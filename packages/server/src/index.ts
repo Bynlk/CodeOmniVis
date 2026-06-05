@@ -8,11 +8,16 @@
 import express from 'express'
 import cors from 'cors'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
 import type { OmniGraph } from '@omnivis/shared'
 import { OmniDatabase } from '@omnivis/analyzer'
 import { createGraphRouter } from './routes/graph'
+
+// ESM 兼容的 __dirname
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // ============================================================
 // 类型定义
