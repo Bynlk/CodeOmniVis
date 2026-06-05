@@ -1,0 +1,5 @@
+- [Project Goals](project-goals.md) — GitHub 影响力优先，视觉 > 深度
+- [User Profile](user-profile.md) — 用户背景和偏好
+- [Current Phase](current-phase.md) — 当前开发阶段和进度
+- [Key Decisions](key-decisions.md) — 重要技术决策记录
+- [Known Issues](known-issues.md) — 已知问题和待解决项

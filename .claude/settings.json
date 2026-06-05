@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(turbo *)",
+      "Bash(git *)",
+      "Bash(vitest *)",
+      "Bash(tsup *)",
+      "Bash(vite *)"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📝 File mutation detected'"
+          }
+        ]
+      }
+    ]
+  }
+}
