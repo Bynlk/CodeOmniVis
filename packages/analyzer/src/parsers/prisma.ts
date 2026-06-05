@@ -7,7 +7,6 @@
  * 遵循"降级而非崩溃"原则：解析失败返回空结果 + warning。
  */
 
-import { getDMMF } from '@prisma/internals'
 import * as fs from 'fs'
 import * as path from 'path'
 import type {
@@ -57,6 +56,19 @@ export class PrismaParser implements Parser {
     const errors: ParseError[] = []
 
     try {
+      // 动态导入 @prisma/internals (CJS 兼容)
+      const prismaInternals = await import('@prisma/internals')
+      const getDMMF = prismaInternals.getDMMF || prismaInternals.default?.getDMMF
+
+      if (!getDMMF) {
+        errors.push({
+          file: filePath,
+          message: 'Failed to load @prisma/internals',
+          severity: 'error',
+        })
+        return { nodes, edges, errors }
+      }
+
       // 读取 schema 文件
       const schemaPath = path.resolve(context.projectRoot, filePath)
       if (!fs.existsSync(schemaPath)) {
