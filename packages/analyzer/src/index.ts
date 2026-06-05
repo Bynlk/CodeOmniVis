@@ -25,3 +25,7 @@ export { PathAliasResolver } from './resolver/pathAlias'
 export type { PathAliasConfig } from './resolver/pathAlias'
 export { CrossLayerLinker } from './resolver/crossLayer'
 export type { CrossLayerResult } from './resolver/crossLayer'
+
+// 一致性检测
+export { ConsistencyChecker } from './graph/consistency'
+export type { ConsistencyReport } from './graph/consistency'
