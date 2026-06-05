@@ -1,0 +1,38 @@
+{
+  "name": "@omnivis/cli",
+  "version": "0.0.1",
+  "private": true,
+  "description": "CLI for OmniVis",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "bin": {
+    "omnivis": "./bin/omnivis.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@omnivis/shared": "workspace:*",
+    "@omnivis/analyzer": "workspace:*",
+    "@omnivis/server": "workspace:*",
+    "commander": "^12.0.0",
+    "ora": "^8.0.0",
+    "chalk": "^5.3.0",
+    "open": "^10.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  }
+}
