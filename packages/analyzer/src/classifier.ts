@@ -89,7 +89,7 @@ export function classifyFile(filePath: string, projectMeta: ProjectMeta): Classi
 
 /**
  * 判断是否是 Next.js App Router 文件
- * 路径模式：app/**/page.tsx, app/**/route.ts, app/**/layout.tsx
+ * 路径模式：app/xxx/page.tsx, app/xxx/route.ts, app/xxx/layout.tsx
  */
 function isNextjsAppRouter(filePath: string): boolean {
   // 匹配 app/ 目录下的特殊文件
@@ -130,7 +130,7 @@ function classifyNextjsAppRouter(filePath: string): ClassificationResult {
 
 /**
  * 判断是否是 Next.js Pages Router 文件
- * 路径模式：pages/**/*.tsx（排除 pages/api/）
+ * 路径模式：pages/xxx/yyy.tsx (排除 pages/api/)
  */
 function isNextjsPagesRouter(filePath: string, projectMeta: ProjectMeta): boolean {
   // 只有当前端框架是 Next.js 时才判断

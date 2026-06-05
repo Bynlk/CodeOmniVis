@@ -197,7 +197,9 @@ export class ReactComponentParser implements Parser {
     sourceFile.forEachDescendant((node: any) => {
       // <ComponentName /> 或 <ComponentName>...</ComponentName>
       if (Node.isJsxSelfClosingElement(node) || Node.isJsxOpeningElement(node)) {
-        const tagName = node.getTagNameNode?.()?.getText?.() || node.getTagName?.()?.getText?.()
+        // 使用 getTagNameNode 获取标签名
+        const tagNameNode = node.getTagNameNode?.()
+        const tagName = tagNameNode?.getText?.()
 
         if (tagName && this.isComponentName(tagName)) {
           childComponents.add(tagName)
