@@ -19,3 +19,9 @@ export type { FileType, ClassificationResult } from './classifier'
 // 图构建器
 export { GraphBuilder } from './graph/builder'
 export type { BuildResult } from './graph/builder'
+
+// Resolver
+export { PathAliasResolver } from './resolver/pathAlias'
+export type { PathAliasConfig } from './resolver/pathAlias'
+export { CrossLayerLinker } from './resolver/crossLayer'
+export type { CrossLayerResult } from './resolver/crossLayer'
