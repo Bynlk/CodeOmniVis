@@ -6,8 +6,6 @@
  */
 
 export { PrismaParser } from './prisma'
-// TODO: 后续添加其他解析器
-// export { NextjsAppParser } from './nextjsApp'
-// export { NextjsPagesParser } from './nextjsPages'
-// export { TrpcParser } from './trpc'
-// export { ExpressParser } from './express'
+export { NextjsAppParser } from './nextjsApp'
+export { TrpcParser } from './trpc'
+export { ApiCallsParser } from './apiCalls'

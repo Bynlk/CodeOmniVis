@@ -10,7 +10,12 @@ export { OmniDatabase } from './storage'
 export type { DbError, DbStats } from './storage'
 
 // 解析器
-export { PrismaParser } from './parsers'
+export { PrismaParser, NextjsAppParser, TrpcParser, ApiCallsParser } from './parsers'
+
+// 文件分类器
+export { classifyFile } from './classifier'
+export type { FileType, ClassificationResult } from './classifier'
 
 // 图构建器
 export { GraphBuilder } from './graph/builder'
+export type { BuildResult } from './graph/builder'
