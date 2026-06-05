@@ -53,16 +53,16 @@ omnivis/
 
 ## 开发阶段
 
-当前阶段：**Phase 2 — Next.js + tRPC 解析**
+当前阶段：**Phase 4 — 跨层连线**
 
 详细计划见 `docs/plans/development-plan.md`。每个 Phase 开始前必须执行计划书中的验证规则。
 
 | Phase | 内容 | 状态 |
 |-------|------|------|
 | 1 | 骨架 + Prisma ER 图 | ✅ 完成 |
-| 2 | Next.js + tRPC 解析 | ← 当前 |
-| 3 | React 组件 + API 调用 | 待开始 |
-| 4 | 跨层连线 | 待开始 |
+| 2 | Next.js + tRPC 解析 | ✅ 完成 |
+| 3 | React 组件 + API 调用 | ✅ 完成 |
+| 4 | 跨层连线 | ← 当前 |
 | 5 | 可视化打磨 | 待开始 |
 | 6 | MCP + CLI + 一致性检测 | 待开始 |
 | 7 | Demo + 发布 | 待开始 |
