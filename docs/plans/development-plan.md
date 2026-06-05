@@ -61,9 +61,9 @@
 | 2 | Next.js + tRPC 解析 | 5 天 | Phase 1 | ✅ 完成 |
 | 3 | React 组件 + API 调用 | 4 天 | Phase 1 | ✅ 完成 |
 | 4 | 跨层连线 | 4 天 | Phase 2, 3 | ✅ 完成 |
-| 5 | 可视化打磨 | 4 天 | Phase 4 | 待开始 |
-| 6 | MCP + CLI + 一致性检测 | 3 天 | Phase 4 | 待开始 |
-| 7 | Demo + 发布 | 3 天 | Phase 5, 6 | 待开始 |
+| 5 | 可视化打磨 | 4 天 | Phase 4 | ✅ 完成 |
+| 6 | MCP + CLI + 一致性检测 | 3 天 | Phase 4 | ✅ 完成 |
+| 7 | Demo + 发布 | 3 天 | Phase 5, 6 | ✅ 完成 |
 | **总计** | | **26 天** | | |
 
 > 注：Phase 2 和 Phase 3 可以并行开发（都只依赖 Phase 1）。
