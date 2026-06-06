@@ -1,5 +1,6 @@
 import type { OmniGraph, OmniNode, NodeType } from '@omnivis/shared'
 import { NODE_COLORS } from '@omnivis/shared'
+import { useTranslation } from 'react-i18next'
 
 interface SidebarProps {
   graph?: OmniGraph
@@ -7,19 +8,9 @@ interface SidebarProps {
   onNodeSelect: (nodeId: string | null) => void
 }
 
-const NODE_TYPE_LABELS: Record<NodeType, string> = {
-  page: 'Pages',
-  component: 'Components',
-  api_route: 'API Routes',
-  trpc_procedure: 'tRPC Procedures',
-  express_route: 'Express Routes',
-  handler: 'Handlers',
-  service: 'Services',
-  db_model: 'DB Models',
-  module: 'Modules',
-}
-
 export default function Sidebar({ graph, selectedNode, onNodeSelect }: SidebarProps) {
+  const { t } = useTranslation()
+
   // 按类型分组节点
   const nodesByType = graph?.nodes.reduce((acc, node) => {
     if (!acc[node.type]) {
@@ -35,11 +26,11 @@ export default function Sidebar({ graph, selectedNode, onNodeSelect }: SidebarPr
     <aside className="w-64 bg-slate-800 border-r border-slate-700 overflow-y-auto">
       <div className="p-4">
         <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-          Nodes ({graph?.nodes.length || 0})
+          {t('sidebar.nodes')} ({graph?.nodes.length || 0})
         </h2>
 
         {nodeTypes.length === 0 ? (
-          <p className="text-slate-500 text-sm">No nodes found</p>
+          <p className="text-slate-500 text-sm">{t('sidebar.noNodesFound')}</p>
         ) : (
           <div className="space-y-4">
             {nodeTypes.map((type) => (
@@ -50,7 +41,7 @@ export default function Sidebar({ graph, selectedNode, onNodeSelect }: SidebarPr
                     style={{ backgroundColor: NODE_COLORS[type] }}
                   />
                   <h3 className="text-sm font-medium text-slate-300">
-                    {NODE_TYPE_LABELS[type]}
+                    {t(`nodeType.${type}`)}
                   </h3>
                   <span className="text-xs text-slate-500">
                     ({nodesByType[type].length})

@@ -31,6 +31,20 @@ export default {
           db: '#ec4899',
         },
       },
+      animation: {
+        slideDown: 'slideDown 0.2s ease-out',
+        fadeIn: 'fadeIn 0.15s ease-out',
+      },
+      keyframes: {
+        slideDown: {
+          from: { opacity: '0', transform: 'translateY(-8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeIn: {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+      },
     },
   },
   plugins: [],

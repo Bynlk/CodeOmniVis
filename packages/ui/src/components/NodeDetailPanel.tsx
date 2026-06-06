@@ -1,5 +1,6 @@
 import type { OmniNode, OmniEdge } from '@omnivis/shared'
 import { NODE_COLORS } from '@omnivis/shared'
+import { useTranslation } from 'react-i18next'
 
 interface NodeDetailPanelProps {
   node: OmniNode | null
@@ -16,6 +17,8 @@ export default function NodeDetailPanel({
   onClose,
   onNodeSelect,
 }: NodeDetailPanelProps) {
+  const { t } = useTranslation()
+
   if (!node) return null
 
   const color = NODE_COLORS[node.type] || '#94a3b8'
@@ -35,7 +38,7 @@ export default function NodeDetailPanel({
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-white transition-colors"
-            aria-label="Close panel"
+            aria-label={t('detail.closePanel')}
           >
             ✕
           </button>
@@ -48,17 +51,17 @@ export default function NodeDetailPanel({
         {/* 文件位置 */}
         <div>
           <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Location
+            {t('detail.location')}
           </h4>
           <p className="text-sm text-slate-300">{node.filePath}</p>
-          <p className="text-xs text-slate-500">Line {node.line}</p>
+          <p className="text-xs text-slate-500">{t('detail.line')} {node.line}</p>
         </div>
 
         {/* Metadata */}
         {node.metadata && Object.keys(node.metadata).length > 0 && (
           <div>
             <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Details
+              {t('detail.details')}
             </h4>
             <pre className="text-xs text-slate-300 bg-slate-900 p-2 rounded overflow-x-auto">
               {JSON.stringify(node.metadata, null, 2)}
@@ -70,7 +73,7 @@ export default function NodeDetailPanel({
         {inEdges.length > 0 && (
           <div>
             <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Upstream ({inEdges.length})
+              {t('detail.upstream')} ({inEdges.length})
             </h4>
             <ul className="space-y-1">
               {inEdges.map((edge) => (
@@ -92,7 +95,7 @@ export default function NodeDetailPanel({
         {outEdges.length > 0 && (
           <div>
             <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Downstream ({outEdges.length})
+              {t('detail.downstream')} ({outEdges.length})
             </h4>
             <ul className="space-y-1">
               {outEdges.map((edge) => (
@@ -119,7 +122,7 @@ export default function NodeDetailPanel({
             window.open(vscodeUrl, '_blank')
           }}
         >
-          Open in VS Code
+          {t('detail.openVSCode')}
         </button>
       </div>
     </div>

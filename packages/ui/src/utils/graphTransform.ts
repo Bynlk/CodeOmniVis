@@ -49,14 +49,19 @@ type CytoscapeElement = CytoscapeNode | CytoscapeEdge
 export function graphToCytoscapeElements(graph: OmniGraph): CytoscapeElement[] {
   const elements: CytoscapeElement[] = []
 
+  // 构建节点 ID 集合，用于过滤无效边
+  const nodeIds = new Set(graph.nodes.map(n => n.id))
+
   // 转换节点
   for (const node of graph.nodes) {
     elements.push(nodeToCytoscape(node))
   }
 
-  // 转换边
+  // 转换边（仅保留两端节点都存在的边）
   for (const edge of graph.edges) {
-    elements.push(edgeToCytoscape(edge))
+    if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
+      elements.push(edgeToCytoscape(edge))
+    }
   }
 
   return elements

@@ -1,4 +1,7 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { LangToggle } from './Header/LangToggle'
 
 interface HeaderProps {
   query?: string
@@ -6,7 +9,10 @@ interface HeaderProps {
 }
 
 export default function Header({ query, onQueryChange }: HeaderProps) {
+  const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
+  const queryClient = useQueryClient()
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Cmd+K / Ctrl+K 快捷键聚焦搜索框
   useEffect(() => {
@@ -20,6 +26,23 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      // 调用 /api/analyze 触发重新分析
+      const res = await fetch('/api/analyze', { method: 'POST' })
+      if (!res.ok) {
+        console.error('Refresh failed:', res.status, res.statusText)
+      }
+      // 让 React Query 重新拉取图数据
+      await queryClient.invalidateQueries({ queryKey: ['graph'] })
+    } catch (err) {
+      console.error('Refresh error:', err)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   return (
     <header className="bg-slate-800 border-b border-slate-700 px-6 py-3">
       <div className="flex items-center justify-between">
@@ -28,7 +51,7 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
             <span className="text-primary-400">Omni</span>Vis
           </h1>
           <span className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">
-            Architecture Visualizer
+            {t('header.subtitle')}
           </span>
         </div>
 
@@ -41,9 +64,9 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
                 type="text"
                 value={query || ''}
                 onChange={(e) => onQueryChange(e.target.value)}
-                placeholder="Search nodes... (⌘K)"
+                placeholder={t('header.searchPlaceholder', { shortcut: '⌘K' })}
                 className="w-64 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-primary-500 transition-colors"
-                aria-label="Search nodes"
+                aria-label={t('header.searchNodes')}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
                 ⌘K
@@ -51,11 +74,22 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
             </div>
           )}
 
+          {/* 语言切换 */}
+          <LangToggle />
+
+          {/* 刷新按钮 */}
           <button
-            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm transition-colors"
-            aria-label="Refresh graph"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-lg text-sm transition-colors"
+            aria-label={t('header.refreshGraph')}
           >
-            Refresh
+            {isRefreshing ? (
+              <span className="animate-spin">⟳</span>
+            ) : '↺'}
+            <span className="ml-1 text-xs">
+              {isRefreshing ? t('header.refreshing') : t('header.refresh')}
+            </span>
           </button>
         </div>
       </div>
