@@ -35,7 +35,7 @@
 ### 1. 零配置全栈分析
 
 ```bash
-npx omnivis serve   # 60 秒内看到完整架构
+npx @bynlk/omnivis serve   # 60 秒内看到完整架构
 ```
 
 自动检测框架 → 扫描文件 → AST 解析 → 跨层连线 → 可视化。不需要任何配置。
@@ -123,10 +123,10 @@ AI（通过 OmniVis）：
 
 ```bash
 # 全局安装
-npm install -g omnivis
+npm install -g @bynlk/omnivis
 
 # 或直接运行
-npx omnivis serve
+npx @bynlk/omnivis serve
 ```
 
 浏览器自动打开 → 看到完整的三层架构图 → 点击节点 → 搜索/过滤/缩放。
