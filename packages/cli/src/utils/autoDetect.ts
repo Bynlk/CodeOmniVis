@@ -7,6 +7,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import type { ProjectMeta, FrameworkType, DatabaseType, MonorepoType } from '@omnivis/shared'
+import { detectGradleFrameworks } from './gradleDetect'
 
 // ============================================================
 // 检测函数
@@ -26,11 +27,20 @@ export async function autoDetectProject(root: string): Promise<ProjectMeta> {
     ...packageJson.devDependencies,
   }
 
-  // 检测框架
+  // 检测框架（TypeScript 项目）
   const frontendFramework = detectFrontendFramework(dependencies)
-  const backendFramework = detectBackendFramework(dependencies)
-  const databaseType = detectDatabaseType(root, dependencies)
+  let backendFramework = detectBackendFramework(dependencies)
+  let databaseType = detectDatabaseType(root, dependencies)
   const monorepoType = detectMonorepoType(root)
+
+  // 检测 Kotlin/Gradle 项目
+  const gradleInfo = detectGradleFrameworks(root)
+  if (gradleInfo.backendFramework !== 'unknown' && backendFramework === 'unknown') {
+    backendFramework = gradleInfo.backendFramework
+  }
+  if (gradleInfo.databaseType !== 'unknown' && databaseType === 'unknown') {
+    databaseType = gradleInfo.databaseType
+  }
 
   // 检测 Prisma schema
   const prismaSchemaPath = findPrismaSchema(root)
@@ -53,7 +63,7 @@ export async function autoDetectProject(root: string): Promise<ProjectMeta> {
     prismaSchemaPath,
     typeormEntityDirs,
     tsConfigPath: findTsConfig(root) ?? null,
-    buildFile: null,
+    buildFile: gradleInfo.buildFile,
     packages: [],
   }
 }
