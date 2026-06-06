@@ -1,15 +1,15 @@
 <div align="center">
 
 ```
- ██████╗ ███╗   ███╗███╗   ██╗██╗██╗   ██╗██╗███████╗
-██╔═══██╗████╗ ████║████╗  ██║██║██║   ██║██║██╔════╝
-██║   ██║██╔████╔██║██╔██╗ ██║██║██║   ██║██║███████╗
-██║   ██║██║╚██╔╝██║██║╚██╗██║██║╚██╗ ██╔╝██║╚════██║
-╚██████╔╝██║ ╚═╝ ██║██║ ╚████║██║ ╚████╔╝ ██║███████║
- ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝  ╚═╝╚══════╝
+ ██████╗ ██████╗ ██████╗ ███████╗ ██████╗ ███╗   ███╗███╗   ██╗██╗██╗   ██╗██╗███████╗
+██╔════╝██╔═══██╗██╔══██╗██╔════╝██╔═══██╗████╗ ████║████╗  ██║██║██║   ██║██║██╔════╝
+██║     ██║   ██║██║  ██║█████╗  ██║   ██║██╔████╔██║██╔██╗ ██║██║██║   ██║██║███████╗
+██║     ██║   ██║██║  ██║██╔══╝  ██║   ██║██║╚██╔╝██║██║╚██╗██║██║╚██╗ ██╔╝██║╚════██║
+╚██████╗╚██████╔╝██████╔╝███████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚████║██║ ╚████╔╝ ██║███████║
+ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝ ╚═════╝╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝  ╚═╝╚══════╝
 ```
 
-# 🔮 OmniVis — 全栈架构可视化引擎
+# 🔮 CodeOmniVis — 全栈架构可视化引擎
 
 **一行命令，60 秒，看清整个项目的架构。**
 
@@ -25,7 +25,7 @@
 
 ## 🤯 一句话说清楚
 
-> OmniVis 静态分析你的 TypeScript 全栈项目，自动生成 **前端 → API → 数据库** 的完整拓扑图，
+> CodeOmniVis 静态分析你的 TypeScript 全栈项目，自动生成 **前端 → API → 数据库** 的完整拓扑图，
 > 并检测死代码、循环依赖、数据流路径。内置 MCP Server，让 AI 助手直接理解你的架构。
 
 ---
@@ -95,7 +95,7 @@ npx @bynlk/CodeOmniVis serve   # 60 秒内看到完整架构
 ### 4. MCP Server — AI 原生集成
 
 ```bash
-omnivis mcp   # 启动 MCP Server
+codeomnivis mcp   # 启动 MCP Server
 ```
 
 **5 个工具**，让 Cursor / Claude / 任何 AI 助手直接查询你的架构：
@@ -111,7 +111,7 @@ omnivis mcp   # 启动 MCP Server
 ```
 你：这个项目的认证流程是怎样的？
 
-AI（通过 OmniVis）：
+AI（通过 CodeOmniVis）：
   User → /api/auth → middleware → protectedProcedure → Session
   
   完整调用链，不是猜的。
@@ -134,17 +134,17 @@ npx @bynlk/CodeOmniVis serve
 ### 命令
 
 ```bash
-omnivis serve          # 🚀 启动可视化服务（自动分析 + 文件监听）
-omnivis analyze        # 📊 输出 JSON 图数据
-omnivis check          # 🔍 一致性检测 + 死代码 + 循环依赖
-omnivis mcp            # 🤖 启动 MCP Server
-omnivis init           # ⚙️ 生成 .omnivis.json 配置文件
+codeomnivis serve          # 🚀 启动可视化服务（自动分析 + 文件监听）
+codeomnivis analyze        # 📊 输出 JSON 图数据
+codeomnivis check          # 🔍 一致性检测 + 死代码 + 循环依赖
+codeomnivis mcp            # 🤖 启动 MCP Server
+codeomnivis init           # ⚙️ 生成 .codeomnivis.json 配置文件
 ```
 
 ### 配置（可选）
 
 ```json
-// .omnivis.json — 零配置也能跑，有配置更精准
+// .codeomnivis.json — 零配置也能跑，有配置更精准
 {
   "frontend": { "dirs": ["src"], "framework": "next" },
   "backend": { "dirs": ["server"], "framework": "nestjs" },
@@ -160,10 +160,10 @@ omnivis init           # ⚙️ 生成 .omnivis.json 配置文件
 ### 自动检测输出
 
 ```
-$ omnivis serve
+$ codeomnivis serve
 
 ✔ Server running at http://localhost:4321
-Configuration loaded from .omnivis.json
+Configuration loaded from .codeomnivis.json
 
 Analysis results:
   Files scanned: 62
@@ -205,7 +205,7 @@ Node types:
 ### 死代码 + 循环依赖检测
 
 ```bash
-$ omnivis check
+$ codeomnivis check
 
 Consistency Issues:
   Total: 15
@@ -277,7 +277,7 @@ Consuming Components:
                    │                    │                  │
           ┌────────┴────────────────────┴──────────────────┴───┐
           │              SQLite (sql.js WASM)                   │
-          │         ~/.omnivis/projects/{hash}.db               │
+          │         ~/.codeomnivis/projects/{hash}.db               │
           │         零配置 · 文件持久化 · 跨进程共享              │
           └────────────────────────┬───────────────────────────┘
                                    │
@@ -297,7 +297,7 @@ Consuming Components:
 ## 📦 Monorepo 结构
 
 ```
-omnivis/
+codeomnivis/
 ├── packages/
 │   ├── shared/       # 共享类型（13 种节点 + 13 种边 + 配置系统）
 │   ├── analyzer/     # 解析引擎（22 个解析器 + 图算法 + 存储）
@@ -316,12 +316,12 @@ omnivis/
 
 | 包 | 代码行数 | 功能 |
 |----|---------|------|
-| `@omnivis/shared` | 982 | 13 种节点类型、13 种边类型、配置加载器 |
-| `@omnivis/analyzer` | 8,333 | 22 个解析器、数据流追踪、死代码/循环依赖检测 |
-| `@omnivis/server` | 759 | REST API、WebSocket 广播、文件监听增量分析 |
-| `@omnivis/ui` | 2,291 | 6 个 Tab 面板、Cytoscape 图、数据流可视化 |
-| `@omnivis/mcp` | 411 | 5 个 MCP 工具、并发安全、优雅关闭 |
-| `@omnivis/cli` | 1,015 | 5 个命令、配置集成、自动框架检测 |
+| `@codeomnivis/shared` | 982 | 13 种节点类型、13 种边类型、配置加载器 |
+| `@codeomnivis/analyzer` | 8,333 | 22 个解析器、数据流追踪、死代码/循环依赖检测 |
+| `@codeomnivis/server` | 759 | REST API、WebSocket 广播、文件监听增量分析 |
+| `@codeomnivis/ui` | 2,291 | 6 个 Tab 面板、Cytoscape 图、数据流可视化 |
+| `@codeomnivis/mcp` | 411 | 5 个 MCP 工具、并发安全、优雅关闭 |
+| `@codeomnivis/cli` | 1,015 | 5 个命令、配置集成、自动框架检测 |
 | **总计** | **~13,800** | |
 
 ---
@@ -364,7 +364,7 @@ omnivis/
 - [x] 循环依赖检测（Tarjan SCC）
 - [x] 一致性检测（死链 / Method 不匹配 / 缺失 Procedure）
 - [x] MCP Server（5 个工具）
-- [x] 配置文件系统（.omnivis.json）
+- [x] 配置文件系统（.codeomnivis.json）
 - [x] 文件监听增量分析
 - [x] WebSocket 实时推送
 - [x] 6 个 UI 面板（图谱 / 筛选 / 问题 / 数据流 / AI / 统计）
