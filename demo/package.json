@@ -1,0 +1,13 @@
+{
+  "name": "demo",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "@prisma/client": "^5.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.0.0"
+  }
+}
