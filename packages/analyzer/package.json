@@ -1,7 +1,7 @@
 {
   "name": "@omnivis/analyzer",
   "version": "0.0.1",
-  "private": true,
+
   "description": "Code analysis engine for OmniVis",
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",

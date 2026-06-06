@@ -1,7 +1,7 @@
 {
   "name": "@omnivis/cli",
   "version": "0.0.1",
-  "private": true,
+
   "description": "CLI for OmniVis",
   "type": "module",
   "main": "./dist/index.mjs",

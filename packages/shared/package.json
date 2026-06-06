@@ -1,7 +1,7 @@
 {
   "name": "@omnivis/shared",
   "version": "0.0.1",
-  "private": true,
+
   "description": "Shared types and constants for OmniVis",
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",

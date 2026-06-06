@@ -1,7 +1,7 @@
 {
   "name": "@omnivis/server",
   "version": "0.0.1",
-  "private": true,
+
   "description": "Web server for OmniVis visualization",
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",

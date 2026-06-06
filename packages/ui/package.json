@@ -1,7 +1,7 @@
 {
   "name": "@omnivis/ui",
   "version": "0.0.1",
-  "private": true,
+
   "description": "Visualization UI for OmniVis",
   "type": "module",
   "scripts": {
