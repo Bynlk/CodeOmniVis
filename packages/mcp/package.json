@@ -1,24 +1,40 @@
 {
   "name": "@omnivis/mcp",
   "version": "0.0.1",
-
   "description": "MCP Server for OmniVis",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bynlk/CodeOmniVis.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
+  "keywords": ["omnivis", "architecture", "visualization", "mcp"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": ["dist"],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "dev": "tsup src/index.ts --format esm --dts --watch",
-    "clean": "rm -rf dist",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "clean": "rimraf dist",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@omnivis/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "@omnivis/analyzer": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@omnivis/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "rimraf": "^5.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^1.0.0"
   }
 }

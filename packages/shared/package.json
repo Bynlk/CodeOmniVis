@@ -1,8 +1,19 @@
 {
   "name": "@omnivis/shared",
   "version": "0.0.1",
-
   "description": "Shared types and constants for OmniVis",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bynlk/CodeOmniVis.git",
+    "directory": "packages/shared"
+  },
+  "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
+  "keywords": ["omnivis", "architecture", "visualization", "typescript"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": ["dist"],
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -14,11 +25,16 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
-    "clean": "rm -rf dist",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "clean": "rimraf dist",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
+    "rimraf": "^5.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^1.0.0"
   }
 }

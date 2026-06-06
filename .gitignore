@@ -45,3 +45,9 @@ coverage/
 
 # Claude Code
 .claude/projects/
+
+# Obsidian
+.obsidian/
+
+# Personal data
+byresume-graph.json

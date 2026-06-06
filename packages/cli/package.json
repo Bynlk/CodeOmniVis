@@ -1,8 +1,19 @@
 {
   "name": "@omnivis/cli",
   "version": "0.0.1",
-
   "description": "CLI for OmniVis",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bynlk/CodeOmniVis.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
+  "keywords": ["omnivis", "architecture", "visualization", "cli"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": ["dist"],
   "type": "module",
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
@@ -19,20 +30,25 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "dev": "tsup src/index.ts --format esm --dts --watch",
-    "clean": "rm -rf dist",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "clean": "rimraf dist",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@omnivis/shared": "workspace:*",
     "@omnivis/analyzer": "workspace:*",
     "@omnivis/server": "workspace:*",
-    "commander": "^12.0.0",
-    "ora": "^8.0.0",
+    "@omnivis/shared": "workspace:*",
     "chalk": "^5.3.0",
-    "open": "^10.0.0"
+    "commander": "^12.0.0",
+    "open": "^10.0.0",
+    "ora": "^8.0.0"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
+    "rimraf": "^5.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^1.0.0"
   }
 }
