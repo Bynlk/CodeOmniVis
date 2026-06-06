@@ -42,8 +42,8 @@ export interface ParseResult {
 // 项目元数据
 // ============================================================
 
-export type FrameworkType = 'next' | 'express' | 'trpc' | 'spring' | 'ktor' | 'unknown'
-export type DatabaseType = 'prisma' | 'typeorm' | 'exposed' | 'room' | 'unknown'
+export type FrameworkType = 'next' | 'express' | 'trpc' | 'nestjs' | 'spring' | 'ktor' | 'unknown'
+export type DatabaseType = 'prisma' | 'typeorm' | 'drizzle' | 'exposed' | 'room' | 'unknown'
 export type MonorepoType = 'turborepo' | 'pnpm' | 'none'
 
 export interface ProjectMeta {

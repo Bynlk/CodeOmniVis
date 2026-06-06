@@ -20,6 +20,10 @@ export type IssueType =
   | 'method_mismatch'     // HTTP method 不匹配
   | 'missing_procedure'   // tRPC procedure 不存在
   | 'param_mismatch'      // 动态路由参数不一致
+  | 'dead_route'          // API 路由没有前端调用
+  | 'dead_component'      // 组件没有被渲染
+  | 'dead_service'        // Service 没有被调用
+  | 'circular_dependency' // 循环依赖
 
 // ============================================================
 // 问题位置

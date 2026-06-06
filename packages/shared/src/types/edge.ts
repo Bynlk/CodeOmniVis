@@ -22,6 +22,7 @@ export type EdgeType =
   | 'kotlin_inherits' // Kotlin 类继承：Child → Parent
   | 'kotlin_implements' // Kotlin 接口实现：Class → Interface
   | 'kotlin_uses'     // Kotlin 依赖关系：Class → Class（字段/参数/返回值类型）
+  | 'data_flows_to'   // 数据流：Model → API → Component 类型传播路径
 
 // ============================================================
 // 置信度

@@ -21,6 +21,11 @@ export type {
   DbFieldInfo,
   DbModelMetadata,
   ModuleMetadata,
+  KotlinClassMetadata,
+  KotlinInterfaceMetadata,
+  KotlinObjectMetadata,
+  KotlinFunctionMetadata,
+  KotlinRouteMetadata,
 } from './types/node'
 
 export {
@@ -93,3 +98,7 @@ export {
   DEFAULT_EXCLUDE,
   FILE_PATTERNS,
 } from './constants/defaults'
+
+// 工具函数导出
+export { getDbPath, hasDbCache, clearDbCache } from './utils/dbPath'
+export { loadConfig } from './utils/configLoader'
