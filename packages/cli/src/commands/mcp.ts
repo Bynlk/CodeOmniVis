@@ -8,15 +8,21 @@
 import type { Command } from 'commander'
 import ora from 'ora'
 import chalk from 'chalk'
+import * as path from 'path'
 
 export function mcpCommand(program: Command): void {
   program
     .command('mcp')
     .description('Start MCP Server for AI assistant integration')
-    .action(async () => {
+    .option('--project <path>', 'Project root path', '.')
+    .action(async (options) => {
       const spinner = ora('Starting MCP Server...').start()
 
       try {
+        // 设置项目根路径环境变量，供 MCP 模块使用
+        const projectRoot = path.resolve(options.project)
+        process.env.OMNIVIS_PROJECT = projectRoot
+
         // 动态导入 MCP 包
         const mcp = await import('@omnivis/mcp')
 

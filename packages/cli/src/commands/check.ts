@@ -11,39 +11,9 @@ import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
 import { autoDetectProject } from '../utils/autoDetect'
-import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, GraphBuilder, ConsistencyChecker } from '@omnivis/analyzer'
-
-/**
- * 递归扫描目录，返回所有 TypeScript/JavaScript 文件
- */
-function scanDirectory(dir: string, rootDir: string): string[] {
-  const files: string[] = []
-  const extensions = ['.ts', '.tsx', '.js', '.jsx']
-  const ignoreDirs = ['node_modules', '.next', 'dist', 'build', '.git']
-
-  try {
-    const entries = fs.readdirSync(dir, { withFileTypes: true })
-
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
-
-      if (entry.isDirectory()) {
-        if (!ignoreDirs.includes(entry.name)) {
-          files.push(...scanDirectory(fullPath, rootDir))
-        }
-      } else if (entry.isFile()) {
-        const ext = path.extname(entry.name)
-        if (extensions.includes(ext)) {
-          files.push(path.relative(rootDir, fullPath).replace(/\\/g, '/'))
-        }
-      }
-    }
-  } catch (err) {
-    // 忽略无法读取的目录
-  }
-
-  return files
-}
+import { scanDirectory } from '../utils/scanDirectory'
+import { getDbPath, loadConfig } from '@omnivis/shared'
+import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, ConsistencyChecker } from '@omnivis/analyzer'
 
 export function checkCommand(program: Command): void {
   program
@@ -53,12 +23,15 @@ export function checkCommand(program: Command): void {
       const spinner = ora('Checking project...').start()
 
       try {
-        // 自动检测项目
+        // 加载配置 + 自动检测项目
+        const projectRoot = path.resolve('.')
         spinner.text = 'Detecting project structure...'
-        const projectMeta = await autoDetectProject(process.cwd())
+        const config = loadConfig(projectRoot)
+        const projectMeta = await autoDetectProject(projectRoot, config)
 
         // 初始化数据库
-        const db = new OmniDatabase()
+        const dbPath = getDbPath(projectRoot)
+        const db = new OmniDatabase(dbPath)
         await db.ready()
 
         // 创建图构建器
@@ -72,6 +45,10 @@ export function checkCommand(program: Command): void {
           new TypeormParser(),
           new ApiCallsParser(),
           new ReactComponentParser(),
+          new NestjsControllerParser(),
+          new NestjsModuleParser(),
+          new NestjsServiceParser(),
+          new DrizzleParser(),
         ])
 
         // 获取要解析的文件
@@ -131,10 +108,10 @@ export function checkCommand(program: Command): void {
         if (report.issues.length > 0) {
           console.log('')
           console.log(chalk.blue('Consistency Issues:'))
-          console.log(`  Total: ${report.stats.totalIssues}`)
-          console.log(`  Critical: ${report.stats.criticalCount}`)
-          console.log(`  Warning: ${report.stats.warningCount}`)
-          console.log(`  Info: ${report.stats.infoCount}`)
+          console.log(`  Total: ${report.summary.total}`)
+          console.log(`  Critical: ${report.summary.critical}`)
+          console.log(`  Warning: ${report.summary.warning}`)
+          console.log(`  Info: ${report.summary.info}`)
 
           console.log('')
           for (const issue of report.issues) {

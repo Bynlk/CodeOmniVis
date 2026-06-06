@@ -10,40 +10,10 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
-import { autoDetectProject } from '../utils/autoDetect'
-import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, GraphBuilder } from '@omnivis/analyzer'
-
-/**
- * 递归扫描目录，返回所有 TypeScript/JavaScript 文件
- */
-function scanDirectory(dir: string, rootDir: string): string[] {
-  const files: string[] = []
-  const extensions = ['.ts', '.tsx', '.js', '.jsx']
-  const ignoreDirs = ['node_modules', '.next', 'dist', 'build', '.git']
-
-  try {
-    const entries = fs.readdirSync(dir, { withFileTypes: true })
-
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
-
-      if (entry.isDirectory()) {
-        if (!ignoreDirs.includes(entry.name)) {
-          files.push(...scanDirectory(fullPath, rootDir))
-        }
-      } else if (entry.isFile()) {
-        const ext = path.extname(entry.name)
-        if (extensions.includes(ext)) {
-          files.push(path.relative(rootDir, fullPath).replace(/\\/g, '/'))
-        }
-      }
-    }
-  } catch (err) {
-    // 忽略无法读取的目录
-  }
-
-  return files
-}
+import { autoDetectProject, findTsConfig } from '../utils/autoDetect'
+import { scanDirectory } from '../utils/scanDirectory'
+import { getDbPath, loadConfig } from '@omnivis/shared'
+import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@omnivis/analyzer'
 
 export function analyzeCommand(program: Command): void {
   program
@@ -54,12 +24,15 @@ export function analyzeCommand(program: Command): void {
       const spinner = ora('Analyzing project...').start()
 
       try {
-        // 自动检测项目
+        // 加载配置 + 自动检测项目
+        const projectRoot = path.resolve(options.project ?? '.')
         spinner.text = 'Detecting project structure...'
-        const projectMeta = await autoDetectProject(process.cwd())
+        const config = loadConfig(projectRoot)
+        const projectMeta = await autoDetectProject(projectRoot, config)
 
         // 初始化数据库
-        const db = new OmniDatabase()
+        const dbPath = getDbPath(projectRoot)
+        const db = new OmniDatabase(dbPath)
         await db.ready()
 
         // 创建图构建器
@@ -73,6 +46,10 @@ export function analyzeCommand(program: Command): void {
           new TypeormParser(),
           new ApiCallsParser(),
           new ReactComponentParser(),
+          new NestjsControllerParser(),
+          new NestjsModuleParser(),
+          new NestjsServiceParser(),
+          new DrizzleParser(),
         ])
 
         // 获取要解析的文件
@@ -102,17 +79,44 @@ export function analyzeCommand(program: Command): void {
           pathAliases: {},
         })
 
+        // 跨层连线
+        const tsConfigPath = findTsConfig(process.cwd())
+        const linker = new CrossLayerLinker(tsConfigPath)
+        const graph = builder.loadGraph()
+        const crossLayerResult = await linker.link(graph)
+
+        // 将跨层边加入 graph 并保存到数据库
+        graph.edges.push(...crossLayerResult.edges)
+        if (crossLayerResult.edges.length > 0) {
+          db.upsertEdges(crossLayerResult.edges)
+        }
+        // linker.link 可能向 graph.nodes 中添加了 synthetic 节点
+        const syntheticNodes = graph.nodes.filter(n => (n.metadata as any)?.isSynthetic)
+        if (syntheticNodes.length > 0) {
+          db.upsertNodes(syntheticNodes)
+        }
+
         spinner.succeed(chalk.green('Analysis complete!'))
 
         // 输出统计信息
+        const totalEdges = result.stats.totalEdges + crossLayerResult.edges.length
         console.log('')
         console.log(chalk.blue('Statistics:'))
-        console.log(`  Nodes: ${result.stats.totalNodes}`)
-        console.log(`  Edges: ${result.stats.totalEdges}`)
+        console.log(`  Nodes: ${graph.nodes.length}`)
+        console.log(`  Edges: ${totalEdges}`)
         console.log(`  Errors: ${result.stats.totalErrors}`)
 
-        // 输出 JSON
-        const graph = builder.loadGraph()
+        // 跨层连线统计
+        if (crossLayerResult.edges.length > 0) {
+          console.log('')
+          console.log(chalk.blue('Cross-layer links:'))
+          console.log(`  calls_api:      ${crossLayerResult.stats.callsApiEdges}`)
+          console.log(`  handles:        ${crossLayerResult.stats.handlesEdges}`)
+          console.log(`  calls_service:  ${crossLayerResult.stats.callsServiceEdges}`)
+          console.log(`  queries_db:     ${crossLayerResult.stats.queriesDbEdges}`)
+        }
+
+        // 输出 JSON（使用包含跨层结果的 graph）
         const json = JSON.stringify(graph, null, 2)
 
         if (options.output === '-') {

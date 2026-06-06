@@ -10,42 +10,11 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
-import { autoDetectProject } from '../utils/autoDetect'
+import { autoDetectProject, findTsConfig } from '../utils/autoDetect'
+import { scanDirectory } from '../utils/scanDirectory'
 import { createOmniServer } from '@omnivis/server'
-import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, GraphBuilder, CrossLayerLinker } from '@omnivis/analyzer'
-
-/**
- * 递归扫描目录，返回所有 TypeScript/JavaScript 文件
- */
-function scanDirectory(dir: string, rootDir: string): string[] {
-  const files: string[] = []
-  const extensions = ['.ts', '.tsx', '.js', '.jsx']
-  const ignoreDirs = ['node_modules', '.next', 'dist', 'build', '.git']
-
-  try {
-    const entries = fs.readdirSync(dir, { withFileTypes: true })
-
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
-
-      if (entry.isDirectory()) {
-        if (!ignoreDirs.includes(entry.name)) {
-          files.push(...scanDirectory(fullPath, rootDir))
-        }
-      } else if (entry.isFile()) {
-        const ext = path.extname(entry.name)
-        if (extensions.includes(ext)) {
-          // 返回相对路径
-          files.push(path.relative(rootDir, fullPath).replace(/\\/g, '/'))
-        }
-      }
-    }
-  } catch (err) {
-    // 忽略无法读取的目录
-  }
-
-  return files
-}
+import { getDbPath, loadConfig } from '@omnivis/shared'
+import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@omnivis/analyzer'
 
 export function serveCommand(program: Command): void {
   program
@@ -58,15 +27,26 @@ export function serveCommand(program: Command): void {
       const spinner = ora('Starting OmniVis server...').start()
 
       try {
-        // 自动检测项目
+        // 加载配置 + 自动检测项目
         spinner.text = 'Detecting project structure...'
-        const projectMeta = await autoDetectProject(process.cwd())
+        const projectRoot = path.resolve(options.project ?? '.')
+        const config = loadConfig(projectRoot)
+        const projectMeta = await autoDetectProject(projectRoot, config)
+
+        // 提示配置文件状态
+        const configPath = require('path').join(projectRoot, '.omnivis.json')
+        if (require('fs').existsSync(configPath)) {
+          console.log(chalk.gray('Configuration loaded from .omnivis.json'))
+        }
 
         // 创建服务器
         spinner.text = 'Starting server...'
+        const dbPath = getDbPath(projectRoot)
         const server = createOmniServer({
           port: parseInt(options.port, 10),
           host: options.host,
+          dbPath,
+          projectRoot,
         })
 
         // 启动服务器
@@ -84,6 +64,10 @@ export function serveCommand(program: Command): void {
           new TypeormParser(),
           new ApiCallsParser(),
           new ReactComponentParser(),
+          new NestjsControllerParser(),
+          new NestjsModuleParser(),
+          new NestjsServiceParser(),
+          new DrizzleParser(),
         ])
 
         // 获取要解析的文件
@@ -116,9 +100,10 @@ export function serveCommand(program: Command): void {
           })
 
           // 跨层连线
-          const linker = new CrossLayerLinker()
+          const tsConfigPath = findTsConfig(process.cwd())
+          const linker = new CrossLayerLinker(tsConfigPath)
           const graph = builder.loadGraph()
-          const crossLayerResult = linker.link(graph)
+          const crossLayerResult = await linker.link(graph)
 
           if (crossLayerResult.edges.length > 0) {
             server.db.upsertEdges(crossLayerResult.edges)
@@ -137,7 +122,10 @@ export function serveCommand(program: Command): void {
           if (crossLayerResult.edges.length > 0) {
             console.log('')
             console.log(chalk.blue('Cross-layer links:'))
-            console.log(`  calls_api: ${crossLayerResult.stats.callsApiEdges}`)
+            console.log(`  calls_api:      ${crossLayerResult.stats.callsApiEdges}`)
+            console.log(`  handles:        ${crossLayerResult.stats.handlesEdges}`)
+            console.log(`  calls_service:  ${crossLayerResult.stats.callsServiceEdges}`)
+            console.log(`  queries_db:     ${crossLayerResult.stats.queriesDbEdges}`)
           }
 
           // 显示节点类型分布
