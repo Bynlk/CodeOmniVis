@@ -112,7 +112,9 @@ export class ReactComponentParser implements Parser {
         const name = node.getName()
 
         if (name && isExported && this.isComponentName(name)) {
-          const componentNode = this.createComponentNode(name, filePath, node.getStartLineNumber(), 'function')
+          const props = this.extractPropsFromFunction(node)
+          const hasState = this.detectUseState(node)
+          const componentNode = this.createComponentNode(name, filePath, node.getStartLineNumber(), 'function', props, hasState)
           components.push({ node: componentNode, name })
         }
       }
@@ -125,7 +127,9 @@ export class ReactComponentParser implements Parser {
         if (name && initializer && Node.isArrowFunction(initializer)) {
           const isExported = this.isVariableExported(node)
           if (isExported && this.isComponentName(name)) {
-            const componentNode = this.createComponentNode(name, filePath, node.getStartLineNumber(), 'function')
+            const props = this.extractPropsFromFunction(initializer)
+            const hasState = this.detectUseState(initializer)
+            const componentNode = this.createComponentNode(name, filePath, node.getStartLineNumber(), 'function', props, hasState)
             components.push({ node: componentNode, name })
           }
         }
@@ -164,15 +168,17 @@ export class ReactComponentParser implements Parser {
     name: string,
     filePath: string,
     line: number,
-    componentType: 'function' | 'class'
+    componentType: 'function' | 'class',
+    props: string[] = [],
+    hasState: boolean = false
   ): OmniNode {
     const nodeId = createNodeId('component', filePath, name)
 
     const metadata: ComponentMetadata = {
-      props: [], // TODO: 提取 props
-      hasState: false, // TODO: 检测 useState
+      props,
+      hasState,
       isPage: filePath.includes('/page.'),
-      jsxChildCount: 0, // TODO: 统计 JSX 子元素
+      jsxChildCount: 0,
     }
 
     return {
@@ -184,6 +190,68 @@ export class ReactComponentParser implements Parser {
       column: 1,
       metadata,
     }
+  }
+
+  /**
+   * 从函数参数提取 props 名称
+   */
+  private extractPropsFromFunction(funcNode: any): string[] {
+    const props: string[] = []
+
+    try {
+      const params = funcNode.getParameters()
+      if (params.length === 0) return props
+
+      const firstParam = params[0]
+      const typeNode = firstParam.getTypeNode()
+
+      // 解构参数：{ name, age, ... }
+      if (firstParam.isDestructured()) {
+        const bindingPattern = firstParam.getNameNode()
+        if (Node.isObjectBindingPattern(bindingPattern)) {
+          for (const element of bindingPattern.getElements()) {
+            props.push(element.getName())
+          }
+        }
+      }
+      // 类型注解中的属性：Props { name: string }
+      else if (typeNode && Node.isTypeLiteral(typeNode)) {
+        for (const member of typeNode.getMembers()) {
+          if (Node.isPropertySignature(member)) {
+            props.push(member.getName())
+          }
+        }
+      }
+    } catch {
+      // 降级：忽略解析错误
+    }
+
+    return props
+  }
+
+  /**
+   * 检测函数体中是否使用了 useState
+   */
+  private detectUseState(funcNode: any): boolean {
+    let hasState = false
+
+    try {
+      funcNode.forEachDescendant((node: any) => {
+        if (hasState) return
+
+        if (Node.isCallExpression(node)) {
+          const expression = node.getExpression()
+          const text = expression.getText()
+          if (text === 'useState' || text.endsWith('.useState')) {
+            hasState = true
+          }
+        }
+      })
+    } catch {
+      // 降级：忽略解析错误
+    }
+
+    return hasState
   }
 
   /**

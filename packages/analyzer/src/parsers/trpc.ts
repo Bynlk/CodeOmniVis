@@ -86,11 +86,27 @@ export class TrpcParser implements Parser {
           const routerNode = this.parseRouterCall(call, filePath)
           if (routerNode) {
             nodes.push(routerNode)
-          }
 
-          // 解析 procedures
-          const procedureNodes = this.parseProcedures(call, filePath)
-          nodes.push(...procedureNodes)
+            // 解析 procedures
+            const procedureNodes = this.parseProcedures(call, filePath)
+            nodes.push(...procedureNodes)
+
+            // 创建 router → procedure 的 contains 边
+            for (const procNode of procedureNodes) {
+              const edgeId = createEdgeId(routerNode.id, 'contains', procNode.id)
+              edges.push({
+                id: edgeId,
+                source: routerNode.id,
+                target: procNode.id,
+                type: 'contains',
+                confidence: 'certain',
+                metadata: {
+                  routerName: routerNode.name,
+                  procedureName: procNode.name,
+                },
+              })
+            }
+          }
         } catch (err) {
           errors.push({
             file: filePath,

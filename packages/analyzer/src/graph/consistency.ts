@@ -44,6 +44,12 @@ export class ConsistencyChecker {
     // 3. 检测孤立节点
     issues.push(...this.checkOrphanNodes(graph))
 
+    // 4. 检测 HTTP method 不匹配
+    issues.push(...this.checkMethodMismatch(graph))
+
+    // 5. 检测 tRPC procedure 不存在
+    issues.push(...this.checkMissingProcedures(graph))
+
     // 计算统计
     const stats = {
       totalIssues: issues.length,
@@ -143,6 +149,99 @@ export class ConsistencyChecker {
           }],
           relatedNodeIds: [node.id],
           relatedEdgeIds: [],
+        })
+      }
+    }
+
+    return issues
+  }
+
+  /**
+   * 检测 HTTP method 不匹配
+   * calls_api 边的 method 与目标 api_route 的 method 不匹配
+   */
+  private checkMethodMismatch(graph: OmniGraph): Issue[] {
+    const issues: Issue[] = []
+
+    for (const edge of graph.edges) {
+      if (edge.type !== 'calls_api') continue
+
+      const sourceNode = graph.nodes.find(n => n.id === edge.source)
+      const targetNode = graph.nodes.find(n => n.id === edge.target)
+
+      if (!sourceNode || !targetNode) continue
+      if (targetNode.type !== 'api_route') continue
+
+      const edgeMetadata = edge.metadata as any
+      const targetMetadata = targetNode.metadata as any
+
+      if (!edgeMetadata?.method || !targetMetadata?.method) continue
+
+      const callMethod = edgeMetadata.method.toUpperCase()
+      const routeMethods = targetMetadata.method.split(',').map((m: string) => m.trim().toUpperCase())
+
+      // 检查调用的 method 是否在路由支持的 method 列表中
+      if (!routeMethods.includes(callMethod) && !routeMethods.includes('ALL')) {
+        issues.push({
+          id: `method-mismatch-${edge.id}`,
+          type: 'method_mismatch',
+          severity: 'warning',
+          description: `HTTP method mismatch: ${sourceNode.name} calls ${targetNode.name} with ${callMethod}, but route only supports ${routeMethods.join(',')}`,
+          locations: [{
+            file: sourceNode.filePath,
+            line: sourceNode.line,
+          }],
+          relatedNodeIds: [edge.source, edge.target],
+          relatedEdgeIds: [edge.id],
+        })
+      }
+    }
+
+    return issues
+  }
+
+  /**
+   * 检测 tRPC procedure 不存在
+   * calls_api 边指向的 tRPC procedure 在图中不存在
+   */
+  private checkMissingProcedures(graph: OmniGraph): Issue[] {
+    const issues: Issue[] = []
+
+    const procedureNames = new Set(
+      graph.nodes
+        .filter(n => n.type === 'trpc_procedure')
+        .map(n => n.name)
+    )
+
+    for (const edge of graph.edges) {
+      if (edge.type !== 'calls_api') continue
+
+      const targetNode = graph.nodes.find(n => n.id === edge.target)
+      if (targetNode) continue // target 存在，跳过
+
+      const edgeMetadata = edge.metadata as any
+      if (edgeMetadata?.callType !== 'trpc_hook') continue
+
+      const procedureName = edgeMetadata.url // 格式：router.procedure
+      if (!procedureName) continue
+
+      // 检查 procedure 是否存在
+      const [router, proc] = procedureName.split('.')
+      const exists = procedureNames.has(proc) || procedureNames.has(procedureName)
+
+      if (!exists) {
+        const sourceNode = graph.nodes.find(n => n.id === edge.source)
+        issues.push({
+          id: `missing-proc-${edge.id}`,
+          type: 'missing_procedure',
+          severity: 'warning',
+          description: `tRPC procedure not found: ${procedureName} (called from ${sourceNode?.name || 'unknown'})`,
+          locations: [{
+            file: sourceNode?.filePath || 'unknown',
+            line: sourceNode?.line || 0,
+          }],
+          relatedNodeIds: [edge.source],
+          relatedEdgeIds: [edge.id],
         })
       }
     }
