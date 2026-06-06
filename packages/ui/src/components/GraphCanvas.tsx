@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react'
 import cytoscape from 'cytoscape'
 import dagre from 'cytoscape-dagre'
-import type { OmniGraph } from '@omnivis/shared'
+import type { OmniGraph, OmniNode } from '@omnivis/shared'
 import { NODE_COLORS } from '@omnivis/shared'
 import { graphToCytoscapeElements } from '../utils/graphTransform'
 import { getCytoscapeStyle } from '../utils/cytoscapeConfig'
@@ -11,11 +11,12 @@ cytoscape.use(dagre)
 
 interface GraphCanvasProps {
   graph?: OmniGraph
+  filteredNodes?: OmniNode[]
   selectedNode: string | null
   onNodeSelect: (nodeId: string | null) => void
 }
 
-export default function GraphCanvas({ graph, selectedNode, onNodeSelect }: GraphCanvasProps) {
+export default function GraphCanvas({ graph, filteredNodes, selectedNode, onNodeSelect }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const cyRef = useRef<cytoscape.Core | null>(null)
 
@@ -69,6 +70,29 @@ export default function GraphCanvas({ graph, selectedNode, onNodeSelect }: Graph
     cy.elements().remove()
     cy.add(elements)
 
+    // 如果有过滤，隐藏不匹配的节点
+    if (filteredNodes && filteredNodes.length > 0) {
+      const visibleIds = new Set(filteredNodes.map(n => n.id))
+      cy.nodes().forEach(node => {
+        if (!visibleIds.has(node.id())) {
+          node.style('display', 'none')
+        } else {
+          node.style('display', 'element')
+        }
+      })
+      cy.edges().forEach(edge => {
+        const src = edge.source().id()
+        const tgt = edge.target().id()
+        if (!visibleIds.has(src) || !visibleIds.has(tgt)) {
+          edge.style('display', 'none')
+        } else {
+          edge.style('display', 'element')
+        }
+      })
+    } else {
+      cy.elements().style('display', 'element')
+    }
+
     // 应用布局
     cy.layout({
       name: 'dagre',
@@ -79,7 +103,7 @@ export default function GraphCanvas({ graph, selectedNode, onNodeSelect }: Graph
 
     // 适应视图
     cy.fit(undefined, 50)
-  }, [graph])
+  }, [graph, filteredNodes])
 
   // 高亮选中的节点
   useEffect(() => {

@@ -159,10 +159,13 @@ export class GraphBuilder {
     let skippedEdges = 0
 
     for (const edge of edges) {
-      // 验证 source 和 target 存在
-      if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
-        skippedEdges++
-        continue
+      // calls_api 边允许 source/target 不存在（CrossLayerLinker 会后续修复）
+      if (edge.type !== 'calls_api') {
+        // 验证 source 和 target 存在
+        if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
+          skippedEdges++
+          continue
+        }
       }
 
       // 去重

@@ -68,6 +68,7 @@ function App() {
             <>
               <GraphCanvas
                 graph={graph}
+                filteredNodes={filteredNodes}
                 selectedNode={selectedNode}
                 onNodeSelect={setSelectedNode}
               />

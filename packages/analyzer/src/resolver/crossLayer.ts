@@ -73,6 +73,9 @@ export class CrossLayerLinker {
       n.type === 'api_route' || n.type === 'trpc_procedure'
     )
 
+    // 获取所有组件节点（用于匹配 source）
+    const components = graph.nodes.filter(n => n.type === 'component')
+
     // 尝试匹配
     for (const callEdge of existingCallEdges) {
       const targetNode = graph.nodes.find(n => n.id === callEdge.target)
@@ -82,19 +85,33 @@ export class CrossLayerLinker {
         continue
       }
 
-      // 尝试从 metadata 中提取 URL 进行匹配
+      // 尝试修复 source：从文件路径匹配实际组件
+      let sourceId = callEdge.source
+      const sourceParts = callEdge.source.split(':')
+      if (sourceParts.length >= 2 && sourceParts[2] === 'unknown') {
+        const filePath = sourceParts[1]
+        const matchedComponent = components.find(c => c.filePath === filePath)
+        if (matchedComponent) {
+          sourceId = matchedComponent.id
+        }
+      }
+
+      // 从 target ID 中提取 URL
+      // target ID 格式：api_route:unknown:/api/xxx 或 trpc_procedure:unknown:router.procedure
+      const targetParts = callEdge.target.split(':')
+      const url = targetParts.slice(2).join(':') // 处理 URL 中可能包含 : 的情况
+
       const metadata = callEdge.metadata as any
       const callType = metadata.callType
 
       if (callType === 'trpc_hook') {
         // tRPC hook：匹配 procedure 名称
-        const procedureName = metadata.url // 格式：router.procedure
-        const matchedProcedure = this.matchTrpcProcedure(procedureName, apiRoutes)
+        const matchedProcedure = this.matchTrpcProcedure(url, apiRoutes)
 
         if (matchedProcedure) {
           const newEdge: OmniEdge = {
-            id: createEdgeId(callEdge.source, 'calls_api', matchedProcedure.id),
-            source: callEdge.source,
+            id: createEdgeId(sourceId, 'calls_api', matchedProcedure.id),
+            source: sourceId,
             target: matchedProcedure.id,
             type: 'calls_api',
             confidence: 'certain',
@@ -107,13 +124,12 @@ export class CrossLayerLinker {
         }
       } else if (callType === 'fetch' || callType === 'axios') {
         // fetch/axios：匹配 URL 路径
-        const url = metadata.url
         const matchedRoute = this.matchApiRoute(url, apiRoutes)
 
         if (matchedRoute) {
           const newEdge: OmniEdge = {
-            id: createEdgeId(callEdge.source, 'calls_api', matchedRoute.id),
-            source: callEdge.source,
+            id: createEdgeId(sourceId, 'calls_api', matchedRoute.id),
+            source: sourceId,
             target: matchedRoute.id,
             type: 'calls_api',
             confidence: 'inferred',
@@ -183,19 +199,39 @@ export class CrossLayerLinker {
     })
     if (withoutApiMatch) return withoutApiMatch
 
-    // 模糊匹配（包含关系）
-    const fuzzyMatch = routes.find(r => {
-      const route = this.normalizeUrl((r.metadata as any).route)
-      return normalizedUrl.includes(route) || route.includes(normalizedUrl)
-    })
+    // 处理基础路径前缀（如 /byresume/api/xxx → /api/xxx）
+    const basePrefixMatch = normalizedUrl.match(/^\/[^/]+(\/api\/.+)$/)
+    if (basePrefixMatch) {
+      const withoutPrefix = basePrefixMatch[1]
+      const prefixMatch = routes.find(r => {
+        const route = (r.metadata as any).route
+        return this.normalizeUrl(route) === withoutPrefix
+      })
+      if (prefixMatch) return prefixMatch
+    }
 
-    return fuzzyMatch || null
+    // 精确路径段匹配（最后一段路径匹配）
+    const urlSegments = normalizedUrl.split('/').filter(Boolean)
+    const lastSegment = urlSegments[urlSegments.length - 1]
+    if (lastSegment) {
+      const segmentMatch = routes.find(r => {
+        const route = (r.metadata as any).route
+        const routeSegments = this.normalizeUrl(route).split('/').filter(Boolean)
+        const routeLastSegment = routeSegments[routeSegments.length - 1]
+        return routeLastSegment === lastSegment
+      })
+      if (segmentMatch) return segmentMatch
+    }
+
+    return null
   }
 
   /**
    * 规范化 URL
    */
   private normalizeUrl(url: string): string {
+    if (!url) return '/'
+
     // 移除查询参数
     let normalized = url.split('?')[0]
 

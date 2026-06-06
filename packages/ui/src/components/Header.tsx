@@ -1,9 +1,25 @@
+import { useRef, useEffect } from 'react'
+
 interface HeaderProps {
   query?: string
   onQueryChange?: (query: string) => void
 }
 
 export default function Header({ query, onQueryChange }: HeaderProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Cmd+K / Ctrl+K 快捷键聚焦搜索框
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        inputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   return (
     <header className="bg-slate-800 border-b border-slate-700 px-6 py-3">
       <div className="flex items-center justify-between">
@@ -21,6 +37,7 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
           {onQueryChange && (
             <div className="relative">
               <input
+                ref={inputRef}
                 type="text"
                 value={query || ''}
                 onChange={(e) => onQueryChange(e.target.value)}

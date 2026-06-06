@@ -2,14 +2,50 @@
  * serve 命令
  *
  * 启动 Web 服务并自动检测项目。
- * npx omnivis serve → 启动服务器 → 打开浏览器
+ * npx omnivis serve → 启动服务器 → 分析项目 → 打开浏览器
  */
 
 import type { Command } from 'commander'
 import ora from 'ora'
 import chalk from 'chalk'
+import * as fs from 'fs'
+import * as path from 'path'
 import { autoDetectProject } from '../utils/autoDetect'
 import { createOmniServer } from '@omnivis/server'
+import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, GraphBuilder, CrossLayerLinker } from '@omnivis/analyzer'
+
+/**
+ * 递归扫描目录，返回所有 TypeScript/JavaScript 文件
+ */
+function scanDirectory(dir: string, rootDir: string): string[] {
+  const files: string[] = []
+  const extensions = ['.ts', '.tsx', '.js', '.jsx']
+  const ignoreDirs = ['node_modules', '.next', 'dist', 'build', '.git']
+
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true })
+
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name)
+
+      if (entry.isDirectory()) {
+        if (!ignoreDirs.includes(entry.name)) {
+          files.push(...scanDirectory(fullPath, rootDir))
+        }
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name)
+        if (extensions.includes(ext)) {
+          // 返回相对路径
+          files.push(path.relative(rootDir, fullPath).replace(/\\/g, '/'))
+        }
+      }
+    }
+  } catch (err) {
+    // 忽略无法读取的目录
+  }
+
+  return files
+}
 
 export function serveCommand(program: Command): void {
   program
@@ -26,9 +62,8 @@ export function serveCommand(program: Command): void {
         spinner.text = 'Detecting project structure...'
         const projectMeta = await autoDetectProject(process.cwd())
 
-        spinner.text = 'Starting server...'
-
         // 创建服务器
+        spinner.text = 'Starting server...'
         const server = createOmniServer({
           port: parseInt(options.port, 10),
           host: options.host,
@@ -37,7 +72,90 @@ export function serveCommand(program: Command): void {
         // 启动服务器
         await server.start()
 
-        spinner.succeed(chalk.green(`Server running at http://${options.host}:${options.port}`))
+        // 自动分析项目
+        spinner.text = 'Analyzing project...'
+        const builder = new GraphBuilder(server.db)
+        builder.registerParsers([
+          new PrismaParser(),
+          new NextjsAppParser(),
+          new NextjsPagesParser(),
+          new TrpcParser(),
+          new ExpressParser(),
+          new TypeormParser(),
+          new ApiCallsParser(),
+          new ReactComponentParser(),
+        ])
+
+        // 获取要解析的文件
+        const files: string[] = []
+
+        // 添加 Prisma schema
+        if (projectMeta.prismaSchemaPath) {
+          files.push(projectMeta.prismaSchemaPath)
+        }
+
+        // 扫描项目中的 TypeScript/JavaScript 文件
+        const scanDirs = ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'server', 'src/server']
+        for (const dir of scanDirs) {
+          const fullPath = path.join(process.cwd(), dir)
+          if (fs.existsSync(fullPath)) {
+            const scanned = scanDirectory(fullPath, process.cwd())
+            files.push(...scanned)
+          }
+        }
+
+        // 执行解析
+        if (files.length > 0) {
+          console.log(chalk.gray(`\nScanning ${files.length} files...`))
+
+          const result = await builder.parseFiles(files, {
+            projectRoot: process.cwd(),
+            projectMeta,
+            tsConfig: null,
+            pathAliases: {},
+          })
+
+          // 跨层连线
+          const linker = new CrossLayerLinker()
+          const graph = builder.loadGraph()
+          const crossLayerResult = linker.link(graph)
+
+          if (crossLayerResult.edges.length > 0) {
+            server.db.upsertEdges(crossLayerResult.edges)
+          }
+
+          spinner.succeed(chalk.green(`Server running at http://${options.host}:${options.port}`))
+
+          // 显示统计
+          console.log('')
+          console.log(chalk.blue('Analysis results:'))
+          console.log(`  Files scanned: ${files.length}`)
+          console.log(`  Nodes: ${result.stats.totalNodes}`)
+          console.log(`  Edges: ${result.stats.totalEdges + crossLayerResult.edges.length}`)
+
+          // 跨层连线统计
+          if (crossLayerResult.edges.length > 0) {
+            console.log('')
+            console.log(chalk.blue('Cross-layer links:'))
+            console.log(`  calls_api: ${crossLayerResult.stats.callsApiEdges}`)
+          }
+
+          // 显示节点类型分布
+          if (Object.keys(result.stats.nodesByType).length > 0) {
+            console.log('')
+            console.log(chalk.blue('Node types:'))
+            for (const [type, count] of Object.entries(result.stats.nodesByType)) {
+              console.log(`  ${type}: ${count}`)
+            }
+          }
+
+          if (result.stats.totalErrors > 0) {
+            console.log(`\n  Errors: ${result.stats.totalErrors}`)
+          }
+        } else {
+          spinner.succeed(chalk.green(`Server running at http://${options.host}:${options.port}`))
+          console.log(chalk.yellow('\nNo Prisma schema found. Place your schema.prisma in the project root.'))
+        }
 
         // 显示项目信息
         console.log('')
