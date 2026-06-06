@@ -306,7 +306,12 @@ omnivis/
 │   ├── mcp/          # MCP Server（5 个工具，并发安全）
 │   └── cli/          # 5 个命令 + 自动检测 + 配置加载
 ├── demo/             # 全栈 demo 项目
-└── docs/             # 设计文档 + 计划书 + 规则
+└── docs/
+    ├── plans/        # 四周执行计划 + Claude Code Prompt
+    ├── architecture/ # 解析管线、数据模型、可视化设计
+    ├── api/          # REST API + MCP 工具文档
+    ├── rules/        # AI 开发约束规则
+    └── reports/      # 状态报告
 ```
 
 | 包 | 代码行数 | 功能 |
@@ -364,7 +369,18 @@ omnivis/
 - [x] WebSocket 实时推送
 - [x] 6 个 UI 面板（图谱 / 筛选 / 问题 / 数据流 / AI / 统计）
 
-### 🔜 下一步
+### 🔜 四周执行计划
+
+详细的执行计划见 [`docs/plans/`](docs/plans/)，每周包含计划书 + 可直接使用的 Claude Code Prompt：
+
+| 周 | 主题 | 计划书 | Prompt |
+|----|------|--------|--------|
+| 第一周 | 修复 4 个严重 Bug（MCP / UI / WebSocket / 端点） | [week1-mcp-bugfix-plan.md](docs/plans/week1-mcp-bugfix-plan.md) | [week1-prompts.md](docs/plans/prompts/week1-prompts.md) |
+| 第二周 | 配置系统 + NestJS 解析器 | [week2-config-nestjs-plan.md](docs/plans/week2-config-nestjs-plan.md) | [week2-prompts.md](docs/plans/prompts/week2-prompts.md) |
+| 第三周 | Drizzle ORM + 死代码/循环依赖检测 | [week3-drizzle-deadcode-plan.md](docs/plans/week3-drizzle-deadcode-plan.md) | [week3-prompts.md](docs/plans/prompts/week3-prompts.md) |
+| 第四周 | 数据流追踪（Model → API → Component） | [week4-dataflow-plan.md](docs/plans/week4-dataflow-plan.md) | [week4-prompts.md](docs/plans/prompts/week4-prompts.md) |
+
+### 🔜 远期目标
 
 - [ ] 模块聚合（大图折叠）
 - [ ] AI 对话式查询
