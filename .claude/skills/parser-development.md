@@ -54,8 +54,7 @@ export const xxxParser: Parser = {
 
 | 工具 | 负责 | 不负责 |
 |------|------|--------|
-| tree-sitter | 快速语法扫描、JSX 结构提取、模式匹配 | 类型信息、跨文件追踪 |
-| ts-morph | 类型信息、跨文件 import、tRPC 深度分析 | 大文件预处理（太慢） |
+| ts-morph | AST 解析、类型信息、跨文件 import、JSX 提取 | — |
 | @prisma/internals | Prisma schema 解析 | 其他任何文件 |
 | regex | 简单模式匹配（HTTP method、路由路径） | 复杂语法分析 |
 
@@ -89,31 +88,6 @@ const edge: OmniEdge = {
   type: 'queries_db',
   confidence: 'certain', // 或 'inferred'
   metadata: { operation: 'findMany', callLine: 42 },
-}
-```
-
-## tree-sitter 使用模式
-
-```typescript
-import Parser from 'tree-sitter'
-import TypeScript from 'tree-sitter-typescript'
-
-const parser = new Parser()
-parser.setLanguage(TypeScript.typescript)
-
-function parseFile(code: string): Parser.Tree {
-  return parser.parse(code)
-}
-
-// 遍历 AST
-function walkTree(tree: Parser.Tree, callback: (node: Parser.SyntaxNode) => void) {
-  function traverse(node: Parser.SyntaxNode) {
-    callback(node)
-    for (let i = 0; i < node.childCount; i++) {
-      traverse(node.child(i))
-    }
-  }
-  traverse(tree.rootNode)
 }
 ```
 

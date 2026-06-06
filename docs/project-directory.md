@@ -274,7 +274,7 @@ omnivis/
 | `parsers/prisma.ts` | 使用 `@prisma/internals` 解析 schema → `OmniNode[]` + `OmniEdge[]` |
 | `parsers/trpc.ts` | 使用 ts-morph 解析 tRPC router → `OmniNode[]` |
 | `parsers/nextjsApp.ts` | 扫描 `app/` 目录提取页面和 API route |
-| `parsers/reactComponent.ts` | tree-sitter 提取 JSX 结构，ts-morph 分析 import |
+| `parsers/reactComponent.ts` | ts-morph 提取 JSX 结构和 import |
 | `parsers/apiCalls.ts` | 识别 fetch/axios/tRPC hooks 调用 |
 | `resolver/symbolResolver.ts` | ts-morph 跨文件符号追踪：handler → service → DB |
 | `resolver/pathAlias.ts` | 解析 tsconfig.json 中的 paths 配置 |

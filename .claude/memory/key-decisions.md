@@ -9,9 +9,9 @@ metadata:
 
 ## 2026-06-06
 
-1. **解析策略**：tree-sitter + ts-morph 分工协作
-   - tree-sitter：快速文件扫描、JSX 语法提取、Express 路由匹配
-   - ts-morph：类型信息提取、跨文件符号追踪、tRPC 深度分析
+1. **解析策略**：ts-morph 统一解析
+   - ts-morph：AST 解析、类型信息提取、跨文件符号追踪、JSX 提取
+   - @prisma/internals：Prisma schema 解析
 
 2. **Demo 策略**：自建 demo 先行 + cal.com 验证
    - 可控、无外部依赖、快速出效果

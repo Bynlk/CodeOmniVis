@@ -316,8 +316,7 @@
 ```
 任务：
   - 实现 parsers/reactComponent.ts
-  - tree-sitter 提取 JSX 结构（速度优势）
-  - ts-morph 分析 import 关系（准确度优势）
+  - ts-morph 提取 JSX 结构和 import 关系
   - 提取组件名、props、state 使用
   - 构建 parent → child 渲染关系
 

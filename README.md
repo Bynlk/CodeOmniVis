@@ -13,62 +13,43 @@
 
 **一行命令，60 秒，看清整个项目的架构。**
 
+不只是画图——是 **代码语义理解** × **跨层数据流追踪** × **AI 原生集成**。
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-00d4aa.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178c6.svg)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node.js-≥18-339933.svg)](https://nodejs.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-9.0-f69220.svg)](https://pnpm.io/)
-
-<br/>
-
-**[English](#english) · [中文](#中文) · [Features](#-what-it-does) · [Quick Start](#-quick-start) · [AI Integration](#-for-ai-agents)**
 
 </div>
 
 ---
 
-## 🤯 这是什么？
+## 🤯 一句话说清楚
 
-OmniVis 是一个 **零配置 CLI 工具**，能自动分析 TypeScript 全栈项目，生成 **交互式架构拓扑图**。
-
-它能看懂你的代码在干什么——不是静态分析，是 **真正的语义理解**：
-
-```
-你的代码                    OmniVis 输出
-─────────                  ──────────────
-page.tsx          ──→      📄 页面节点 + 路由路径
-Component.tsx     ──→      🧩 组件节点 + props + state
-route.ts          ──→      🌐 API 路由 + HTTP method
-router.ts         ──→      ⚡ tRPC procedure + 类型
-schema.prisma     ──→      🗄️ 数据库模型 + 关系
-
-fetch('/api/xxx') ──→      ──→ 连线 ──→
-trpc.user.useQuery──→      ──→ 连线 ──→    完整调用链路
-axios.post(...)   ──→      ──→ 连线 ──→
-```
-
-**前端组件 → API 路由 → 后端处理 → 数据库模型**，全链路可视化。
+> OmniVis 静态分析你的 TypeScript 全栈项目，自动生成 **前端 → API → 数据库** 的完整拓扑图，
+> 并检测死代码、循环依赖、数据流路径。内置 MCP Server，让 AI 助手直接理解你的架构。
 
 ---
 
-## 🔥 为什么屌？
+## 🔥 核心能力
 
-### 不是画图工具，是代码理解引擎
+### 1. 零配置全栈分析
 
-| 其他工具 | OmniVis |
-|----------|---------|
-| 手动画架构图 | **自动扫描，零配置** |
-| 静态文件树 | **语义级理解（知道谁调用谁）** |
-| 只看单层 | **三层穿透（前端→API→DB）** |
-| 需要配置 | **`npx omnivis serve` 就完了** |
-| 不懂框架 | **原生支持 Next.js/tRPC/Prisma/Express/TypeORM** |
+```bash
+npx omnivis serve   # 60 秒内看到完整架构
+```
 
-### 支持的框架
+自动检测框架 → 扫描文件 → AST 解析 → 跨层连线 → 可视化。不需要任何配置。
+
+### 2. 22 个解析器，覆盖主流生态
 
 <table>
 <tr>
-<td align="center"><b>前端</b></td>
-<td align="center"><b>后端</b></td>
-<td align="center"><b>数据库</b></td>
+<td align="center" colspan="3"><b>支持的框架</b></td>
+</tr>
+<tr>
+<td><b>前端</b></td>
+<td><b>后端</b></td>
+<td><b>数据库</b></td>
 </tr>
 <tr>
 <td>
@@ -82,10 +63,9 @@ axios.post(...)   ──→      ──→ 连线 ──→
 </td>
 <td>
 
-✅ tRPC Router（嵌套）<br/>
+✅ tRPC Router<br/>
 ✅ Express 路由<br/>
-✅ API Routes<br/>
-✅ HTTP Method 提取<br/>
+✅ **NestJS** (Controller/Module/Service)<br/>
 ✅ **Spring Boot + Kotlin**<br/>
 ✅ **Ktor Routing DSL**
 
@@ -94,8 +74,7 @@ axios.post(...)   ──→      ──→ 连线 ──→
 
 ✅ Prisma Schema<br/>
 ✅ TypeORM Entity<br/>
-✅ 关系识别（1:1/1:N/M:N）<br/>
-✅ 字段提取<br/>
+✅ **Drizzle ORM** (pg/mysql/sqlite)<br/>
 ✅ **Exposed ORM**<br/>
 ✅ **Room (Android)**
 
@@ -103,39 +82,88 @@ axios.post(...)   ──→      ──→ 连线 ──→
 </tr>
 </table>
 
+### 3. 不只是拓扑图——架构智能
+
+| 能力 | 说明 |
+|------|------|
+| **跨层连线** | `fetch('/api/user')` → `GET /api/user` → `User.findUnique()` → `User` 表，全链路自动连线 |
+| **数据流追踪** | 选中一个 Model，看它流向了哪些 API 和组件 🌊 |
+| **死代码检测** | 🚫 没人调用的路由、🗑️ 没人渲染的组件、🔇 没人用的 Service |
+| **循环依赖检测** | 🔄 Tarjan SCC 算法，精准定位循环链 |
+| **一致性检测** | 死链 API、HTTP method 不匹配、缺失的 tRPC procedure |
+
+### 4. MCP Server — AI 原生集成
+
+```bash
+omnivis mcp   # 启动 MCP Server
+```
+
+**5 个工具**，让 Cursor / Claude / 任何 AI 助手直接查询你的架构：
+
+| 工具 | 功能 | AI 能问什么 |
+|------|------|------------|
+| `get_api_routes` | API 路由 + 下游 DB | "有哪些 API？哪些连了数据库？" |
+| `get_component_tree` | 组件树 | "Booking 页面用了哪些组件？" |
+| `find_callers` | 调用链追踪 | "谁在调用 User 模型？" |
+| `list_db_models` | 数据库模型列表 | "有哪些数据表？" |
+| `get_dataflow` | 数据流追踪 | "User 数据从 DB 到 UI 怎么流的？" |
+
+```
+你：这个项目的认证流程是怎样的？
+
+AI（通过 OmniVis）：
+  User → /api/auth → middleware → protectedProcedure → Session
+  
+  完整调用链，不是猜的。
+```
+
 ---
 
 ## ⚡ Quick Start
 
 ```bash
-# 一行命令，看到你的项目架构
+# 全局安装
+npm install -g omnivis
+
+# 或直接运行
 npx omnivis serve
 ```
 
-就这么简单。
+浏览器自动打开 → 看到完整的三层架构图 → 点击节点 → 搜索/过滤/缩放。
 
-浏览器自动打开 → 看到完整的三层架构图 → 点击节点详情 → 搜索/过滤/缩放。
-
-### 更多命令
+### 命令
 
 ```bash
-omnivis serve      # 🚀 启动可视化服务
-omnivis analyze    # 📊 输出 JSON 图数据
-omnivis check      # 🔍 一致性检测
-omnivis mcp        # 🤖 启动 MCP Server（给 AI 用）
-omnivis init       # ⚙️ 生成配置文件
+omnivis serve          # 🚀 启动可视化服务（自动分析 + 文件监听）
+omnivis analyze        # 📊 输出 JSON 图数据
+omnivis check          # 🔍 一致性检测 + 死代码 + 循环依赖
+omnivis mcp            # 🤖 启动 MCP Server
+omnivis init           # ⚙️ 生成 .omnivis.json 配置文件
+```
+
+### 配置（可选）
+
+```json
+// .omnivis.json — 零配置也能跑，有配置更精准
+{
+  "frontend": { "dirs": ["src"], "framework": "next" },
+  "backend": { "dirs": ["server"], "framework": "nestjs" },
+  "database": { "prismaSchema": "prisma/schema.prisma" },
+  "exclude": ["node_modules", "dist", ".next"]
+}
 ```
 
 ---
 
 ## 🧠 它能看懂什么？
 
-### 📊 自动检测
+### 自动检测输出
 
 ```
 $ omnivis serve
 
 ✔ Server running at http://localhost:4321
+Configuration loaded from .omnivis.json
 
 Analysis results:
   Files scanned: 62
@@ -143,144 +171,125 @@ Analysis results:
   Edges: 28
 
 Cross-layer links:
-  calls_api: 4
+  calls_api:      4
+  handles:        9
+  calls_service:  12
+  queries_db:     7
 
 Node types:
-  db_model: 7       ← 7 个数据库模型，关系全连好
-  page: 9           ← 9 个页面路由，含动态参数
-  component: 48     ← 48 个 React 组件，含 props/state
-  api_route: 9      ← 9 个 API 路由，含 HTTP method
+  db_model:       7    ← 数据库模型 + 关系
+  page:           9    ← 页面路由 + 动态参数
+  component:      48   ← React 组件 + props
+  api_route:      9    ← API 路由 + HTTP method
+  handler:        9    ← 路由处理函数
+  service:        5    ← Service 层
 ```
 
-### 🔗 跨层连线
-
-OmniVis 能追踪 **完整的调用链路**：
+### 跨层连线
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│  📄 /admin/page.tsx                                         │
-│      │                                                      │
-│      └──→ 🧩 AdminDashboard                                │
-│              │                                              │
-│              ├──→ 🌐 /api/feedback          (fetch GET)     │
-│              ├──→ 🌐 /api/admin/stats       (fetch GET)     │
-│              │                                              │
-│              └──→ 🧩 PasswordModal                          │
-│                      │                                      │
-│                      └──→ 🌐 /api/admin/verify-password     │
+┌──────────────────────────────────────────────────────────────┐
+│  📄 /admin/page.tsx                                          │
+│      └──→ 🧩 AdminDashboard                                 │
+│              ├──→ 🌐 GET /api/feedback        (calls_api)    │
+│              ├──→ 🌐 GET /api/admin/stats     (calls_api)    │
+│              └──→ 🧩 PasswordModal                           │
+│                      └──→ 🌐 POST /api/verify (calls_api)    │
 │                                                              │
-│  🌐 /api/admin/verify-password                              │
-│      │                                                      │
-│      └──→ 🗄️ User (prisma.user.findUnique)                 │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+│  🌐 POST /api/verify                                         │
+│      └──→ ⚡ verifyPassword()                 (handles)      │
+│              └──→ 🗄️ User.findUnique          (queries_db)   │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### 🔍 一致性检测
+### 死代码 + 循环依赖检测
 
 ```bash
 $ omnivis check
 
 Consistency Issues:
-  Total: 72
-  ℹ️ [unused_route] Route appears to be unused: /api/admin/stats
-  ℹ️ [unused_route] Node has no connections: AdminDashboard
-  ℹ️ [method_mismatch] HTTP method mismatch: ...
-  ℹ️ [missing_procedure] tRPC procedure not found: ...
+  Total: 15
+  Critical: 0
+  Warning: 3
+  Info: 12
+
+  🚫 [dead_route] Route has no callers: GET /api/admin/stats
+  🗑️ [dead_component] Component not rendered: AdminSidebar
+  🔇 [dead_service] Service has no callers: NotificationService
+  🔄 [circular_dependency] Circular: UserRepo → AuthService → UserRepo
 ```
 
-自动发现：死链 API 调用、未使用路由、HTTP method 不匹配、缺失的 tRPC procedure。
-
----
-
-## 🤖 For AI Agents
-
-### MCP Server — 让 AI 看懂你的架构
-
-OmniVis 内置 **MCP (Model Context Protocol) Server**，让 Cursor、Claude、或其他 AI 助手 **直接查询你的项目架构**。
-
-```bash
-omnivis mcp
-```
-
-AI 可以调用的工具：
-
-| 工具 | 功能 | 示例问题 |
-|------|------|----------|
-| `getApiRoutes` | 获取所有 API 路由 | "这个项目有哪些 API？" |
-| `getComponentTree` | 获取组件树 | "Admin 页面用了哪些组件？" |
-| `findCallers` | 查找调用链 | "谁在调用 /api/feedback？" |
-
-### 实际效果
+### 数据流追踪 🌊
 
 ```
-你：这个项目的认证流程是怎样的？
+选择 Model: User
 
-AI（通过 OmniVis MCP）：
-  1. 前端 AuthProvider 组件调用 /api/auth/[...nextauth]
-  2. NextAuth 处理 OAuth + JWT
-  3. Session 存储在数据库 Session 表
-  4. 受保护路由通过 middleware.ts 检查 session
-  5. tRPC router 通过 protectedProcedure 验证
+🗄️ User → 3 routes → 5 components
 
-  调用链：AuthProvider → /api/auth → middleware → protectedProcedure → Session 表
+API Routes:
+  🔗 GET /api/user/:id
+  🔗 POST /api/auth/login
+  🔗 GET /api/admin/users
+
+Consuming Components:
+  ⚛️ UserProfile
+  ⚛️ AdminDashboard
+  ⚛️ LoginForm
+  ⚛️ UserCard
+  ⚛️ SettingsPage
 ```
-
-**AI 不再瞎猜，而是基于真实的代码分析。**
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-                    ┌──────────────────────────────────────────┐
-                    │              CLI Entry Point              │
-                    │           npx omnivis serve               │
-                    └───────────────┬──────────────────────────┘
-                                    │
-                    ┌───────────────┴──────────────────────────┐
-                    │          Analysis Engine                  │
-                    │                                          │
-                    │  ┌─────────────────────────────────────┐ │
-                    │  │  8 Parsers                          │ │
-                    │  │  ┌──────────┐ ┌──────────────┐     │ │
-                    │  │  │ Prisma   │ │ Next.js App  │     │ │
-                    │  │  │ TypeORM  │ │ Next.js Pages│     │ │
-                    │  │  │ tRPC     │ │ Express      │     │ │
-                    │  │  │ React    │ │ API Calls    │     │ │
-                    │  │  └──────────┘ └──────────────┘     │ │
-                    │  └─────────────────────────────────────┘ │
-                    │                    │                      │
-                    │  ┌─────────────────┴───────────────────┐ │
-                    │  │  CrossLayerLinker                   │ │
-                    │  │  前端 ──→ API ──→ DB 全链路连线       │ │
-                    │  └─────────────────────────────────────┘ │
-                    │                    │                      │
-                    │  ┌─────────────────┴───────────────────┐ │
-                    │  │  ConsistencyChecker                 │ │
-                    │  │  死链检测 · 未使用路由 · Method 匹配   │ │
-                    │  └─────────────────────────────────────┘ │
-                    │                    │                      │
-                    │  ┌─────────────────┴───────────────────┐ │
-                    │  │  SQLite Store (sql.js WASM)         │ │
-                    │  │  零配置 · 跨平台 · 事务支持            │ │
-                    │  └─────────────────────────────────────┘ │
-                    └──────────────────────────────────────────┘
-                                    │
-                    ┌───────────────┴──────────────────────────┐
-                    │           REST API + WebSocket            │
-                    │     Express · CORS · 实时推送              │
-                    └───────────────┬──────────────────────────┘
-                                    │
-              ┌─────────────────────┼─────────────────────┐
-              │                     │                     │
-    ┌─────────┴─────────┐ ┌────────┴────────┐ ┌─────────┴─────────┐
-    │    Web UI          │ │   MCP Server    │ │   CLI Output      │
-    │  React + Cytoscape │ │  AI 助手接口    │ │  JSON / Report    │
-    │  dagre 分层布局     │ │  3 个工具       │ │  一致性检测        │
-    │  搜索/过滤/详情     │ │  stdio 传输     │ │                   │
-    └───────────────────┘ └─────────────────┘ └───────────────────┘
+                         ┌─────────────────────────────────────┐
+                         │          CLI (commander)             │
+                         │  serve · analyze · check · mcp · init│
+                         └──────────────┬──────────────────────┘
+                                        │
+                    ┌───────────────────┼───────────────────┐
+                    │                   │                   │
+          ┌─────────┴─────────┐ ┌──────┴──────┐ ┌─────────┴─────────┐
+          │   Analysis Engine  │ │   Server    │ │    MCP Server      │
+          │                    │ │             │ │                    │
+          │  22 Parsers:       │ │  Express    │ │  5 Tools:          │
+          │  · Prisma          │ │  REST API   │ │  · get_api_routes  │
+          │  · Next.js         │ │  WebSocket  │ │  · get_component   │
+          │  · tRPC            │ │  增量分析    │ │  · find_callers    │
+          │  · Express         │ │  文件监听    │ │  · list_db_models  │
+          │  · NestJS          │ │             │ │  · get_dataflow    │
+          │  · Drizzle         │ └──────┬──────┘ └─────────┬─────────┘
+          │  · TypeORM         │        │                  │
+          │  · Kotlin/Spring   │        │                  │
+          │  · Ktor            │        │                  │
+          │  · Exposed         │        │                  │
+          │  · Room            │        │                  │
+          │                    │        │                  │
+          │  CrossLayerLinker  │        │                  │
+          │  DataFlowTracer    │        │                  │
+          │  ConsistencyChecker│        │                  │
+          │  · 死代码检测       │        │                  │
+          │  · 循环依赖检测     │        │                  │
+          │  · 一致性检测       │        │                  │
+          └────────┬───────────┘        │                  │
+                   │                    │                  │
+          ┌────────┴────────────────────┴──────────────────┴───┐
+          │              SQLite (sql.js WASM)                   │
+          │         ~/.omnivis/projects/{hash}.db               │
+          │         零配置 · 文件持久化 · 跨进程共享              │
+          └────────────────────────┬───────────────────────────┘
+                                   │
+                         ┌─────────┴─────────┐
+                         │     Web UI         │
+                         │  React + Cytoscape │
+                         │  dagre 分层布局     │
+                         │  搜索/过滤/详情     │
+                         │  🌊 数据流面板      │
+                         │  ⚠️ 问题检测面板    │
+                         │  📊 统计面板        │
+                         └───────────────────┘
 ```
 
 ---
@@ -290,25 +299,25 @@ AI（通过 OmniVis MCP）：
 ```
 omnivis/
 ├── packages/
-│   ├── shared/       # 共享类型（OmniNode, OmniEdge, OmniGraph）
-│   ├── analyzer/     # 解析引擎（8 个解析器 + 跨层连线 + 一致性检测）
-│   ├── server/       # Express Web 服务 + WebSocket
-│   ├── ui/           # React + Cytoscape.js 可视化前端
-│   ├── mcp/          # MCP Server（AI 助手接口）
-│   └── cli/          # CLI 入口（serve/analyze/check/mcp/init）
+│   ├── shared/       # 共享类型（13 种节点 + 13 种边 + 配置系统）
+│   ├── analyzer/     # 解析引擎（22 个解析器 + 图算法 + 存储）
+│   ├── server/       # Express + WebSocket + 增量分析
+│   ├── ui/           # React + Cytoscape.js + 6 个 Tab 面板
+│   ├── mcp/          # MCP Server（5 个工具，并发安全）
+│   └── cli/          # 5 个命令 + 自动检测 + 配置加载
 ├── demo/             # 全栈 demo 项目
-└── docs/             # 文档
+└── docs/             # 设计文档 + 计划书 + 规则
 ```
 
-| 包 | 源码行数 | 功能 |
+| 包 | 代码行数 | 功能 |
 |----|---------|------|
-| `@omnivis/shared` | 768 | 9 种节点类型、9 种边类型、完整 metadata |
-| `@omnivis/analyzer` | 4,771 | 8 个解析器、图构建、存储、跨层连线 |
-| `@omnivis/server` | 392 | REST API、WebSocket、静态文件服务 |
-| `@omnivis/ui` | 1,134 | Cytoscape.js 图、搜索、过滤、详情面板 |
-| `@omnivis/mcp` | 196 | MCP Server 3 个工具 |
-| `@omnivis/cli` | 767 | 5 个命令、自动检测、进度条 |
-| **总计** | **~9,100** | |
+| `@omnivis/shared` | 982 | 13 种节点类型、13 种边类型、配置加载器 |
+| `@omnivis/analyzer` | 8,333 | 22 个解析器、数据流追踪、死代码/循环依赖检测 |
+| `@omnivis/server` | 759 | REST API、WebSocket 广播、文件监听增量分析 |
+| `@omnivis/ui` | 2,291 | 6 个 Tab 面板、Cytoscape 图、数据流可视化 |
+| `@omnivis/mcp` | 411 | 5 个 MCP 工具、并发安全、优雅关闭 |
+| `@omnivis/cli` | 1,015 | 5 个命令、配置集成、自动框架检测 |
+| **总计** | **~13,800** | |
 
 ---
 
@@ -316,63 +325,52 @@ omnivis/
 
 | 层 | 技术 | 为什么选它 |
 |----|------|-----------|
-| 解析核心 | **ts-morph** + **@prisma/internals** | 类型安全的 AST 分析，Prisma 官方 DMMF |
-| 图存储 | **sql.js** (WASM SQLite) | 零配置、零依赖、跨平台 |
+| 解析核心 | **ts-morph** | 类型安全的 TypeScript AST 分析 |
+| DB 解析 | **@prisma/internals** | Prisma 官方 DMMF |
+| 图存储 | **sql.js** (WASM SQLite) | 零配置、零依赖、文件持久化 |
 | 可视化 | **React** + **Cytoscape.js** + **dagre** | 专为大图设计，自动分层布局 |
-| Web 服务 | **Express** + **ws** | 轻量、成熟、WebSocket 支持 |
+| Web 服务 | **Express** + **ws** | WebSocket 实时推送 |
 | MCP | **@modelcontextprotocol/sdk** | AI 助手标准协议 |
 | CLI | **commander** + **ora** + **chalk** | 优雅的命令行体验 |
-| 构建 | **tsup** (包) + **Vite** (UI) | 快速、ESM 原生 |
-| 样式 | **Tailwind CSS** | 原子化、深色主题友好 |
+| 构建 | **tsup** + **Vite** | ESM 原生，快速构建 |
+| 样式 | **Tailwind CSS** | 深色主题 |
 
 ---
 
-## ⚙️ 配置
+## 🎯 性能
 
-```json
-// .omnivis.json
-{
-  "version": "0.0.1",
-  "frontend": "auto",
-  "backend": "auto",
-  "database": "auto",
-  "exclude": ["node_modules", ".next", "dist", "build"],
-  "server": {
-    "port": 4321,
-    "host": "localhost"
-  }
-}
-```
-
-**零配置也能跑** — OmniVis 会自动检测项目类型。
-
----
-
-## 🎯 性能目标
-
-| 指标 | 目标 | 实测 |
-|------|------|------|
-| 单文件解析 | < 100ms | ✅ |
-| 100 文件项目 | < 10 秒 | ✅ |
-| 1000 文件项目 | < 60 秒 | 待验证 |
-| UI 布局（100+ 节点） | < 1 秒 | ✅ |
-| 搜索响应 | < 100ms | ✅ |
+| 指标 | 目标 |
+|------|------|
+| 单文件解析 | < 100ms |
+| 100 文件项目 | < 10 秒 |
+| UI 布局（100+ 节点） | < 1 秒 |
+| 搜索响应 | < 100ms |
 
 ---
 
 ## 🗺️ Roadmap
 
-- [x] Phase 1: 骨架 + Prisma ER 图
-- [x] Phase 2: Next.js + tRPC 解析
-- [x] Phase 3: React 组件 + API 调用
-- [x] Phase 4: 跨层连线（calls_api）
-- [x] Phase 5: 可视化打磨
-- [x] Phase 6: MCP + CLI + 一致性检测
-- [x] Phase 7: Demo + 发布
+### ✅ 已完成
+
+- [x] 22 个解析器（Next.js / tRPC / Express / NestJS / Prisma / Drizzle / TypeORM / Kotlin）
+- [x] 跨层连线（前端 → API → Service → DB）
+- [x] 数据流追踪（Model → API → Component）
+- [x] 死代码检测（死路由 / 死组件 / 死 Service）
+- [x] 循环依赖检测（Tarjan SCC）
+- [x] 一致性检测（死链 / Method 不匹配 / 缺失 Procedure）
+- [x] MCP Server（5 个工具）
+- [x] 配置文件系统（.omnivis.json）
+- [x] 文件监听增量分析
+- [x] WebSocket 实时推送
+- [x] 6 个 UI 面板（图谱 / 筛选 / 问题 / 数据流 / AI / 统计）
+
+### 🔜 下一步
+
 - [ ] 模块聚合（大图折叠）
-- [ ] WebSocket 实时更新
-- [ ] cal.com 端到端验证
-- [ ] symbolResolver（handler→service→DB 链路追踪）
+- [ ] AI 对话式查询
+- [ ] VS Code 插件
+- [ ] monorepo 多包分析
+- [ ] 更多框架支持（Vue / Svelte / Fastify / Hono）
 
 ---
 

@@ -16,7 +16,7 @@
 
 | 决策项 | 选择 | 理由 |
 |--------|------|------|
-| 解析策略 | tree-sitter + ts-morph 分工 | tree-sitter 做快速语法扫描，ts-morph 做跨文件语义追踪 |
+| 解析策略 | ts-morph 统一解析 | TypeScript AST 解析、跨文件语义追踪 |
 | Demo 策略 | 自建 demo 先行 + cal.com 验证 | 可控、无外部依赖、快速出效果 |
 | MVP 范围 | 全部解析器（含 Express/TypeORM） | 用户选择保留，确保覆盖面 |
 | 开发模式 | AI 驱动开发 | 需要严格约束规则 |
@@ -27,18 +27,15 @@
 ### 1.3 分工策略
 
 ```
-tree-sitter 负责：
-  - 快速文件扫描和分类
-  - JSX/TSX 语法树提取
-  - Express 路由模式匹配
-  - 大文件预处理（速度优势）
-
 ts-morph 负责：
-  - TypeScript 类型信息提取
+  - TypeScript/JSX AST 解析
   - 跨文件符号追踪（import 解析）
   - tRPC router 深度分析
-  - Prisma schema 解析（通过 @prisma/internals）
+  - Express 路由模式匹配
   - 路径别名解析
+
+@prisma/internals 负责：
+  - Prisma schema 解析（DMMF）
 ```
 
 ---
@@ -60,8 +57,8 @@ ts-morph 负责：
 │                      │  │  Express + WebSocket    │
 │  ┌────────────────┐  │  └────────────┬───────────┘
 │  │ Parser Layer   │  │               │
-│  │ (tree-sitter   │  │               ▼
-│  │  + ts-morph)   │  │  ┌────────────────────────┐
+│  │ (ts-morph)     │  │               ▼
+│  │                │  │  ┌────────────────────────┐
 │  └───────┬────────┘  │  │   Visualization UI      │
 │          │           │  │   packages/ui/          │
 │  ┌───────▼────────┐  │  │   React + Cytoscape.js  │
@@ -186,7 +183,7 @@ type EdgeType =
 **目标**：能构建组件树并识别 API 调用。
 
 **产出**：
-- React 组件解析器（tree-sitter 提取 JSX，ts-morph 分析 import）
+- React 组件解析器（ts-morph 提取 JSX 和 import）
 - 组件树构建（parent → child 关系）
 - API 调用提取（fetch/axios/tRPC hooks）
 - TypeORM entity 解析器

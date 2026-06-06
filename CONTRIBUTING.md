@@ -26,7 +26,7 @@ This is a monorepo managed by pnpm workspaces + Turborepo:
 ```
 packages/
 ├── shared/      # Shared types (OmniNode, OmniEdge, OmniGraph)
-├── analyzer/    # Parsing engine (tree-sitter + ts-morph)
+├── analyzer/    # Parsing engine (ts-morph)
 ├── server/      # Express web server + WebSocket
 ├── ui/          # React + Cytoscape.js visualization
 ├── mcp/         # MCP Server for AI assistants
