@@ -9,6 +9,7 @@ import { Command } from 'commander'
 import { serveCommand } from './commands/serve'
 import { analyzeCommand } from './commands/analyze'
 import { checkCommand } from './commands/check'
+import { mcpCommand } from './commands/mcp'
 import { initCommand } from './commands/init'
 
 // ============================================================
@@ -26,6 +27,7 @@ program
 serveCommand(program)
 analyzeCommand(program)
 checkCommand(program)
+mcpCommand(program)
 initCommand(program)
 
 // 解析命令行参数

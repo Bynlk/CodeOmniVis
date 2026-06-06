@@ -8,8 +8,42 @@
 import type { Command } from 'commander'
 import ora from 'ora'
 import chalk from 'chalk'
+import * as fs from 'fs'
+import * as path from 'path'
 import { autoDetectProject } from '../utils/autoDetect'
-import { OmniDatabase, PrismaParser, GraphBuilder } from '@omnivis/analyzer'
+import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, GraphBuilder } from '@omnivis/analyzer'
+
+/**
+ * 递归扫描目录，返回所有 TypeScript/JavaScript 文件
+ */
+function scanDirectory(dir: string, rootDir: string): string[] {
+  const files: string[] = []
+  const extensions = ['.ts', '.tsx', '.js', '.jsx']
+  const ignoreDirs = ['node_modules', '.next', 'dist', 'build', '.git']
+
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true })
+
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name)
+
+      if (entry.isDirectory()) {
+        if (!ignoreDirs.includes(entry.name)) {
+          files.push(...scanDirectory(fullPath, rootDir))
+        }
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name)
+        if (extensions.includes(ext)) {
+          files.push(path.relative(rootDir, fullPath).replace(/\\/g, '/'))
+        }
+      }
+    }
+  } catch (err) {
+    // 忽略无法读取的目录
+  }
+
+  return files
+}
 
 export function analyzeCommand(program: Command): void {
   program
@@ -30,12 +64,33 @@ export function analyzeCommand(program: Command): void {
 
         // 创建图构建器
         const builder = new GraphBuilder(db)
-        builder.registerParser(new PrismaParser())
+        builder.registerParsers([
+          new PrismaParser(),
+          new NextjsAppParser(),
+          new NextjsPagesParser(),
+          new TrpcParser(),
+          new ExpressParser(),
+          new TypeormParser(),
+          new ApiCallsParser(),
+          new ReactComponentParser(),
+        ])
 
         // 获取要解析的文件
         const files: string[] = []
+
+        // 添加 Prisma schema
         if (projectMeta.prismaSchemaPath) {
           files.push(projectMeta.prismaSchemaPath)
+        }
+
+        // 扫描项目中的 TypeScript/JavaScript 文件
+        const scanDirs = ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'server', 'src/server']
+        for (const dir of scanDirs) {
+          const fullPath = path.join(process.cwd(), dir)
+          if (fs.existsSync(fullPath)) {
+            const scanned = scanDirectory(fullPath, process.cwd())
+            files.push(...scanned)
+          }
         }
 
         // 执行解析
@@ -63,7 +118,6 @@ export function analyzeCommand(program: Command): void {
         if (options.output === '-') {
           console.log(json)
         } else {
-          const fs = await import('fs')
           fs.writeFileSync(options.output, json, 'utf-8')
           console.log(chalk.gray(`\nGraph saved to ${options.output}`))
         }
