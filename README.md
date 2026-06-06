@@ -85,7 +85,9 @@ axios.post(...)   ──→      ──→ 连线 ──→
 ✅ tRPC Router（嵌套）<br/>
 ✅ Express 路由<br/>
 ✅ API Routes<br/>
-✅ HTTP Method 提取
+✅ HTTP Method 提取<br/>
+✅ **Spring Boot + Kotlin**<br/>
+✅ **Ktor Routing DSL**
 
 </td>
 <td>
@@ -93,7 +95,9 @@ axios.post(...)   ──→      ──→ 连线 ──→
 ✅ Prisma Schema<br/>
 ✅ TypeORM Entity<br/>
 ✅ 关系识别（1:1/1:N/M:N）<br/>
-✅ 字段提取
+✅ 字段提取<br/>
+✅ **Exposed ORM**<br/>
+✅ **Room (Android)**
 
 </td>
 </tr>

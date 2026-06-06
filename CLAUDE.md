@@ -19,9 +19,10 @@
 
 | 层 | 技术 | 用途 |
 |----|------|------|
-| 解析核心 | tree-sitter + ts-morph | tree-sitter 快速语法扫描，ts-morph 跨文件语义追踪 |
+| 解析核心 | ts-morph | TypeScript AST 解析、跨文件语义追踪 |
+| Kotlin 解析 | web-tree-sitter + tree-sitter-kotlin | Kotlin CST 解析（WASM，无需 JVM） |
 | DB 解析 | @prisma/internals | Prisma schema → DMMF |
-| 图存储 | better-sqlite3 | 本地 SQLite，零配置 |
+| 图存储 | sql.js | 本地 SQLite，零配置 |
 | 可视化 | React + Cytoscape.js + dagre | 大图渲染 + 分层布局 |
 | Web 服务 | Express + ws | REST API + WebSocket |
 | MCP | @modelcontextprotocol/sdk | AI 助手接口 |
@@ -178,7 +179,7 @@ pnpm build
 # 运行测试
 pnpm test
 
-# 启动开发模式（Phase 1 完成后）
+# 启动开发模式
 pnpm --filter @omnivis/cli dev serve
 
 # 构建单个包
@@ -248,4 +249,4 @@ pnpm --filter @omnivis/analyzer build
 
 ---
 
-*本文件随项目进展更新。当前版本：Phase 1。*
+*本文件随项目进展更新。当前版本：Phase 7。*
