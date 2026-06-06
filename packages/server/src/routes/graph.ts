@@ -7,7 +7,19 @@
 
 import { Router, Request, Response } from 'express'
 import type { OmniDatabase } from '@omnivis/analyzer'
+import { DataFlowTracer } from '@omnivis/analyzer'
 import type { NodeType, EdgeType } from '@omnivis/shared'
+
+// 合法的节点类型和边类型
+const VALID_NODE_TYPES: ReadonlySet<string> = new Set<NodeType>([
+  'page', 'component', 'api_route', 'trpc_procedure', 'express_route',
+  'handler', 'service', 'db_model', 'module',
+])
+
+const VALID_EDGE_TYPES: ReadonlySet<string> = new Set<EdgeType>([
+  'renders', 'navigates_to', 'calls_api', 'handles', 'calls_service',
+  'queries_db', 'db_relation', 'imports', 'contains', 'data_flows_to',
+])
 
 // ============================================================
 // 路由创建
@@ -55,6 +67,14 @@ export function createGraphRouter(db: OmniDatabase): Router {
 
       let nodes
       if (type && typeof type === 'string') {
+        if (!VALID_NODE_TYPES.has(type)) {
+          return res.status(400).json({
+            error: {
+              code: 'INVALID_TYPE',
+              message: `Invalid node type: ${type}. Valid types: ${[...VALID_NODE_TYPES].join(', ')}`,
+            },
+          })
+        }
         nodes = db.getNodesByType(type as NodeType)
       } else {
         nodes = db.getAllNodes()
@@ -148,6 +168,14 @@ export function createGraphRouter(db: OmniDatabase): Router {
 
       let edges
       if (type && typeof type === 'string') {
+        if (!VALID_EDGE_TYPES.has(type)) {
+          return res.status(400).json({
+            error: {
+              code: 'INVALID_TYPE',
+              message: `Invalid edge type: ${type}. Valid types: ${[...VALID_EDGE_TYPES].join(', ')}`,
+            },
+          })
+        }
         edges = db.getEdgesByType(type as EdgeType)
       } else {
         edges = db.getAllEdges()
@@ -189,10 +217,20 @@ export function createGraphRouter(db: OmniDatabase): Router {
 
   /**
    * DELETE /api/graph
-   * 清空图数据
+   * 清空图数据（需要 X-Confirm: true header）
    */
-  router.delete('/', (_req: Request, res: Response) => {
+  router.delete('/', (req: Request, res: Response) => {
     try {
+      // 要求确认 header，防止误操作
+      if (req.headers['x-confirm'] !== 'true') {
+        return res.status(400).json({
+          error: {
+            code: 'CONFIRMATION_REQUIRED',
+            message: 'This operation requires X-Confirm: true header',
+          },
+        })
+      }
+
       db.clearGraph()
       res.json({ data: { success: true } })
     } catch (err) {
@@ -224,6 +262,54 @@ export function createGraphRouter(db: OmniDatabase): Router {
           code: 'INTERNAL_ERROR',
           message: 'Failed to load errors',
         },
+      })
+    }
+  })
+
+  /**
+   * GET /api/graph/dataflow
+   * 追踪数据流：Model → API → Component
+   */
+  router.get('/dataflow', (req: Request, res: Response) => {
+    try {
+      const graph = db.loadGraph()
+      const tracer = new DataFlowTracer(graph)
+
+      const model = req.query.model as string | undefined
+
+      if (model) {
+        // 追踪指定 model
+        const modelNode = graph.nodes.find(
+          n => n.type === 'db_model' && (n.name === model || n.id.includes(model))
+        )
+        if (!modelNode) {
+          return res.status(404).json({
+            error: { code: 'NOT_FOUND', message: `Model not found: ${model}` },
+          })
+        }
+
+        const path = tracer.traceModelFlow(modelNode)
+        res.json({
+          data: {
+            modelId: modelNode.id,
+            modelName: modelNode.name,
+            paths: [path],
+            totalRoutes: path.apiNodes.length,
+            totalComponents: path.componentNodes.length,
+          },
+        })
+      } else {
+        // 返回所有 model 的数据流概览
+        const results = tracer.traceAllModels()
+        res.json({
+          data: results,
+          meta: { count: results.length },
+        })
+      }
+    } catch (err) {
+      console.error('Failed to trace dataflow:', err)
+      res.status(500).json({
+        error: { code: 'INTERNAL_ERROR', message: 'Failed to trace dataflow' },
       })
     }
   })
