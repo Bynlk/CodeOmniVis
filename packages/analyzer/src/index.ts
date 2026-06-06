@@ -10,7 +10,7 @@ export { OmniDatabase } from './storage'
 export type { DbError, DbStats } from './storage'
 
 // 解析器
-export { PrismaParser, NextjsAppParser, TrpcParser, ApiCallsParser, ReactComponentParser } from './parsers'
+export { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser } from './parsers'
 
 // 文件分类器
 export { classifyFile } from './classifier'

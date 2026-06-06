@@ -7,6 +7,9 @@
 
 export { PrismaParser } from './prisma'
 export { NextjsAppParser } from './nextjsApp'
+export { NextjsPagesParser } from './nextjsPages'
 export { TrpcParser } from './trpc'
+export { ExpressParser } from './express'
+export { TypeormParser } from './typeorm'
 export { ApiCallsParser } from './apiCalls'
 export { ReactComponentParser } from './reactComponent'
