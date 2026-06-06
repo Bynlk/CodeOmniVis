@@ -2,7 +2,6 @@
  * 项目自动检测工具
  *
  * 检测项目使用的框架、ORM、monorepo 类型等。
- * 基础版：检测 prisma schema。
  */
 
 import * as fs from 'fs'
@@ -36,6 +35,12 @@ export async function autoDetectProject(root: string): Promise<ProjectMeta> {
   // 检测 Prisma schema
   const prismaSchemaPath = findPrismaSchema(root)
 
+  // 检测 tRPC router 路径
+  const trpcRouterPaths = findTrpcRouterPaths(root)
+
+  // 检测 TypeORM entity 目录
+  const typeormEntityDirs = findTypeormEntityDirs(root)
+
   return {
     root,
     frontendFramework,
@@ -44,10 +49,11 @@ export async function autoDetectProject(root: string): Promise<ProjectMeta> {
     monorepoType,
     frontendDirs: ['app', 'src/app', 'pages', 'src/pages'],
     backendDirs: ['server', 'src/server', 'api', 'src/api'],
-    trpcRouterPaths: [],
+    trpcRouterPaths,
     prismaSchemaPath,
-    typeormEntityDirs: [],
-    tsConfigPath: findTsConfig(root),
+    typeormEntityDirs,
+    tsConfigPath: findTsConfig(root) ?? null,
+    buildFile: null,
     packages: [],
   }
 }
@@ -114,18 +120,85 @@ function findPrismaSchema(root: string): string | null {
 
 /**
  * 查找 tsconfig.json
+ * 优先查找 monorepo 前端包的 tsconfig
  */
-function findTsConfig(root: string): string | null {
-  const possiblePaths = [
-    'tsconfig.json',
-    'tsconfig.base.json',
+export function findTsConfig(root: string): string | undefined {
+  const candidates = [
+    path.join(root, 'tsconfig.json'),
+    path.join(root, 'apps', 'web', 'tsconfig.json'),
+    path.join(root, 'app', 'tsconfig.json'),
+    path.join(root, 'src', 'tsconfig.json'),
+  ]
+  return candidates.find(p => fs.existsSync(p))
+}
+
+/**
+ * 查找 tRPC router 文件路径
+ * 扫描 server/routers/、src/server/routers/ 等常见目录
+ */
+function findTrpcRouterPaths(root: string): string[] {
+  const possibleDirs = [
+    'server/routers',
+    'src/server/routers',
+    'server/router',
+    'src/server/router',
+    'api/trpc',
+    'src/api/trpc',
   ]
 
-  for (const p of possiblePaths) {
-    if (fs.existsSync(path.join(root, p))) {
-      return p
+  const paths: string[] = []
+  for (const dir of possibleDirs) {
+    const fullPath = path.join(root, dir)
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      // 查找目录下的 .ts/.tsx 文件
+      try {
+        const entries = fs.readdirSync(fullPath, { withFileTypes: true })
+        for (const entry of entries) {
+          if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
+            paths.push(path.join(dir, entry.name))
+          }
+        }
+      } catch {
+        // 忽略读取错误
+      }
     }
   }
 
-  return null
+  return paths
+}
+
+/**
+ * 查找 TypeORM entity 文件目录
+ * 扫描 entity/、entities/、model/、models/ 等常见目录
+ */
+function findTypeormEntityDirs(root: string): string[] {
+  const possibleDirs = [
+    'entity',
+    'entities',
+    'src/entity',
+    'src/entities',
+    'model',
+    'models',
+    'src/model',
+    'src/models',
+  ]
+
+  const dirs: string[] = []
+  for (const dir of possibleDirs) {
+    const fullPath = path.join(root, dir)
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      // 检查目录下是否有 .ts/.tsx 文件
+      try {
+        const entries = fs.readdirSync(fullPath, { withFileTypes: true })
+        const hasTsFiles = entries.some(e => e.isFile() && /\.(ts|tsx)$/.test(e.name))
+        if (hasTsFiles) {
+          dirs.push(dir)
+        }
+      } catch {
+        // 忽略读取错误
+      }
+    }
+  }
+
+  return dirs
 }

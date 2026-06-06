@@ -19,6 +19,9 @@ export type EdgeType =
   | 'db_relation'     // DB 关系：Model A → Model B（一对多/多对多）
   | 'imports'         // 模块导入（用于解析但通常不直接显示）
   | 'contains'        // 聚合关系：Module → 其内部节点
+  | 'kotlin_inherits' // Kotlin 类继承：Child → Parent
+  | 'kotlin_implements' // Kotlin 接口实现：Class → Interface
+  | 'kotlin_uses'     // Kotlin 依赖关系：Class → Class（字段/参数/返回值类型）
 
 // ============================================================
 // 置信度
@@ -87,6 +90,21 @@ export interface ContainsMetadata {
   reason: 'route_prefix' | 'directory' | 'manual'
 }
 
+export interface KotlinInheritsMetadata {
+  superClass: string
+  line: number
+}
+
+export interface KotlinImplementsMetadata {
+  interfaceName: string
+  line: number
+}
+
+export interface KotlinUsesMetadata {
+  usageType: 'field' | 'parameter' | 'return' | 'annotation'
+  line: number
+}
+
 // ============================================================
 // Metadata 联合类型
 // ============================================================
@@ -100,6 +118,9 @@ export type EdgeMetadata =
   | QueriesDbMetadata
   | DbRelationMetadata
   | ContainsMetadata
+  | KotlinInheritsMetadata
+  | KotlinImplementsMetadata
+  | KotlinUsesMetadata
   | Record<string, unknown>
 
 // ============================================================

@@ -2,77 +2,53 @@
  * Cytoscape.js 配置
  *
  * 定义节点和边的样式，用于 ER 图可视化。
+ * 节点 label 带 Emoji 前缀，inferred 边用虚线。
  */
 
-import type { Stylesheet } from 'cytoscape'
+import type { NodeType } from '@omnivis/shared'
+import { NODE_EMOJI, NODE_COLORS } from '../lib/nodeConfig'
 
 /**
  * 获取 Cytoscape 样式配置
  */
-export function getCytoscapeStyle(): Stylesheet[] {
+export function getCytoscapeStyle(): any[] {
   return [
-    // 节点基础样式
+    // 节点基础样式 — emoji + 文字在节点内
     {
       selector: 'node',
       style: {
-        'background-color': 'data(color)',
-        'label': 'data(label)',
+        'background-color': (node: any) => {
+          const type = node.data('type') as NodeType
+          return NODE_COLORS[type] ?? '#6b7280'
+        },
+        'label': (node: any) => {
+          const type = node.data('type') as NodeType
+          const label = node.data('label') as string
+          const emoji = NODE_EMOJI[type] ?? '●'
+          const displayName = label && label.length > 16 ? label.slice(0, 14) + '…' : label ?? '?'
+          return `${emoji} ${displayName}`
+        },
         'text-valign': 'center',
         'text-halign': 'center',
-        'font-size': '12px',
+        'font-size': '10px',
         'font-weight': '500',
-        'color': '#e2e8f0',
-        'text-outline-color': '#1e293b',
+        'color': '#ffffff',
+        'text-outline-color': '#000000',
         'text-outline-width': 2,
-        'width': 'label',
-        'height': 'label',
-        'padding': '12px',
+        'text-wrap': 'wrap',
+        'text-max-width': '100px',
+        'width': 80,
+        'height': 40,
+        'padding': '8px',
         'shape': 'roundrectangle',
-        'border-radius': '6px',
+        'corner-radius': '8',
       } as any,
     },
 
-    // 节点类型样式
-    {
-      selector: 'node[type="page"]',
-      style: {
-        'shape': 'roundrectangle',
-        'background-color': '#8b5cf6',
-      } as any,
-    },
-    {
-      selector: 'node[type="component"]',
-      style: {
-        'shape': 'roundrectangle',
-        'background-color': '#06b6d4',
-      } as any,
-    },
-    {
-      selector: 'node[type="api_route"], node[type="trpc_procedure"], node[type="express_route"]',
-      style: {
-        'shape': 'roundrectangle',
-        'background-color': '#10b981',
-      } as any,
-    },
-    {
-      selector: 'node[type="handler"]',
-      style: {
-        'shape': 'roundrectangle',
-        'background-color': '#f59e0b',
-      } as any,
-    },
-    {
-      selector: 'node[type="service"]',
-      style: {
-        'shape': 'roundrectangle',
-        'background-color': '#ef4444',
-      } as any,
-    },
+    // 节点类型样式（保留特化样式）
     {
       selector: 'node[type="db_model"]',
       style: {
-        'shape': 'roundrectangle',
-        'background-color': '#ec4899',
         'border-width': 2,
         'border-color': '#f472b6',
       } as any,
@@ -82,12 +58,14 @@ export function getCytoscapeStyle(): Stylesheet[] {
     {
       selector: 'edge',
       style: {
-        'width': 2,
-        'line-color': '#475569',
-        'target-arrow-color': '#475569',
+        'width': 1.5,
+        'line-color': '#64748b',
+        'target-arrow-color': '#64748b',
         'target-arrow-shape': 'triangle',
         'curve-style': 'bezier',
-        'arrow-scale': 0.8,
+        'control-point-step-size': 40,
+        'arrow-scale': 0.7,
+        'opacity': 0.7,
       } as any,
     },
 
@@ -97,7 +75,6 @@ export function getCytoscapeStyle(): Stylesheet[] {
       style: {
         'line-color': '#ec4899',
         'target-arrow-color': '#ec4899',
-        'line-style': 'dashed',
       } as any,
     },
     {
@@ -105,6 +82,7 @@ export function getCytoscapeStyle(): Stylesheet[] {
       style: {
         'line-color': '#06b6d4',
         'target-arrow-color': '#06b6d4',
+        'width': 1.5,
       } as any,
     },
     {
@@ -112,15 +90,63 @@ export function getCytoscapeStyle(): Stylesheet[] {
       style: {
         'line-color': '#10b981',
         'target-arrow-color': '#10b981',
+        'width': 2,
+      } as any,
+    },
+    {
+      selector: 'edge[type="handles"]',
+      style: {
+        'line-color': '#f59e0b',
+        'target-arrow-color': '#f59e0b',
+      } as any,
+    },
+    {
+      selector: 'edge[type="calls_service"]',
+      style: {
+        'line-color': '#ef4444',
+        'target-arrow-color': '#ef4444',
+      } as any,
+    },
+    {
+      selector: 'edge[type="queries_db"]',
+      style: {
+        'line-color': '#ec4899',
+        'target-arrow-color': '#ec4899',
+        'width': 2,
+      } as any,
+    },
+    {
+      selector: 'edge[type="kotlin_inherits"]',
+      style: {
+        'line-color': '#a855f7',
+        'target-arrow-color': '#a855f7',
+        'line-style': 'dashed',
+      } as any,
+    },
+    {
+      selector: 'edge[type="kotlin_implements"]',
+      style: {
+        'line-color': '#3b82f6',
+        'target-arrow-color': '#3b82f6',
+        'line-style': 'dashed',
+      } as any,
+    },
+    {
+      selector: 'edge[type="kotlin_uses"]',
+      style: {
+        'line-color': '#64748b',
+        'target-arrow-color': '#64748b',
+        'opacity': 0.5,
       } as any,
     },
 
-    // 置信度样式
+    // 置信度样式 — inferred 边用虚线
     {
       selector: 'edge[confidence="inferred"]',
       style: {
         'line-style': 'dashed',
-        'opacity': 0.7,
+        'line-dash-pattern': [6, 3],
+        'opacity': 0.6,
       } as any,
     },
 

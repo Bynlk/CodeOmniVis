@@ -14,16 +14,16 @@ describe('CrossLayerLinker', () => {
   })
 
   describe('link', () => {
-    it('should return result with stats', () => {
+    it('should return result with stats', async () => {
       const graph: OmniGraph = { nodes: [], edges: [] }
-      const result = linker.link(graph)
+      const result = await linker.link(graph)
 
       expect(result).toHaveProperty('edges')
       expect(result).toHaveProperty('stats')
       expect(result.stats.callsApiEdges).toBe(0)
     })
 
-    it('should match tRPC hooks to procedures', () => {
+    it('should match tRPC hooks to procedures', async () => {
       const graph: OmniGraph = {
         nodes: [
           {
@@ -65,13 +65,13 @@ describe('CrossLayerLinker', () => {
         ],
       }
 
-      const result = linker.link(graph)
+      const result = await linker.link(graph)
       expect(result.stats.callsApiEdges).toBeGreaterThanOrEqual(0)
     })
 
-    it('should handle empty graph', () => {
+    it('should handle empty graph', async () => {
       const graph: OmniGraph = { nodes: [], edges: [] }
-      const result = linker.link(graph)
+      const result = await linker.link(graph)
 
       expect(result.edges).toHaveLength(0)
     })

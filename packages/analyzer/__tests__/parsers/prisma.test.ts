@@ -31,6 +31,7 @@ const projectMeta: ProjectMeta = {
   prismaSchemaPath: 'schema.prisma',
   typeormEntityDirs: [],
   tsConfigPath: null,
+    buildFile: null,
   packages: [],
 }
 

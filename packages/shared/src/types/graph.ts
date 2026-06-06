@@ -42,8 +42,8 @@ export interface ParseResult {
 // 项目元数据
 // ============================================================
 
-export type FrameworkType = 'next' | 'express' | 'trpc' | 'unknown'
-export type DatabaseType = 'prisma' | 'typeorm' | 'unknown'
+export type FrameworkType = 'next' | 'express' | 'trpc' | 'spring' | 'ktor' | 'unknown'
+export type DatabaseType = 'prisma' | 'typeorm' | 'exposed' | 'room' | 'unknown'
 export type MonorepoType = 'turborepo' | 'pnpm' | 'none'
 
 export interface ProjectMeta {
@@ -69,6 +69,8 @@ export interface ProjectMeta {
   typeormEntityDirs: string[]
   /** tsconfig.json 路径 */
   tsConfigPath: string | null
+  /** Gradle 构建文件路径（Kotlin 项目） */
+  buildFile: string | null
   /** 包列表（monorepo 时） */
   packages: PackageInfo[]
 }

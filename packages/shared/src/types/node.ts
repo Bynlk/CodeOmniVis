@@ -19,6 +19,11 @@ export type NodeType =
   | 'service'         // Service 层函数/类方法
   | 'db_model'        // Prisma Model / TypeORM Entity
   | 'module'          // 聚合节点（代表一组路由/组件的折叠视图）
+  | 'kotlin_class'    // Kotlin class / data class / sealed class
+  | 'kotlin_interface' // Kotlin interface
+  | 'kotlin_object'   // Kotlin object 声明（含 companion object）
+  | 'kotlin_function' // Kotlin 顶级函数 / 扩展函数
+  | 'kotlin_route'    // Kotlin 路由端点（Spring @RequestMapping / Ktor routing）
 
 // ============================================================
 // 各类型节点的 Metadata
@@ -91,6 +96,50 @@ export interface ModuleMetadata {
 }
 
 // ============================================================
+// Kotlin 节点 Metadata
+// ============================================================
+
+export interface KotlinClassMetadata {
+  className: string
+  kind: 'data' | 'sealed' | 'abstract' | 'open' | 'value' | 'inner' | 'regular'
+  packageName: string
+  annotations: string[]
+  superClass?: string
+  interfaces: string[]
+}
+
+export interface KotlinInterfaceMetadata {
+  interfaceName: string
+  packageName: string
+  annotations: string[]
+  superInterfaces: string[]
+}
+
+export interface KotlinObjectMetadata {
+  objectName: string
+  packageName: string
+  isCompanion: boolean
+  annotations: string[]
+}
+
+export interface KotlinFunctionMetadata {
+  functionName: string
+  packageName: string
+  isTopLevel: boolean
+  isExtension: boolean
+  receiverType?: string
+  returnType?: string
+  annotations: string[]
+}
+
+export interface KotlinRouteMetadata {
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+  path: string
+  framework: 'ktor' | 'spring'
+  annotations: string[]
+}
+
+// ============================================================
 // Metadata 联合类型
 // ============================================================
 
@@ -104,6 +153,11 @@ export type NodeMetadata =
   | ServiceMetadata
   | DbModelMetadata
   | ModuleMetadata
+  | KotlinClassMetadata
+  | KotlinInterfaceMetadata
+  | KotlinObjectMetadata
+  | KotlinFunctionMetadata
+  | KotlinRouteMetadata
   | Record<string, unknown>  // fallback
 
 // ============================================================
@@ -141,6 +195,11 @@ export type NodeTypeMetadataMap = {
   service: ServiceMetadata
   db_model: DbModelMetadata
   module: ModuleMetadata
+  kotlin_class: KotlinClassMetadata
+  kotlin_interface: KotlinInterfaceMetadata
+  kotlin_object: KotlinObjectMetadata
+  kotlin_function: KotlinFunctionMetadata
+  kotlin_route: KotlinRouteMetadata
 }
 
 // ============================================================
