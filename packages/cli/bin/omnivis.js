@@ -7,7 +7,7 @@
  * 它会加载编译后的 CLI 代码。
  */
 
-import('../dist/index.mjs').catch((err) => {
+import('../dist/index.js').catch((err) => {
   console.error('Failed to load OmniVis CLI:', err)
   process.exit(1)
 })
