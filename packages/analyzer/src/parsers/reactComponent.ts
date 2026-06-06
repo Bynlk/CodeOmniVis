@@ -9,6 +9,7 @@
 
 import { Project, SyntaxKind, Node, CallExpression, JsxElement, JsxSelfClosingElement } from 'ts-morph'
 import * as path from 'path'
+import * as fs from 'fs'
 import type {
   Parser,
   ParseContext,
@@ -261,6 +262,9 @@ export class ReactComponentParser implements Parser {
     const edges: OmniEdge[] = []
     const childComponents = new Set<string>()
 
+    // 构建 import 映射：组件名 → 来源文件路径
+    const importMap = this.buildImportMap(sourceFile, filePath)
+
     // 查找 JSX 元素
     sourceFile.forEachDescendant((node: any) => {
       // <ComponentName /> 或 <ComponentName>...</ComponentName>
@@ -279,7 +283,9 @@ export class ReactComponentParser implements Parser {
     const parentId = createNodeId('component', filePath, parentName)
 
     for (const childName of childComponents) {
-      const childId = createNodeId('component', filePath, childName)
+      // 优先使用 import 解析的文件路径，否则用父组件的文件路径
+      const childFilePath = importMap.get(childName) || filePath
+      const childId = createNodeId('component', childFilePath, childName)
       const edgeId = createEdgeId(parentId, 'renders', childId)
 
       edges.push({
@@ -287,13 +293,101 @@ export class ReactComponentParser implements Parser {
         source: parentId,
         target: childId,
         type: 'renders',
-        confidence: 'inferred',
+        confidence: importMap.has(childName) ? 'certain' : 'inferred',
         metadata: {
-          jsxLine: 0, // TODO: 获取实际行号
+          jsxLine: 0,
         },
       })
     }
 
     return edges
+  }
+
+  /**
+   * 从 import 语句构建 组件名 → 文件路径 映射
+   */
+  private buildImportMap(sourceFile: any, currentFilePath: string): Map<string, string> {
+    const importMap = new Map<string, string>()
+
+    try {
+      sourceFile.forEachDescendant((node: any) => {
+        if (!Node.isImportDeclaration(node)) return
+
+        const moduleSpecifier = node.getModuleSpecifier()?.getText?.() || ''
+        // 去掉引号
+        const importPath = moduleSpecifier.replace(/^['"]|['"]$/g, '')
+        if (!importPath) return
+
+        // 只处理相对路径（跨文件组件）
+        if (!importPath.startsWith('.')) return
+
+        // 解析绝对路径
+        const resolvedPath = this.resolveImportPath(currentFilePath, importPath)
+
+        // 默认导入：import ComponentName from '...'
+        const defaultImport = node.getDefaultImport()
+        if (defaultImport) {
+          const name = defaultImport.getText()
+          if (this.isComponentName(name)) {
+            importMap.set(name, resolvedPath)
+          }
+        }
+
+        // 命名导入：import { A, B } from '...'
+        const namedImports = node.getNamedImports()
+        for (const named of namedImports) {
+          const name = named.getName()
+          if (this.isComponentName(name)) {
+            importMap.set(name, resolvedPath)
+          }
+        }
+      })
+    } catch {
+      // 降级：import 解析失败时返回空映射
+    }
+
+    return importMap
+  }
+
+  /**
+   * 解析 import 路径为相对于项目根的路径，并补全文件扩展名
+   */
+  private resolveImportPath(fromFile: string, importPath: string): string {
+    try {
+      const fromDir = path.dirname(fromFile)
+      let resolved = path.join(fromDir, importPath)
+      // 规范化路径分隔符
+      resolved = resolved.replace(/\\/g, '/')
+      // 补全扩展名
+      resolved = this.resolveWithExtension(resolved)
+      return resolved
+    } catch {
+      return importPath
+    }
+  }
+
+  /**
+   * 补全文件扩展名
+   * 如果路径已有扩展名则直接返回，否则按优先级尝试 .tsx → .ts → .jsx → .js，
+   * 再尝试 index 文件。找不到时返回原路径（降级，不抛异常）。
+   */
+  private resolveWithExtension(resolvedPath: string): string {
+    // 如果路径已有扩展名，直接返回
+    if (/\.(tsx|ts|jsx|js)$/.test(resolvedPath)) return resolvedPath
+
+    // 按优先级依次尝试补全
+    const exts = ['.tsx', '.ts', '.jsx', '.js']
+    for (const ext of exts) {
+      if (fs.existsSync(resolvedPath + ext)) return resolvedPath + ext
+    }
+
+    // 处理 index 文件：../components/Booking → ../components/Booking/index.tsx
+    for (const ext of exts) {
+      const indexPath = path.join(resolvedPath, 'index' + ext)
+      if (fs.existsSync(indexPath)) return indexPath
+    }
+
+    // 文件不存在：返回原路径（降级，不抛异常）
+    return resolvedPath
   }
 }

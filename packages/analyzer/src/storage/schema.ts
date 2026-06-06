@@ -10,6 +10,9 @@
 // ============================================================
 
 export const CREATE_TABLES_SQL = `
+-- 启用外键约束
+PRAGMA foreign_keys = ON;
+
 -- 启用 WAL 模式
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;

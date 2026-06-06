@@ -23,6 +23,32 @@ import type {
 } from '@omnivis/shared'
 import { createNodeId, createEdgeId } from '@omnivis/shared'
 
+// Prisma DMMF 类型（从 @prisma/internals 导出）
+interface DmmfModel {
+  name: string
+  dbName: string | null
+  fields: DmmfField[]
+  relationFrom?: Array<{ name: string }>
+}
+
+interface DmmfField {
+  name: string
+  type: string
+  isRequired: boolean
+  isId: boolean
+  isList: boolean
+  isUnique: boolean
+  relationName?: string
+}
+
+interface DmmfDatamodel {
+  models: DmmfModel[]
+}
+
+interface DmmfDocument {
+  datamodel: DmmfDatamodel
+}
+
 // ============================================================
 // Prisma 解析器
 // ============================================================
@@ -82,10 +108,10 @@ export class PrismaParser implements Parser {
 
       const schemaContent = fs.readFileSync(schemaPath, 'utf-8')
 
-      // 使用 DMMF 解析
-      const dmmf = await getDMMF({
+      // 使用 DMMF 解析（Prisma 返回 readonly 类型，转为可变类型）
+      const dmmf = (await getDMMF({
         datamodel: schemaContent,
-      })
+      })) as unknown as DmmfDocument
 
       // 解析所有 Model
       for (const model of dmmf.datamodel.models) {
@@ -123,14 +149,14 @@ export class PrismaParser implements Parser {
   /**
    * 解析单个 Model 为 OmniNode
    */
-  private parseModel(model: any, filePath: string, schemaContent: string): OmniNode {
+  private parseModel(model: DmmfModel, filePath: string, schemaContent: string): OmniNode {
     const nodeId = createNodeId('db_model', filePath, model.name)
     const line = this.findModelLine(schemaContent, model.name)
 
     // 提取字段信息
     const fields: DbFieldInfo[] = model.fields
-      .filter((f: any) => !f.relationName)  // 排除关系字段
-      .map((f: any) => ({
+      .filter(f => !f.relationName)  // 排除关系字段
+      .map(f => ({
         name: f.name,
         type: f.type,
         isRequired: f.isRequired,
@@ -158,7 +184,7 @@ export class PrismaParser implements Parser {
   /**
    * 解析 Model 的关系字段，生成 db_relation 边
    */
-  private parseRelations(model: any, filePath: string, dmmf: any): OmniEdge[] {
+  private parseRelations(model: DmmfModel, filePath: string, _dmmf: DmmfDocument): OmniEdge[] {
     const edges: OmniEdge[] = []
 
     for (const field of model.fields) {
@@ -173,7 +199,7 @@ export class PrismaParser implements Parser {
       const relationType = this.getRelationType(field)
 
       // 获取关系详情
-      const relation = model.relationFrom?.find((r: any) => r.name === field.relationName) || null
+      const relation = model.relationFrom?.find(r => r.name === field.relationName) || null
 
       const edgeId = createEdgeId(sourceNodeId, 'db_relation', targetNodeId)
 
@@ -201,7 +227,7 @@ export class PrismaParser implements Parser {
   /**
    * 根据字段信息判断关系类型
    */
-  private getRelationType(field: any): 'one_to_one' | 'one_to_many' | 'many_to_many' {
+  private getRelationType(field: DmmfField): 'one_to_one' | 'one_to_many' | 'many_to_many' {
     // 如果字段是列表，那就是一对多（从对方角度看）
     if (field.isList) {
       return 'one_to_many'

@@ -7,6 +7,7 @@
  */
 
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js'
+import * as fs from 'fs'
 import type { OmniNode, OmniEdge, OmniGraph, NodeType, EdgeType } from '@omnivis/shared'
 import { CREATE_TABLES_SQL, SQL } from './schema'
 
@@ -38,21 +39,29 @@ export class OmniDatabase {
   private dbPath: string
   private initPromise: Promise<void>
 
-  constructor(dbPath: string = ':memory:') {
+  constructor(dbPath: string) {
     this.dbPath = dbPath
     this.initPromise = this.initialize()
   }
 
   /**
    * 初始化数据库：加载 WASM 并创建表
+   * 如果 dbPath 是文件路径且文件存在，则从文件加载
    */
   private async initialize(): Promise<void> {
     try {
-      const SQL = await initSqlJs()
-      this.db = new SQL.Database()
+      const SQL_WASM = await initSqlJs()
 
-      // 执行建表语句
-      this.db.run(CREATE_TABLES_SQL)
+      if (this.dbPath !== ':memory:' && fs.existsSync(this.dbPath)) {
+        // 从已有文件加载
+        const buffer = fs.readFileSync(this.dbPath)
+        this.db = new SQL_WASM.Database(buffer)
+      } else {
+        // 创建新数据库
+        this.db = new SQL_WASM.Database()
+        // 执行建表语句
+        this.db.run(CREATE_TABLES_SQL)
+      }
     } catch (err) {
       console.error(`Failed to initialize database at ${this.dbPath}:`, err)
       throw err
@@ -67,10 +76,20 @@ export class OmniDatabase {
   }
 
   /**
-   * 关闭数据库连接
+   * 关闭数据库连接（持久化到文件）
    */
   close(): void {
     if (this.db) {
+      // 持久化到文件
+      if (this.dbPath !== ':memory:') {
+        try {
+          const data = this.db.export()
+          const buffer = Buffer.from(data)
+          fs.writeFileSync(this.dbPath, buffer)
+        } catch (err) {
+          console.error(`Failed to persist database to ${this.dbPath}:`, err)
+        }
+      }
       this.db.close()
       this.db = null
     }
@@ -147,7 +166,9 @@ export class OmniDatabase {
       console.error('Failed to upsert nodes:', err)
       try {
         this.db!.run('ROLLBACK')
-      } catch {}
+      } catch (rollbackErr) {
+        console.error('ROLLBACK failed after upsertNodes error:', rollbackErr)
+      }
       return 0
     }
   }
@@ -318,7 +339,9 @@ export class OmniDatabase {
       console.error('Failed to upsert edges:', err)
       try {
         this.db!.run('ROLLBACK')
-      } catch {}
+      } catch (rollbackErr) {
+        console.error('ROLLBACK failed after upsertEdges error:', rollbackErr)
+      }
       return 0
     }
   }
@@ -504,7 +527,9 @@ export class OmniDatabase {
       console.error('Failed to insert errors:', err)
       try {
         this.db!.run('ROLLBACK')
-      } catch {}
+      } catch (rollbackErr) {
+        console.error('ROLLBACK failed after insertErrors error:', rollbackErr)
+      }
       return 0
     }
   }
@@ -666,13 +691,233 @@ export class OmniDatabase {
   }
 
   // ============================================================
+  // MCP 工具查询方法
+  // ============================================================
+
+  /**
+   * 按多个类型获取节点
+   */
+  getNodesByTypes(types: NodeType[]): OmniNode[] {
+    try {
+      this.ensureReady()
+      if (types.length === 0) return []
+      const placeholders = types.map(() => '?').join(',')
+      const stmt = this.db!.prepare(`SELECT * FROM nodes WHERE type IN (${placeholders})`)
+      stmt.bind(types)
+      const nodes: OmniNode[] = []
+      while (stmt.step()) {
+        const row = stmt.getAsObject()
+        nodes.push(this.rowToNode(row))
+      }
+      stmt.free()
+      return nodes
+    } catch (err) {
+      console.error(`Failed to get nodes by types:`, err)
+      return []
+    }
+  }
+
+  /**
+   * 获取下游节点（通过出边连接的节点）
+   */
+  getDownstreamNodes(nodeId: string, edgeTypes?: EdgeType[]): OmniNode[] {
+    try {
+      this.ensureReady()
+      const edgeFilter = edgeTypes && edgeTypes.length > 0
+        ? `AND e.type IN (${edgeTypes.map(() => '?').join(',')})`
+        : ''
+      const sql = `
+        SELECT n.* FROM nodes n
+        JOIN edges e ON e.target = n.id
+        WHERE e.source = ? ${edgeFilter}
+      `
+      const params = edgeTypes && edgeTypes.length > 0
+        ? [nodeId, ...edgeTypes]
+        : [nodeId]
+      const stmt = this.db!.prepare(sql)
+      stmt.bind(params)
+      const nodes: OmniNode[] = []
+      while (stmt.step()) {
+        const row = stmt.getAsObject()
+        nodes.push(this.rowToNode(row))
+      }
+      stmt.free()
+      return nodes
+    } catch (err) {
+      console.error(`Failed to get downstream nodes for ${nodeId}:`, err)
+      return []
+    }
+  }
+
+  /**
+   * 获取上游节点（通过入边连接的节点）
+   */
+  getUpstreamNodes(nodeId: string, edgeTypes?: EdgeType[]): OmniNode[] {
+    try {
+      this.ensureReady()
+      const edgeFilter = edgeTypes && edgeTypes.length > 0
+        ? `AND e.type IN (${edgeTypes.map(() => '?').join(',')})`
+        : ''
+      const sql = `
+        SELECT n.* FROM nodes n
+        JOIN edges e ON e.source = n.id
+        WHERE e.target = ? ${edgeFilter}
+      `
+      const params = edgeTypes && edgeTypes.length > 0
+        ? [nodeId, ...edgeTypes]
+        : [nodeId]
+      const stmt = this.db!.prepare(sql)
+      stmt.bind(params)
+      const nodes: OmniNode[] = []
+      while (stmt.step()) {
+        const row = stmt.getAsObject()
+        nodes.push(this.rowToNode(row))
+      }
+      stmt.free()
+      return nodes
+    } catch (err) {
+      console.error(`Failed to get upstream nodes for ${nodeId}:`, err)
+      return []
+    }
+  }
+
+  /**
+   * 按路由查找节点
+   */
+  findNodeByRoute(route: string): OmniNode | null {
+    try {
+      this.ensureReady()
+      const stmt = this.db!.prepare(
+        `SELECT * FROM nodes WHERE json_extract(metadata, '$.route') = ? LIMIT 1`
+      )
+      stmt.bind([route])
+      if (stmt.step()) {
+        const row = stmt.getAsObject()
+        stmt.free()
+        return this.rowToNode(row)
+      }
+      stmt.free()
+      return null
+    } catch (err) {
+      console.error(`Failed to find node by route ${route}:`, err)
+      return null
+    }
+  }
+
+  /**
+   * 按文件路径查找节点
+   */
+  findNodeByFilePath(filePath: string): OmniNode | null {
+    try {
+      this.ensureReady()
+      const stmt = this.db!.prepare(`SELECT * FROM nodes WHERE file_path = ? LIMIT 1`)
+      stmt.bind([filePath])
+      if (stmt.step()) {
+        const row = stmt.getAsObject()
+        stmt.free()
+        return this.rowToNode(row)
+      }
+      stmt.free()
+      return null
+    } catch (err) {
+      console.error(`Failed to find node by file path ${filePath}:`, err)
+      return null
+    }
+  }
+
+  /**
+   * 按任意标识查找节点（路由 → 名称）
+   */
+  findNodeByAny(query: string): OmniNode | null {
+    return this.findNodeByRoute(query)
+      ?? this.findNodeByFilePath(query)
+      ?? (() => {
+        try {
+          this.ensureReady()
+          const stmt = this.db!.prepare(`SELECT * FROM nodes WHERE name = ? LIMIT 1`)
+          stmt.bind([query])
+          if (stmt.step()) {
+            const row = stmt.getAsObject()
+            stmt.free()
+            return this.rowToNode(row)
+          }
+          stmt.free()
+          return null
+        } catch (err) {
+          console.error(`Failed to find node by name ${query}:`, err)
+          return null
+        }
+      })()
+  }
+
+  /**
+   * 获取受影响的页面（BFS 向上追溯到 page 节点）
+   */
+  getAffectedPages(nodeId: string, maxDepth = 10): OmniNode[] {
+    const visited = new Set<string>()
+    const queue: { id: string; depth: number }[] = [{ id: nodeId, depth: 0 }]
+    const pages: OmniNode[] = []
+
+    // 只沿有意义的调用链向上追溯，不走 renders/imports/contains
+    const callEdgeTypes: EdgeType[] = ['calls_api', 'handles', 'calls_service', 'queries_db']
+
+    while (queue.length > 0) {
+      const { id, depth } = queue.shift()!
+      if (visited.has(id) || depth > maxDepth) continue
+      visited.add(id)
+
+      const upstreams = this.getUpstreamNodes(id, callEdgeTypes)
+      for (const up of upstreams) {
+        if (up.type === 'page') {
+          if (!pages.find(p => p.id === up.id)) pages.push(up)
+        } else {
+          queue.push({ id: up.id, depth: depth + 1 })
+        }
+      }
+    }
+    return pages
+  }
+
+  /**
+   * 获取子树（递归获取下游节点）
+   */
+  getSubtree(rootId: string, edgeType: EdgeType, maxDepth: number): Record<string, unknown> {
+    const root = this.getNode(rootId)
+    if (!root) return {}
+
+    if (maxDepth === 0) {
+      return { id: root.id, name: root.name, type: root.type, children: [] }
+    }
+
+    const children = this.getDownstreamNodes(rootId, [edgeType])
+    return {
+      id: root.id,
+      name: root.name,
+      type: root.type,
+      children: children.map(c => this.getSubtree(c.id, edgeType, maxDepth - 1)),
+    }
+  }
+
+  // ============================================================
   // 辅助方法
   // ============================================================
 
   /**
+   * 安全解析 JSON 字符串，失败返回空对象
+   */
+  private safeJsonParse(jsonStr: string, context: string): Record<string, unknown> {
+    try {
+      return JSON.parse(jsonStr) as Record<string, unknown>
+    } catch (err) {
+      console.warn(`Failed to parse JSON for ${context}, using empty object:`, err)
+      return {}
+    }
+  }
+
+  /**
    * 将数据库行对象转换为 OmniNode
    */
-  private rowToNode(row: Record<string, any>): OmniNode {
+  private rowToNode(row: Record<string, unknown>): OmniNode {
     return {
       id: row.id as string,
       type: row.type as NodeType,
@@ -680,14 +925,14 @@ export class OmniDatabase {
       filePath: row.file_path as string,
       line: row.line as number,
       column: row.column as number,
-      metadata: JSON.parse(row.metadata as string),
+      metadata: this.safeJsonParse(row.metadata as string, `node ${row.id}`),
     }
   }
 
   /**
    * 将数组形式的行转换为 OmniNode
    */
-  private arrayToNode(row: any[]): OmniNode {
+  private arrayToNode(row: unknown[]): OmniNode {
     return {
       id: row[0] as string,
       type: row[1] as NodeType,
@@ -695,35 +940,35 @@ export class OmniDatabase {
       filePath: row[3] as string,
       line: row[4] as number,
       column: row[5] as number,
-      metadata: JSON.parse(row[6] as string),
+      metadata: this.safeJsonParse(row[6] as string, `node ${row[0]}`),
     }
   }
 
   /**
    * 将数据库行对象转换为 OmniEdge
    */
-  private rowToEdge(row: Record<string, any>): OmniEdge {
+  private rowToEdge(row: Record<string, unknown>): OmniEdge {
     return {
       id: row.id as string,
       source: row.source as string,
       target: row.target as string,
       type: row.type as EdgeType,
       confidence: row.confidence as 'certain' | 'inferred',
-      metadata: JSON.parse(row.metadata as string),
+      metadata: this.safeJsonParse(row.metadata as string, `edge ${row.id}`),
     }
   }
 
   /**
    * 将数组形式的行转换为 OmniEdge
    */
-  private arrayToEdge(row: any[]): OmniEdge {
+  private arrayToEdge(row: unknown[]): OmniEdge {
     return {
       id: row[0] as string,
       source: row[1] as string,
       target: row[2] as string,
       type: row[3] as EdgeType,
       confidence: row[4] as 'certain' | 'inferred',
-      metadata: JSON.parse(row[5] as string),
+      metadata: this.safeJsonParse(row[5] as string, `edge ${row[0]}`),
     }
   }
 }

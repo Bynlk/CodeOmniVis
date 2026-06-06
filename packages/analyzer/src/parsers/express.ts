@@ -110,7 +110,8 @@ export class ExpressParser implements Parser {
    */
   private findRouteDefinitions(sourceFile: any, filePath: string): OmniNode[] {
     const nodes: OmniNode[] = []
-    const routerPrefix = this.detectRouterPrefix(sourceFile)
+    // 为每个 router 变量维护独立的前缀
+    const routerPrefixes = this.detectAllRouterPrefixes(sourceFile)
 
     sourceFile.forEachDescendant((node: any) => {
       if (node.getKind() !== SyntaxKind.CallExpression) return
@@ -125,6 +126,10 @@ export class ExpressParser implements Parser {
       // 提取路由路径
       const routePath = this.extractRoutePath(callExpr)
       if (!routePath) return
+
+      // 获取该调用所属 router 的前缀
+      const routerName = this.getRouterName(expression)
+      const routerPrefix = routerName ? (routerPrefixes.get(routerName) ?? '') : ''
 
       // 组合完整路径
       const fullPath = routerPrefix
@@ -155,11 +160,11 @@ export class ExpressParser implements Parser {
   }
 
   /**
-   * 检测 router 前缀
-   * 例如：const router = Router() 且 router 有 prefix
+   * 检测所有 router 的前缀
+   * 返回 routerName -> prefix 的映射
    */
-  private detectRouterPrefix(sourceFile: any): string {
-    let prefix = ''
+  private detectAllRouterPrefixes(sourceFile: any): Map<string, string> {
+    const prefixes = new Map<string, string>()
 
     sourceFile.forEachDescendant((node: any) => {
       if (node.getKind() !== SyntaxKind.CallExpression) return
@@ -171,18 +176,30 @@ export class ExpressParser implements Parser {
       if (Node.isIdentifier(expression)) {
         const name = expression.getText()
         if (name === 'Router') {
-          // 查找这个 router 变量的使用，看是否有 prefix
           const parent = callExpr.getParent()
           if (parent && Node.isVariableDeclaration(parent)) {
             const varName = parent.getName()
-            // 在文件中查找 router.use('/prefix', ...) 模式
-            prefix = this.findRouterPrefix(sourceFile, varName)
+            const prefix = this.findRouterPrefix(sourceFile, varName)
+            prefixes.set(varName, prefix)
           }
         }
       }
     })
 
-    return prefix
+    return prefixes
+  }
+
+  /**
+   * 从表达式中获取 router 变量名
+   */
+  private getRouterName(expression: any): string | null {
+    if (Node.isPropertyAccessExpression(expression)) {
+      const obj = expression.getExpression()
+      if (Node.isIdentifier(obj)) {
+        return obj.getText()
+      }
+    }
+    return null
   }
 
   /**

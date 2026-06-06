@@ -10,7 +10,7 @@ export { OmniDatabase } from './storage'
 export type { DbError, DbStats } from './storage'
 
 // 解析器
-export { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser } from './parsers'
+export { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser } from './parsers'
 
 // 文件分类器
 export { classifyFile } from './classifier'
@@ -20,12 +20,22 @@ export type { FileType, ClassificationResult } from './classifier'
 export { GraphBuilder } from './graph/builder'
 export type { BuildResult } from './graph/builder'
 
+// 一键分析
+export { runAnalysis } from './graph/runAnalysis'
+export type { RunAnalysisOptions, RunAnalysisResult } from './graph/runAnalysis'
+
 // Resolver
 export { PathAliasResolver } from './resolver/pathAlias'
 export type { PathAliasConfig } from './resolver/pathAlias'
 export { CrossLayerLinker } from './resolver/crossLayer'
 export type { CrossLayerResult } from './resolver/crossLayer'
+export { SymbolResolver } from './resolver/symbolResolver'
+export type { DbCall, TraceResult } from './resolver/symbolResolver'
 
 // 一致性检测
 export { ConsistencyChecker } from './graph/consistency'
-export type { ConsistencyReport } from './graph/consistency'
+export type { ConsistencyReport } from '@omnivis/shared'
+
+// 数据流追踪
+export { DataFlowTracer } from './resolver/dataFlowTracer'
+export type { DataFlowPath, DataFlowEdge, DataFlowResult } from './resolver/dataFlowTracer'

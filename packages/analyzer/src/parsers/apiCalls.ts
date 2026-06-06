@@ -170,7 +170,7 @@ export class ApiCallsParser implements Parser {
     if (args.length === 0) return null
 
     const urlArg = args[0]
-    let url = ''
+    let url: string
     let confidence: 'certain' | 'inferred' = 'certain'
 
     // 提取 URL
@@ -301,16 +301,17 @@ export class ApiCallsParser implements Parser {
    * 将调用转换为边
    */
   private callToEdge(call: DetectedCall, filePath: string): OmniEdge | null {
-    // 创建一个临时的 source 节点 ID
-    // 实际连线会在 Phase 4 中完成
-    const sourceId = `component:${filePath}:unknown`
+    // 从文件路径推断组件名
+    const componentName = this.inferComponentName(filePath)
+    const sourceId = `component:${filePath}:${componentName}`
 
     // 根据 URL 创建 target 节点 ID
-    let targetId = ''
+    let targetId: string
     if (call.type === 'trpc_hook') {
       targetId = `trpc_procedure:unknown:${call.url}`
     } else {
       // 对于 fetch/axios，使用 URL 作为 target
+      // crossLayer.ts 的 linkCallsApi 会通过 URL 匹配修复 target
       targetId = `api_route:unknown:${call.url}`
     }
 
@@ -330,5 +331,43 @@ export class ApiCallsParser implements Parser {
       confidence: call.confidence,
       metadata,
     }
+  }
+
+  /**
+   * 从文件路径推断组件名
+   *
+   * app/booking/page.tsx       → BookingPage
+   * components/BookingList.tsx → BookingList
+   * app/profile/page.tsx       → ProfilePage
+   */
+  private inferComponentName(filePath: string): string {
+    const normalized = filePath.replace(/\\/g, '/')
+    const parts = normalized.split('/')
+
+    // page.tsx → 取父目录名 + "Page"
+    const fileName = parts[parts.length - 1] || ''
+    if (/^page\.(tsx|jsx|ts|js)$/.test(fileName)) {
+      const dirName = parts[parts.length - 2] || 'Page'
+      return this.toPascalCase(dirName) + 'Page'
+    }
+
+    // route.ts → 取父目录名 + "Route"
+    if (/^route\.(tsx|ts|jsx|js)$/.test(fileName)) {
+      const dirName = parts[parts.length - 2] || 'Route'
+      return this.toPascalCase(dirName) + 'Route'
+    }
+
+    // 其他文件 → 取文件名（不含扩展名）
+    const baseName = fileName.replace(/\.(tsx|jsx|ts|js)$/, '')
+    return this.toPascalCase(baseName)
+  }
+
+  /**
+   * 转 PascalCase
+   */
+  private toPascalCase(str: string): string {
+    return str
+      .replace(/[-_](\w)/g, (_, c) => c.toUpperCase())
+      .replace(/^(\w)/, (_, c) => c.toUpperCase())
   }
 }

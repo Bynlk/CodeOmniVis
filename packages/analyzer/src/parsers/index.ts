@@ -20,3 +20,9 @@ export { SpringKotlinParser } from './kotlin/springKotlinParser'
 export { KtorParser } from './kotlin/ktorParser'
 export { RoomParser } from './kotlin/roomParser'
 export { ExposedParser } from './kotlin/exposedParser'
+
+// NestJS 解析器
+export { NestjsControllerParser, NestjsModuleParser, NestjsServiceParser } from './nestjs'
+
+// Drizzle ORM 解析器
+export { DrizzleParser } from './drizzle'

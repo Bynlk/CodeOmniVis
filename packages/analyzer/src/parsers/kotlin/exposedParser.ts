@@ -44,7 +44,7 @@ export class ExposedParser implements Parser {
         // 检查是否继承自 Exposed Table 类型
         // object Users : IntIdTable() 模式
         const isExposedTable = source.includes(`${obj.name}`) &&
-          EXPOSED_TABLE_BASES.some(base => source.includes(`${obj.name} : ${base}`))
+          [...EXPOSED_TABLE_BASES].some((base: string) => source.includes(`${obj.name} : ${base}`))
 
         if (isExposedTable) {
           const nodeId = createNodeId('db_model', normalizedPath, obj.name)
