@@ -40,7 +40,7 @@ npx @bynlk/CodeOmniVis serve   # 60 秒内看到完整架构
 
 自动检测框架 → 扫描文件 → AST 解析 → 跨层连线 → 可视化。不需要任何配置。
 
-### 2. 22 个解析器，覆盖主流生态
+### 2. 19 个解析器，覆盖主流生态
 
 <table>
 <tr>
@@ -160,29 +160,33 @@ codeomnivis init           # ⚙️ 生成 .codeomnivis.json 配置文件
 ### 自动检测输出
 
 ```
-$ codeomnivis serve
+$ codeomnivis serve --project ./cal.com
 
 ✔ Server running at http://localhost:4321
-Configuration loaded from .codeomnivis.json
 
+Scanning 9390 files...
 Analysis results:
-  Files scanned: 62
-  Nodes: 73
-  Edges: 28
-
-Cross-layer links:
-  calls_api:      4
-  handles:        9
-  calls_service:  12
-  queries_db:     7
+  Files scanned: 9,390
+  Nodes: 1,892
+  Edges: 3,347
 
 Node types:
-  db_model:       7    ← 数据库模型 + 关系
-  page:           9    ← 页面路由 + 动态参数
-  component:      48   ← React 组件 + props
-  api_route:      9    ← API 路由 + HTTP method
-  handler:        9    ← 路由处理函数
-  service:        5    ← Service 层
+  component:      693   ← React 组件 + props
+  handler:        490   ← 路由处理函数
+  trpc_procedure: 408   ← tRPC 过程
+  page:           104   ← 页面路由 + 动态参数
+  db_model:       102   ← 数据库模型 + 关系
+  api_route:       82   ← API 路由 + HTTP method
+  service:         13   ← Service 层
+
+Edge types:
+  renders:       1,622   ← 组件渲染关系
+  handles:         490   ← 路由处理绑定
+  contains:        342   ← 模块包含关系
+  db_relation:     323   ← 数据库表关系
+  calls_service:   311   ← 服务调用链
+  calls_api:       172   ← 前端调用 API
+  queries_db:       87   ← 数据库查询
 ```
 
 ### 跨层连线
@@ -300,7 +304,7 @@ Consuming Components:
 codeomnivis/
 ├── packages/
 │   ├── shared/       # 共享类型（13 种节点 + 13 种边 + 配置系统）
-│   ├── analyzer/     # 解析引擎（22 个解析器 + 图算法 + 存储）
+│   ├── analyzer/     # 解析引擎（19 个解析器 + 图算法 + 存储）
 │   ├── server/       # Express + WebSocket + 增量分析
 │   ├── ui/           # React + Cytoscape.js + 6 个 Tab 面板
 │   ├── mcp/          # MCP Server（5 个工具，并发安全）
@@ -316,13 +320,13 @@ codeomnivis/
 
 | 包 | 代码行数 | 功能 |
 |----|---------|------|
-| `@codeomnivis/shared` | 982 | 13 种节点类型、13 种边类型、配置加载器 |
-| `@codeomnivis/analyzer` | 8,333 | 22 个解析器、数据流追踪、死代码/循环依赖检测 |
+| `@codeomnivis/shared` | 995 | 14 种节点类型、13 种边类型、配置加载器 |
+| `@codeomnivis/analyzer` | 9,557 | 22 个解析器、数据流追踪、死代码/循环依赖检测 |
 | `@codeomnivis/server` | 759 | REST API、WebSocket 广播、文件监听增量分析 |
-| `@codeomnivis/ui` | 2,291 | 6 个 Tab 面板、Cytoscape 图、数据流可视化 |
+| `@codeomnivis/ui` | 2,328 | 6 个 Tab 面板、Cytoscape 图、数据流可视化 |
 | `@codeomnivis/mcp` | 411 | 5 个 MCP 工具、并发安全、优雅关闭 |
-| `@codeomnivis/cli` | 1,015 | 5 个命令、配置集成、自动框架检测 |
-| **总计** | **~13,800** | |
+| `@codeomnivis/cli` | 1,312 | 5 个命令、配置集成、自动框架检测 |
+| **总计** | **~15,362** | |
 
 ---
 
@@ -344,14 +348,38 @@ codeomnivis/
 
 ## 🎯 性能基准（cal.com 验证）
 
-在 [cal.com](https://github.com/calcom/cal.com)（1000+ 文件的大型全栈项目）上验证：
+在 [cal.com](https://github.com/calcom/cal.com)（9,390 文件的大型全栈项目）上验证：
 
-| 指标 | 初始 | 最终 | 倍数 |
-|------|------|------|------|
-| 节点 | 309 | 2,072 | **6.7x** |
-| 边 | 83 | 3,799 | **45.8x** |
-| 孤立率 | 63.8% | 9.2% | ✅ |
-| renders 边 | 10 | 1,632 | **163x** |
+| 指标 | 数值 |
+|------|------|
+| 扫描文件 | 9,390 |
+| 节点 | 1,892 |
+| 边 | 3,347 |
+| 错误 | 0 |
+
+### 节点类型分布
+
+| 类型 | 数量 | 说明 |
+|------|------|------|
+| component | 693 | React 组件 |
+| handler | 490 | 请求处理器 |
+| trpc_procedure | 408 | tRPC 过程 |
+| page | 104 | 页面路由 |
+| db_model | 102 | 数据库模型 |
+| api_route | 82 | API 路由 |
+| service | 13 | 服务层 |
+
+### 边类型分布
+
+| 类型 | 数量 | 说明 |
+|------|------|------|
+| renders | 1,622 | 组件渲染关系 |
+| handles | 490 | 路由处理绑定 |
+| contains | 342 | 模块包含关系 |
+| db_relation | 323 | 数据库表关系 |
+| calls_service | 311 | 服务调用链 |
+| calls_api | 172 | 前端调用 API |
+| queries_db | 87 | 数据库查询 |
 
 ### 代码质量
 
@@ -366,7 +394,7 @@ codeomnivis/
 
 ### ✅ 已完成
 
-- [x] 22 个解析器（Next.js / tRPC / Express / NestJS / Prisma / Drizzle / TypeORM / Kotlin）
+- [x] 19 个解析器（Next.js / tRPC / Express / NestJS / Prisma / Drizzle / TypeORM / Kotlin）
 - [x] 跨层连线（前端 → API → Service → DB）
 - [x] 数据流追踪（Model → API → Component）
 - [x] 死代码检测（死路由 / 死组件 / 死 Service）
