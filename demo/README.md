@@ -1,6 +1,6 @@
-# OmniVis Demo
+# CodeOmniVis Demo
 
-This demo project demonstrates OmniVis capabilities with a realistic full-stack application structure.
+This demo project demonstrates CodeOmniVis capabilities with a realistic full-stack application structure.
 
 ## Structure
 
@@ -13,7 +13,7 @@ This demo project demonstrates OmniVis capabilities with a realistic full-stack 
 
 ```bash
 # From the project root
-npx omnivis serve
+npx codeomnivis serve
 ```
 
 Then open http://localhost:4321 to see the architecture visualization.

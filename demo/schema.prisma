@@ -1,4 +1,4 @@
-// Demo Prisma Schema for OmniVis
+// Demo Prisma Schema for CodeOmniVis
 
 generator client {
   provider = "prisma-client-js"
