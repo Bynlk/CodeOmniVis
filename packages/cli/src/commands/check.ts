@@ -2,7 +2,7 @@
  * check 命令
  *
  * 检测项目中的问题。
- * npx omnivis check → 检测问题 → 输出报告
+ * npx codeomnivis check → 检测问题 → 输出报告
  */
 
 import type { Command } from 'commander'
@@ -12,8 +12,8 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { autoDetectProject } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
-import { getDbPath, loadConfig } from '@omnivis/shared'
-import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, ConsistencyChecker } from '@omnivis/analyzer'
+import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
+import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, ConsistencyChecker } from '@codeomnivis/analyzer'
 
 export function checkCommand(program: Command): void {
   program

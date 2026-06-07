@@ -2,7 +2,7 @@
  * analyze 命令
  *
  * 分析项目并输出 JSON 结果。
- * npx omnivis analyze → 分析项目 → 输出 JSON
+ * npx codeomnivis analyze → 分析项目 → 输出 JSON
  */
 
 import type { Command } from 'commander'
@@ -10,16 +10,16 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
-import { autoDetectProject, findTsConfig } from '../utils/autoDetect'
+import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
-import { getDbPath, loadConfig } from '@omnivis/shared'
-import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@omnivis/analyzer'
+import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
+import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@codeomnivis/analyzer'
 
 export function analyzeCommand(program: Command): void {
   program
     .command('analyze')
     .description('Analyze project and output graph as JSON')
-    .option('-o, --output <file>', 'Output file path', 'omnivis-graph.json')
+    .option('-o, --output <file>', 'Output file path', 'codeomnivis-graph.json')
     .action(async (options) => {
       const spinner = ora('Analyzing project...').start()
 
@@ -60,12 +60,16 @@ export function analyzeCommand(program: Command): void {
           files.push(projectMeta.prismaSchemaPath)
         }
 
+        // 添加 tRPC router 文件
+        if (projectMeta.trpcRouterPaths && projectMeta.trpcRouterPaths.length > 0) {
+          files.push(...projectMeta.trpcRouterPaths)
+        }
+
         // 扫描项目中的 TypeScript/JavaScript 文件
-        const scanDirs = ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'server', 'src/server']
+        const scanDirs = collectScanDirs(projectRoot, config)
         for (const dir of scanDirs) {
-          const fullPath = path.join(process.cwd(), dir)
-          if (fs.existsSync(fullPath)) {
-            const scanned = scanDirectory(fullPath, process.cwd())
+          if (fs.existsSync(dir)) {
+            const scanned = scanDirectory(dir, projectRoot)
             files.push(...scanned)
           }
         }
@@ -73,14 +77,14 @@ export function analyzeCommand(program: Command): void {
         // 执行解析
         spinner.text = `Parsing ${files.length} files...`
         const result = await builder.parseFiles(files, {
-          projectRoot: process.cwd(),
+          projectRoot,
           projectMeta,
           tsConfig: null,
           pathAliases: {},
         })
 
         // 跨层连线
-        const tsConfigPath = findTsConfig(process.cwd())
+        const tsConfigPath = findTsConfig(projectRoot)
         const linker = new CrossLayerLinker(tsConfigPath)
         const graph = builder.loadGraph()
         const crossLayerResult = await linker.link(graph)
@@ -91,7 +95,7 @@ export function analyzeCommand(program: Command): void {
           db.upsertEdges(crossLayerResult.edges)
         }
         // linker.link 可能向 graph.nodes 中添加了 synthetic 节点
-        const syntheticNodes = graph.nodes.filter(n => (n.metadata as any)?.isSynthetic)
+        const syntheticNodes = graph.nodes.filter(n => 'isSynthetic' in n.metadata && (n.metadata as { isSynthetic?: boolean }).isSynthetic)
         if (syntheticNodes.length > 0) {
           db.upsertNodes(syntheticNodes)
         }

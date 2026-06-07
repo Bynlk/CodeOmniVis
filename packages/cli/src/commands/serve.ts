@@ -2,7 +2,7 @@
  * serve 命令
  *
  * 启动 Web 服务并自动检测项目。
- * npx omnivis serve → 启动服务器 → 分析项目 → 打开浏览器
+ * npx codeomnivis serve → 启动服务器 → 分析项目 → 打开浏览器
  */
 
 import type { Command } from 'commander'
@@ -10,21 +10,21 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
-import { autoDetectProject, findTsConfig } from '../utils/autoDetect'
+import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
-import { createOmniServer } from '@omnivis/server'
-import { getDbPath, loadConfig } from '@omnivis/shared'
-import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@omnivis/analyzer'
+import { createOmniServer } from '@codeomnivis/server'
+import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
+import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@codeomnivis/analyzer'
 
 export function serveCommand(program: Command): void {
   program
     .command('serve')
-    .description('Start OmniVis server and visualize your project')
+    .description('Start CodeOmniVis server and visualize your project')
     .option('-p, --port <port>', 'Server port', '4321')
     .option('-h, --host <host>', 'Server host', 'localhost')
     .option('--no-open', 'Do not open browser automatically')
     .action(async (options) => {
-      const spinner = ora('Starting OmniVis server...').start()
+      const spinner = ora('Starting CodeOmniVis server...').start()
 
       try {
         // 加载配置 + 自动检测项目
@@ -34,9 +34,9 @@ export function serveCommand(program: Command): void {
         const projectMeta = await autoDetectProject(projectRoot, config)
 
         // 提示配置文件状态
-        const configPath = require('path').join(projectRoot, '.omnivis.json')
+        const configPath = require('path').join(projectRoot, '.codeomnivis.json')
         if (require('fs').existsSync(configPath)) {
-          console.log(chalk.gray('Configuration loaded from .omnivis.json'))
+          console.log(chalk.gray('Configuration loaded from .codeomnivis.json'))
         }
 
         // 创建服务器
@@ -78,12 +78,16 @@ export function serveCommand(program: Command): void {
           files.push(projectMeta.prismaSchemaPath)
         }
 
+        // 添加 tRPC router 文件
+        if (projectMeta.trpcRouterPaths && projectMeta.trpcRouterPaths.length > 0) {
+          files.push(...projectMeta.trpcRouterPaths)
+        }
+
         // 扫描项目中的 TypeScript/JavaScript 文件
-        const scanDirs = ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'server', 'src/server']
+        const scanDirs = collectScanDirs(projectRoot, config)
         for (const dir of scanDirs) {
-          const fullPath = path.join(process.cwd(), dir)
-          if (fs.existsSync(fullPath)) {
-            const scanned = scanDirectory(fullPath, process.cwd())
+          if (fs.existsSync(dir)) {
+            const scanned = scanDirectory(dir, projectRoot)
             files.push(...scanned)
           }
         }
@@ -93,14 +97,14 @@ export function serveCommand(program: Command): void {
           console.log(chalk.gray(`\nScanning ${files.length} files...`))
 
           const result = await builder.parseFiles(files, {
-            projectRoot: process.cwd(),
+            projectRoot,
             projectMeta,
             tsConfig: null,
             pathAliases: {},
           })
 
           // 跨层连线
-          const tsConfigPath = findTsConfig(process.cwd())
+          const tsConfigPath = findTsConfig(projectRoot)
           const linker = new CrossLayerLinker(tsConfigPath)
           const graph = builder.loadGraph()
           const crossLayerResult = await linker.link(graph)
