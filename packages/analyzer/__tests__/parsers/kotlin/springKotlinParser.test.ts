@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import * as path from 'path'
 import { SpringKotlinParser } from '../../../src/parsers/kotlin/springKotlinParser'
-import type { ProjectMeta, ParseContext } from '@omnivis/shared'
+import type { ProjectMeta, ParseContext, KotlinRouteMetadata } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../../fixtures/kotlin')
 
@@ -59,7 +59,7 @@ describe('SpringKotlinParser', () => {
       const routes = result.nodes.filter(n => n.type === 'kotlin_route')
       expect(routes.length).toBeGreaterThanOrEqual(3) // GET, POST, DELETE
 
-      const methods = routes.map(n => (n.metadata as any).method)
+      const methods = routes.map(n => (n.metadata as KotlinRouteMetadata).method)
       expect(methods).toContain('GET')
       expect(methods).toContain('POST')
       expect(methods).toContain('DELETE')

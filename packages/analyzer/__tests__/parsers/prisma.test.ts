@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
 import { PrismaParser } from '../../src/parsers/prisma'
-import type { ParseContext, ProjectMeta } from '@omnivis/shared'
+import type { ParseContext, ProjectMeta, DbModelMetadata } from '@codeomnivis/shared'
 
 // ============================================================
 // 测试数据
@@ -107,7 +107,7 @@ describe('PrismaParser', () => {
       expect(userNode).toBeDefined()
       expect(userNode?.metadata).toBeDefined()
 
-      const metadata = userNode?.metadata as any
+      const metadata = userNode?.metadata as DbModelMetadata
       expect(metadata.tableName).toBe('users')
       expect(metadata.fieldCount).toBeGreaterThan(0)
       expect(metadata.fields).toBeInstanceOf(Array)

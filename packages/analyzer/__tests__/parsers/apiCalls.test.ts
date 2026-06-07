@@ -5,7 +5,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
 import { ApiCallsParser } from '../../src/parsers/apiCalls'
-import type { ParseContext, ProjectMeta } from '@omnivis/shared'
+import type { ParseContext, ProjectMeta } from '@codeomnivis/shared'
+import type { CallsApiMetadata } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures')
 
@@ -62,7 +63,7 @@ describe('ApiCallsParser', () => {
       const result = await parser.parse('components/BookingList.tsx', context)
 
       const fetchEdge = result.edges.find(e =>
-        (e.metadata as any).callType === 'fetch'
+        (e.metadata as CallsApiMetadata).callType === 'fetch'
       )
 
       expect(fetchEdge).toBeDefined()
@@ -73,7 +74,7 @@ describe('ApiCallsParser', () => {
       const result = await parser.parse('components/BookingList.tsx', context)
 
       const trpcEdge = result.edges.find(e =>
-        (e.metadata as any).callType === 'trpc_hook'
+        (e.metadata as CallsApiMetadata).callType === 'trpc_hook'
       )
 
       expect(trpcEdge).toBeDefined()
@@ -84,10 +85,10 @@ describe('ApiCallsParser', () => {
       const result = await parser.parse('components/BookingList.tsx', context)
 
       const fetchEdge = result.edges.find(e =>
-        (e.metadata as any).callType === 'fetch'
+        (e.metadata as CallsApiMetadata).callType === 'fetch'
       )
 
-      expect((fetchEdge?.metadata as any).method).toBe('POST')
+      expect((fetchEdge?.metadata as CallsApiMetadata).method).toBe('POST')
     })
 
     it('should handle non-existent file gracefully', async () => {

@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
 import { TrpcParser } from '../../src/parsers/trpc'
-import type { ParseContext, ProjectMeta } from '@omnivis/shared'
+import type { ParseContext, ProjectMeta, TrpcProcedureMetadata } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures')
 
@@ -81,12 +81,12 @@ describe('TrpcParser', () => {
 
       const createProc = result.nodes.find(n => n.name === 'create')
       if (createProc) {
-        expect((createProc.metadata as any).procedureType).toBe('mutation')
+        expect((createProc.metadata as TrpcProcedureMetadata).procedureType).toBe('mutation')
       }
 
       const listProc = result.nodes.find(n => n.name === 'list')
       if (listProc) {
-        expect((listProc.metadata as any).procedureType).toBe('query')
+        expect((listProc.metadata as TrpcProcedureMetadata).procedureType).toBe('query')
       }
     })
 

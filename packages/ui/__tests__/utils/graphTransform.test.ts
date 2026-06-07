@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { graphToCytoscapeElements } from '../../src/utils/graphTransform'
-import type { OmniGraph, OmniNode, OmniEdge } from '@omnivis/shared'
+import type { OmniGraph, OmniNode, OmniEdge } from '@codeomnivis/shared'
 
 const nodeA: OmniNode = {
   id: 'page:app/page.tsx:/',
@@ -101,7 +101,7 @@ describe('graphToCytoscapeElements', () => {
   it('节点颜色来自 NODE_COLORS', () => {
     const graph: OmniGraph = { nodes: [nodeA], edges: [] }
     const elements = graphToCytoscapeElements(graph)
-    const nodeEl = elements[0] as any
+    const nodeEl = elements[0] as { data: { color: string } }
     expect(nodeEl.data.color).toBe('#6366f1') // page 颜色
   })
 })

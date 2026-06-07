@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 import * as path from 'path'
 import * as fs from 'fs'
 import { KotlinParser } from '../../../src/parsers/kotlin/kotlinParser'
-import type { ProjectMeta, ParseContext } from '@omnivis/shared'
+import type { ProjectMeta, ParseContext, KotlinClassMetadata } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../../fixtures/kotlin')
 
@@ -72,7 +72,7 @@ describe('KotlinParser', () => {
       )
       expect(dataClass).toBeDefined()
       if (dataClass) {
-        const meta = dataClass.metadata as any
+        const meta = dataClass.metadata as KotlinClassMetadata
         expect(meta.kind).toBe('data')
         expect(meta.packageName).toBe('com.example.demo.controller')
       }

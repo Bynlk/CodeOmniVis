@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
 import { NextjsAppParser } from '../../src/parsers/nextjsApp'
-import type { ParseContext, ProjectMeta } from '@omnivis/shared'
+import type { ParseContext, ProjectMeta, PageMetadata, ApiRouteMetadata } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures')
 
@@ -79,7 +79,7 @@ describe('NextjsAppParser', () => {
 
     it('should detect dynamic routes', async () => {
       const result = await parser.parse('app/booking/[id]/page.tsx', context)
-      const metadata = result.nodes[0].metadata as any
+      const metadata = result.nodes[0].metadata as PageMetadata
 
       expect(metadata.isDynamic).toBe(true)
       expect(metadata.params).toContain('id')
@@ -87,7 +87,7 @@ describe('NextjsAppParser', () => {
 
     it('should extract HTTP methods from route', async () => {
       const result = await parser.parse('app/api/booking/route.ts', context)
-      const metadata = result.nodes[0].metadata as any
+      const metadata = result.nodes[0].metadata as ApiRouteMetadata
 
       expect(metadata.method).toContain('GET')
       expect(metadata.method).toContain('POST')
