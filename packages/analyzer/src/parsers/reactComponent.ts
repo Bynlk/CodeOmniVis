@@ -120,6 +120,18 @@ export class ReactComponentParser implements Parser {
         }
       }
 
+      // export default function ComponentName() {} 或 export default function()
+      if (Node.isFunctionDeclaration(node)) {
+        const isDefaultExport = node.isDefaultExport?.() || false
+        if (isDefaultExport) {
+          const name = node.getName() || this.inferComponentNameFromPath(filePath)
+          const props = this.extractPropsFromFunction(node)
+          const hasState = this.detectUseState(node)
+          const componentNode = this.createComponentNode(name, filePath, node.getStartLineNumber(), 'function', props, hasState)
+          components.push({ node: componentNode, name })
+        }
+      }
+
       // export const ComponentName = () => {}
       if (Node.isVariableDeclaration(node)) {
         const name = node.getName()
@@ -138,6 +150,33 @@ export class ReactComponentParser implements Parser {
     })
 
     return components
+  }
+
+  /**
+   * 从文件路径推断组件名
+   * app/booking/page.tsx → BookingPage
+   * components/BookingList.tsx → BookingList
+   */
+  private inferComponentNameFromPath(filePath: string): string {
+    const normalized = filePath.replace(/\\/g, '/')
+    const parts = normalized.split('/')
+    const fileName = parts[parts.length - 1] || ''
+
+    // page.tsx → 取父目录名 + "Page"
+    if (/^page\.(tsx|jsx|ts|js)$/.test(fileName)) {
+      const dirName = parts[parts.length - 2] || 'Page'
+      return this.toPascalCase(dirName) + 'Page'
+    }
+
+    // 其他文件 → 取文件名（不含扩展名）
+    const baseName = fileName.replace(/\.(tsx|jsx|ts|js)$/, '')
+    return this.toPascalCase(baseName)
+  }
+
+  private toPascalCase(str: string): string {
+    return str
+      .replace(/[-_](\w)/g, (_, c: string) => c.toUpperCase())
+      .replace(/^(\w)/, (_, c: string) => c.toUpperCase())
   }
 
   /**
