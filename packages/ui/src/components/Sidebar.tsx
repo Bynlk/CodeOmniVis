@@ -1,5 +1,5 @@
-import type { OmniGraph, OmniNode, NodeType } from '@omnivis/shared'
-import { NODE_COLORS } from '@omnivis/shared'
+import type { OmniGraph, OmniNode, NodeType } from '@codeomnivis/shared'
+import { NODE_COLORS } from '@codeomnivis/shared'
 import { useTranslation } from 'react-i18next'
 
 interface SidebarProps {

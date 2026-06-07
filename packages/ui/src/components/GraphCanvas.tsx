@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react'
 import cytoscape from 'cytoscape'
 import { useTranslation } from 'react-i18next'
-import type { OmniGraph } from '@omnivis/shared'
+import type { OmniGraph } from '@codeomnivis/shared'
 import { graphToCytoscapeElements } from '../utils/graphTransform'
 import { getCytoscapeStyle } from '../utils/cytoscapeConfig'
 import { NodeTooltip } from './Graph/NodeTooltip'

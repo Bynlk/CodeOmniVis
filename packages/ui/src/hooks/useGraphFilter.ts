@@ -2,8 +2,8 @@ import { useState, useCallback, useRef } from 'react'
 import { useCytoscapeInstance } from '../lib/cytoscapeContext'
 import { NODE_TYPE_LIST } from '../lib/nodeConfig'
 import { EDGE_TYPE_LIST } from '../lib/edgeConfig'
-import type { NodeType } from '@omnivis/shared'
-import type { EdgeType } from '@omnivis/shared'
+import type { NodeType } from '@codeomnivis/shared'
+import type { EdgeType } from '@codeomnivis/shared'
 
 interface GraphFilterState {
   nodeTypeFilter: Set<NodeType>

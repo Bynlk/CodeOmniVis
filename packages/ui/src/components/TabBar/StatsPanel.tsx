@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
-import type { NodeType } from '@omnivis/shared'
+import type { NodeType } from '@codeomnivis/shared'
 
 interface StatsResponse {
   nodeCount: number
@@ -35,7 +35,7 @@ export function StatsPanel() {
   }
 
   const nodeTypes = Object.entries(stats?.nodeTypeCounts ?? {}) as [NodeType, number][]
-  const totalNodes = stats?.nodeCount || 1
+  const totalNodes = stats?.nodeCount ?? 0
   const isolatedCount = stats?.nodeTypeCounts?.['module'] ?? 0
 
   return (

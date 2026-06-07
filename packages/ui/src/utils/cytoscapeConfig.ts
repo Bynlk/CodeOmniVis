@@ -10,18 +10,23 @@ import { NODE_EMOJI, NODE_COLORS } from '../lib/nodeConfig'
 
 /**
  * 获取 Cytoscape 样式配置
+ *
+ * 使用 `as unknown as cytoscape.Css.Node/Edge` 处理函数 mapper：
+ * Cytoscape.js 允许样式值为 `(ele) => value` 函数，但 @types/cytoscape
+ * 的 CSS 类型定义不支持此模式。`as unknown as` 比 `as any` 更安全，
+ * 因为它强制显式转换且保留了类型意图。
  */
-export function getCytoscapeStyle(): any[] {
+export function getCytoscapeStyle(): cytoscape.StylesheetJson {
   return [
     // 节点基础样式 — emoji + 文字在节点内
     {
       selector: 'node',
       style: {
-        'background-color': (node: any) => {
+        'background-color': (node: cytoscape.SingularElementReturnValue) => {
           const type = node.data('type') as NodeType
           return NODE_COLORS[type] ?? '#6b7280'
         },
-        'label': (node: any) => {
+        'label': (node: cytoscape.SingularElementReturnValue) => {
           const type = node.data('type') as NodeType
           const label = node.data('label') as string
           const emoji = NODE_EMOJI[type] ?? '●'
@@ -42,7 +47,7 @@ export function getCytoscapeStyle(): any[] {
         'padding': '8px',
         'shape': 'roundrectangle',
         'corner-radius': '8',
-      } as any,
+      } as unknown as cytoscape.Css.Node,
     },
 
     // 节点类型样式（保留特化样式）
@@ -51,7 +56,7 @@ export function getCytoscapeStyle(): any[] {
       style: {
         'border-width': 2,
         'border-color': '#f472b6',
-      } as any,
+      } as unknown as cytoscape.Css.Node,
     },
 
     // 边基础样式
@@ -66,7 +71,7 @@ export function getCytoscapeStyle(): any[] {
         'control-point-step-size': 40,
         'arrow-scale': 0.7,
         'opacity': 0.7,
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
 
     // 边类型样式
@@ -75,7 +80,7 @@ export function getCytoscapeStyle(): any[] {
       style: {
         'line-color': '#ec4899',
         'target-arrow-color': '#ec4899',
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
     {
       selector: 'edge[type="renders"]',
@@ -83,7 +88,7 @@ export function getCytoscapeStyle(): any[] {
         'line-color': '#06b6d4',
         'target-arrow-color': '#06b6d4',
         'width': 1.5,
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
     {
       selector: 'edge[type="calls_api"]',
@@ -91,21 +96,21 @@ export function getCytoscapeStyle(): any[] {
         'line-color': '#10b981',
         'target-arrow-color': '#10b981',
         'width': 2,
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
     {
       selector: 'edge[type="handles"]',
       style: {
         'line-color': '#f59e0b',
         'target-arrow-color': '#f59e0b',
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
     {
       selector: 'edge[type="calls_service"]',
       style: {
         'line-color': '#ef4444',
         'target-arrow-color': '#ef4444',
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
     {
       selector: 'edge[type="queries_db"]',
@@ -113,7 +118,7 @@ export function getCytoscapeStyle(): any[] {
         'line-color': '#ec4899',
         'target-arrow-color': '#ec4899',
         'width': 2,
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
     {
       selector: 'edge[type="kotlin_inherits"]',
@@ -121,7 +126,7 @@ export function getCytoscapeStyle(): any[] {
         'line-color': '#a855f7',
         'target-arrow-color': '#a855f7',
         'line-style': 'dashed',
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
     {
       selector: 'edge[type="kotlin_implements"]',
@@ -129,7 +134,7 @@ export function getCytoscapeStyle(): any[] {
         'line-color': '#3b82f6',
         'target-arrow-color': '#3b82f6',
         'line-style': 'dashed',
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
     {
       selector: 'edge[type="kotlin_uses"]',
@@ -137,7 +142,7 @@ export function getCytoscapeStyle(): any[] {
         'line-color': '#64748b',
         'target-arrow-color': '#64748b',
         'opacity': 0.5,
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
 
     // 置信度样式 — inferred 边用虚线
@@ -147,7 +152,7 @@ export function getCytoscapeStyle(): any[] {
         'line-style': 'dashed',
         'line-dash-pattern': [6, 3],
         'opacity': 0.6,
-      } as any,
+      } as unknown as cytoscape.Css.Edge,
     },
 
     // 选中状态
@@ -158,7 +163,7 @@ export function getCytoscapeStyle(): any[] {
         'border-color': '#3b82f6',
         'background-color': '#1d4ed8',
         'font-weight': 'bold',
-      } as any,
+      } as unknown as cytoscape.Css.Node,
     },
 
     // 高亮状态
@@ -166,7 +171,7 @@ export function getCytoscapeStyle(): any[] {
       selector: '.highlighted',
       style: {
         'opacity': 1,
-      } as any,
+      } as unknown as cytoscape.Css.Node,
     },
 
     // 非高亮状态（淡化）
@@ -174,7 +179,7 @@ export function getCytoscapeStyle(): any[] {
       selector: 'node:active',
       style: {
         'overlay-opacity': 0.1,
-      } as any,
+      } as unknown as cytoscape.Css.Node,
     },
   ]
 }

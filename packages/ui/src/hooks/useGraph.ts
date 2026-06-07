@@ -5,7 +5,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import type { OmniGraph } from '@omnivis/shared'
+import type { OmniGraph } from '@codeomnivis/shared'
 
 // ============================================================
 // API 函数

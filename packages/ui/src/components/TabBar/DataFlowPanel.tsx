@@ -30,7 +30,7 @@ async function fetchAllModels(): Promise<{ id: string; name: string }[]> {
   const res = await fetch('/api/graph/nodes?type=db_model')
   if (!res.ok) return []
   const json = await res.json()
-  return (json.data ?? []).map((n: any) => ({ id: n.id, name: n.name }))
+  return (json.data ?? []).map((n: { id: string; name: string }) => ({ id: n.id, name: n.name }))
 }
 
 export function DataFlowPanel() {
