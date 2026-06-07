@@ -1,5 +1,5 @@
 /**
- * OmniVis 边类型定义
+ * CodeOmniVis 边类型定义
  *
  * 所有解析器输出的边必须符合 OmniEdge 接口。
  * 边 ID 格式：{sourceId}--{type}--{targetId}

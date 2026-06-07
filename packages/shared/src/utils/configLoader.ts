@@ -1,21 +1,21 @@
 /**
  * 配置文件加载器
  *
- * 加载 .omnivis.json 配置文件，与默认值合并。
+ * 加载 .codeomnivis.json 配置文件，与默认值合并。
  * 遵循"降级而非崩溃"原则：配置文件不存在或解析失败时使用默认值。
  */
 
 import * as fs from 'fs'
 import * as path from 'path'
-import type { OmniVisConfig } from '../types/config'
+import type { CodeOmniVisConfig } from '../types/config'
 
-const CONFIG_FILENAME = '.omnivis.json'
+const CONFIG_FILENAME = '.codeomnivis.json'
 
 /**
  * 加载项目配置
- * 优先级：.omnivis.json > 默认值
+ * 优先级：.codeomnivis.json > 默认值
  */
-export function loadConfig(projectRoot: string): OmniVisConfig {
+export function loadConfig(projectRoot: string): CodeOmniVisConfig {
   const configPath = path.join(projectRoot, CONFIG_FILENAME)
 
   if (!fs.existsSync(configPath)) {
@@ -24,10 +24,10 @@ export function loadConfig(projectRoot: string): OmniVisConfig {
 
   try {
     const raw = fs.readFileSync(configPath, 'utf-8')
-    const parsed = JSON.parse(raw) as Partial<OmniVisConfig>
+    const parsed = JSON.parse(raw) as Partial<CodeOmniVisConfig>
     return mergeWithDefaults(parsed, projectRoot)
   } catch (err) {
-    console.warn(`[omnivis] Failed to parse ${CONFIG_FILENAME}: ${err}. Using defaults.`)
+    console.warn(`[codeomnivis] Failed to parse ${CONFIG_FILENAME}: ${err}. Using defaults.`)
     return getDefaultConfig(projectRoot)
   }
 }
@@ -35,11 +35,11 @@ export function loadConfig(projectRoot: string): OmniVisConfig {
 /**
  * 获取默认配置
  */
-function getDefaultConfig(projectRoot: string): OmniVisConfig {
+function getDefaultConfig(projectRoot: string): CodeOmniVisConfig {
   return {
     root: projectRoot,
-    frontend: { dirs: [], framework: 'auto' as any },
-    backend: { dirs: [], framework: 'auto' as any },
+    frontend: { dirs: [], framework: 'auto' },
+    backend: { dirs: [], framework: 'auto' },
     database: {},
     exclude: ['node_modules', 'dist', '.next', 'coverage', '.git'],
     port: 4321,
@@ -50,9 +50,9 @@ function getDefaultConfig(projectRoot: string): OmniVisConfig {
  * 将用户配置与默认值合并
  */
 function mergeWithDefaults(
-  partial: Partial<OmniVisConfig>,
+  partial: Partial<CodeOmniVisConfig>,
   projectRoot: string
-): OmniVisConfig {
+): CodeOmniVisConfig {
   const defaults = getDefaultConfig(projectRoot)
   return {
     ...defaults,

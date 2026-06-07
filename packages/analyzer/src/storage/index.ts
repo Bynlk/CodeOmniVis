@@ -1,5 +1,5 @@
 /**
- * @omnivis/analyzer/storage — SQLite 存储层
+ * @codeomnivis/analyzer/storage — SQLite 存储层
  *
  * 提供图数据的持久化存储。
  * 使用 better-sqlite3 实现高性能同步操作。

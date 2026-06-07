@@ -1,5 +1,5 @@
 /**
- * OmniVis 节点类型定义
+ * CodeOmniVis 节点类型定义
  *
  * 所有解析器输出的节点必须符合 OmniNode 接口。
  * 节点 ID 格式：{type}:{filePath}:{name}

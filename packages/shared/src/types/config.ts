@@ -1,11 +1,11 @@
 /**
- * OmniVis 配置文件类型定义
+ * CodeOmniVis 配置文件类型定义
  *
- * 对应 .omnivis.json 配置文件。
+ * 对应 .codeomnivis.json 配置文件。
  * "零配置"意味着无需配置也能运行，但支持可选配置覆盖默认行为。
  */
 
-export interface OmniVisConfig {
+export interface CodeOmniVisConfig {
   /** 项目根目录（默认 "."） */
   root?: string
 
@@ -13,16 +13,16 @@ export interface OmniVisConfig {
   frontend?: {
     /** 前端源码目录 */
     dirs?: string[]
-    /** 前端框架 */
-    framework?: 'next' | 'react' | 'vue'
+    /** 前端框架（auto = 自动检测） */
+    framework?: 'next' | 'react' | 'vue' | 'auto'
   }
 
   /** 后端配置 */
   backend?: {
     /** 后端源码目录 */
     dirs?: string[]
-    /** 后端框架 */
-    framework?: 'express' | 'trpc' | 'fastify'
+    /** 后端框架（auto = 自动检测） */
+    framework?: 'express' | 'trpc' | 'fastify' | 'auto'
   }
 
   /** 数据库配置 */
