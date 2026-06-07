@@ -1,6 +1,6 @@
 # Skill: Error Handling
 
-> OmniVis 错误处理模式。核心原则：降级而非崩溃。
+> CodeOmniVis 错误处理模式。核心原则：降级而非崩溃。
 
 ## 适用场景
 

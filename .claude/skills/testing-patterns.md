@@ -1,6 +1,6 @@
 # Skill: Testing Patterns
 
-> OmniVis 测试开发指南。基于 Vitest。
+> CodeOmniVis 测试开发指南。基于 Vitest。
 
 ## 适用场景
 
@@ -31,7 +31,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { xxxParser } from '../../src/parsers/xxx'
 import path from 'path'
-import type { ParseContext, ProjectMeta } from '@omnivis/shared'
+import type { ParseContext, ProjectMeta } from '@codeomnivis/shared'
 
 const FIXTURES = path.resolve(__dirname, '../fixtures')
 
@@ -136,16 +136,16 @@ describe('xxxParser', () => {
 pnpm test
 
 # 运行指定包的测试
-pnpm --filter @omnivis/analyzer test
+pnpm --filter @codeomnivis/analyzer test
 
 # 运行指定测试文件
-pnpm --filter @omnivis/analyzer test -- prisma.test.ts
+pnpm --filter @codeomnivis/analyzer test -- prisma.test.ts
 
 # 监听模式
-pnpm --filter @omnivis/analyzer test:watch
+pnpm --filter @codeomnivis/analyzer test:watch
 
 # 带覆盖率
-pnpm --filter @omnivis/analyzer test --coverage
+pnpm --filter @codeomnivis/analyzer test --coverage
 ```
 
 ## Fixture 管理

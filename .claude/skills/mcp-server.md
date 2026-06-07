@@ -1,6 +1,6 @@
 # Skill: MCP Server Development
 
-> OmniVis MCP Server 开发指南。基于 @modelcontextprotocol/sdk。
+> CodeOmniVis MCP Server 开发指南。基于 @modelcontextprotocol/sdk。
 
 ## 适用场景
 
@@ -25,7 +25,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js'
 
 const server = new Server(
-  { name: 'omnivis', version: '1.0.0' },
+  { name: 'codeomnivis', version: '1.0.0' },
   { capabilities: { tools: {} } },
 )
 
@@ -83,7 +83,7 @@ async function handleGetApiRoutes(args: unknown) {
     includeDbCalls?: boolean
   }
 
-  const db = new Database('./omnivis.db', { readonly: true })
+  const db = new Database('./codeomnivis.db', { readonly: true })
 
   try {
     // 查询所有 API 路由节点
@@ -158,7 +158,7 @@ echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_api_ro
 // .cursor/mcp.json
 {
   "mcpServers": {
-    "omnivis": {
+    "codeomnivis": {
       "command": "node",
       "args": ["packages/mcp/dist/index.js"],
       "cwd": "${workspaceFolder}"
@@ -173,7 +173,7 @@ echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_api_ro
 // ~/Library/Application Support/Claude/claude_desktop_config.json
 {
   "mcpServers": {
-    "omnivis": {
+    "codeomnivis": {
       "command": "node",
       "args": ["/absolute/path/to/packages/mcp/dist/index.js"]
     }

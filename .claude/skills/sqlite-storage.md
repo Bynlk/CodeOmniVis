@@ -1,6 +1,6 @@
 # Skill: SQLite Storage
 
-> OmniVis 数据存储层开发指南。基于 better-sqlite3。
+> CodeOmniVis 数据存储层开发指南。基于 better-sqlite3。
 
 ## 适用场景
 

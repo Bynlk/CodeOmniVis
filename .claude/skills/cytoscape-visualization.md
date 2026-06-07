@@ -1,6 +1,6 @@
 # Skill: Cytoscape.js Visualization
 
-> OmniVis 可视化前端开发指南。基于 React + Cytoscape.js + Tailwind CSS。
+> CodeOmniVis 可视化前端开发指南。基于 React + Cytoscape.js + Tailwind CSS。
 
 ## 适用场景
 
@@ -147,8 +147,8 @@ export function useCytoscape(containerRef: React.RefObject<HTMLDivElement>) {
 
 ```typescript
 // lib/graphTransform.ts
-import type { OmniGraph } from '@omnivis/shared'
-import { NODE_COLORS } from '@omnivis/shared'
+import type { OmniGraph } from '@codeomnivis/shared'
+import { NODE_COLORS } from '@codeomnivis/shared'
 
 export function graphToCytoscape(graph: OmniGraph): cytoscape.ElementDefinition[] {
   const nodes = graph.nodes.map(node => ({

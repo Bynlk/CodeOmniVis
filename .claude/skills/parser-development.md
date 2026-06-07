@@ -1,6 +1,6 @@
 # Skill: Parser Development
 
-> 编写 OmniVis 解析器的专用指南。每个解析器遵循统一模式。
+> 编写 CodeOmniVis 解析器的专用指南。每个解析器遵循统一模式。
 
 ## 适用场景
 
@@ -14,7 +14,7 @@
 所有解析器必须实现 `Parser` 接口：
 
 ```typescript
-import type { Parser, ParseContext, ParseResult, ProjectMeta } from '@omnivis/shared'
+import type { Parser, ParseContext, ParseResult, ProjectMeta } from '@codeomnivis/shared'
 
 export const xxxParser: Parser = {
   name: 'xxx',
@@ -61,7 +61,7 @@ export const xxxParser: Parser = {
 ## 节点 ID 生成
 
 ```typescript
-import { createNodeId } from '@omnivis/shared'
+import { createNodeId } from '@codeomnivis/shared'
 
 // ✅ 正确
 const id = createNodeId('db_model', schemaPath, model.name)
@@ -74,7 +74,7 @@ const id = `db_model:${schemaPath}:${model.name}`
 ## 边的生成规则
 
 ```typescript
-import { createEdgeId } from '@omnivis/shared'
+import { createEdgeId } from '@codeomnivis/shared'
 
 // 生成边时必须：
 // 1. 验证 source 和 target 节点存在
@@ -158,7 +158,7 @@ describe('xxxParser', () => {
 ```typescript
 import { prismaParser } from './prisma'
 import { trpcParser } from './trpc'
-import type { Parser } from '@omnivis/shared'
+import type { Parser } from '@codeomnivis/shared'
 
 export const parsers: Parser[] = [
   prismaParser,

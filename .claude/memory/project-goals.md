@@ -1,6 +1,6 @@
 ---
 name: project-goals
-description: OmniVis 项目核心目标和优先级
+description: CodeOmniVis 项目核心目标和优先级
 metadata:
   type: project
 ---
@@ -15,7 +15,7 @@ metadata:
 3. 功能完整性 — 能用就行，不求完美
 4. 解析深度 — 可以有误报，不能崩溃
 
-**核心卖点**：`npx omnivis serve` → 60 秒内看到整个 TypeScript 全栈项目的架构图。
+**核心卖点**：`npx codeomnivis serve` → 60 秒内看到整个 TypeScript 全栈项目的架构图。
 
 **目标用户**：
 - 主要：加入新项目需要快速上手的全栈工程师

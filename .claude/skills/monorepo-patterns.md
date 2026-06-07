@@ -20,22 +20,22 @@ pnpm install
 pnpm build
 
 # 构建单个包
-pnpm --filter @omnivis/analyzer build
+pnpm --filter @codeomnivis/analyzer build
 
 # 运行单个包的测试
-pnpm --filter @omnivis/analyzer test
+pnpm --filter @codeomnivis/analyzer test
 
 # 运行所有测试
 pnpm test
 
 # 添加依赖到指定包
-pnpm --filter @omnivis/analyzer add ts-morph
+pnpm --filter @codeomnivis/analyzer add ts-morph
 
 # 添加开发依赖
-pnpm --filter @omnivis/analyzer add -D vitest
+pnpm --filter @codeomnivis/analyzer add -D vitest
 
 # 添加 workspace 内部依赖
-pnpm --filter @omnivis/server add @omnivis/shared@workspace:*
+pnpm --filter @codeomnivis/server add @codeomnivis/shared@workspace:*
 ```
 
 ## 包间依赖规则
@@ -52,7 +52,7 @@ cli           ← shared, analyzer, server
 **规则**：
 - 下游包不能被上游包依赖（禁止循环）
 - ui 包不直接 import 其他包（通过 HTTP 访问）
-- 所有包通过 `@omnivis/shared` 共享类型
+- 所有包通过 `@codeomnivis/shared` 共享类型
 
 ## 新建包的步骤
 
@@ -101,7 +101,7 @@ cli           ← shared, analyzer, server
 
 ```bash
 # 查看包依赖图
-pnpm why @omnivis/shared
+pnpm why @codeomnivis/shared
 
 # 清除构建缓存
 pnpm clean
