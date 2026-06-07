@@ -23,6 +23,8 @@ async function fetchDataFlow(model?: string): Promise<DataFlowResult[]> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Failed to fetch dataflow: ${res.statusText}`)
   const json = await res.json()
+  // 处理 null/undefined 的情况
+  if (!json.data) return []
   return Array.isArray(json.data) ? json.data : [json.data]
 }
 

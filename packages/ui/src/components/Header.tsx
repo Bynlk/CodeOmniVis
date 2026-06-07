@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { LangToggle } from './Header/LangToggle'
@@ -13,18 +13,6 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
   const [isRefreshing, setIsRefreshing] = useState(false)
-
-  // Cmd+K / Ctrl+K 快捷键聚焦搜索框
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        inputRef.current?.focus()
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [])
 
   const handleRefresh = async () => {
     setIsRefreshing(true)

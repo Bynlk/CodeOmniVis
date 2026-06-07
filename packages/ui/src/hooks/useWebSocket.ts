@@ -4,7 +4,7 @@
  * 监听服务器 graph_updated 事件，自动刷新图数据。
  */
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
 interface WebSocketOptions {
@@ -21,6 +21,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
   const wsRef = useRef<WebSocket | null>(null)
   const queryClient = useQueryClient()
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
 
   const connect = useCallback(() => {
     if (!enabled) return
@@ -31,6 +32,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
 
       ws.onopen = () => {
         console.log('WebSocket connected')
+        setIsConnected(true)
       }
 
       ws.onmessage = (event) => {
@@ -50,6 +52,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
       ws.onclose = () => {
         console.log('WebSocket disconnected')
         wsRef.current = null
+        setIsConnected(false)
 
         // 自动重连（3 秒后）
         if (enabled) {
@@ -79,10 +82,11 @@ export function useWebSocket(options: WebSocketOptions = {}) {
         wsRef.current.close()
         wsRef.current = null
       }
+      setIsConnected(false)
     }
   }, [connect])
 
   return {
-    isConnected: wsRef.current?.readyState === WebSocket.OPEN,
+    isConnected,
   }
 }

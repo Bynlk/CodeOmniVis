@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
+import { useCytoscapeRef } from '../../lib/cytoscapeContext'
 import type { NodeType } from '@codeomnivis/shared'
 import type cytoscape from 'cytoscape'
 
@@ -15,19 +16,16 @@ interface TooltipData {
   edgeCount: { in: number; out: number }
 }
 
-interface NodeTooltipProps {
-  cyRef: React.RefObject<cytoscape.Core | null>
-}
-
 const HOVER_DELAY_MS = 600
 
-export function NodeTooltip({ cyRef }: NodeTooltipProps) {
+export function NodeTooltip() {
   const { t } = useTranslation()
+  const cyRef = useCytoscapeRef()
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const cy = cyRef.current
+    const cy = cyRef?.current
     if (!cy) return
 
     const onMouseOver = (evt: cytoscape.EventObject) => {
@@ -73,7 +71,7 @@ export function NodeTooltip({ cyRef }: NodeTooltipProps) {
       cy.off('tap', 'node', onMouseOut)
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [cyRef])
+  }, [cyRef]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!tooltip) return null
 

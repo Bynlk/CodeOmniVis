@@ -87,7 +87,7 @@ function App() {
   }, [graph, selectedNode])
 
   return (
-    <CytoscapeContext.Provider value={cyRef.current}>
+    <CytoscapeContext.Provider value={cyRef}>
       <div className="flex flex-col h-screen bg-slate-900">
         {/* 命令面板 */}
         <CommandPalette

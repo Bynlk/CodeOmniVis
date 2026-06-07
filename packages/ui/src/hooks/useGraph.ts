@@ -31,6 +31,13 @@ async function fetchGraph(): Promise<GraphResponse> {
   return response.json()
 }
 
+// 深度比较函数，用于避免不必要的重渲染
+function isGraphEqual(a: OmniGraph | undefined, b: OmniGraph | undefined): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  return a.nodes.length === b.nodes.length && a.edges.length === b.edges.length
+}
+
 // ============================================================
 // Hook
 // ============================================================
@@ -40,6 +47,13 @@ export function useGraph() {
     queryKey: ['graph'],
     queryFn: fetchGraph,
     select: (data) => data.data,
-    refetchInterval: 5000, // 每 5 秒自动刷新
+    refetchInterval: 30000, // 改为 30 秒，主要依赖 WebSocket 推送
+    structuralSharing: (oldData, newData) => {
+      // 如果数据结构相同，返回旧引用避免重渲染
+      if (isGraphEqual(oldData as OmniGraph, newData as OmniGraph)) {
+        return oldData
+      }
+      return newData
+    },
   })
 }

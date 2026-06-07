@@ -180,7 +180,7 @@ export default function GraphCanvas({ graph, selectedNode, onNodeSelect, onCyIni
         aria-label={t('graph.canvasLabel')}
         role="img"
       />
-      <NodeTooltip cyRef={cyRef} />
+      <NodeTooltip />
     </>
   )
 }

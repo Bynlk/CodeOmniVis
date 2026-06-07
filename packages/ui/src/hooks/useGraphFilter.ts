@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from 'react'
-import { useCytoscapeInstance } from '../lib/cytoscapeContext'
+import { useState, useCallback, useRef, useEffect } from 'react'
+import { useCytoscapeRef } from '../lib/cytoscapeContext'
 import { NODE_TYPE_LIST } from '../lib/nodeConfig'
 import { EDGE_TYPE_LIST } from '../lib/edgeConfig'
 import type { NodeType } from '@codeomnivis/shared'
@@ -12,22 +12,26 @@ interface GraphFilterState {
   showIsolated: boolean
 }
 
-// 默认全开
-const DEFAULT_STATE: GraphFilterState = {
-  nodeTypeFilter: new Set(NODE_TYPE_LIST),
-  edgeTypeFilter: new Set(EDGE_TYPE_LIST),
-  confidenceFilter: new Set(['certain', 'inferred']),
-  showIsolated: true,
+// 创建默认状态的工厂函数（避免共享可变对象）
+function createDefaultState(): GraphFilterState {
+  return {
+    nodeTypeFilter: new Set(NODE_TYPE_LIST),
+    edgeTypeFilter: new Set(EDGE_TYPE_LIST),
+    confidenceFilter: new Set(['certain', 'inferred']),
+    showIsolated: true,
+  }
 }
 
 export function useGraphFilter() {
-  const [state, setState] = useState<GraphFilterState>(DEFAULT_STATE)
-  const cy = useCytoscapeInstance()
+  const [state, setState] = useState<GraphFilterState>(createDefaultState)
+  const cyRef = useCytoscapeRef()
 
   // 保存 viewport 的 ref
   const savedViewport = useRef<{ pan: { x: number; y: number }; zoom: number } | null>(null)
 
-  const applyFilter = useCallback((newState: GraphFilterState) => {
+  // 使用 useEffect 监听 state 变化并应用过滤
+  useEffect(() => {
+    const cy = cyRef?.current
     if (!cy) return
 
     // 保存当前视口（首次筛选时保存）
@@ -45,8 +49,8 @@ export function useGraphFilter() {
         const hasEdges = node.degree() > 0
         const isIsolated = !hasEdges
 
-        const typeVisible = newState.nodeTypeFilter.has(type)
-        const isolatedVisible = newState.showIsolated || !isIsolated
+        const typeVisible = state.nodeTypeFilter.has(type)
+        const isolatedVisible = state.showIsolated || !isIsolated
 
         node.style('display', typeVisible && isolatedVisible ? 'element' : 'none')
       })
@@ -56,8 +60,8 @@ export function useGraphFilter() {
         const edgeType = edge.data('type') as EdgeType
         const confidence = edge.data('confidence') as 'certain' | 'inferred'
 
-        const typeVisible = newState.edgeTypeFilter.has(edgeType)
-        const confVisible = newState.confidenceFilter.has(confidence)
+        const typeVisible = state.edgeTypeFilter.has(edgeType)
+        const confVisible = state.confidenceFilter.has(confidence)
 
         edge.style('display', typeVisible && confVisible ? 'element' : 'none')
       })
@@ -65,7 +69,7 @@ export function useGraphFilter() {
 
     // 恢复视口（不 fit！）
     cy.viewport({ zoom: currentZoom, pan: currentPan })
-  }, [cy])
+  }, [state, cyRef]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleNodeType = useCallback((type: NodeType) => {
     setState(prev => {
@@ -75,10 +79,9 @@ export function useGraphFilter() {
       } else {
         next.nodeTypeFilter.add(type)
       }
-      applyFilter(next)
       return next
     })
-  }, [applyFilter])
+  }, [])
 
   const toggleEdgeType = useCallback((type: EdgeType) => {
     setState(prev => {
@@ -88,10 +91,9 @@ export function useGraphFilter() {
       } else {
         next.edgeTypeFilter.add(type)
       }
-      applyFilter(next)
       return next
     })
-  }, [applyFilter])
+  }, [])
 
   const toggleConfidence = useCallback((c: 'certain' | 'inferred') => {
     setState(prev => {
@@ -101,28 +103,23 @@ export function useGraphFilter() {
       } else {
         next.confidenceFilter.add(c)
       }
-      applyFilter(next)
       return next
     })
-  }, [applyFilter])
+  }, [])
 
   const setShowIsolated = useCallback((show: boolean) => {
-    setState(prev => {
-      const next = { ...prev, showIsolated: show }
-      applyFilter(next)
-      return next
-    })
-  }, [applyFilter])
+    setState(prev => ({ ...prev, showIsolated: show }))
+  }, [])
 
   const resetFilters = useCallback(() => {
-    setState(DEFAULT_STATE)
-    applyFilter(DEFAULT_STATE)
+    setState(createDefaultState())
     // 重置后恢复 fit
+    const cy = cyRef?.current
     if (cy) {
       cy.fit(undefined, 40)
       savedViewport.current = null
     }
-  }, [applyFilter, cy])
+  }, [cyRef])
 
   return {
     nodeTypeFilter: state.nodeTypeFilter,

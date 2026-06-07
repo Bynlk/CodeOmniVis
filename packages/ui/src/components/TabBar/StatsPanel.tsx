@@ -36,7 +36,8 @@ export function StatsPanel() {
 
   const nodeTypes = Object.entries(stats?.nodeTypeCounts ?? {}) as [NodeType, number][]
   const totalNodes = stats?.nodeCount ?? 0
-  const isolatedCount = stats?.nodeTypeCounts?.['module'] ?? 0
+  // module 是聚合节点，不是孤立节点；暂时显示 0，后续需要从 API 获取真实孤立节点数
+  const isolatedCount = 0
 
   return (
     <div className="p-4 grid grid-cols-4 gap-6">

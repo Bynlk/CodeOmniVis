@@ -23,6 +23,9 @@ export function AiPanel() {
     try {
       // 获取当前图数据作为上下文
       const graphRes = await fetch('/api/graph')
+      if (!graphRes.ok) {
+        throw new Error(`Failed to fetch graph: ${graphRes.status}`)
+      }
       const graphData = await graphRes.json()
 
       // 构建 prompt
@@ -41,6 +44,8 @@ export function AiPanel() {
       if (res.ok) {
         const data = await res.json()
         setMessages(prev => [...prev, { role: 'assistant', content: data.response ?? t('ai.noResponse') }])
+      } else if (res.status === 429) {
+        setMessages(prev => [...prev, { role: 'assistant', content: 'Rate limit exceeded. Please try again later.' }])
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: t('ai.serviceUnavailable') }])
       }
