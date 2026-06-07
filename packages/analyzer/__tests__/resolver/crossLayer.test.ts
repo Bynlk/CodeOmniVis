@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { CrossLayerLinker } from '../../src/resolver/crossLayer'
-import type { OmniGraph, OmniNode, OmniEdge } from '@omnivis/shared'
+import type { OmniGraph, OmniNode, OmniEdge } from '@codeomnivis/shared'
 
 describe('CrossLayerLinker', () => {
   let linker: CrossLayerLinker

@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import * as path from 'path'
 import { ExposedParser } from '../../../src/parsers/kotlin/exposedParser'
-import type { ProjectMeta, ParseContext } from '@omnivis/shared'
+import type { ProjectMeta, ParseContext } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../../fixtures/kotlin')
 

@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { TypeormParser } from '../../src/parsers/typeorm'
-import type { ProjectMeta } from '@omnivis/shared'
+import type { ProjectMeta } from '@codeomnivis/shared'
 
 const typeormMeta: ProjectMeta = {
   root: '/project',

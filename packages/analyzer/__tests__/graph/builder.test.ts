@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { GraphBuilder } from '../../src/graph/builder'
 import { OmniDatabase } from '../../src/storage/db'
-import type { OmniNode, OmniEdge, Parser, ParseContext, ProjectMeta, ParseResult } from '@omnivis/shared'
+import type { OmniNode, OmniEdge, Parser, ParseContext, ProjectMeta, ParseResult } from '@codeomnivis/shared'
 
 // 辅助函数
 function makeNode(id: string, type: OmniNode['type'] = 'page'): OmniNode {

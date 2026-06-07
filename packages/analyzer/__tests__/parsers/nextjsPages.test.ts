@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { NextjsPagesParser } from '../../src/parsers/nextjsPages'
-import type { ProjectMeta } from '@omnivis/shared'
+import type { ProjectMeta } from '@codeomnivis/shared'
 
 const projectMeta: ProjectMeta = {
   root: '/project',

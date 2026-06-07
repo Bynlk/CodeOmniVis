@@ -10,7 +10,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { OmniDatabase } from '../../src/storage/db'
-import type { OmniNode, OmniEdge } from '@omnivis/shared'
+import type { OmniNode, OmniEdge } from '@codeomnivis/shared'
 
 // ============================================================
 // 测试数据

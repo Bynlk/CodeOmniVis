@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
 import { ReactComponentParser } from '../../src/parsers/reactComponent'
-import type { ParseContext, ProjectMeta } from '@omnivis/shared'
+import type { ParseContext, ProjectMeta } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures')
 

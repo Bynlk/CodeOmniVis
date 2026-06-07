@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { ConsistencyChecker } from '../../src/graph/consistency'
-import type { OmniGraph, OmniNode, OmniEdge } from '@omnivis/shared'
+import type { OmniGraph, OmniNode, OmniEdge } from '@codeomnivis/shared'
 
 const checker = new ConsistencyChecker()
 

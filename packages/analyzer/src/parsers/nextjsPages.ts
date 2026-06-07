@@ -19,8 +19,8 @@ import type {
   ProjectMeta,
   PageMetadata,
   ApiRouteMetadata,
-} from '@omnivis/shared'
-import { createNodeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId } from '@codeomnivis/shared'
 
 // ============================================================
 // Next.js Pages Router 解析器

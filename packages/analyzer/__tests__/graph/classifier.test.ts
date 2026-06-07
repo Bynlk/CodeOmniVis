@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { classifyFile } from '../../src/classifier'
-import type { ProjectMeta } from '@omnivis/shared'
+import type { ProjectMeta } from '@codeomnivis/shared'
 
 const baseMeta: ProjectMeta = {
   root: '/project',

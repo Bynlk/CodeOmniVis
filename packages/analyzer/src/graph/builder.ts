@@ -5,6 +5,8 @@
  * 遵循"边的 source/target 必须存在"原则。
  */
 
+import * as fs from 'fs'
+import * as path from 'path'
 import type {
   OmniGraph,
   OmniNode,
@@ -12,7 +14,8 @@ import type {
   ParseResult,
   Parser,
   ParseContext,
-} from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createEdgeId } from '@codeomnivis/shared'
 import { OmniDatabase } from '../storage/db'
 
 // ============================================================
@@ -87,6 +90,10 @@ export class GraphBuilder {
 
     // 去重节点
     const uniqueNodes = this.deduplicateNodes(allNodes)
+
+    // 后处理：所有节点→组件 renders 边（跨 package 连接）
+    const componentEdges = this.linkComponents(uniqueNodes, context.projectRoot)
+    allEdges.push(...componentEdges)
 
     // 验证边的 source/target 存在，并去重
     const { validEdges, skippedEdges } = this.validateAndDeduplicateEdges(allEdges, uniqueNodes)
@@ -178,6 +185,99 @@ export class GraphBuilder {
       validEdges: Array.from(seen.values()),
       skippedEdges,
     }
+  }
+
+  /**
+   * 通用组件连接：扫描所有节点的源文件，匹配 JSX→组件关系
+   * 支持页面、组件、handler 等所有节点类型
+   * 使用正则匹配（轻量级，不依赖 ts-morph）
+   */
+  private linkComponents(nodes: OmniNode[], projectRoot: string): OmniEdge[] {
+    const edges: OmniEdge[] = []
+
+    // 构建组件名→节点映射
+    const componentMap = new Map<string, OmniNode[]>()
+    for (const node of nodes) {
+      if (node.type === 'component') {
+        const existing = componentMap.get(node.name) || []
+        existing.push(node)
+        componentMap.set(node.name, existing)
+      }
+    }
+
+    // 构建已有的 renders 边集合（避免重复）
+    const existingRenders = new Set<string>()
+    for (const node of nodes) {
+      // 这里只能从 nodes 推断，实际 edges 在后续步骤
+    }
+
+    // 需要扫描的节点类型
+    const scanTypes = new Set(['page', 'component', 'handler'])
+    const scanNodes = nodes.filter(n => scanTypes.has(n.type))
+
+    for (const node of scanNodes) {
+      try {
+        const fullPath = path.resolve(projectRoot, node.filePath)
+        if (!fs.existsSync(fullPath)) continue
+
+        const content = fs.readFileSync(fullPath, 'utf-8')
+
+        // 解析 import：组件名 → 是否已导入
+        const importedNames = new Set<string>()
+        const importRegex = /import\s+(?:\{([^}]+)\}|(\w+))\s+from\s+['"]([^'"]+)['"]/g
+        let m: RegExpExecArray | null
+
+        while ((m = importRegex.exec(content)) !== null) {
+          if (m[0].includes('import type')) continue
+          const named = m[1]
+          const def = m[2]
+          if (named) {
+            for (const n of named.split(',').map(s => s.trim().split(/\s+as\s+/)[0].trim())) {
+              if (n && /^[A-Z]/.test(n)) importedNames.add(n)
+            }
+          }
+          if (def && /^[A-Z]/.test(def)) importedNames.add(def)
+        }
+
+        // 查找 JSX 使用
+        const jsxRegex = /<([A-Z]\w*)(?:[\s/>])/g
+        const usedComponents = new Set<string>()
+        while ((m = jsxRegex.exec(content)) !== null) {
+          const tag = m[1]
+          if (!['Fragment', 'Suspense', 'ErrorBoundary', 'Head', 'Script'].includes(tag)) {
+            usedComponents.add(tag)
+          }
+        }
+
+        // 创建 renders 边
+        for (const compName of usedComponents) {
+          if (!importedNames.has(compName)) continue
+          const candidates = componentMap.get(compName)
+          if (!candidates || candidates.length === 0) continue
+
+          // 优先选择同目录或相近路径的组件
+          const compNode = candidates.find(c => c.filePath !== node.filePath) || candidates[0]
+          if (compNode.id === node.id) continue
+
+          const edgeId = `${node.id}--renders--${compNode.id}`
+          if (!existingRenders.has(edgeId)) {
+            existingRenders.add(edgeId)
+            edges.push({
+              id: edgeId,
+              source: node.id,
+              target: compNode.id,
+              type: 'renders',
+              confidence: 'inferred',
+              metadata: {},
+            })
+          }
+        }
+      } catch {
+        // 降级
+      }
+    }
+
+    return edges
   }
 
   /**

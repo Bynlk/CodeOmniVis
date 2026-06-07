@@ -1,5 +1,5 @@
 /**
- * @omnivis/analyzer — 代码分析引擎
+ * @codeomnivis/analyzer — 代码分析引擎
  *
  * 负责解析 TypeScript 全栈项目，提取前端组件、后端 API、数据库关系三层结构。
  * 所有解析器遵循统一接口，输出标准化的 OmniGraph 数据。
@@ -34,7 +34,7 @@ export type { DbCall, TraceResult } from './resolver/symbolResolver'
 
 // 一致性检测
 export { ConsistencyChecker } from './graph/consistency'
-export type { ConsistencyReport } from '@omnivis/shared'
+export type { ConsistencyReport } from '@codeomnivis/shared'
 
 // 数据流追踪
 export { DataFlowTracer } from './resolver/dataFlowTracer'

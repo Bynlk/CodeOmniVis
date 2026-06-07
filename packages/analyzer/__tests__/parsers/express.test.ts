@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { ExpressParser } from '../../src/parsers/express'
-import type { ProjectMeta } from '@omnivis/shared'
+import type { ProjectMeta } from '@codeomnivis/shared'
 
 const expressMeta: ProjectMeta = {
   root: '/project',

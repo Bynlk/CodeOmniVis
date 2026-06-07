@@ -5,7 +5,7 @@
  * 支持：Next.js Pages/App Router、tRPC、Express
  */
 
-import type { ProjectMeta } from '@omnivis/shared'
+import type { ProjectMeta } from '@codeomnivis/shared'
 
 // ============================================================
 // 文件类型枚举

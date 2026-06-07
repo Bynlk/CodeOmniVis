@@ -18,8 +18,8 @@ import type {
   ProjectMeta,
   ModuleMetadata,
   NodeType,
-} from '@omnivis/shared'
-import { createNodeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId } from '@codeomnivis/shared'
 
 // ============================================================
 // NestJS Module 解析器

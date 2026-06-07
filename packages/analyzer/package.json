@@ -1,7 +1,7 @@
 {
-  "name": "@omnivis/analyzer",
+  "name": "@codeomnivis/analyzer",
   "version": "0.0.1",
-  "description": "Code analysis engine for OmniVis",
+  "description": "Code analysis engine for CodeOmniVis",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -10,7 +10,7 @@
   },
   "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
   "keywords": [
-    "omnivis",
+    "codeomnivis",
     "architecture",
     "visualization",
     "typescript",
@@ -41,13 +41,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@omnivis/shared": "workspace:*",
+    "@codeomnivis/shared": "workspace:*",
     "@prisma/internals": "^5.0.0",
     "fast-glob": "^3.3.0",
     "sql.js": "^1.10.0",
     "tree-sitter-wasms": "^0.1.13",
     "ts-morph": "^21.0.0",
-    "web-tree-sitter": "^0.26.9"
+    "web-tree-sitter": "^0.20.8"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
