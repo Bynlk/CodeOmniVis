@@ -10,4 +10,8 @@ export const EDGE_TYPE_LIST: EdgeType[] = [
   'db_relation',
   'imports',
   'contains',
+  'kotlin_inherits',
+  'kotlin_implements',
+  'kotlin_uses',
+  'data_flows_to',
 ]
