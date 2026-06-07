@@ -24,6 +24,9 @@ export type IssueType =
   | 'dead_component'      // 组件没有被渲染
   | 'dead_service'        // Service 没有被调用
   | 'circular_dependency' // 循环依赖
+  | 'n_plus_one_query'    // N+1 查询：循环内的 DB 调用
+  | 'unguarded_route'     // API 路由没有鉴权
+  | 'rsc_boundary_violation' // RSC 边界违规
 
 // ============================================================
 // 问题位置

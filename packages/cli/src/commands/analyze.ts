@@ -13,7 +13,7 @@ import * as path from 'path'
 import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
-import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@codeomnivis/analyzer'
+import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker, NPlusOneDetector, AuthDetector, RSCBoundaryDetector } from '@codeomnivis/analyzer'
 
 export function analyzeCommand(program: Command): void {
   program
@@ -100,6 +100,17 @@ export function analyzeCommand(program: Command): void {
           db.upsertNodes(syntheticNodes)
         }
 
+        // 6. 深度分析检测器
+        const nPlusOneDetector = new NPlusOneDetector()
+        const authDetector = new AuthDetector()
+        const rscBoundaryDetector = new RSCBoundaryDetector()
+
+        const allIssues = [
+          ...nPlusOneDetector.detect(graph, projectRoot),
+          ...authDetector.detect(graph, projectRoot),
+          ...rscBoundaryDetector.detect(graph, projectRoot),
+        ]
+
         spinner.succeed(chalk.green('Analysis complete!'))
 
         // 输出统计信息
@@ -118,6 +129,36 @@ export function analyzeCommand(program: Command): void {
           console.log(`  handles:        ${crossLayerResult.stats.handlesEdges}`)
           console.log(`  calls_service:  ${crossLayerResult.stats.callsServiceEdges}`)
           console.log(`  queries_db:     ${crossLayerResult.stats.queriesDbEdges}`)
+        }
+
+        // 输出 Issues
+        if (allIssues.length > 0) {
+          console.log('')
+          console.log(chalk.red(`Issues Found: ${allIssues.length}`))
+          const byType: Record<string, number> = {}
+          for (const issue of allIssues) {
+            byType[issue.type] = (byType[issue.type] || 0) + 1
+          }
+          for (const [type, count] of Object.entries(byType)) {
+            const severity = allIssues.find(i => i.type === type)?.severity || 'info'
+            const color = severity === 'critical' ? chalk.red : severity === 'warning' ? chalk.yellow : chalk.gray
+            console.log(color(`  ${type}: ${count}`))
+          }
+          // 显示 critical issues 详情
+          const criticals = allIssues.filter(i => i.severity === 'critical')
+          if (criticals.length > 0) {
+            console.log('')
+            console.log(chalk.red('Critical issues:'))
+            for (const issue of criticals.slice(0, 10)) {
+              console.log(chalk.red(`  ⚠ ${issue.description}`))
+              if (issue.locations[0]) {
+                console.log(chalk.gray(`    at ${issue.locations[0].file}:${issue.locations[0].line}`))
+              }
+            }
+            if (criticals.length > 10) {
+              console.log(chalk.gray(`  ... and ${criticals.length - 10} more`))
+            }
+          }
         }
 
         // 输出 JSON（使用包含跨层结果的 graph）

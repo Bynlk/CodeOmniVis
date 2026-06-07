@@ -22,6 +22,7 @@ export function serveCommand(program: Command): void {
     .description('Start CodeOmniVis server and visualize your project')
     .option('-p, --port <port>', 'Server port', '4321')
     .option('-h, --host <host>', 'Server host', 'localhost')
+    .option('--project <path>', 'Project root path', '.')
     .option('--no-open', 'Do not open browser automatically')
     .action(async (options) => {
       const spinner = ora('Starting CodeOmniVis server...').start()
@@ -34,8 +35,8 @@ export function serveCommand(program: Command): void {
         const projectMeta = await autoDetectProject(projectRoot, config)
 
         // 提示配置文件状态
-        const configPath = require('path').join(projectRoot, '.codeomnivis.json')
-        if (require('fs').existsSync(configPath)) {
+        const configPath = path.join(projectRoot, '.codeomnivis.json')
+        if (fs.existsSync(configPath)) {
           console.log(chalk.gray('Configuration loaded from .codeomnivis.json'))
         }
 
@@ -112,6 +113,14 @@ export function serveCommand(program: Command): void {
           if (crossLayerResult.edges.length > 0) {
             server.db.upsertEdges(crossLayerResult.edges)
           }
+          // 将跨层连线产生的 synthetic 节点写入 DB
+          const syntheticNodes = graph.nodes.filter(n => 'isSynthetic' in n.metadata && (n.metadata as { isSynthetic?: boolean }).isSynthetic)
+          if (syntheticNodes.length > 0) {
+            server.db.upsertNodes(syntheticNodes)
+          }
+
+          // 从 DB 加载最终图（包含所有节点和边）
+          const finalGraph = server.db.loadGraph()
 
           spinner.succeed(chalk.green(`Server running at http://${options.host}:${options.port}`))
 
@@ -119,8 +128,8 @@ export function serveCommand(program: Command): void {
           console.log('')
           console.log(chalk.blue('Analysis results:'))
           console.log(`  Files scanned: ${files.length}`)
-          console.log(`  Nodes: ${result.stats.totalNodes}`)
-          console.log(`  Edges: ${result.stats.totalEdges + crossLayerResult.edges.length}`)
+          console.log(`  Nodes: ${finalGraph.nodes.length}`)
+          console.log(`  Edges: ${finalGraph.edges.length}`)
 
           // 跨层连线统计
           if (crossLayerResult.edges.length > 0) {

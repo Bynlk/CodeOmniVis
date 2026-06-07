@@ -39,3 +39,8 @@ export type { ConsistencyReport } from '@codeomnivis/shared'
 // 数据流追踪
 export { DataFlowTracer } from './resolver/dataFlowTracer'
 export type { DataFlowPath, DataFlowEdge, DataFlowResult } from './resolver/dataFlowTracer'
+
+// 深度分析检测器
+export { NPlusOneDetector } from './resolver/nPlusOneDetector'
+export { AuthDetector } from './resolver/authDetector'
+export { RSCBoundaryDetector } from './resolver/rscBoundaryDetector'
