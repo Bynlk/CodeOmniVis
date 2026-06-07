@@ -5,7 +5,7 @@
  * 节点 label 带 Emoji 前缀，inferred 边用虚线。
  */
 
-import type { NodeType } from '@omnivis/shared'
+import type { NodeType } from '@codeomnivis/shared'
 import { NODE_EMOJI, NODE_COLORS } from '../lib/nodeConfig'
 
 /**

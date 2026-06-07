@@ -48,7 +48,7 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <h1 className="text-xl font-bold text-white">
-            <span className="text-primary-400">Omni</span>Vis
+            <span className="text-primary-400">Code</span>Omni<span className="text-primary-400">Vis</span>
           </h1>
           <span className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">
             {t('header.subtitle')}

@@ -55,3 +55,4 @@ byresume-graph.json
 # Analysis output
 cal-com-analysis.json
 cal-com-full-graph.json
+self-analysis.json
