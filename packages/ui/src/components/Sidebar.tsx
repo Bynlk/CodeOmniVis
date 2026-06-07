@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { OmniGraph, OmniNode, NodeType } from '@codeomnivis/shared'
 import { NODE_COLORS } from '@codeomnivis/shared'
 import { useTranslation } from 'react-i18next'
@@ -11,16 +12,18 @@ interface SidebarProps {
 export default function Sidebar({ graph, selectedNode, onNodeSelect }: SidebarProps) {
   const { t } = useTranslation()
 
-  // 按类型分组节点
-  const nodesByType = graph?.nodes.reduce((acc, node) => {
-    if (!acc[node.type]) {
-      acc[node.type] = []
-    }
-    acc[node.type].push(node)
-    return acc
-  }, {} as Record<NodeType, OmniNode[]>) || {}
+  // 按类型分组节点（使用 useMemo 避免每次渲染重新计算）
+  const nodesByType = useMemo(() => {
+    return graph?.nodes.reduce((acc, node) => {
+      if (!acc[node.type]) {
+        acc[node.type] = []
+      }
+      acc[node.type].push(node)
+      return acc
+    }, {} as Record<NodeType, OmniNode[]>) || {}
+  }, [graph?.nodes])
 
-  const nodeTypes = Object.keys(nodesByType) as NodeType[]
+  const nodeTypes = useMemo(() => Object.keys(nodesByType) as NodeType[], [nodesByType])
 
   return (
     <aside className="w-64 bg-slate-800 border-r border-slate-700 overflow-y-auto">

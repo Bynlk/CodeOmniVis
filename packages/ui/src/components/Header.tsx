@@ -13,19 +13,24 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [refreshError, setRefreshError] = useState<string | null>(null)
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
+    setRefreshError(null)
     try {
       // 调用 /api/analyze 触发重新分析
       const res = await fetch('/api/analyze', { method: 'POST' })
       if (!res.ok) {
-        console.error('Refresh failed:', res.status, res.statusText)
+        const errorMsg = `Refresh failed: ${res.status} ${res.statusText}`
+        setRefreshError(errorMsg)
+        return
       }
       // 让 React Query 重新拉取图数据
       await queryClient.invalidateQueries({ queryKey: ['graph'] })
     } catch (err) {
-      console.error('Refresh error:', err)
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+      setRefreshError(errorMsg)
     } finally {
       setIsRefreshing(false)
     }

@@ -23,7 +23,7 @@ export function StatsPanel() {
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ['graph-stats'],
     queryFn: fetchStats,
-    refetchInterval: 5000,
+    refetchInterval: 30000, // 主要依赖 WebSocket 推送
   })
 
   if (isLoading) {
@@ -72,7 +72,7 @@ export function StatsPanel() {
                 <span
                   className="h-2 rounded-full"
                   style={{
-                    width: `${Math.max(8, (count / totalNodes) * 200)}px`,
+                    width: `${totalNodes > 0 ? Math.max(8, (count / totalNodes) * 200) : 8}px`,
                     backgroundColor: NODE_COLORS[type] ?? '#6b7280',
                   }}
                 />

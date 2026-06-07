@@ -1,13 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-
-interface Issue {
-  file: string
-  message: string
-  severity: 'error' | 'warning' | 'info'
-  originalError?: string
-  type?: string
-}
+import type { Issue, IssueSeverity } from '@codeomnivis/shared'
 
 // 问题类型 → emoji 映射
 const ISSUE_EMOJI: Record<string, string> = {
@@ -19,11 +12,14 @@ const ISSUE_EMOJI: Record<string, string> = {
   unused_route: '📭',
   method_mismatch: '⚡',
   missing_procedure: '❓',
+  n_plus_one_query: '🔁',
+  unguarded_route: '🔓',
+  rsc_boundary_violation: '⚠️',
 }
 
 function getIssueEmoji(issue: Issue): string {
   if (issue.type && ISSUE_EMOJI[issue.type]) return ISSUE_EMOJI[issue.type]
-  if (issue.severity === 'error') return '❌'
+  if (issue.severity === 'critical') return '❌'
   if (issue.severity === 'warning') return '⚠️'
   return 'ℹ️'
 }
@@ -32,7 +28,7 @@ async function fetchErrors(): Promise<Issue[]> {
   const res = await fetch('/api/graph/errors')
   if (!res.ok) throw new Error(`Failed to fetch errors: ${res.statusText}`)
   const json = await res.json()
-  return json.data as Issue[]
+  return (json.data ?? []) as Issue[]
 }
 
 export function IssuesPanel() {
@@ -40,7 +36,7 @@ export function IssuesPanel() {
   const { data: issues, isLoading, error } = useQuery({
     queryKey: ['graph-errors'],
     queryFn: fetchErrors,
-    refetchInterval: 5000,
+    refetchInterval: 30000, // 主要依赖 WebSocket 推送
   })
 
   if (isLoading) {
@@ -61,8 +57,8 @@ export function IssuesPanel() {
   }
 
   // 按严重度分组
-  const grouped = {
-    error: issues.filter(i => i.severity === 'error'),
+  const grouped: Record<IssueSeverity, Issue[]> = {
+    critical: issues.filter(i => i.severity === 'critical'),
     warning: issues.filter(i => i.severity === 'warning'),
     info: issues.filter(i => i.severity === 'info'),
   }
@@ -71,8 +67,8 @@ export function IssuesPanel() {
     <div className="p-4 max-h-56 overflow-y-auto">
       {/* 统计 */}
       <div className="flex gap-4 mb-3">
-        {grouped.error.length > 0 && (
-          <span className="text-xs text-red-400">❌ {grouped.error.length} {t('issues.errors')}</span>
+        {grouped.critical.length > 0 && (
+          <span className="text-xs text-red-400">❌ {grouped.critical.length} {t('issues.errors')}</span>
         )}
         {grouped.warning.length > 0 && (
           <span className="text-xs text-yellow-400">⚠️ {grouped.warning.length} {t('issues.warnings')}</span>
@@ -84,17 +80,22 @@ export function IssuesPanel() {
 
       {/* 问题列表 */}
       <div className="space-y-2">
-        {issues.map((issue, idx) => (
+        {issues.map((issue) => (
           <div
-            key={idx}
+            key={issue.id}
             className="flex items-start gap-2 text-sm p-2 rounded bg-slate-700/50"
           >
             <span className="mt-0.5">
               {getIssueEmoji(issue)}
             </span>
             <div className="flex-1 min-w-0">
-              <div className="text-slate-300 break-words">{issue.message}</div>
-              <div className="text-xs text-slate-500 mt-0.5 truncate">{issue.file}</div>
+              <div className="text-slate-300 break-words">{issue.description}</div>
+              {issue.locations[0] && (
+                <div className="text-xs text-slate-500 mt-0.5 truncate">
+                  {issue.locations[0].file}
+                  {issue.locations[0].line ? `:${issue.locations[0].line}` : ''}
+                </div>
+              )}
             </div>
           </div>
         ))}

@@ -117,8 +117,9 @@ export default function NodeDetailPanel({
         <button
           className="w-full py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm transition-colors"
           onClick={() => {
-            // 尝试用 vscode:// 协议打开
-            const vscodeUrl = `vscode://file/${node.filePath}:${node.line}`
+            // 尝试用 vscode:// 协议打开（处理路径中的特殊字符）
+            const normalizedPath = node.filePath.replace(/\\/g, '/')
+            const vscodeUrl = `vscode://file/${normalizedPath}:${node.line}`
             window.open(vscodeUrl, '_blank')
           }}
         >

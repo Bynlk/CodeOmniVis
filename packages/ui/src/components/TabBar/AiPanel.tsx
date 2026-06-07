@@ -1,9 +1,15 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 interface AiMessage {
+  id: string
   role: 'user' | 'assistant'
   content: string
+}
+
+let messageIdCounter = 0
+function generateId(): string {
+  return `msg-${++messageIdCounter}-${Date.now()}`
 }
 
 export function AiPanel() {
@@ -11,18 +17,23 @@ export function AiPanel() {
   const [messages, setMessages] = useState<AiMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || isLoading) return
 
     const userMessage = input.trim()
     setInput('')
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    setMessages(prev => [...prev, { id: generateId(), role: 'user', content: userMessage }])
     setIsLoading(true)
+
+    // 创建新的 AbortController
+    const controller = new AbortController()
+    abortControllerRef.current = controller
 
     try {
       // 获取当前图数据作为上下文
-      const graphRes = await fetch('/api/graph')
+      const graphRes = await fetch('/api/graph', { signal: controller.signal })
       if (!graphRes.ok) {
         throw new Error(`Failed to fetch graph: ${graphRes.status}`)
       }
@@ -39,20 +50,26 @@ export function AiPanel() {
           message: userMessage,
           context,
         }),
+        signal: controller.signal,
       })
 
       if (res.ok) {
         const data = await res.json()
-        setMessages(prev => [...prev, { role: 'assistant', content: data.response ?? t('ai.noResponse') }])
+        setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: data.response ?? t('ai.noResponse') }])
       } else if (res.status === 429) {
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Rate limit exceeded. Please try again later.' }])
+        setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: 'Rate limit exceeded. Please try again later.' }])
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: t('ai.serviceUnavailable') }])
+        setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: t('ai.serviceUnavailable') }])
       }
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: t('ai.serviceUnavailable') }])
+    } catch (err) {
+      // 忽略 abort 错误
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: t('ai.serviceUnavailable') }])
     } finally {
-      setIsLoading(false)
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null
+        setIsLoading(false)
+      }
     }
   }, [input, isLoading])
 
@@ -66,9 +83,9 @@ export function AiPanel() {
             <p className="text-xs mt-1">{t('ai.askAboutArchitecture')}</p>
           </div>
         )}
-        {messages.map((msg, idx) => (
+        {messages.map((msg) => (
           <div
-            key={idx}
+            key={msg.id}
             className={`text-sm p-2 rounded ${
               msg.role === 'user'
                 ? 'bg-primary-600/20 text-primary-200 ml-8'
