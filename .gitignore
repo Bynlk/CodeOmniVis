@@ -37,8 +37,8 @@ coverage/
 # Vite
 *.local
 
-# OmniVis output
-.omnivis/
+# CodeOmniVis output
+.codeomnivis/
 *.db
 *.db-journal
 *.db-wal

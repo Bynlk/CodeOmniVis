@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest a new feature for OmniVis
+about: Suggest a new feature for CodeOmniVis
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''

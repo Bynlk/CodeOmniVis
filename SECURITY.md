@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in OmniVis, please report it responsibly.
+If you discover a security vulnerability in CodeOmniVis, please report it responsibly.
 
 **Do NOT open a public issue for security vulnerabilities.**
 
@@ -29,7 +29,7 @@ Instead, please email the maintainers directly or use [GitHub's private vulnerab
 
 ## Security Considerations
 
-OmniVis runs locally and analyzes your source code. It does:
+CodeOmniVis runs locally and analyzes your source code. It does:
 
 - Read files from your local project directory
 - Parse TypeScript/JavaScript source code

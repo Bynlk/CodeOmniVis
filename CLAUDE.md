@@ -1,4 +1,4 @@
-# CLAUDE.md — OmniVis 项目 Claude Code 工作指南
+# CLAUDE.md — CodeOmniVis 项目 Claude Code 工作指南
 
 > 本文件是 Claude Code 在本项目中工作的唯一权威指南。
 > 所有 AI 生成的代码必须遵守本文件和 `docs/rules/ai-development-rules.md` 中的规则。
@@ -7,9 +7,9 @@
 
 ## 项目概述
 
-**OmniVis** 是一个零配置 CLI 工具，为 TypeScript 全栈项目（Next.js + tRPC/Express + Prisma/TypeORM）自动生成交互式拓扑图，连接前端组件、后端 API、数据库关系三层结构。
+**CodeOmniVis** 是一个零配置 CLI 工具，为 TypeScript 全栈项目（Next.js + tRPC/Express + Prisma/TypeORM）自动生成交互式拓扑图，连接前端组件、后端 API、数据库关系三层结构。
 
-**核心卖点**：`npx omnivis serve` → 60 秒内看到整个项目的全栈架构图。
+**核心卖点**：`npx codeomnivis serve` → 60 秒内看到整个项目的全栈架构图。
 
 **目标**：GitHub 影响力优先。视觉效果 > 解析深度，demo 体验 > 功能完整性。
 
@@ -35,7 +35,7 @@
 ## 项目结构
 
 ```
-omnivis/
+codeomnivis/
 ├── packages/
 │   ├── shared/       # 共享类型（OmniNode, OmniEdge, OmniGraph）
 │   ├── analyzer/     # 解析引擎（parsers/ + resolver/ + graph/ + storage/）
@@ -180,10 +180,10 @@ pnpm build
 pnpm test
 
 # 启动开发模式
-pnpm --filter @omnivis/cli dev serve
+pnpm --filter @codeomnivis/cli dev serve
 
 # 构建单个包
-pnpm --filter @omnivis/analyzer build
+pnpm --filter @codeomnivis/analyzer build
 ```
 
 ---
@@ -242,7 +242,7 @@ pnpm --filter @omnivis/analyzer build
 | 文档 | 用途 |
 |------|------|
 | `docs/README.md` | 文档总索引 |
-| `docs/superpowers/specs/2026-06-06-omnivis-design.md` | 设计文档 |
+| `docs/superpowers/specs/2026-06-06-codeomnivis-design.md` | 设计文档 |
 | `docs/plans/development-plan.md` | 开发计划（含验证规则） |
 | `docs/rules/ai-development-rules.md` | AI 约束规则（详细版） |
 | `docs/project-directory.md` | 完整目录结构 |

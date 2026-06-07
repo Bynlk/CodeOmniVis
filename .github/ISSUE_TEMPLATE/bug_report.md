@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug to help us improve OmniVis
+about: Report a bug to help us improve CodeOmniVis
 title: '[BUG] '
 labels: bug
 assignees: ''
@@ -12,7 +12,7 @@ A clear and concise description of the bug.
 
 ## 🔄 Steps to Reproduce
 
-1. Run `npx omnivis ...`
+1. Run `npx codeomnivis ...`
 2. ...
 3. See error
 
@@ -28,7 +28,7 @@ What actually happened.
 
 - **OS**: [e.g. Windows 11, macOS 15, Ubuntu 24]
 - **Node.js version**: [e.g. 18.19.0]
-- **OmniVis version**: [e.g. 0.1.0]
+- **CodeOmniVis version**: [e.g. 0.1.0]
 - **Project framework**: [e.g. Next.js 14 + tRPC + Prisma]
 
 ## 📎 Error Output

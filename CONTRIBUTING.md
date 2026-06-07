@@ -1,4 +1,4 @@
-# Contributing to OmniVis
+# Contributing to CodeOmniVis
 
 Thanks for your interest in contributing! 🎉
 
@@ -37,13 +37,13 @@ packages/
 
 ```bash
 # Start CLI in dev mode
-pnpm --filter @omnivis/cli dev serve
+pnpm --filter @codeomnivis/cli dev serve
 
 # Build a single package
-pnpm --filter @omnivis/analyzer build
+pnpm --filter @codeomnivis/analyzer build
 
 # Watch mode for UI
-pnpm --filter @omnivis/ui dev
+pnpm --filter @codeomnivis/ui dev
 ```
 
 ## 🧪 Testing
@@ -53,7 +53,7 @@ pnpm --filter @omnivis/ui dev
 pnpm test
 
 # Run tests for a specific package
-pnpm --filter @omnivis/analyzer test
+pnpm --filter @codeomnivis/analyzer test
 ```
 
 - Each parser needs at least 3 tests: normal input, error input, edge case
