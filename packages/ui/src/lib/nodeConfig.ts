@@ -1,5 +1,5 @@
-import type { NodeType } from '@omnivis/shared'
-import { NODE_COLORS } from '@omnivis/shared'
+import type { NodeType } from '@codeomnivis/shared'
+import { NODE_COLORS } from '@codeomnivis/shared'
 
 export { NODE_COLORS }
 

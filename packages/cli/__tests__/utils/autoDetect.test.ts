@@ -12,7 +12,7 @@ describe('autoDetectProject', () => {
   let tmpDir: string
 
   beforeAll(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'omnivis-detect-'))
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeomnivis-detect-'))
   })
 
   afterAll(() => {

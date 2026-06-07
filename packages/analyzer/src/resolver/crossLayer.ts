@@ -7,8 +7,8 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import type { OmniGraph, OmniNode, OmniEdge, EdgeType, ComponentMetadata, CallsApiMetadata, PageMetadata, ApiRouteMetadata, TrpcProcedureMetadata } from '@omnivis/shared'
-import { createEdgeId } from '@omnivis/shared'
+import type { OmniGraph, OmniNode, OmniEdge, EdgeType, ComponentMetadata, CallsApiMetadata, PageMetadata, ApiRouteMetadata, TrpcProcedureMetadata } from '@codeomnivis/shared'
+import { createEdgeId } from '@codeomnivis/shared'
 import * as fs from 'fs'
 import * as path from 'path'
 import { SymbolResolver, type DbCall } from './symbolResolver'
@@ -428,21 +428,32 @@ export class CrossLayerLinker {
     const handlerNodes = graph.nodes.filter(n => n.type === 'handler')
     const serviceNodes = graph.nodes.filter(n => n.type === 'service')
 
+    // 预构建 service 节点索引（name + filePath）
+    const serviceByName = new Map<string, OmniNode[]>()
+    for (const s of serviceNodes) {
+      const existing = serviceByName.get(s.name) || []
+      existing.push(s)
+      serviceByName.set(s.name, existing)
+    }
+
     for (const handler of handlerNodes) {
       const filePath = handler.filePath
-
-      // 策略1：查找该文件里的 import 语句，找 service 路径的 import
       const serviceImports = this.extractServiceImports(filePath)
 
       for (const imp of serviceImports) {
-        // 在现有 service 节点中查找匹配
-        const matched = serviceNodes.find(s =>
-          s.filePath.includes(imp.resolvedPath) && s.name === imp.importedName
-        )
+        // 在现有 service 节点中按名称查找
+        const candidates = serviceByName.get(imp.importedName)
+        let matched: OmniNode | null = null
+
+        if (candidates) {
+          // 优先精确匹配 filePath
+          matched = candidates.find(c => c.filePath === imp.resolvedPath) || candidates[0]
+        }
+
         if (matched) {
           edges.push(makeEdge(handler.id, matched.id, 'calls_service', 'certain'))
-        } else {
-          // service 节点不存在 → 动态创建 synthetic service 节点
+        } else if (this.looksLikeServicePath(imp.resolvedPath)) {
+          // 只在路径看起来像 service 时才创建 synthetic 节点
           const serviceId = `service:${imp.resolvedPath}:${imp.importedName}`
           if (!nodeMap.has(serviceId)) {
             const syntheticService: OmniNode = {
@@ -491,8 +502,10 @@ export class CrossLayerLinker {
           const result = await this.symbolResolver.traceHandlerToDb(caller)
           dbCalls = result.dbCalls
 
-          // 将追踪中发现的中间 service 节点动态加入图
-          for (const nodeId of result.callChain) {
+          // 将追踪中发现的中间 service 节点动态加入图，并连接调用链
+          const callChain = result.callChain
+          for (let i = 0; i < callChain.length; i++) {
+            const nodeId = callChain[i]
             if (nodeId.startsWith('service:') && !nodeMap.has(nodeId)) {
               const parts = nodeId.split(':')
               const syntheticService: OmniNode = {
@@ -505,6 +518,14 @@ export class CrossLayerLinker {
               }
               graph.nodes.push(syntheticService)
               nodeMap.set(syntheticService.id, syntheticService)
+            }
+            // 连接调用链中的相邻节点
+            if (i > 0) {
+              const prevId = callChain[i - 1]
+              const edgeId = `${prevId}--calls_service--${nodeId}`
+              if (!edges.find(e => e.id === edgeId)) {
+                edges.push(makeEdge(prevId, nodeId, 'calls_service', 'inferred'))
+              }
             }
           }
         } catch {
@@ -596,43 +617,55 @@ export class CrossLayerLinker {
   }
 
   /**
+   * 判断路径是否看起来像 service/repository 文件
+   * 排除 handler/test/mock 等非 service 文件
+   */
+  private looksLikeServicePath(importPath: string): boolean {
+    // 排除 handler/test/mock/config 等
+    if (/(?:handler|test|mock|config|constant|util|helper)/i.test(importPath)) return false
+    // 包含 service/repository/di 等关键词
+    return /(?:service|Service|repository|Repository|repo|Repo|di\/)/i.test(importPath)
+  }
+
+  /**
    * 从文件中提取 service 相关 import
+   * 匹配：service/repository 路径、@calcom/features/*、@calcom/lib/*
    */
   private extractServiceImports(filePath: string): ServiceImport[] {
     const imports: ServiceImport[] = []
     try {
       const content = fs.readFileSync(filePath, 'utf-8')
-      const lines = content.split('\n')
 
-      for (const line of lines) {
-        // 匹配：import { xxx } from '../services/...'
-        // 匹配：import XxxService from '...'
-        const importMatch = line.match(
-          /import\s+\{([^}]+)\}\s+from\s+['"]([^'"]*(?:service|Service|repository|Repository|repo|Repo)[^'"]*)['"]|import\s+(\w+Service|\w+Repository|\w+Repo)\s+from\s+['"]([^'"]+)['"]/i
-        )
-        if (importMatch) {
-          const namedImports = importMatch[1]
-          const fromPath = importMatch[2] || importMatch[4]
-          const defaultImport = importMatch[3]
+      // 匹配所有 import { ... } from '...' 语句
+      const importRegex = /import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/g
+      let match: RegExpExecArray | null
 
-          if (namedImports) {
-            namedImports.split(',').forEach(name => {
-              const trimmed = name.trim()
-              if (trimmed) {
-                imports.push({
-                  importedName: trimmed,
-                  resolvedPath: this.resolveRelativePath(filePath, fromPath),
-                })
-              }
-            })
-          }
-          if (defaultImport) {
+      while ((match = importRegex.exec(content)) !== null) {
+        const namedImports = match[1]
+        const fromPath = match[2]
+
+        // 跳过类型导入
+        if (match[0].includes('import type')) continue
+
+        // 只处理 service/repository 相关路径
+        const isServicePath = /(?:service|Service|repository|Repository|repo|Repo|di\/)/i.test(fromPath)
+        // @calcom/features/* 只匹配包含 service/repository/di 的子路径
+        const isFeaturesService = /^@calcom\/features\/.*(?:service|Service|repository|Repository|repo|Repo|di\/)/i.test(fromPath)
+        // @calcom/lib/* 匹配 server/ 或 service 相关
+        const isLibService = /^@calcom\/lib\/(?:server\/|.*(?:service|Service))/i.test(fromPath)
+
+        if (!isServicePath && !isFeaturesService && !isLibService) continue
+
+        namedImports.split(',').forEach(name => {
+          const trimmed = name.trim().split(/\s+as\s+/)[0].trim()
+          // 跳过类型前缀和无效标识符
+          if (trimmed && !trimmed.startsWith('type ') && /^[a-zA-Z_$]/.test(trimmed)) {
             imports.push({
-              importedName: defaultImport,
+              importedName: trimmed,
               resolvedPath: this.resolveRelativePath(filePath, fromPath),
             })
           }
-        }
+        })
       }
     } catch {
       // 文件读取失败，返回空数组（降级原则）
@@ -641,13 +674,15 @@ export class CrossLayerLinker {
   }
 
   /**
-   * 解析相对路径为绝对路径
+   * 解析 import 路径为标准化路径
    */
   private resolveRelativePath(fromFile: string, importPath: string): string {
     if (importPath.startsWith('.')) {
-      return path.resolve(path.dirname(fromFile), importPath)
+      // 相对路径：解析为绝对路径，然后转为 POSIX 格式
+      const resolved = path.resolve(path.dirname(fromFile), importPath)
+      return resolved.replace(/\\/g, '/')
     }
-    // path alias 或 node_modules，返回原始值作为 fallback
+    // workspace 路径（@calcom/...）：直接返回
     return importPath
   }
 
@@ -669,7 +704,7 @@ export class CrossLayerLinker {
 
     // 1. kotlin_route → kotlin_function (handles)
     for (const route of kotlinRoutes) {
-      const routeMeta = route.metadata as import('@omnivis/shared').KotlinRouteMetadata
+      const routeMeta = route.metadata as import('@codeomnivis/shared').KotlinRouteMetadata
       // 查找同文件中的 kotlin_function（Spring: 函数名匹配，Ktor: 函数名匹配）
       const matchingFn = kotlinFunctions.find(fn =>
         fn.filePath === route.filePath && fn.name === route.name
@@ -681,10 +716,10 @@ export class CrossLayerLinker {
 
     // 2. kotlin_function → kotlin_class @Service (calls_service)
     for (const fn of kotlinFunctions) {
-      const fnMeta = fn.metadata as import('@omnivis/shared').KotlinFunctionMetadata
+      const fnMeta = fn.metadata as import('@codeomnivis/shared').KotlinFunctionMetadata
       // 查找同文件中的 @Service 类
       const serviceClass = kotlinClasses.find(cls => {
-        const meta = cls.metadata as import('@omnivis/shared').KotlinClassMetadata
+        const meta = cls.metadata as import('@codeomnivis/shared').KotlinClassMetadata
         return cls.filePath === fn.filePath && meta.annotations.includes('Service')
       })
       if (serviceClass) {
@@ -694,7 +729,7 @@ export class CrossLayerLinker {
 
     // 3. kotlin_class @Repository → db_model (queries_db)
     for (const cls of kotlinClasses) {
-      const meta = cls.metadata as import('@omnivis/shared').KotlinClassMetadata
+      const meta = cls.metadata as import('@codeomnivis/shared').KotlinClassMetadata
       const isRepository = meta.annotations.includes('Repository')
       if (!isRepository) continue
 

@@ -1,4 +1,4 @@
-import type { EdgeType } from '@omnivis/shared'
+import type { EdgeType } from '@codeomnivis/shared'
 
 export const EDGE_TYPE_LIST: EdgeType[] = [
   'renders',

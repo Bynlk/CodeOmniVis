@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // OmniVis 品牌色
+        // CodeOmniVis 品牌色
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',

@@ -1,5 +1,5 @@
 /**
- * @omnivis/cli — CLI 入口
+ * @codeomnivis/cli — CLI 入口
  *
  * 使用 Commander.js 构建命令行工具。
  * 支持命令：serve, analyze, check, mcp, init
@@ -19,7 +19,7 @@ import { initCommand } from './commands/init'
 const program = new Command()
 
 program
-  .name('omnivis')
+  .name('codeomnivis')
   .description('Full-stack architecture visualizer for TypeScript projects')
   .version('0.0.1')
 

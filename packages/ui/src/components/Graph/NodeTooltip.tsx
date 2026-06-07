@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
-import type { NodeType } from '@omnivis/shared'
+import type { NodeType } from '@codeomnivis/shared'
 import type cytoscape from 'cytoscape'
 
 interface TooltipData {

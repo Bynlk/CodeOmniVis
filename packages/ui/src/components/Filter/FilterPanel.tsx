@@ -3,7 +3,7 @@ import { NODE_TYPE_LIST, NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
 import { EDGE_TYPE_LIST } from '../../lib/edgeConfig'
 import { useGraphFilter } from '../../hooks/useGraphFilter'
 import { FilterChip } from './FilterChip'
-import type { NodeType, EdgeType } from '@omnivis/shared'
+import type { NodeType, EdgeType } from '@codeomnivis/shared'
 
 export function FilterPanel() {
   const { t } = useTranslation()

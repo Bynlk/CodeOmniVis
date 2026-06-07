@@ -1,5 +1,5 @@
 /**
- * @omnivis/shared — 共享类型和常量
+ * @codeomnivis/shared — 共享类型和常量
  *
  * 所有包通过此入口导入共享类型。
  * 不包含任何运行时逻辑，仅类型定义和常量。
@@ -84,7 +84,7 @@ export type {
 } from './types/issue'
 
 export type {
-  OmniVisConfig,
+  CodeOmniVisConfig,
 } from './types/config'
 
 // 常量导出
@@ -99,6 +99,6 @@ export {
   FILE_PATTERNS,
 } from './constants/defaults'
 
-// 工具函数导出
-export { getDbPath, hasDbCache, clearDbCache } from './utils/dbPath'
-export { loadConfig } from './utils/configLoader'
+// 工具函数导出（浏览器安全）
+// 注意：getDbPath/hasDbCache/clearDbCache/loadConfig 依赖 Node.js API，
+// 已移至 @codeomnivis/shared/node 入口，仅供 CLI/Server/MCP 使用。

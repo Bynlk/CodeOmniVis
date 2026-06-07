@@ -4,8 +4,8 @@
  * 将 OmniGraph 转换为 Cytoscape.js 的元素格式。
  */
 
-import type { OmniGraph, OmniNode, OmniEdge } from '@omnivis/shared'
-import { NODE_COLORS } from '@omnivis/shared'
+import type { OmniGraph, OmniNode, OmniEdge } from '@codeomnivis/shared'
+import { NODE_COLORS } from '@codeomnivis/shared'
 
 // ============================================================
 // 类型定义

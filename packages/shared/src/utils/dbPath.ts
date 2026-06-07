@@ -5,7 +5,7 @@ import * as crypto from 'crypto'
 
 /**
  * 根据项目根路径生成唯一的 SQLite 文件路径
- * 存放在 ~/.omnivis/projects/{hash}.db
+ * 存放在 ~/.codeomnivis/projects/{hash}.db
  * 同一个项目无论从哪里调用，总是得到同一个路径
  */
 export function getDbPath(projectRoot: string): string {
@@ -16,7 +16,7 @@ export function getDbPath(projectRoot: string): string {
     .digest('hex')
     .slice(0, 12)
 
-  const dir = path.join(os.homedir(), '.omnivis', 'projects')
+  const dir = path.join(os.homedir(), '.codeomnivis', 'projects')
   fs.mkdirSync(dir, { recursive: true })
 
   return path.join(dir, `${hash}.db`)
@@ -30,7 +30,7 @@ export function hasDbCache(projectRoot: string): boolean {
 }
 
 /**
- * 删除项目缓存（用于 omnivis init --clean）
+ * 删除项目缓存（用于 codeomnivis init --clean）
  */
 export function clearDbCache(projectRoot: string): void {
   const p = getDbPath(projectRoot)

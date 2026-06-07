@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI } from '../lib/nodeConfig'
-import type { OmniGraph, NodeType } from '@omnivis/shared'
+import type { OmniGraph, NodeType } from '@codeomnivis/shared'
 
 interface CommandPaletteProps {
   graph?: OmniGraph

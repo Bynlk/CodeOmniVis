@@ -1,7 +1,7 @@
 {
-  "name": "@omnivis/mcp",
+  "name": "@codeomnivis/mcp",
   "version": "0.0.1",
-  "description": "MCP Server for OmniVis",
+  "description": "MCP Server for CodeOmniVis",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
     "directory": "packages/mcp"
   },
   "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
-  "keywords": ["omnivis", "architecture", "visualization", "mcp"],
+  "keywords": ["codeomnivis", "architecture", "visualization", "mcp"],
   "publishConfig": {
     "access": "public"
   },
@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@omnivis/analyzer": "workspace:*",
-    "@omnivis/shared": "workspace:*"
+    "@codeomnivis/analyzer": "workspace:*",
+    "@codeomnivis/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

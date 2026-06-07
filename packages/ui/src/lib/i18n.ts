@@ -10,7 +10,7 @@ i18n
       'zh-CN': { translation: zhCN },
       'en-US': { translation: enUS },
     },
-    lng: localStorage.getItem('omnivis-lang') ?? 'en-US',
+    lng: localStorage.getItem('codeomnivis-lang') ?? 'en-US',
     fallbackLng: 'en-US',
     interpolation: { escapeValue: false },
   })

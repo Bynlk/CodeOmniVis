@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { OmniDatabase } from '@omnivis/analyzer'
-import type { NodeType, EdgeType } from '@omnivis/shared'
+import { OmniDatabase } from '@codeomnivis/analyzer'
+import type { NodeType, EdgeType } from '@codeomnivis/shared'
 
 // 模拟 MCP 工具逻辑（从 index.ts 提取）
 async function executeGetApiRoutes(db: OmniDatabase) {

@@ -1,7 +1,7 @@
 {
-  "name": "@omnivis/ui",
+  "name": "@codeomnivis/ui",
   "version": "0.0.1",
-  "description": "Visualization UI for OmniVis",
+  "description": "Visualization UI for CodeOmniVis",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
     "directory": "packages/ui"
   },
   "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
-  "keywords": ["omnivis", "architecture", "visualization", "react", "cytoscape"],
+  "keywords": ["codeomnivis", "architecture", "visualization", "react", "cytoscape"],
   "publishConfig": {
     "access": "public"
   },
@@ -25,7 +25,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@omnivis/shared": "workspace:*",
+    "@codeomnivis/shared": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
     "cytoscape": "^3.28.0",
     "cytoscape-dagre": "^2.5.0",

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import type { OmniGraph, OmniNode } from '@omnivis/shared'
+import type { OmniGraph, OmniNode } from '@codeomnivis/shared'
 
 interface UseSearchOptions {
   graph?: OmniGraph

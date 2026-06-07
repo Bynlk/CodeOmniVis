@@ -1,7 +1,7 @@
 {
-  "name": "@omnivis/server",
+  "name": "@codeomnivis/server",
   "version": "0.0.1",
-  "description": "Web server for OmniVis visualization",
+  "description": "Web server for CodeOmniVis visualization",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
     "directory": "packages/server"
   },
   "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
-  "keywords": ["omnivis", "architecture", "visualization", "server"],
+  "keywords": ["codeomnivis", "architecture", "visualization", "server"],
   "publishConfig": {
     "access": "public"
   },
@@ -32,8 +32,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@omnivis/analyzer": "workspace:*",
-    "@omnivis/shared": "workspace:*",
+    "@codeomnivis/analyzer": "workspace:*",
+    "@codeomnivis/shared": "workspace:*",
     "chokidar": "^4.0.0",
     "cors": "^2.8.5",
     "express": "^4.18.0",

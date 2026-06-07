@@ -6,8 +6,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import express from 'express'
 import request from 'supertest'
-import { OmniDatabase } from '@omnivis/analyzer'
-import type { OmniEdge } from '@omnivis/shared'
+import { OmniDatabase } from '@codeomnivis/analyzer'
+import type { OmniEdge } from '@codeomnivis/shared'
 import { createGraphRouter } from '../../src/routes/graph'
 
 describe('Graph Routes — Extended', () => {

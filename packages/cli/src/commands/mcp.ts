@@ -2,7 +2,7 @@
  * mcp 命令
  *
  * 启动 MCP Server。
- * npx omnivis mcp → 启动 MCP Server
+ * npx codeomnivis mcp → 启动 MCP Server
  */
 
 import type { Command } from 'commander'
@@ -21,10 +21,10 @@ export function mcpCommand(program: Command): void {
       try {
         // 设置项目根路径环境变量，供 MCP 模块使用
         const projectRoot = path.resolve(options.project)
-        process.env.OMNIVIS_PROJECT = projectRoot
+        process.env.codeomnivis_PROJECT = projectRoot
 
         // 动态导入 MCP 包
-        const mcp = await import('@omnivis/mcp')
+        const mcp = await import('@codeomnivis/mcp')
 
         spinner.succeed(chalk.green('MCP Server started'))
         console.log(chalk.gray('\nListening on stdio transport'))

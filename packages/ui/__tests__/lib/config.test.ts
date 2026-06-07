@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import { NODE_EMOJI, NODE_TYPE_LIST } from '../../src/lib/nodeConfig'
 import { EDGE_TYPE_LIST } from '../../src/lib/edgeConfig'
-import type { NodeType, EdgeType } from '@omnivis/shared'
+import type { NodeType, EdgeType } from '@codeomnivis/shared'
 
 const ALL_NODE_TYPES: NodeType[] = [
   'page', 'component', 'api_route', 'trpc_procedure',

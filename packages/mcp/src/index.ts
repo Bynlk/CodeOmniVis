@@ -1,5 +1,5 @@
 /**
- * @omnivis/mcp — MCP Server
+ * @codeomnivis/mcp — MCP Server
  *
  * 提供 5 个工具供 AI 助手调用：
  * - get_api_routes: 获取 API 路由列表及下游依赖
@@ -15,9 +15,9 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import { OmniDatabase, runAnalysis, DataFlowTracer } from '@omnivis/analyzer'
-import { getDbPath, hasDbCache } from '@omnivis/shared'
-import type { NodeType, EdgeType } from '@omnivis/shared'
+import { OmniDatabase, runAnalysis, DataFlowTracer } from '@codeomnivis/analyzer'
+import { getDbPath, hasDbCache } from '@codeomnivis/shared/node'
+import type { NodeType, EdgeType } from '@codeomnivis/shared'
 
 // ============================================================
 // MCP Server
@@ -25,7 +25,7 @@ import type { NodeType, EdgeType } from '@omnivis/shared'
 
 const server = new Server(
   {
-    name: 'omnivis',
+    name: 'codeomnivis',
     version: '0.0.1',
   },
   {
@@ -36,7 +36,7 @@ const server = new Server(
 )
 
 // 项目根路径
-const projectRoot = process.env.OMNIVIS_PROJECT ?? process.cwd()
+const projectRoot = process.env.codeomnivis_PROJECT ?? process.cwd()
 
 // 数据库实例缓存（避免每次调用都重新初始化）
 let cachedDb: OmniDatabase | null = null
@@ -84,7 +84,7 @@ async function getDb(): Promise<OmniDatabase> {
  * 日志输出到 stderr（不干扰 stdio 协议）
  */
 function log(message: string): void {
-  process.stderr.write(`[omnivis-mcp] ${message}\n`)
+  process.stderr.write(`[codeomnivis-mcp] ${message}\n`)
 }
 
 /**

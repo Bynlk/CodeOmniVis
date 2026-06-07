@@ -12,8 +12,8 @@
     "test": {
       "dependsOn": ["build"]
     },
-    "@omnivis/server#test": {
-      "dependsOn": ["build", "@omnivis/analyzer#test"]
+    "@codeomnivis/server#test": {
+      "dependsOn": ["build", "@codeomnivis/analyzer#test"]
     },
     "lint": {},
     "clean": {

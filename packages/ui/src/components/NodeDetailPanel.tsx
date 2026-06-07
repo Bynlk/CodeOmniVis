@@ -1,5 +1,5 @@
-import type { OmniNode, OmniEdge } from '@omnivis/shared'
-import { NODE_COLORS } from '@omnivis/shared'
+import type { OmniNode, OmniEdge } from '@codeomnivis/shared'
+import { NODE_COLORS } from '@codeomnivis/shared'
 import { useTranslation } from 'react-i18next'
 
 interface NodeDetailPanelProps {

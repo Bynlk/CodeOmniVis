@@ -42,7 +42,7 @@ importers:
 
   packages/analyzer:
     dependencies:
-      '@omnivis/shared':
+      '@codeomnivis/shared':
         specifier: workspace:*
         version: link:../shared
       '@prisma/internals':
@@ -61,8 +61,8 @@ importers:
         specifier: ^21.0.0
         version: 21.0.1
       web-tree-sitter:
-        specifier: ^0.26.9
-        version: 0.26.9
+        specifier: ^0.20.8
+        version: 0.20.8
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -82,13 +82,13 @@ importers:
 
   packages/cli:
     dependencies:
-      '@omnivis/analyzer':
+      '@codeomnivis/analyzer':
         specifier: workspace:*
         version: link:../analyzer
-      '@omnivis/server':
+      '@codeomnivis/server':
         specifier: workspace:*
         version: link:../server
-      '@omnivis/shared':
+      '@codeomnivis/shared':
         specifier: workspace:*
         version: link:../shared
       chalk:
@@ -122,15 +122,15 @@ importers:
 
   packages/mcp:
     dependencies:
+      '@codeomnivis/analyzer':
+        specifier: workspace:*
+        version: link:../analyzer
+      '@codeomnivis/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.0
         version: 1.29.0(zod@4.4.3)
-      '@omnivis/analyzer':
-        specifier: workspace:*
-        version: link:../analyzer
-      '@omnivis/shared':
-        specifier: workspace:*
-        version: link:../shared
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -150,10 +150,10 @@ importers:
 
   packages/server:
     dependencies:
-      '@omnivis/analyzer':
+      '@codeomnivis/analyzer':
         specifier: workspace:*
         version: link:../analyzer
-      '@omnivis/shared':
+      '@codeomnivis/shared':
         specifier: workspace:*
         version: link:../shared
       chokidar:
@@ -223,7 +223,7 @@ importers:
 
   packages/ui:
     dependencies:
-      '@omnivis/shared':
+      '@codeomnivis/shared':
         specifier: workspace:*
         version: link:../shared
       '@tanstack/react-query':
@@ -2926,8 +2926,8 @@ packages:
     resolution: {integrity: sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==}
     engines: {node: '>=0.10.0'}
 
-  web-tree-sitter@0.26.9:
-    resolution: {integrity: sha512-YJwSHANl6XFgeEjB8nitgj0qZYt5gkIesJ4w2srS2wcLB4GUa4xcOkM0YaMsU6WNR53YVIkDSY7Ej4pf3IXtCA==}
+  web-tree-sitter@0.20.8:
+    resolution: {integrity: sha512-weOVgZ3aAARgdnb220GqYuh7+rZU0Ka9k9yfKtGAzEYMa6GgiCzW9JjQRJyCJakvibQW+dfjJdihjInKuuCAUQ==}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -5598,7 +5598,7 @@ snapshots:
 
   void-elements@3.1.0: {}
 
-  web-tree-sitter@0.26.9: {}
+  web-tree-sitter@0.20.8: {}
 
   which@2.0.2:
     dependencies:

@@ -7,7 +7,7 @@ export function LangToggle() {
   const toggle = () => {
     const next = isZh ? 'en-US' : 'zh-CN'
     i18n.changeLanguage(next)
-    localStorage.setItem('omnivis-lang', next)
+    localStorage.setItem('codeomnivis-lang', next)
   }
 
   return (

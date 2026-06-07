@@ -13,7 +13,7 @@ describe('scanDirectory', () => {
 
   beforeAll(() => {
     // 创建临时目录结构
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'omnivis-test-'))
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeomnivis-test-'))
 
     // 创建文件
     fs.writeFileSync(path.join(tmpDir, 'index.ts'), 'export {}')

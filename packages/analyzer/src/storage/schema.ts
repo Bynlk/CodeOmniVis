@@ -88,9 +88,9 @@ export const SQL = {
   deleteNode: `DELETE FROM nodes WHERE id = ?`,
   deleteAllNodes: `DELETE FROM nodes`,
 
-  // 边操作
+  // 边操作（使用 INSERT OR IGNORE 避免 FK constraint 失败时中断流程）
   insertEdge: `
-    INSERT OR REPLACE INTO edges (id, source, target, type, confidence, metadata, updated_at)
+    INSERT OR IGNORE INTO edges (id, source, target, type, confidence, metadata, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
   `,
   selectEdge: `SELECT * FROM edges WHERE id = ?`,
