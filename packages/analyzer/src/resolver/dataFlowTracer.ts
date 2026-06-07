@@ -7,8 +7,8 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import type { OmniGraph, OmniNode, OmniEdge, EdgeType } from '@omnivis/shared'
-import { createEdgeId } from '@omnivis/shared'
+import type { OmniGraph, OmniNode, OmniEdge, EdgeType } from '@codeomnivis/shared'
+import { createEdgeId } from '@codeomnivis/shared'
 
 // ============================================================
 // 类型定义

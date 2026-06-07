@@ -8,9 +8,9 @@
 import * as path from 'path'
 import * as fs from 'fs'
 import chokidar from 'chokidar'
-import type { OmniDatabase } from '@omnivis/analyzer'
-import { runAnalysis } from '@omnivis/analyzer'
-import { omniVisEvents, EVENTS } from './events'
+import type { OmniDatabase } from '@codeomnivis/analyzer'
+import { runAnalysis } from '@codeomnivis/analyzer'
+import { codeomnivisEvents, EVENTS } from './events'
 
 export interface IncrementalAnalyzerOptions {
   projectRoot: string
@@ -69,7 +69,7 @@ export class IncrementalAnalyzer {
         /node_modules/,
         /\.next/,
         /dist/,
-        /\.omnivis/,
+        /\.codeomnivis/,
       ],
       persistent: true,
       ignoreInitial: true,
@@ -111,7 +111,7 @@ export class IncrementalAnalyzer {
     }
 
     this.isAnalyzing = true
-    omniVisEvents.emit(EVENTS.ANALYSIS_STARTED)
+    codeomnivisEvents.emit(EVENTS.ANALYSIS_STARTED)
 
     try {
       console.log('[IncrementalAnalyzer] Running re-analysis...')
@@ -120,7 +120,7 @@ export class IncrementalAnalyzer {
         dbPath: this.dbPath,
       })
       console.log('[IncrementalAnalyzer] Re-analysis complete')
-      omniVisEvents.emit(EVENTS.GRAPH_UPDATED, filePath)
+      codeomnivisEvents.emit(EVENTS.GRAPH_UPDATED, filePath)
     } catch (err) {
       console.error('[IncrementalAnalyzer] Analysis failed:', err)
     } finally {

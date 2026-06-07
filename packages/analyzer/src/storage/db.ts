@@ -8,7 +8,7 @@
 
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js'
 import * as fs from 'fs'
-import type { OmniNode, OmniEdge, OmniGraph, NodeType, EdgeType } from '@omnivis/shared'
+import type { OmniNode, OmniEdge, OmniGraph, NodeType, EdgeType } from '@codeomnivis/shared'
 import { CREATE_TABLES_SQL, SQL } from './schema'
 
 // ============================================================
@@ -284,12 +284,13 @@ export class OmniDatabase {
   // ============================================================
 
   /**
-   * 插入或更新边
+   * 插入或更新边（暂时禁用 FK 检查）
    * @returns 成功返回 true，失败返回 false
    */
   upsertEdge(edge: OmniEdge): boolean {
     try {
       this.ensureReady()
+      this.db!.run('PRAGMA foreign_keys = OFF')
       this.db!.run(SQL.insertEdge, [
         edge.id,
         edge.source,
@@ -298,15 +299,17 @@ export class OmniDatabase {
         edge.confidence,
         JSON.stringify(edge.metadata),
       ])
+      this.db!.run('PRAGMA foreign_keys = ON')
       return true
     } catch (err) {
       console.error(`Failed to upsert edge ${edge.id}:`, err)
+      try { this.db!.run('PRAGMA foreign_keys = ON') } catch { /* ignore */ }
       return false
     }
   }
 
   /**
-   * 批量插入或更新边（使用事务）
+   * 批量插入或更新边（使用事务，暂时禁用 FK 检查避免跨层边写入失败）
    * @returns 成功插入的数量
    */
   upsertEdges(edges: OmniEdge[]): number {
@@ -316,6 +319,8 @@ export class OmniDatabase {
       this.ensureReady()
       let count = 0
 
+      // 暂时禁用 FK 检查，允许引用尚未存在的节点的边写入
+      this.db!.run('PRAGMA foreign_keys = OFF')
       this.db!.run('BEGIN TRANSACTION')
       for (const edge of edges) {
         try {
@@ -333,12 +338,14 @@ export class OmniDatabase {
         }
       }
       this.db!.run('COMMIT')
+      this.db!.run('PRAGMA foreign_keys = ON')
 
       return count
     } catch (err) {
       console.error('Failed to upsert edges:', err)
       try {
         this.db!.run('ROLLBACK')
+        this.db!.run('PRAGMA foreign_keys = ON')
       } catch (rollbackErr) {
         console.error('ROLLBACK failed after upsertEdges error:', rollbackErr)
       }

@@ -7,7 +7,7 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import type { ProjectMeta } from '@omnivis/shared'
+import type { ProjectMeta } from '@codeomnivis/shared'
 import { OmniDatabase } from '../storage/db'
 import { GraphBuilder } from './builder'
 import { CrossLayerLinker } from '../resolver/crossLayer'

@@ -8,7 +8,7 @@
  * - tRPC procedure 不存在
  */
 
-import type { OmniGraph, OmniNode, Issue, IssueType, IssueSeverity, ConsistencyReport, CallsApiMetadata, ApiRouteMetadata } from '@omnivis/shared'
+import type { OmniGraph, OmniNode, Issue, IssueType, IssueSeverity, ConsistencyReport, CallsApiMetadata, ApiRouteMetadata } from '@codeomnivis/shared'
 
 // ============================================================
 // 一致性检测器
