@@ -1,4 +1,4 @@
-# OmniVis 实施计划：Phase 1 + Phase 2
+# CodeOmniVis 实施计划：Phase 1 + Phase 2
 ## 跨层连线完整化 × symbolResolver 实现
 
 > 目标：让"三层全栈图"从"三张孤立图"变成真正连通的一张图
@@ -37,7 +37,7 @@ DB 层节点和 API 层节点永远断开
 
 ### Task 1.1 修复 ConsistencyReport 接口不一致
 
-**优先级**：立即修复（30 分钟），不修会在 `omnivis check` 运行时崩溃
+**优先级**：立即修复（30 分钟），不修会在 `codeomnivis check` 运行时崩溃
 
 **问题定位**：
 ```
@@ -75,7 +75,7 @@ return {
 }
 ```
 
-**验证**：运行 `npx omnivis check` 无运行时错误。
+**验证**：运行 `npx codeomnivis check` 无运行时错误。
 
 ---
 
@@ -544,7 +544,7 @@ if (edge.type === 'calls_api') {
 
 ### Phase 1 验收测试
 
-在 demo 项目上运行 `npx omnivis serve`，打开 UI，检查：
+在 demo 项目上运行 `npx codeomnivis serve`，打开 UI，检查：
 
 | 检查项 | 期望结果 |
 |--------|---------|
@@ -552,7 +552,7 @@ if (edge.type === 'calls_api') {
 | `calls_service` 边 | handler 节点有出边连到 service（如果 demo 有 service 层） |
 | `queries_db` 边 | handler/service 节点有出边连到 Prisma model |
 | 孤立节点数量 | 应从 63 降至 < 30（部分仍孤立是正常的） |
-| omnivis check | 无 runtime 错误，summary 字段正确显示 |
+| codeomnivis check | 无 runtime 错误，summary 字段正确显示 |
 
 ---
 
@@ -599,7 +599,7 @@ import {
 } from 'ts-morph'
 import * as path from 'path'
 import * as fs from 'fs'
-import type { OmniNode, OmniEdge } from '@omnivis/shared'
+import type { OmniNode, OmniEdge } from '@codeomnivis/shared'
 
 export interface DbCall {
   modelName: string         // 'Booking'
@@ -1197,7 +1197,7 @@ describe('SymbolResolver', () => {
 
 ### Phase 2 验收测试
 
-在 demo 项目上运行 `npx omnivis serve`，检查：
+在 demo 项目上运行 `npx codeomnivis serve`，检查：
 
 | 检查项 | 期望结果 |
 |--------|---------|
@@ -1206,7 +1206,7 @@ describe('SymbolResolver', () => {
 | 三层连通性 | 选中一个 page 节点，应能沿边追踪到 db_model |
 | 孤立节点比例 | 应从 Phase 1 的 < 30 进一步降低 |
 | 性能 | demo 项目分析总时间 < 30 秒 |
-| 不崩溃 | cal.com 项目上 `npx omnivis serve` 不报 fatal error |
+| 不崩溃 | cal.com 项目上 `npx codeomnivis serve` 不报 fatal error |
 
 ---
 

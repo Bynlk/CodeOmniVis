@@ -7,7 +7,7 @@
 ## Prompt 3-A：Drizzle 解析器
 
 ```
-你是 OmniVis 项目的开发者。
+你是 CodeOmniVis 项目的开发者。
 
 1. 读取 packages/analyzer/src/parsers/prisma.ts（参考 db_model 节点生成模式）
 2. 读取 packages/analyzer/src/parsers/index.ts
@@ -156,7 +156,7 @@ function extractDrizzleColumns(columnsNode: Node): FieldDef[] {
 ## Prompt 3-B：死代码 + 循环依赖检测
 
 ```
-你是 OmniVis 项目的开发者。
+你是 CodeOmniVis 项目的开发者。
 
 1. 读取 packages/analyzer/src/graph/consistency.ts 完整内容
 2. 读取 packages/shared/src/types/issue.ts，确认 Issue 接口的字段

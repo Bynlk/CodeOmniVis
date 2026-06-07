@@ -1,4 +1,4 @@
-# OmniVis 全框架扩展设计文档
+# CodeOmniVis 全框架扩展设计文档
 
 > **文档版本**：v1.0
 > **创建日期**：2026-06-06
@@ -29,7 +29,7 @@
 
 ### 1.1 当前状态
 
-OmniVis 目前支持以下框架组合：
+CodeOmniVis 目前支持以下框架组合：
 
 | 层 | 支持的框架 |
 |----|----------|
@@ -57,7 +57,7 @@ OmniVis 目前支持以下框架组合：
 
 ### 1.3 扩展目标
 
-将 OmniVis 从"Next.js 专属工具"扩展为"全栈 TypeScript 架构洞察引擎"，覆盖主流前端框架、后端框架和数据库 ORM。
+将 CodeOmniVis 从"Next.js 专属工具"扩展为"全栈 TypeScript 架构洞察引擎"，覆盖主流前端框架、后端框架和数据库 ORM。
 
 ---
 
@@ -65,7 +65,7 @@ OmniVis 目前支持以下框架组合：
 
 ### 2.1 详细对比
 
-| 维度 | OmniVis (扩展后) | LikeC4 | CodeSee | Madge |
+| 维度 | CodeOmniVis (扩展后) | LikeC4 | CodeSee | Madge |
 |------|-----------------|--------|---------|-------|
 | 自动提取 | ✅ 从代码自动提取 | ❌ 需手写 DSL | ✅ 自动 | ✅ 自动 |
 | 框架感知 | ✅ 识别框架特定模式 | ❌ 通用 | ❌ 通用 | ❌ 通用 |
@@ -77,7 +77,7 @@ OmniVis 目前支持以下框架组合：
 
 ### 2.2 差异化优势
 
-**一句话**：唯一一个 `npx omnivis serve` 就能跑的全栈 TS 架构图工具。
+**一句话**：唯一一个 `npx codeomnivis serve` 就能跑的全栈 TS 架构图工具。
 
 具体优势：
 
@@ -1724,7 +1724,7 @@ const KNEX_RE = /knex\s*\(\s*['"](\w+)['"]\s*\)\s*\.\s*(?:select|insert|update|d
 **文件**：`packages/analyzer/src/parsers/index.ts`
 
 ```typescript
-import { Parser } from '@omnivis/shared'
+import { Parser } from '@codeomnivis/shared'
 import { PrismaParser } from './prisma'
 import { NextjsAppParser } from './nextjsApp'
 import { NextjsPagesParser } from './nextjsPages'
@@ -1796,7 +1796,7 @@ builder.registerParsers([
 ])
 
 // 改为
-import { createDefaultParsers } from '@omnivis/analyzer'
+import { createDefaultParsers } from '@codeomnivis/analyzer'
 builder.registerParsers(createDefaultParsers())
 ```
 
@@ -1901,7 +1901,7 @@ packages/analyzer/__tests__/fixtures/
 ```typescript
 import { describe, it, expect } from 'vitest'
 import { VueComponentParser } from '../../src/parsers/vueComponent'
-import { ProjectMeta } from '@omnivis/shared'
+import { ProjectMeta } from '@codeomnivis/shared'
 import * as path from 'path'
 
 const FIXTURES = path.join(__dirname, '../fixtures/vue')
@@ -2098,7 +2098,7 @@ Phase 内部各解析器互相独立，可并行开发。
 pnpm test
 
 # 运行单个解析器测试
-pnpm --filter @omnivis/analyzer test -- vueComponent
+pnpm --filter @codeomnivis/analyzer test -- vueComponent
 ```
 
 每个解析器至少 3 个测试用例。
@@ -2124,7 +2124,7 @@ fixtures/multi-framework/
 
 ```bash
 # 对 demo/ 目录运行分析
-pnpm --filter @omnivis/cli dev serve
+pnpm --filter @codeomnivis/cli dev serve
 
 # 在浏览器中验证：
 # 1. 新节点类型（controller, layout）正确显示

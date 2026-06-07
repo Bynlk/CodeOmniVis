@@ -1,4 +1,4 @@
-# OmniVis 项目阶段报告
+# CodeOmniVis 项目阶段报告
 
 > 生成日期：2026-06-06
 > 扫描范围：全量代码 + docs 计划书对比
@@ -7,7 +7,7 @@
 
 ## 一、项目概况
 
-**OmniVis** 是一个零配置 CLI 工具，为 TypeScript 全栈项目自动生成交互式拓扑图，连接前端组件、后端 API、数据库关系三层结构。
+**CodeOmniVis** 是一个零配置 CLI 工具，为 TypeScript 全栈项目自动生成交互式拓扑图，连接前端组件、后端 API、数据库关系三层结构。
 
 | 维度 | 状态 |
 |------|------|
@@ -148,11 +148,11 @@
 
 | 命令 | 功能 |
 |------|------|
-| omnivis init | 生成 .omnivis.json 配置 |
-| omnivis serve | 启动 Web 服务器 + 自动分析 |
-| omnivis analyze | 输出 JSON 图数据文件 |
-| omnivis check | 运行一致性检查 |
-| omnivis mcp | 启动 MCP Server |
+| codeomnivis init | 生成 .codeomnivis.json 配置 |
+| codeomnivis serve | 启动 Web 服务器 + 自动分析 |
+| codeomnivis analyze | 输出 JSON 图数据文件 |
+| codeomnivis check | 运行一致性检查 |
+| codeomnivis mcp | 启动 MCP Server |
 
 ---
 
@@ -170,7 +170,7 @@
 | 6 | MCP + CLI + 一致性检测 | ✅ 已完成 | 75% | MCP 工具偏少 |
 | 7 | Demo + 发布 | ✅ 已完成 | **50%** | 无 cal.com 验证、无 GIF/截图 |
 
-### 6.2 omnivis-plan-3.md（前端重设计）
+### 6.2 codeomnivis-plan-3.md（前端重设计）
 
 | 计划项 | 状态 | 说明 |
 |--------|------|------|

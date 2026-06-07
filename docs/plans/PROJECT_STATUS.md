@@ -1,4 +1,4 @@
-# OmniVis 项目状态评估报告
+# CodeOmniVis 项目状态评估报告
 
 > 评估日期：2026-06-06
 > 评估依据：计划书 vs 实际代码逐项验证 + ByResume 项目实测
@@ -238,7 +238,7 @@
 
 | 项目 | 值 |
 |------|-----|
-| 名称 | OmniVis |
+| 名称 | CodeOmniVis |
 | 版本 | 0.0.1 |
 | 许可证 | MIT |
 | Node 要求 | >=18.0.0 |
@@ -248,7 +248,7 @@
 ### Monorepo 结构
 
 ```
-omnivis/
+codeomnivis/
 ├── packages/
 │   ├── shared/       # 共享类型（8 文件，768 行）
 │   ├── analyzer/     # 解析引擎（20 文件，4,771 行）
@@ -307,11 +307,11 @@ analyzer  (依赖: shared)
 
 | 命令 | 文件 | 功能 |
 |------|------|------|
-| `omnivis serve` | `commands/serve.ts` | 启动 Web 服务 + 自动分析 |
-| `omnivis analyze` | `commands/analyze.ts` | 分析项目输出 JSON |
-| `omnivis check` | `commands/check.ts` | 一致性检测报告 |
-| `omnivis mcp` | `commands/mcp.ts` | 启动 MCP Server |
-| `omnivis init` | `commands/init.ts` | 生成配置文件 |
+| `codeomnivis serve` | `commands/serve.ts` | 启动 Web 服务 + 自动分析 |
+| `codeomnivis analyze` | `commands/analyze.ts` | 分析项目输出 JSON |
+| `codeomnivis check` | `commands/check.ts` | 一致性检测报告 |
+| `codeomnivis mcp` | `commands/mcp.ts` | 启动 MCP Server |
+| `codeomnivis init` | `commands/init.ts` | 生成配置文件 |
 
 ### UI 组件（10 个）
 
@@ -373,14 +373,14 @@ pnpm build
 pnpm test
 
 # 启动开发模式
-pnpm --filter @omnivis/cli dev serve
+pnpm --filter @codeomnivis/cli dev serve
 
 # 全局使用
-omnivis serve      # 启动可视化服务
-omnivis analyze    # 输出 JSON 图数据
-omnivis check      # 一致性检测
-omnivis mcp        # 启动 MCP Server
-omnivis init       # 生成配置文件
+codeomnivis serve      # 启动可视化服务
+codeomnivis analyze    # 输出 JSON 图数据
+codeomnivis check      # 一致性检测
+codeomnivis mcp        # 启动 MCP Server
+codeomnivis init       # 生成配置文件
 ```
 
 ---

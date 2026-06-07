@@ -1,4 +1,4 @@
-# OmniVis 开发计划书
+# CodeOmniVis 开发计划书
 
 ---
 
@@ -98,13 +98,13 @@
   - 实现 types/edge.ts（OmniEdge、EdgeType）
   - 实现 types/graph.ts（OmniGraph、ParseResult）
   - 实现 types/issue.ts（Issue、IssueSeverity）
-  - 实现 types/config.ts（OmniVisConfig）
+  - 实现 types/config.ts（CodeOmniVisConfig）
   - 实现 constants/nodeColors.ts
   - 实现 index.ts 导出
 
 验收：
-  □ pnpm --filter @omnivis/shared build 成功
-  □ 所有类型可以从 @omnivis/shared 正确导入
+  □ pnpm --filter @codeomnivis/shared build 成功
+  □ 所有类型可以从 @codeomnivis/shared 正确导入
 ```
 
 ### 步骤 1.3：实现 analyzer 存储层
@@ -190,7 +190,7 @@
   - 实现 cli/src/utils/logger.ts
 
 验收：
-  □ npx omnivis serve 能启动服务
+  □ npx codeomnivis serve 能启动服务
   □ 浏览器自动打开并显示 ER 图
 ```
 
@@ -575,10 +575,10 @@
   - 实现 utils/progress.ts（ora 进度条）
 
 验收：
-  □ npx omnivis analyze 输出 JSON
-  □ npx omnivis check 输出报告
-  □ npx omnivis mcp 启动 MCP Server
-  □ npx omnivis init 生成配置文件
+  □ npx codeomnivis analyze 输出 JSON
+  □ npx codeomnivis check 输出报告
+  □ npx codeomnivis mcp 启动 MCP Server
+  □ npx codeomnivis init 生成配置文件
 ```
 
 ### Phase 6 总验收
@@ -609,7 +609,7 @@
   - 包含跨层调用链
 
 验收：
-  □ npx omnivis serve 在 demo 上 60 秒内出图
+  □ npx codeomnivis serve 在 demo 上 60 秒内出图
   □ 图包含所有三层节点和连线
 ```
 
@@ -618,7 +618,7 @@
 ```
 任务：
   - 克隆 cal.com（固定 commit hash）
-  - 运行 omnivis serve
+  - 运行 codeomnivis serve
   - 记录问题并修复
   - 固定 demo 用的 cal.com 版本
 

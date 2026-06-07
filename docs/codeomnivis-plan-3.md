@@ -1,4 +1,4 @@
-# OmniVis 前端重设计计划书 v1.0
+# CodeOmniVis 前端重设计计划书 v1.0
 
 > 基于当前 DOM 结构分析 + 需求梳理
 > 涵盖：风琴式导航 / 筛选器重构 / 节点 Tooltip + Emoji / i18n
@@ -24,7 +24,7 @@
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │ BRAND BAR                                                       │
-│  🔷 OmniVis   Architecture Visualizer        [ZH/EN] [Refresh] │
+│  🔷 CodeOmniVis   Architecture Visualizer        [ZH/EN] [Refresh] │
 ├────────────────────────────────────────────────────────────────┤
 │ TAB BAR                                                         │
 │  [Graph ▼] [Filter] [Issues 3] [AI] [Stats]                    │
@@ -308,7 +308,7 @@ export function FilterChip({ active, label, emoji, color, onClick }: FilterChipP
 
 import { useCallback, useRef } from 'react'
 import { useCytoscapeInstance } from './useCytoscapeInstance'
-import { NodeType, EdgeType } from '@omnivis/shared'
+import { NodeType, EdgeType } from '@codeomnivis/shared'
 
 interface GraphFilterState {
   nodeTypeFilter: Set<NodeType>
@@ -447,7 +447,7 @@ export function useGraphFilter() {
 ```typescript
 // packages/ui/src/lib/nodeConfig.ts
 
-import type { NodeType } from '@omnivis/shared'
+import type { NodeType } from '@codeomnivis/shared'
 
 export const NODE_EMOJI: Record<NodeType, string> = {
   page:            '📄',
@@ -530,7 +530,7 @@ const cytoscapeStylesheet: cytoscape.Stylesheet[] = [
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
-import type { NodeType } from '@omnivis/shared'
+import type { NodeType } from '@codeomnivis/shared'
 
 interface TooltipData {
   x: number
@@ -652,7 +652,7 @@ export function NodeTooltip({ cyRef }: NodeTooltipProps) {
 ### 6.1 安装依赖
 
 ```bash
-pnpm add react-i18next i18next --filter @omnivis/ui
+pnpm add react-i18next i18next --filter @codeomnivis/ui
 ```
 
 ### 6.2 初始化
@@ -672,7 +672,7 @@ i18n
       'zh-CN': { translation: zhCN },
       'en-US': { translation: enUS },
     },
-    lng: localStorage.getItem('omnivis-lang') ?? 'en-US',
+    lng: localStorage.getItem('codeomnivis-lang') ?? 'en-US',
     fallbackLng: 'en-US',
     interpolation: { escapeValue: false },
   })
@@ -820,7 +820,7 @@ export function LangToggle() {
   const toggle = () => {
     const next = isZh ? 'en-US' : 'zh-CN'
     i18n.changeLanguage(next)
-    localStorage.setItem('omnivis-lang', next)
+    localStorage.setItem('codeomnivis-lang', next)
   }
 
   return (
@@ -966,12 +966,12 @@ packages/ui/src/
 ### Prompt A：i18n 基础设施 + nodeConfig
 
 ```
-你是 OmniVis 项目的前端开发者。
+你是 CodeOmniVis 项目的前端开发者。
 
 执行顺序：
 
 1. 在 packages/ui 中安装 react-i18next 和 i18next：
-   pnpm add react-i18next i18next --filter @omnivis/ui
+   pnpm add react-i18next i18next --filter @codeomnivis/ui
 
 2. 创建 packages/ui/src/locales/zh-CN.json，内容如下：
 [粘贴 6.3 节的 JSON]
@@ -986,13 +986,13 @@ packages/ui/src/
 [粘贴 5.1 节的代码]
 
 6. 创建 packages/ui/src/lib/edgeConfig.ts，内容为：
-import type { EdgeType } from '@omnivis/shared'
+import type { EdgeType } from '@codeomnivis/shared'
 export const EDGE_TYPE_LIST: EdgeType[] = ['renders','navigates_to','calls_api','handles','calls_service','queries_db','db_relation','imports','contains']
 
 7. 在 packages/ui/src/main.tsx 顶部加入：
 import './lib/i18n'
 
-8. 运行 pnpm build --filter @omnivis/ui，确认无 TypeScript 错误
+8. 运行 pnpm build --filter @codeomnivis/ui，确认无 TypeScript 错误
 ```
 
 ---
@@ -1000,7 +1000,7 @@ import './lib/i18n'
 ### Prompt B：useGraphFilter hook + FilterPanel
 
 ```
-你是 OmniVis 项目的前端开发者。
+你是 CodeOmniVis 项目的前端开发者。
 i18n 和 nodeConfig 已完成（Prompt A 已执行）。
 
 1. 读取 packages/ui/src/components/Graph/GraphCanvas.tsx，
@@ -1017,7 +1017,7 @@ i18n 和 nodeConfig 已完成（Prompt A 已执行）。
 4. 创建 packages/ui/src/components/Filter/FilterPanel.tsx：
 [粘贴 4.1 节的代码]
 
-5. 运行 pnpm build --filter @omnivis/ui，确认无错误。
+5. 运行 pnpm build --filter @codeomnivis/ui，确认无错误。
 
 6. 临时在 App.tsx 底部渲染 <FilterPanel />，
    运行开发服务器截图确认 UI 渲染正确，再移除临时代码。
@@ -1028,7 +1028,7 @@ i18n 和 nodeConfig 已完成（Prompt A 已执行）。
 ### Prompt C：NodeTooltip + Cytoscape Emoji
 
 ```
-你是 OmniVis 项目的前端开发者。
+你是 CodeOmniVis 项目的前端开发者。
 
 1. 读取 packages/ui/src/lib/cytoscapeConfig.ts 的完整内容。
 
@@ -1055,7 +1055,7 @@ i18n 和 nodeConfig 已完成（Prompt A 已执行）。
 ### Prompt D：TabBar + App.tsx 整合
 
 ```
-你是 OmniVis 项目的前端开发者。
+你是 CodeOmniVis 项目的前端开发者。
 前三个 Prompt 已执行完毕。
 
 1. 读取 packages/ui/src/App.tsx 的完整内容。
@@ -1116,4 +1116,4 @@ AiPanel 的实现留到后续，当前用占位组件。接入 Claude API 后，
 
 ---
 
-*文档版本：1.0 | 基于 OmniVis 前端 DOM 结构 + 需求梳理*
+*文档版本：1.0 | 基于 CodeOmniVis 前端 DOM 结构 + 需求梳理*

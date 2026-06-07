@@ -149,7 +149,7 @@ GET /api/graph/dataflow?model=User
 
 ```bash
 # 数据流追踪验证
-npx omnivis serve
+npx codeomnivis serve
 # 在 UI 中：
 # 1. 点击 Tab: "Data Flow"
 # 2. 点击一个 DB Model（如 User）

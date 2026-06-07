@@ -1,4 +1,4 @@
-# OmniVis AI 开发约束规则
+# CodeOmniVis AI 开发约束规则
 
 > **适用范围**：所有由 AI（Claude Code / Cursor / 其他 AI 助手）生成或修改的代码
 > **强制级别**：违反任何标记为 `[MUST]` 的规则将被拒绝合并
@@ -45,10 +45,10 @@ async function parseTrpcRouter(file: string): Promise<OmniNode[]> {
 
 ```typescript
 // ✅ 正确：通过 shared 包的类型通信
-import { OmniNode, ParseResult } from '@omnivis/shared'
+import { OmniNode, ParseResult } from '@codeomnivis/shared'
 
 // ❌ 错误：直接引用 analyzer 包的内部类型
-import { PrismaParserResult } from '@omnivis/analyzer/parsers/prisma'
+import { PrismaParserResult } from '@codeomnivis/analyzer/parsers/prisma'
 ```
 
 ---

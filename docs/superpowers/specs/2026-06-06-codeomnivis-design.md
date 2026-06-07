@@ -155,7 +155,7 @@ type EdgeType =
 - analyzer 包：Prisma 解析器 + 图构建
 - server 包：基础 Express + REST API
 - ui 包：Cytoscape.js 基础 ER 图渲染
-- CLI：`npx omnivis serve` 能跑
+- CLI：`npx codeomnivis serve` 能跑
 
 **验收标准**：
 - 输入一个 `schema.prisma` 文件
@@ -234,14 +234,14 @@ type EdgeType =
 
 **产出**：
 - MCP Server（3 个工具）
-- `omnivis check` 命令
-- `omnivis init` 命令
+- `codeomnivis check` 命令
+- `codeomnivis init` 命令
 - 前后端接口一致性检测
 - CLI 进度条和美化输出
 
 **验收标准**：
 - Cursor 能调用 `find_callers`
-- `omnivis check` 输出 JSON 报告
+- `codeomnivis check` 输出 JSON 报告
 - 死链 API 调用被检测到
 
 ### Phase 7：Demo + 发布（3 天）
@@ -256,7 +256,7 @@ type EdgeType =
 - Demo 视频脚本
 
 **验收标准**：
-- `npx omnivis serve` 在自建 demo 上 60 秒内出图
+- `npx codeomnivis serve` 在自建 demo 上 60 秒内出图
 - cal.com 上能跑通（至少核心功能）
 - README 有 GIF 和截图
 

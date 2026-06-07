@@ -100,16 +100,16 @@ circular_dependency: { emoji: '🔄', labelKey: 'issues.circularDep' },
 
 ```bash
 # Drizzle 验证
-npx omnivis serve --project ./samples/drizzle-demo
+npx codeomnivis serve --project ./samples/drizzle-demo
 # 期望：db_model 节点出现，含 isDrizzle: true metadata
 
 # 死代码检测验证
-npx omnivis check
+npx codeomnivis check
 # 期望：输出中出现 dead_route 和 dead_component 类型的问题
 
 # 循环依赖检测验证
 # 在 demo 项目中创建循环 import：A imports B, B imports A
-npx omnivis check
+npx codeomnivis check
 # 期望：输出 circular_dependency 类型的问题
 ```
 

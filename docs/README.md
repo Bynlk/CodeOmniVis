@@ -1,14 +1,14 @@
-# OmniVis 文档索引
+# CodeOmniVis 文档索引
 
 ## 设计文档
-- [项目设计文档](superpowers/specs/2026-06-06-omnivis-design.md) — 整体架构、技术选型、设计决策
+- [项目设计文档](superpowers/specs/2026-06-06-codeomnivis-design.md) — 整体架构、技术选型、设计决策
 
 ## 开发计划
 - [开发计划书](plans/development-plan.md) — 分阶段开发步骤和验收标准
 - [全框架扩展设计文档](plans/framework-expansion-design.md) — 14 个新解析器的详细设计（Vue/Nuxt/Angular/Svelte/NestJS/Fastify/Drizzle 等）
 - [计划修改历史](plans/changelog.md) — 计划变更记录
 - [项目状态报告](plans/PROJECT_STATUS.md) — 实测数据与完成度评估
-- [Phase 1+2 实施计划](plans/omnivis-phase1-phase2-plan.md) — 跨层连线完整化方案
+- [Phase 1+2 实施计划](plans/codeomnivis-phase1-phase2-plan.md) — 跨层连线完整化方案
 - [Kotlin 支持计划](plans/kotlin-support-plan.md) — Kotlin 解析器、Spring/Ktor/Room/Exposed 支持
 
 ## 规则

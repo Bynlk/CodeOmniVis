@@ -225,7 +225,7 @@ commandPalette.esc       → "ESC" / "ESC"
 
 每个 Batch 完成后执行：
 
-- [ ] `pnpm --filter @omnivis/ui build` 编译通过
+- [ ] `pnpm --filter @codeomnivis/ui build` 编译通过
 - [ ] 切换到英文（en-US），所有页面无中文残留
 - [ ] 切换到中文（zh-CN），所有页面无英文残留
 - [ ] 检查 aria-label 在 DevTools 中正确显示
@@ -252,5 +252,5 @@ commandPalette.esc       → "ESC" / "ESC"
 1. **App.tsx 的 `useTranslation` 位置** — App 是根组件，需确认 `I18nextProvider` 已在 `main.tsx` 中包裹，否则 `t()` 无法工作
 2. **Sidebar 的 `NODE_TYPE_LABELS` 改造** — 从静态 Record 改为函数调用，需确认所有引用处都传入 `t`
 3. **interpolation 参数** — `header.searchPlaceholder` 包含 `{shortcut}` 变量，需确认 i18next interpolation 配置正确
-4. **不翻译品牌名** — "Omni"、"OmniVis"、"VS Code" 等品牌名保留英文原文
+4. **不翻译品牌名** — "Omni"、"CodeOmniVis"、"VS Code" 等品牌名保留英文原文
 5. **emoji 保留** — "🤖"、"🌐" 等 emoji 不翻译，保留在 JSX 中

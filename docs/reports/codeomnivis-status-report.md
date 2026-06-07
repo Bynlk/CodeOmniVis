@@ -1,4 +1,4 @@
-# OmniVis 阶段报告书
+# CodeOmniVis 阶段报告书
 
 > 生成日期：2026-06-06
 > 扫描范围：全部 6 个包 + demo 目录 + 测试 + 文档
@@ -77,7 +77,7 @@ Cross-layer links:
   calls_api: 4
 ```
 
-### Demo 项目实测结果（OmniVis Demo）
+### Demo 项目实测结果（CodeOmniVis Demo）
 
 ```
 Files scanned: 16
@@ -151,7 +151,7 @@ Cross-layer links:
 | # | 问题 | 位置 | 影响 |
 |---|------|------|------|
 | 1 | **MCP 数据库永远为空** | `mcp/src/index.ts` | MCP 三个工具全部返回空结果，AI 助手无法使用 |
-| 2 | **MCP CLI 命令不启动服务器** | `cli/commands/mcp.ts` | `omnivis mcp` 命令实际不工作 |
+| 2 | **MCP CLI 命令不启动服务器** | `cli/commands/mcp.ts` | `codeomnivis mcp` 命令实际不工作 |
 | 3 | **`scanFileForDbCalls` 正则捕获组错误** | `crossLayer.ts:535` | `operation` 字段永远是 `undefined` |
 | 4 | **`renders` 边跨文件 ID 不匹配** | `reactComponent.ts` | import 路径解析缺少扩展名，导致边被丢弃 |
 | 5 | **Demo 不完整** | `demo/` | 缺少 `lib/trpc.ts`、`lib/prisma.ts`、`app/layout.tsx` |
@@ -229,9 +229,9 @@ Cross-layer links:
 | `docs/README.md` | 文档索引 |
 | `docs/plans/development-plan.md` | 7 阶段开发计划 |
 | `docs/plans/PROJECT_STATUS.md` | 状态报告（⚠️ symbolResolver 标记为未实现） |
-| `docs/plans/omnivis-phase1-phase2-plan.md` | Phase 1+2 实施计划 |
+| `docs/plans/codeomnivis-phase1-phase2-plan.md` | Phase 1+2 实施计划 |
 | `docs/rules/ai-development-rules.md` | AI 开发约束规则 |
-| `docs/superpowers/specs/2026-06-06-omnivis-design.md` | 设计文档（~1500 行） |
+| `docs/superpowers/specs/2026-06-06-codeomnivis-design.md` | 设计文档（~1500 行） |
 | `docs/project-directory.md` | 目录结构（⚠️ 部分过时） |
 | `docs/archive/项目大纲.md` | 原始大纲 |
 

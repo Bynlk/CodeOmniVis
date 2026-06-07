@@ -1,4 +1,4 @@
-# OmniVis 完整项目目录结构
+# CodeOmniVis 完整项目目录结构
 
 > **生成日期**：2026-06-06
 > **说明**：标注 `# MVP` 的文件为第一阶段必须实现，其余为后续阶段
@@ -8,7 +8,7 @@
 ## 根目录
 
 ```
-omnivis/
+codeomnivis/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml                    # GitHub Actions CI
@@ -20,7 +20,7 @@ omnivis/
 │
 ├── docs/
 │   ├── specs/                        # 设计文档
-│   │   └── 2026-06-06-omnivis-design.md
+│   │   └── 2026-06-06-codeomnivis-design.md
 │   ├── plans/                        # 开发计划
 │   │   └── development-plan.md
 │   ├── rules/                        # AI 约束规则
@@ -44,7 +44,7 @@ omnivis/
 │   │   │   │   ├── edge.ts           # OmniEdge, EdgeType
 │   │   │   │   ├── graph.ts          # OmniGraph, ParseResult
 │   │   │   │   ├── issue.ts          # Issue, IssueSeverity
-│   │   │   │   ├── config.ts         # OmniVisConfig
+│   │   │   │   ├── config.ts         # CodeOmniVisConfig
 │   │   │   │   └── index.ts
 │   │   │   ├── constants/
 │   │   │   │   ├── nodeColors.ts     # 节点颜色配置
@@ -191,18 +191,18 @@ omnivis/
 │       ├── src/
 │       │   ├── index.ts              # Commander 入口 # MVP
 │       │   ├── commands/
-│       │   │   ├── serve.ts          # npx omnivis serve # MVP
-│       │   │   ├── analyze.ts        # npx omnivis analyze
-│       │   │   ├── mcp.ts            # npx omnivis mcp
-│       │   │   ├── check.ts          # npx omnivis check
-│       │   │   └── init.ts           # npx omnivis init
+│       │   │   ├── serve.ts          # npx codeomnivis serve # MVP
+│       │   │   ├── analyze.ts        # npx codeomnivis analyze
+│       │   │   ├── mcp.ts            # npx codeomnivis mcp
+│       │   │   ├── check.ts          # npx codeomnivis check
+│       │   │   └── init.ts           # npx codeomnivis init
 │       │   └── utils/
 │       │       ├── autoDetect.ts     # 框架自动检测 # MVP
 │       │       ├── progress.ts       # 进度条（ora）
 │       │       └── logger.ts         # chalk 日志
 │       │
 │       ├── bin/
-│       │   └── omnivis.ts            # shebang 入口
+│       │   └── codeomnivis.ts            # shebang 入口
 │       ├── package.json
 │       └── tsconfig.json
 │
@@ -239,7 +239,7 @@ omnivis/
 │   ├── package.json
 │   └── tsconfig.json
 │
-├── .omnivis.json.example             # 配置文件示例
+├── .codeomnivis.json.example             # 配置文件示例
 ├── .gitignore
 ├── .eslintrc.json
 ├── .prettierrc
@@ -262,7 +262,7 @@ omnivis/
 | `types/edge.ts` | 定义 `OmniEdge`、`EdgeType`、边 metadata 类型 |
 | `types/graph.ts` | 定义 `OmniGraph`、`ParseResult`、`ProjectMeta` |
 | `types/issue.ts` | 定义 `Issue`、`IssueSeverity`、`IssueType` |
-| `types/config.ts` | 定义 `OmniVisConfig`（.omnivis.json 的类型） |
+| `types/config.ts` | 定义 `CodeOmniVisConfig`（.codeomnivis.json 的类型） |
 | `constants/nodeColors.ts` | 节点类型 → 颜色映射（与 UI 主题一致） |
 | `constants/defaults.ts` | 默认配置值（端口、追踪深度、聚合阈值等） |
 

@@ -32,7 +32,7 @@ import * as crypto from 'crypto'
 
 /**
  * 根据项目根路径生成唯一的 SQLite 文件路径
- * 存放在 ~/.omnivis/projects/{hash}.db
+ * 存放在 ~/.codeomnivis/projects/{hash}.db
  * 同一个项目无论从哪里调用，总是得到同一个路径
  */
 export function getDbPath(projectRoot: string): string {
@@ -43,7 +43,7 @@ export function getDbPath(projectRoot: string): string {
     .digest('hex')
     .slice(0, 12)
 
-  const dir = path.join(os.homedir(), '.omnivis', 'projects')
+  const dir = path.join(os.homedir(), '.codeomnivis', 'projects')
   fs.mkdirSync(dir, { recursive: true })
 
   return path.join(dir, `${hash}.db`)
@@ -57,7 +57,7 @@ export function hasDbCache(projectRoot: string): boolean {
 }
 
 /**
- * 删除项目缓存（用于 omnivis init --clean）
+ * 删除项目缓存（用于 codeomnivis init --clean）
  */
 export function clearDbCache(projectRoot: string): void {
   const p = getDbPath(projectRoot)
@@ -68,7 +68,7 @@ export function clearDbCache(projectRoot: string): void {
 **修改 `packages/analyzer/src/storage/db.ts`**：
 
 ```typescript
-import { getDbPath } from '@omnivis/shared'
+import { getDbPath } from '@codeomnivis/shared'
 
 export class OmniDatabase {
   constructor(
@@ -85,7 +85,7 @@ export class OmniDatabase {
 **修改所有命令**（serve.ts / analyze.ts / check.ts / mcp.ts）：
 
 ```typescript
-import { getDbPath } from '@omnivis/shared'
+import { getDbPath } from '@codeomnivis/shared'
 
 // 在命令 action 函数内：
 const projectRoot = path.resolve(options.project ?? '.')
@@ -148,7 +148,7 @@ export interface GraphStats {
 新建 `packages/server/src/events.ts`：
 ```typescript
 import { EventEmitter } from 'events'
-export const omniVisEvents = new EventEmitter()
+export const codeomnivisEvents = new EventEmitter()
 export const EVENTS = {
   GRAPH_UPDATED: 'graph:updated',
   ANALYSIS_STARTED: 'analysis:started',
@@ -156,9 +156,9 @@ export const EVENTS = {
 } as const
 ```
 
-修改 `server/src/index.ts`：监听 `omniVisEvents.on(EVENTS.GRAPH_UPDATED)`，触发时向所有 WebSocket 客户端广播。
+修改 `server/src/index.ts`：监听 `codeomnivisEvents.on(EVENTS.GRAPH_UPDATED)`，触发时向所有 WebSocket 客户端广播。
 
-修改 `IncrementalAnalyzer`：在文件变更重新分析后，调用 `omniVisEvents.emit(EVENTS.GRAPH_UPDATED, filePath)`。
+修改 `IncrementalAnalyzer`：在文件变更重新分析后，调用 `codeomnivisEvents.emit(EVENTS.GRAPH_UPDATED, filePath)`。
 
 ---
 
@@ -173,10 +173,10 @@ export const EVENTS = {
 
 ```bash
 # 1. MCP 验证
-npx omnivis serve &       # 先分析，写入 DB
-npx omnivis mcp --stdio   # MCP server 读取同一 DB
+npx codeomnivis serve &       # 先分析，写入 DB
+npx codeomnivis mcp --stdio   # MCP server 读取同一 DB
 echo '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"get_api_routes","arguments":{}},"id":1}' \
-  | npx omnivis mcp --stdio
+  | npx codeomnivis mcp --stdio
 # 期望：返回实际的路由数据，不是 []
 
 # 2. UI 验证

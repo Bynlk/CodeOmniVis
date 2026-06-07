@@ -7,7 +7,7 @@
 ## Prompt 4-A：DataFlowTracer + API 端点
 
 ```
-你是 OmniVis 项目的开发者。
+你是 CodeOmniVis 项目的开发者。
 
 1. 读取 packages/analyzer/src/resolver/symbolResolver.ts（参考 ts-morph 使用模式）
 2. 读取 packages/shared/src/types/edge.ts
@@ -17,7 +17,7 @@
 4. 创建 packages/analyzer/src/resolver/dataFlowTracer.ts：
 
 import { Project, Type, TypeChecker, Node, SyntaxKind } from 'ts-morph'
-import type { OmniNode, OmniEdge, OmniGraph } from '@omnivis/shared'
+import type { OmniNode, OmniEdge, OmniGraph } from '@codeomnivis/shared'
 
 export interface DataFlowPath {
   modelNode: OmniNode
@@ -213,7 +213,7 @@ router.get('/dataflow', async (req, res) => {
 ## Prompt 4-B：DataFlowPanel UI + 图高亮
 
 ```
-你是 OmniVis 项目的开发者。
+你是 CodeOmniVis 项目的开发者。
 
 1. 读取 packages/ui/src/components/TabBar/StatsPanel.tsx（参考 Panel 结构）
 2. 读取 packages/ui/src/hooks/useGraphFilter.ts

@@ -2,7 +2,7 @@
 
 ## Context
 
-OmniVis 当前只支持 TypeScript 全栈项目（Next.js + Express/tRPC + Prisma/TypeORM）。用户希望扩展到 Kotlin 生态，支持 Spring Boot、Ktor、Room（Android）三个框架，新增 Kotlin 专用节点类型，并实现 TypeScript 前端 → Kotlin 后端的跨层连线。
+CodeOmniVis 当前只支持 TypeScript 全栈项目（Next.js + Express/tRPC + Prisma/TypeORM）。用户希望扩展到 Kotlin 生态，支持 Spring Boot、Ktor、Room（Android）三个框架，新增 Kotlin 专用节点类型，并实现 TypeScript 前端 → Kotlin 后端的跨层连线。
 
 ## 技术选型：tree-sitter-kotlin
 
@@ -264,5 +264,5 @@ OmniVis 当前只支持 TypeScript 全栈项目（Next.js + Express/tRPC + Prism
 
 1. **单元测试** — `pnpm test` 所有 Kotlin 解析器测试通过
 2. **构建** — `pnpm build` 无 TypeScript 错误
-3. **端到端** — 用 `demo/` 目录下的 Kotlin 示例项目运行 `npx omnivis serve`，在 UI 中看到 Kotlin 节点和连线
+3. **端到端** — 用 `demo/` 目录下的 Kotlin 示例项目运行 `npx codeomnivis serve`，在 UI 中看到 Kotlin 节点和连线
 4. **跨层验证** — TypeScript 前端的 API 调用能正确连接到 Kotlin 后端路由

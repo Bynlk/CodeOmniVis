@@ -5,7 +5,7 @@
 
 ---
 
-## Task 2.1：实现 .omnivis.json 加载
+## Task 2.1：实现 .codeomnivis.json 加载
 
 **根因**：`init` 命令生成配置文件，但全项目没有任何代码读取它。
 
@@ -16,11 +16,11 @@
 ```typescript
 import * as fs from 'fs'
 import * as path from 'path'
-import type { OmniVisConfig } from '../types/config'
+import type { CodeOmniVisConfig } from '../types/config'
 
-const CONFIG_FILENAME = '.omnivis.json'
+const CONFIG_FILENAME = '.codeomnivis.json'
 
-export function loadConfig(projectRoot: string): OmniVisConfig {
+export function loadConfig(projectRoot: string): CodeOmniVisConfig {
   const configPath = path.join(projectRoot, CONFIG_FILENAME)
 
   if (!fs.existsSync(configPath)) {
@@ -29,15 +29,15 @@ export function loadConfig(projectRoot: string): OmniVisConfig {
 
   try {
     const raw = fs.readFileSync(configPath, 'utf-8')
-    const parsed = JSON.parse(raw) as Partial<OmniVisConfig>
+    const parsed = JSON.parse(raw) as Partial<CodeOmniVisConfig>
     return mergeWithDefaults(parsed, projectRoot)
   } catch (err) {
-    console.warn(`[omnivis] Failed to parse ${CONFIG_FILENAME}: ${err}. Using defaults.`)
+    console.warn(`[codeomnivis] Failed to parse ${CONFIG_FILENAME}: ${err}. Using defaults.`)
     return getDefaultConfig(projectRoot)
   }
 }
 
-function getDefaultConfig(projectRoot: string): OmniVisConfig {
+function getDefaultConfig(projectRoot: string): CodeOmniVisConfig {
   return {
     root: projectRoot,
     frontend: { dirs: [], framework: 'auto' },
@@ -49,9 +49,9 @@ function getDefaultConfig(projectRoot: string): OmniVisConfig {
 }
 
 function mergeWithDefaults(
-  partial: Partial<OmniVisConfig>,
+  partial: Partial<CodeOmniVisConfig>,
   projectRoot: string
-): OmniVisConfig {
+): CodeOmniVisConfig {
   const defaults = getDefaultConfig(projectRoot)
   return {
     ...defaults,
@@ -69,7 +69,7 @@ function mergeWithDefaults(
 在 `serve.ts` / `analyze.ts` / `check.ts` 的 action 函数顶部添加：
 
 ```typescript
-import { loadConfig } from '@omnivis/shared'
+import { loadConfig } from '@codeomnivis/shared'
 
 const projectRoot = path.resolve(options.project ?? '.')
 const config = loadConfig(projectRoot)
@@ -83,7 +83,7 @@ const projectMeta = await autoDetect(projectRoot, config)
 ```typescript
 export async function autoDetect(
   root: string,
-  config?: OmniVisConfig
+  config?: CodeOmniVisConfig
 ): Promise<ProjectMeta> {
   const detected = await doAutoDetect(root)
 
@@ -168,12 +168,12 @@ function detectBackendFramework(root: string, pkgJson: any): BackendFramework {
 ```bash
 # 配置文件验证
 cd demo/
-cat .omnivis.json
-npx omnivis serve   # 观察 CLI 输出中是否提示"配置文件已加载"
+cat .codeomnivis.json
+npx codeomnivis serve   # 观察 CLI 输出中是否提示"配置文件已加载"
 
 # NestJS 验证
 git clone https://github.com/nestjs/nest samples/nestjs-demo
-npx omnivis serve --project samples/nestjs-demo/sample01-cats-app
+npx codeomnivis serve --project samples/nestjs-demo/sample01-cats-app
 # 期望：
 # - 检测到 NestJS 框架
 # - UI 中出现 api_route 节点（如 GET /cats, POST /cats）

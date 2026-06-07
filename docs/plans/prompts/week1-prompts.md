@@ -7,7 +7,7 @@
 ## Prompt 1-A：数据库路径共享
 
 ```
-你是 OmniVis 项目的开发者。按顺序执行：
+你是 CodeOmniVis 项目的开发者。按顺序执行：
 
 1. 读取 packages/shared/src/types/ 目录结构
 2. 读取 packages/analyzer/src/storage/db.ts 完整内容
@@ -22,7 +22,7 @@ import * as crypto from 'crypto'
 
 /**
  * 根据项目根路径生成唯一的 SQLite 文件路径
- * 存放在 ~/.omnivis/projects/{hash}.db
+ * 存放在 ~/.codeomnivis/projects/{hash}.db
  * 同一个项目无论从哪里调用，总是得到同一个路径
  */
 export function getDbPath(projectRoot: string): string {
@@ -33,7 +33,7 @@ export function getDbPath(projectRoot: string): string {
     .digest('hex')
     .slice(0, 12)
 
-  const dir = path.join(os.homedir(), '.omnivis', 'projects')
+  const dir = path.join(os.homedir(), '.codeomnivis', 'projects')
   fs.mkdirSync(dir, { recursive: true })
 
   return path.join(dir, `${hash}.db`)
@@ -47,7 +47,7 @@ export function hasDbCache(projectRoot: string): boolean {
 }
 
 /**
- * 删除项目缓存（用于 omnivis init --clean）
+ * 删除项目缓存（用于 codeomnivis init --clean）
  */
 export function clearDbCache(projectRoot: string): void {
   const p = getDbPath(projectRoot)
@@ -73,7 +73,7 @@ export function clearDbCache(projectRoot: string): void {
 ## Prompt 1-B：MCP 工具实现
 
 ```
-你是 OmniVis 项目的开发者。
+你是 CodeOmniVis 项目的开发者。
 Prompt 1-A 已完成（数据库路径共享）。
 
 1. 读取 packages/mcp/src/index.ts 完整内容
@@ -163,17 +163,17 @@ getSubtree(rootId: string, edgeType: EdgeType, maxDepth: number): object {
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import { OmniDatabase } from '@omnivis/analyzer'
-import { getDbPath, hasDbCache } from '@omnivis/shared'
+import { OmniDatabase } from '@codeomnivis/analyzer'
+import { getDbPath, hasDbCache } from '@codeomnivis/shared'
 import { runAnalysis } from '../../../analyzer/src/index'
 import * as path from 'path'
 
-const projectRoot = process.env.OMNIVIS_PROJECT ?? process.cwd()
+const projectRoot = process.env.codeomnivis_PROJECT ?? process.cwd()
 const dbPath = getDbPath(projectRoot)
 
 async function ensureDbReady(): Promise<OmniDatabase> {
   if (!hasDbCache(projectRoot)) {
-    console.error('[omnivis-mcp] No cache found, running analysis...')
+    console.error('[codeomnivis-mcp] No cache found, running analysis...')
     await runAnalysis({ projectRoot, dbPath })
   }
   return new OmniDatabase(dbPath)
@@ -248,8 +248,8 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
 5. 运行 pnpm build，确认无错误
 
-6. 手动测试（需要先运行 omnivis serve 分析项目）：
-   echo '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"get_api_routes","arguments":{}},"id":1}' | npx omnivis mcp --stdio
+6. 手动测试（需要先运行 codeomnivis serve 分析项目）：
+   echo '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"get_api_routes","arguments":{}},"id":1}' | npx codeomnivis mcp --stdio
 
    输出应包含实际的路由数据，不是空数组。
 ```
@@ -259,7 +259,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 ## Prompt 1-C：UI Panel 修复 + WebSocket + 端点修复
 
 ```
-你是 OmniVis 项目的开发者。
+你是 CodeOmniVis 项目的开发者。
 
 1. 读取 packages/ui/src/components/TabBar/IssuesPanel.tsx 完整内容
 2. 读取 packages/ui/src/components/TabBar/StatsPanel.tsx 完整内容
@@ -291,27 +291,27 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 7. 创建 packages/server/src/events.ts：
 
    import { EventEmitter } from 'events'
-   export const omniVisEvents = new EventEmitter()
+   export const codeomnivisEvents = new EventEmitter()
    export const EVENTS = {
      GRAPH_UPDATED: 'graph:updated',
      ANALYSIS_STARTED: 'analysis:started',
      ANALYSIS_COMPLETED: 'analysis:completed',
    } as const
 
-8. 修改 server/src/index.ts，监听 omniVisEvents.on(EVENTS.GRAPH_UPDATED)，
+8. 修改 server/src/index.ts，监听 codeomnivisEvents.on(EVENTS.GRAPH_UPDATED)，
    触发时向所有 WebSocket 客户端广播
 
 9. 修改 IncrementalAnalyzer（chokidar watcher），在文件变更重新分析后，
-   调用 omniVisEvents.emit(EVENTS.GRAPH_UPDATED, filePath)
+   调用 codeomnivisEvents.emit(EVENTS.GRAPH_UPDATED, filePath)
 
 10. 新增 POST /api/analyze 路由：
 
     router.post('/analyze', async (req, res) => {
       try {
         const projectRoot = req.app.locals.projectRoot as string
-        omniVisEvents.emit(EVENTS.ANALYSIS_STARTED)
+        codeomnivisEvents.emit(EVENTS.ANALYSIS_STARTED)
         await runAnalysis({ projectRoot, dbPath: getDbPath(projectRoot) })
-        omniVisEvents.emit(EVENTS.GRAPH_UPDATED)
+        codeomnivisEvents.emit(EVENTS.GRAPH_UPDATED)
         res.json({ data: { success: true, message: 'Analysis completed' }, meta: {} })
       } catch (err) {
         res.status(500).json({ error: String(err) })

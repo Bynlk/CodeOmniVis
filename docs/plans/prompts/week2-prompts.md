@@ -7,7 +7,7 @@
 ## Prompt 2-A：配置文件系统
 
 ```
-你是 OmniVis 项目的开发者。
+你是 CodeOmniVis 项目的开发者。
 
 1. 读取 packages/shared/src/types/ 下的所有类型文件
 2. 读取 packages/cli/src/utils/autoDetect.ts 完整内容
@@ -17,11 +17,11 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import type { OmniVisConfig } from '../types/config'
+import type { CodeOmniVisConfig } from '../types/config'
 
-const CONFIG_FILENAME = '.omnivis.json'
+const CONFIG_FILENAME = '.codeomnivis.json'
 
-export function loadConfig(projectRoot: string): OmniVisConfig {
+export function loadConfig(projectRoot: string): CodeOmniVisConfig {
   const configPath = path.join(projectRoot, CONFIG_FILENAME)
 
   if (!fs.existsSync(configPath)) {
@@ -30,15 +30,15 @@ export function loadConfig(projectRoot: string): OmniVisConfig {
 
   try {
     const raw = fs.readFileSync(configPath, 'utf-8')
-    const parsed = JSON.parse(raw) as Partial<OmniVisConfig>
+    const parsed = JSON.parse(raw) as Partial<CodeOmniVisConfig>
     return mergeWithDefaults(parsed, projectRoot)
   } catch (err) {
-    console.warn(`[omnivis] Failed to parse ${CONFIG_FILENAME}: ${err}. Using defaults.`)
+    console.warn(`[codeomnivis] Failed to parse ${CONFIG_FILENAME}: ${err}. Using defaults.`)
     return getDefaultConfig(projectRoot)
   }
 }
 
-function getDefaultConfig(projectRoot: string): OmniVisConfig {
+function getDefaultConfig(projectRoot: string): CodeOmniVisConfig {
   return {
     root: projectRoot,
     frontend: { dirs: [], framework: 'auto' },
@@ -50,9 +50,9 @@ function getDefaultConfig(projectRoot: string): OmniVisConfig {
 }
 
 function mergeWithDefaults(
-  partial: Partial<OmniVisConfig>,
+  partial: Partial<CodeOmniVisConfig>,
   projectRoot: string
-): OmniVisConfig {
+): CodeOmniVisConfig {
   const defaults = getDefaultConfig(projectRoot)
   return {
     ...defaults,
@@ -70,7 +70,7 @@ function mergeWithDefaults(
 
 export async function autoDetect(
   root: string,
-  config?: OmniVisConfig
+  config?: CodeOmniVisConfig
 ): Promise<ProjectMeta> {
   const detected = await doAutoDetect(root)
 
@@ -99,8 +99,8 @@ export async function autoDetect(
    传入 autoDetect(projectRoot, config)
 
 8. pnpm build 确认无错误
-9. 在 demo/ 目录创建 .omnivis.json（只包含 { "port": 4322 }）
-   运行 omnivis serve，确认服务在 4322 端口启动
+9. 在 demo/ 目录创建 .codeomnivis.json（只包含 { "port": 4322 }）
+   运行 codeomnivis serve，确认服务在 4322 端口启动
 ```
 
 ---
@@ -108,7 +108,7 @@ export async function autoDetect(
 ## Prompt 2-B：NestJS 解析器
 
 ```
-你是 OmniVis 项目的开发者。
+你是 CodeOmniVis 项目的开发者。
 
 1. 读取 packages/analyzer/src/parsers/express.ts 完整内容（参考模式）
 2. 读取 packages/analyzer/src/parsers/trpc.ts 完整内容（参考模式）
@@ -119,7 +119,7 @@ export async function autoDetect(
 ─── packages/analyzer/src/parsers/nestjs/nestjsControllerParser.ts ───
 
 import { Project, SyntaxKind, Decorator } from 'ts-morph'
-import type { OmniNode, OmniEdge, NodeType } from '@omnivis/shared'
+import type { OmniNode, OmniEdge, NodeType } from '@codeomnivis/shared'
 
 const HTTP_METHOD_DECORATORS = ['Get', 'Post', 'Put', 'Delete', 'Patch', 'Head', 'Options', 'All']
 
