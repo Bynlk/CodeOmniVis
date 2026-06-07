@@ -8,7 +8,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, CallExpression, Node } from 'ts-morph'
+import { Project, SyntaxKind, CallExpression, Node, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -19,8 +19,8 @@ import type {
   OmniEdge,
   ProjectMeta,
   ApiRouteMetadata,
-} from '@omnivis/shared'
-import { createNodeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId } from '@codeomnivis/shared'
 
 // ============================================================
 // Express 路由解析器
@@ -108,12 +108,12 @@ export class ExpressParser implements Parser {
   /**
    * 查找路由定义
    */
-  private findRouteDefinitions(sourceFile: any, filePath: string): OmniNode[] {
+  private findRouteDefinitions(sourceFile: SourceFile, filePath: string): OmniNode[] {
     const nodes: OmniNode[] = []
     // 为每个 router 变量维护独立的前缀
     const routerPrefixes = this.detectAllRouterPrefixes(sourceFile)
 
-    sourceFile.forEachDescendant((node: any) => {
+    sourceFile.forEachDescendant((node: Node) => {
       if (node.getKind() !== SyntaxKind.CallExpression) return
 
       const callExpr = node as CallExpression
@@ -163,10 +163,10 @@ export class ExpressParser implements Parser {
    * 检测所有 router 的前缀
    * 返回 routerName -> prefix 的映射
    */
-  private detectAllRouterPrefixes(sourceFile: any): Map<string, string> {
+  private detectAllRouterPrefixes(sourceFile: SourceFile): Map<string, string> {
     const prefixes = new Map<string, string>()
 
-    sourceFile.forEachDescendant((node: any) => {
+    sourceFile.forEachDescendant((node: Node) => {
       if (node.getKind() !== SyntaxKind.CallExpression) return
 
       const callExpr = node as CallExpression
@@ -192,7 +192,7 @@ export class ExpressParser implements Parser {
   /**
    * 从表达式中获取 router 变量名
    */
-  private getRouterName(expression: any): string | null {
+  private getRouterName(expression: Node): string | null {
     if (Node.isPropertyAccessExpression(expression)) {
       const obj = expression.getExpression()
       if (Node.isIdentifier(obj)) {
@@ -205,10 +205,10 @@ export class ExpressParser implements Parser {
   /**
    * 查找 router 的前缀
    */
-  private findRouterPrefix(sourceFile: any, routerName: string): string {
+  private findRouterPrefix(sourceFile: SourceFile, routerName: string): string {
     let prefix = ''
 
-    sourceFile.forEachDescendant((node: any) => {
+    sourceFile.forEachDescendant((node: Node) => {
       if (node.getKind() !== SyntaxKind.CallExpression) return
 
       const callExpr = node as CallExpression
@@ -234,11 +234,11 @@ export class ExpressParser implements Parser {
   /**
    * 从表达式中提取 HTTP method
    */
-  private extractHttpMethod(expression: any): string | null {
+  private extractHttpMethod(expression: Node): string | null {
     // app.get / router.get
     if (Node.isPropertyAccessExpression(expression)) {
       const methodName = expression.getName()
-      if (HTTP_METHODS.includes(methodName as any)) {
+      if ((HTTP_METHODS as readonly string[]).includes(methodName)) {
         return methodName
       }
     }

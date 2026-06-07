@@ -7,9 +7,9 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import type { Parser, ParseResult, ParseContext, ProjectMeta } from '@omnivis/shared'
-import { createNodeId, createEdgeId } from '@omnivis/shared'
-import type { OmniNode, OmniEdge } from '@omnivis/shared'
+import type { Parser, ParseResult, ParseContext, ProjectMeta } from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
+import type { OmniNode, OmniEdge } from '@codeomnivis/shared'
 import { parseKotlinSource } from './treeSitterInit'
 import { walkKotlinTree } from './kotlinWalker'
 
@@ -47,11 +47,13 @@ export class ExposedParser implements Parser {
           [...EXPOSED_TABLE_BASES].some((base: string) => source.includes(`${obj.name} : ${base}`))
 
         if (isExposedTable) {
-          const nodeId = createNodeId('db_model', normalizedPath, obj.name)
+          // Derive singular entity name from table object name (e.g. Users -> User, Posts -> Post)
+          const singularName = obj.name.endsWith('s') ? obj.name.slice(0, -1) : obj.name
+          const nodeId = createNodeId('db_model', normalizedPath, singularName)
           nodes.push({
             id: nodeId,
             type: 'db_model',
-            name: obj.name,
+            name: singularName,
             filePath: normalizedPath,
             line: obj.line,
             column: obj.column,
@@ -139,12 +141,12 @@ export class ExposedParser implements Parser {
       }
 
       tree.delete()
-    } catch (err: any) {
+    } catch (err: unknown) {
       errors.push({
         file: filePath,
-        message: err.message ?? 'Unknown error in ExposedParser',
+        message: err instanceof Error ? err.message : 'Unknown error in ExposedParser',
         severity: 'warning',
-        originalError: err,
+        originalError: err instanceof Error ? err : undefined,
       })
     }
 

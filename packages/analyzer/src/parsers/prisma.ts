@@ -20,8 +20,8 @@ import type {
   DbModelMetadata,
   DbFieldInfo,
   DbRelationMetadata,
-} from '@omnivis/shared'
-import { createNodeId, createEdgeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 
 // Prisma DMMF 类型（从 @prisma/internals 导出）
 interface DmmfModel {

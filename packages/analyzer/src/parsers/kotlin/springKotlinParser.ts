@@ -7,9 +7,9 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import type { Parser, ParseResult, ParseContext, ProjectMeta } from '@omnivis/shared'
-import { createNodeId, createEdgeId } from '@omnivis/shared'
-import type { OmniNode, OmniEdge } from '@omnivis/shared'
+import type { Parser, ParseResult, ParseContext, ProjectMeta } from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
+import type { OmniNode, OmniEdge } from '@codeomnivis/shared'
 import { parseKotlinSource } from './treeSitterInit'
 import { walkKotlinTree, type KotlinClassInfo, type KotlinFunctionInfo } from './kotlinWalker'
 
@@ -45,6 +45,10 @@ export class SpringKotlinParser implements Parser {
     const nodes: OmniNode[] = []
     const edges: OmniEdge[] = []
     const errors: ParseResult['errors'] = []
+
+    if (!this.canHandle(filePath, context.projectMeta)) {
+      return { nodes, edges, errors }
+    }
 
     try {
       const fullPath = path.resolve(context.projectRoot, filePath)
@@ -171,12 +175,12 @@ export class SpringKotlinParser implements Parser {
       }
 
       tree.delete()
-    } catch (err: any) {
+    } catch (err: unknown) {
       errors.push({
         file: filePath,
-        message: err.message ?? 'Unknown error in SpringKotlinParser',
+        message: err instanceof Error ? err.message : 'Unknown error in SpringKotlinParser',
         severity: 'warning',
-        originalError: err,
+        originalError: err instanceof Error ? err : undefined,
       })
     }
 

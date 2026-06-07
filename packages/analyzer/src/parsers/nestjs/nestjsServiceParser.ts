@@ -8,7 +8,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, Node, Decorator, ClassDeclaration } from 'ts-morph'
+import { Project, SyntaxKind, Node, Decorator, ClassDeclaration, ParameterDeclaration } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -20,8 +20,8 @@ import type {
   ProjectMeta,
   ServiceMetadata,
   EdgeType,
-} from '@omnivis/shared'
-import { createNodeId, createEdgeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 
 // ============================================================
 // NestJS Service 解析器
@@ -128,14 +128,14 @@ export class NestjsServiceParser implements Parser {
     return { nodes, edges, errors }
   }
 
-  private findDecorator(node: ClassDeclaration | any, name: string): Decorator | undefined {
+  private findDecorator(node: ClassDeclaration | ParameterDeclaration, name: string): Decorator | undefined {
     return node.getDecorators().find((d: Decorator) => d.getName() === name)
   }
 
   /**
    * 从 @InjectRepository(User) 提取实体类型
    */
-  private extractRepositoryType(param: any): string | null {
+  private extractRepositoryType(param: ParameterDeclaration): string | null {
     const repoDecorator = this.findDecorator(param, 'InjectRepository')
     if (!repoDecorator) return null
 

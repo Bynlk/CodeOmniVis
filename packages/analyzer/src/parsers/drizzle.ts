@@ -8,7 +8,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, CallExpression, Node, VariableDeclaration } from 'ts-morph'
+import { Project, SyntaxKind, CallExpression, Node, VariableDeclaration, SourceFile, ObjectLiteralExpression } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -20,8 +20,8 @@ import type {
   ProjectMeta,
   DbModelMetadata,
   DbFieldInfo,
-} from '@omnivis/shared'
-import { createNodeId, createEdgeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 
 // ============================================================
 // 常量
@@ -112,11 +112,11 @@ export class DrizzleParser implements Parser {
   /**
    * 解析表定义：const xxxTable = pgTable('xxx', { ... })
    */
-  private parseTableDefinitions(sourceFile: any, filePath: string): { nodes: OmniNode[]; tableMap: Map<string, string> } {
+  private parseTableDefinitions(sourceFile: SourceFile, filePath: string): { nodes: OmniNode[]; tableMap: Map<string, string> } {
     const nodes: OmniNode[] = []
     const tableMap = new Map<string, string>() // constName → nodeId
 
-    sourceFile.forEachDescendant((node: any) => {
+    sourceFile.forEachDescendant((node: Node) => {
       if (node.getKind() !== SyntaxKind.CallExpression) return
 
       const callExpr = node as CallExpression
@@ -182,7 +182,7 @@ export class DrizzleParser implements Parser {
   /**
    * 提取列定义
    */
-  private extractColumns(objLiteral: any): DbFieldInfo[] {
+  private extractColumns(objLiteral: ObjectLiteralExpression): DbFieldInfo[] {
     const fields: DbFieldInfo[] = []
 
     for (const prop of objLiteral.getProperties()) {
@@ -228,10 +228,10 @@ export class DrizzleParser implements Parser {
   /**
    * 解析关系定义：relations(xxxTable, ({ one, many }) => ({ ... }))
    */
-  private parseRelationDefinitions(sourceFile: any, filePath: string, tableMap: Map<string, string>): OmniEdge[] {
+  private parseRelationDefinitions(sourceFile: SourceFile, filePath: string, tableMap: Map<string, string>): OmniEdge[] {
     const edges: OmniEdge[] = []
 
-    sourceFile.forEachDescendant((node: any) => {
+    sourceFile.forEachDescendant((node: Node) => {
       if (node.getKind() !== SyntaxKind.CallExpression) return
 
       const callExpr = node as CallExpression
@@ -309,15 +309,15 @@ export class DrizzleParser implements Parser {
   /**
    * 获取表函数名
    */
-  private getTableFunctionName(expression: any): string | null {
+  private getTableFunctionName(expression: Node): string | null {
     if (Node.isIdentifier(expression)) {
       const name = expression.getText()
-      if (TABLE_FUNCTIONS.includes(name as any)) return name
+      if ((TABLE_FUNCTIONS as readonly string[]).includes(name)) return name
     }
 
     if (Node.isPropertyAccessExpression(expression)) {
       const methodName = expression.getName()
-      if (TABLE_FUNCTIONS.includes(methodName as any)) return methodName
+      if ((TABLE_FUNCTIONS as readonly string[]).includes(methodName)) return methodName
     }
 
     return null

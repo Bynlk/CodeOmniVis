@@ -8,7 +8,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, CallExpression, Node, Decorator, ClassDeclaration } from 'ts-morph'
+import { Project, SyntaxKind, CallExpression, Node, Decorator, ClassDeclaration, MethodDeclaration, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -21,8 +21,8 @@ import type {
   ApiRouteMetadata,
   HandlerMetadata,
   EdgeType,
-} from '@omnivis/shared'
-import { createNodeId, createEdgeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 
 // ============================================================
 // 常量
@@ -161,16 +161,16 @@ export class NestjsControllerParser implements Parser {
   /**
    * 查找指定名称的装饰器
    */
-  private findDecorator(node: ClassDeclaration | any, name: string): Decorator | undefined {
+  private findDecorator(node: ClassDeclaration, name: string): Decorator | undefined {
     return node.getDecorators().find((d: Decorator) => d.getName() === name)
   }
 
   /**
    * 查找方法上的 HTTP 装饰器
    */
-  private findHttpDecorator(method: any): Decorator | undefined {
+  private findHttpDecorator(method: MethodDeclaration): Decorator | undefined {
     return method.getDecorators().find((d: Decorator) =>
-      HTTP_DECORATORS.includes(d.getName() as any)
+      (HTTP_DECORATORS as readonly string[]).includes(d.getName())
     )
   }
 

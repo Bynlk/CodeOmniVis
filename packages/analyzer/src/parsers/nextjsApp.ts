@@ -20,8 +20,8 @@ import type {
   ProjectMeta,
   PageMetadata,
   ApiRouteMetadata,
-} from '@omnivis/shared'
-import { createNodeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 
 // ============================================================
 // Next.js App Router 解析器
@@ -69,7 +69,12 @@ export class NextjsAppParser implements Parser {
       // 判断是 page 还是 route
       if (/\/page\.(tsx|ts|jsx|js)$/.test(normalizedPath)) {
         const node = this.parsePage(normalizedPath, context.projectRoot)
-        if (node) nodes.push(node)
+        if (node) {
+          nodes.push(node)
+          // 轻量级：从页面提取组件渲染关系
+          const componentEdges = this.extractPageRenders(normalizedPath, context.projectRoot, node.id)
+          edges.push(...componentEdges)
+        }
       } else if (/\/route\.(tsx|ts|jsx|js)$/.test(normalizedPath)) {
         const node = this.parseRoute(normalizedPath, context.projectRoot)
         if (node) nodes.push(node)
@@ -172,8 +177,10 @@ export class NextjsAppParser implements Parser {
     // 移除文件名（page.tsx, route.ts 等）
     routePath = routePath.replace(/\/(?:page|route|layout|loading|error)\.(tsx|ts|jsx|js)$/, '')
 
-    // 处理路由组：(group) → 移除括号
-    routePath = routePath.replace(/\(([^)]+)\)\//g, '$1/')
+    // 处理路由组：(group)/ → 完全移除（路由组不影响 URL）
+    routePath = routePath.replace(/\([^)]+\)\//g, '')
+    // 末尾的路由组也剥离
+    routePath = routePath.replace(/\([^)]+\)$/g, '')
 
     // 处理 parallel routes：@slot → 移除 @
     routePath = routePath.replace(/@([^/]+)/g, '$1')
@@ -204,6 +211,195 @@ export class NextjsAppParser implements Parser {
     }
 
     return params
+  }
+
+  /**
+   * 提取页面渲染的组件关系（renders 边）
+   * 通过分析 import 和 JSX 元素构建 page → component 连接
+   */
+  private extractPageComponents(filePath: string, projectRoot: string, pageId: string): OmniEdge[] {
+    const edges: OmniEdge[] = []
+
+    try {
+      const fullPath = path.resolve(projectRoot, filePath)
+      if (!fs.existsSync(fullPath)) return edges
+
+      const content = fs.readFileSync(fullPath, 'utf-8')
+
+      // 构建 import 映射：组件名 → 文件路径
+      const importMap = new Map<string, string>()
+      const importRegex = /import\s+(?:\{([^}]+)\}|(\w+))\s+from\s+['"]([^'"]+)['"]/g
+      let match
+
+      while ((match = importRegex.exec(content)) !== null) {
+        const namedImports = match[1]
+        const defaultImport = match[2]
+        const importPath = match[3]
+
+        // 只处理相对路径 import（避免昂贵的 workspace 解析）
+        if (!importPath.startsWith('.')) continue
+
+        const resolvedPath = this.resolveRelativeImport(filePath, importPath, projectRoot)
+        if (!resolvedPath) continue
+
+        if (namedImports) {
+          for (const name of namedImports.split(',').map(s => s.trim().split(/\s+as\s+/)[0].trim())) {
+            if (name && /^[A-Z]/.test(name)) importMap.set(name, resolvedPath)
+          }
+        }
+        if (defaultImport && /^[A-Z]/.test(defaultImport)) {
+          importMap.set(defaultImport, resolvedPath)
+        }
+      }
+
+      // 查找 JSX 元素
+      const jsxRegex = /<([A-Z]\w*)(?:\s|\/|>)/g
+      const usedComponents = new Set<string>()
+      while ((match = jsxRegex.exec(content)) !== null) {
+        const tagName = match[1]
+        if (tagName && !['Fragment', 'Suspense', 'ErrorBoundary'].includes(tagName)) {
+          usedComponents.add(tagName)
+        }
+      }
+
+      // 创建 renders 边
+      for (const componentName of usedComponents) {
+        const componentPath = importMap.get(componentName)
+        if (componentPath) {
+          const componentId = createNodeId('component', componentPath, componentName)
+          const edgeId = createEdgeId(pageId, 'renders', componentId)
+          edges.push({
+            id: edgeId,
+            source: pageId,
+            target: componentId,
+            type: 'renders',
+            confidence: 'certain',
+            metadata: { jsxLine: 0 },
+          })
+        }
+      }
+    } catch {
+      // 降级
+    }
+
+    return edges
+  }
+
+  /**
+   * 解析相对路径 import
+   */
+  private resolveRelativeImport(fromFile: string, importPath: string, projectRoot: string): string | null {
+    try {
+      const fromDir = path.dirname(fromFile)
+      let resolved = path.join(fromDir, importPath).replace(/\\/g, '/')
+
+      const exts = ['.tsx', '.ts', '.jsx', '.js']
+      for (const ext of exts) {
+        const candidate = resolved + ext
+        if (fs.existsSync(path.resolve(projectRoot, candidate))) return candidate
+      }
+      for (const ext of exts) {
+        const indexPath = path.join(resolved, 'index' + ext)
+        if (fs.existsSync(path.resolve(projectRoot, indexPath))) return indexPath
+      }
+
+      return resolved
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * 轻量级提取页面渲染的组件关系
+   * 支持相对路径、path alias（@lib/、app/、~/）
+   */
+  private extractPageRenders(filePath: string, projectRoot: string, pageId: string): OmniEdge[] {
+    const edges: OmniEdge[] = []
+    try {
+      const fullPath = path.resolve(projectRoot, filePath)
+      if (!fs.existsSync(fullPath)) return edges
+      const content = fs.readFileSync(fullPath, 'utf-8')
+
+      // 解析 import：组件名 → 文件路径
+      const importMap = new Map<string, string>()
+      const importRegex = /import\s+(?:\{([^}]+)\}|(\w+))\s+from\s+['"]([^'"]+)['"]/g
+      let m: RegExpExecArray | null
+
+      while ((m = importRegex.exec(content)) !== null) {
+        const named = m[1]
+        const def = m[2]
+        const importPath = m[3]
+
+        // 只处理相对路径和 path alias（跳过 node_modules 包）
+        if (importPath.startsWith('.') || importPath.startsWith('~/') ||
+            importPath.startsWith('@lib/') || importPath.startsWith('app/')) {
+          const resolved = this.resolveImportPath(filePath, importPath, projectRoot)
+          if (!resolved) continue
+
+          if (named) {
+            for (const n of named.split(',').map(s => s.trim().split(/\s+as\s+/)[0].trim())) {
+              if (n && /^[A-Z]/.test(n)) importMap.set(n, resolved)
+            }
+          }
+          if (def && /^[A-Z]/.test(def)) importMap.set(def, resolved)
+        }
+      }
+
+      // 查找 JSX 使用
+      const jsxRegex = /<([A-Z]\w*)(?:[\s/>])/g
+      while ((m = jsxRegex.exec(content)) !== null) {
+        const tag = m[1]
+        const compPath = importMap.get(tag)
+        if (compPath) {
+          const compId = createNodeId('component', compPath, tag)
+          edges.push({
+            id: createEdgeId(pageId, 'renders', compId),
+            source: pageId,
+            target: compId,
+            type: 'renders',
+            confidence: 'certain',
+            metadata: { jsxLine: 0 },
+          })
+        }
+      }
+    } catch { /* 降级 */ }
+    return edges
+  }
+
+  /**
+   * 解析 import 路径（支持相对路径和 path alias）
+   */
+  private resolveImportPath(fromFile: string, importPath: string, projectRoot: string): string | null {
+    try {
+      let resolved: string
+
+      if (importPath.startsWith('.')) {
+        // 相对路径
+        resolved = path.join(path.dirname(fromFile), importPath).replace(/\\/g, '/')
+      } else if (importPath.startsWith('~/')) {
+        // ~/ 别名 → 相对于 apps/web
+        resolved = importPath.replace(/^~\//, '').replace(/\\/g, '/')
+      } else if (importPath.startsWith('@lib/')) {
+        // @lib/ 别名 → lib/
+        resolved = importPath.replace(/^@lib\//, 'lib/').replace(/\\/g, '/')
+      } else if (importPath.startsWith('app/')) {
+        // app/ 路径别名
+        resolved = importPath.replace(/\\/g, '/')
+      } else {
+        return null
+      }
+
+      // 补全扩展名
+      const exts = ['.tsx', '.ts', '.jsx', '.js']
+      for (const ext of exts) {
+        if (fs.existsSync(path.resolve(projectRoot, resolved + ext))) return resolved + ext
+      }
+      for (const ext of exts) {
+        const idx = path.join(resolved, 'index' + ext)
+        if (fs.existsSync(path.resolve(projectRoot, idx))) return idx
+      }
+      return null
+    } catch { return null }
   }
 
   /**

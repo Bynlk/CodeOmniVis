@@ -7,7 +7,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, CallExpression, Node } from 'ts-morph'
+import { Project, SyntaxKind, CallExpression, Node, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -18,8 +18,8 @@ import type {
   OmniEdge,
   ProjectMeta,
   TrpcProcedureMetadata,
-} from '@omnivis/shared'
-import { createNodeId, createEdgeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 
 // ============================================================
 // tRPC 解析器
@@ -133,11 +133,11 @@ export class TrpcParser implements Parser {
   /**
    * 查找 createTRPCRouter 调用
    */
-  private findCreateRouterCalls(sourceFile: any): CallExpression[] {
+  private findCreateRouterCalls(sourceFile: SourceFile): CallExpression[] {
     const calls: CallExpression[] = []
 
     // 递归查找所有函数调用
-    sourceFile.forEachDescendant((node: any) => {
+    sourceFile.forEachDescendant((node: Node) => {
       if (node.getKind() === SyntaxKind.CallExpression) {
         const callExpr = node as CallExpression
         const expression = callExpr.getExpression()

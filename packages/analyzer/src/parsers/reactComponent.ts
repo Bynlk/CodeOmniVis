@@ -7,7 +7,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, Node, CallExpression, JsxElement, JsxSelfClosingElement } from 'ts-morph'
+import { Project, SyntaxKind, Node, CallExpression, JsxElement, JsxSelfClosingElement, SourceFile, FunctionDeclaration, ArrowFunction, MethodDeclaration, FunctionExpression, VariableDeclaration } from 'ts-morph'
 import * as path from 'path'
 import * as fs from 'fs'
 import type {
@@ -19,8 +19,8 @@ import type {
   OmniEdge,
   ProjectMeta,
   ComponentMetadata,
-} from '@omnivis/shared'
-import { createNodeId, createEdgeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 
 // ============================================================
 // React 组件解析器
@@ -81,7 +81,7 @@ export class ReactComponentParser implements Parser {
         nodes.push(component.node)
 
         // 提取 JSX 子组件关系
-        const childEdges = this.extractChildComponents(sourceFile, filePath, component.name)
+        const childEdges = this.extractChildComponents(sourceFile, filePath, component.name, context.projectRoot)
         edges.push(...childEdges)
       }
 
@@ -102,11 +102,11 @@ export class ReactComponentParser implements Parser {
   /**
    * 提取组件
    */
-  private extractComponents(sourceFile: any, filePath: string): Array<{ node: OmniNode; name: string }> {
+  private extractComponents(sourceFile: SourceFile, filePath: string): Array<{ node: OmniNode; name: string }> {
     const components: Array<{ node: OmniNode; name: string }> = []
 
     // 查找函数组件
-    sourceFile.forEachDescendant((node: any) => {
+    sourceFile.forEachDescendant((node: Node) => {
       // export function ComponentName() {}
       if (Node.isFunctionDeclaration(node)) {
         const isExported = node.isExported()
@@ -150,7 +150,7 @@ export class ReactComponentParser implements Parser {
   /**
    * 判断变量是否被导出
    */
-  private isVariableExported(node: any): boolean {
+  private isVariableExported(node: VariableDeclaration): boolean {
     const parent = node.getParent()
     if (!parent) return false
 
@@ -196,7 +196,7 @@ export class ReactComponentParser implements Parser {
   /**
    * 从函数参数提取 props 名称
    */
-  private extractPropsFromFunction(funcNode: any): string[] {
+  private extractPropsFromFunction(funcNode: FunctionDeclaration | ArrowFunction | MethodDeclaration | FunctionExpression): string[] {
     const props: string[] = []
 
     try {
@@ -207,12 +207,10 @@ export class ReactComponentParser implements Parser {
       const typeNode = firstParam.getTypeNode()
 
       // 解构参数：{ name, age, ... }
-      if (firstParam.isDestructured()) {
-        const bindingPattern = firstParam.getNameNode()
-        if (Node.isObjectBindingPattern(bindingPattern)) {
-          for (const element of bindingPattern.getElements()) {
-            props.push(element.getName())
-          }
+      const nameNode = firstParam.getNameNode()
+      if (Node.isObjectBindingPattern(nameNode)) {
+        for (const element of nameNode.getElements()) {
+          props.push(element.getName())
         }
       }
       // 类型注解中的属性：Props { name: string }
@@ -233,11 +231,11 @@ export class ReactComponentParser implements Parser {
   /**
    * 检测函数体中是否使用了 useState
    */
-  private detectUseState(funcNode: any): boolean {
+  private detectUseState(funcNode: FunctionDeclaration | ArrowFunction | MethodDeclaration | FunctionExpression): boolean {
     let hasState = false
 
     try {
-      funcNode.forEachDescendant((node: any) => {
+      funcNode.forEachDescendant((node: Node) => {
         if (hasState) return
 
         if (Node.isCallExpression(node)) {
@@ -258,15 +256,15 @@ export class ReactComponentParser implements Parser {
   /**
    * 提取子组件关系（renders 边）
    */
-  private extractChildComponents(sourceFile: any, filePath: string, parentName: string): OmniEdge[] {
+  private extractChildComponents(sourceFile: SourceFile, filePath: string, parentName: string, projectRoot?: string): OmniEdge[] {
     const edges: OmniEdge[] = []
     const childComponents = new Set<string>()
 
     // 构建 import 映射：组件名 → 来源文件路径
-    const importMap = this.buildImportMap(sourceFile, filePath)
+    const importMap = this.buildImportMap(sourceFile, filePath, projectRoot)
 
     // 查找 JSX 元素
-    sourceFile.forEachDescendant((node: any) => {
+    sourceFile.forEachDescendant((node: Node) => {
       // <ComponentName /> 或 <ComponentName>...</ComponentName>
       if (Node.isJsxSelfClosingElement(node) || Node.isJsxOpeningElement(node)) {
         // 使用 getTagNameNode 获取标签名
@@ -306,11 +304,11 @@ export class ReactComponentParser implements Parser {
   /**
    * 从 import 语句构建 组件名 → 文件路径 映射
    */
-  private buildImportMap(sourceFile: any, currentFilePath: string): Map<string, string> {
+  private buildImportMap(sourceFile: SourceFile, currentFilePath: string, projectRoot?: string): Map<string, string> {
     const importMap = new Map<string, string>()
 
     try {
-      sourceFile.forEachDescendant((node: any) => {
+      sourceFile.forEachDescendant((node: Node) => {
         if (!Node.isImportDeclaration(node)) return
 
         const moduleSpecifier = node.getModuleSpecifier()?.getText?.() || ''
@@ -318,27 +316,42 @@ export class ReactComponentParser implements Parser {
         const importPath = moduleSpecifier.replace(/^['"]|['"]$/g, '')
         if (!importPath) return
 
-        // 只处理相对路径（跨文件组件）
-        if (!importPath.startsWith('.')) return
+        // 相对路径 import
+        if (importPath.startsWith('.')) {
+          const resolvedPath = this.resolveImportPath(currentFilePath, importPath)
+          if (!resolvedPath) return
 
-        // 解析绝对路径
-        const resolvedPath = this.resolveImportPath(currentFilePath, importPath)
+          const defaultImport = node.getDefaultImport()
+          if (defaultImport) {
+            const name = defaultImport.getText()
+            if (this.isComponentName(name)) importMap.set(name, resolvedPath)
+          }
 
-        // 默认导入：import ComponentName from '...'
-        const defaultImport = node.getDefaultImport()
-        if (defaultImport) {
-          const name = defaultImport.getText()
-          if (this.isComponentName(name)) {
-            importMap.set(name, resolvedPath)
+          const namedImports = node.getNamedImports()
+          for (const named of namedImports) {
+            const name = named.getName()
+            if (this.isComponentName(name)) importMap.set(name, resolvedPath)
           }
         }
+        // workspace package import（如 @calcom/ui、@calcom/features/...）
+        else if (projectRoot && importPath.startsWith('@')) {
+          const defaultImport = node.getDefaultImport()
+          if (defaultImport) {
+            const name = defaultImport.getText()
+            if (this.isComponentName(name)) {
+              const resolved = this.resolveWorkspaceImport(importPath, projectRoot)
+              if (resolved) importMap.set(name, resolved)
+            }
+          }
 
-        // 命名导入：import { A, B } from '...'
-        const namedImports = node.getNamedImports()
-        for (const named of namedImports) {
-          const name = named.getName()
-          if (this.isComponentName(name)) {
-            importMap.set(name, resolvedPath)
+          // 命名导入：使用包入口路径（避免昂贵的递归搜索）
+          const namedImports = node.getNamedImports()
+          for (const named of namedImports) {
+            const name = named.getName()
+            if (this.isComponentName(name)) {
+              const resolved = this.resolveWorkspaceImport(importPath, projectRoot)
+              if (resolved) importMap.set(name, resolved)
+            }
           }
         }
       })
@@ -347,6 +360,69 @@ export class ReactComponentParser implements Parser {
     }
 
     return importMap
+  }
+
+  /**
+   * 解析 workspace 包中的具体组件文件
+   * 如 @calcom/ui 中的 Button → packages/ui/components/button/Button.tsx
+   */
+  private resolveWorkspaceComponent(importPath: string, componentName: string, projectRoot: string): string | null {
+    const match = importPath.match(/^@[\w-]+\/([\w-]+)/)
+    if (!match) return null
+
+    const pkgName = match[1]
+
+    // 向上查找 monorepo 根目录
+    let root = projectRoot
+    for (let i = 0; i < 5; i++) {
+      if (fs.existsSync(path.join(root, 'packages'))) break
+      root = path.dirname(root)
+    }
+
+    const pkgDir = path.join(root, 'packages', pkgName)
+    if (!fs.existsSync(pkgDir)) return null
+
+    // 只在 src/ 和 components/ 下搜索，限制深度
+    const searchDirs = [
+      path.join(pkgDir, 'src'),
+      path.join(pkgDir, 'components'),
+    ]
+
+    for (const searchDir of searchDirs) {
+      if (!fs.existsSync(searchDir)) continue
+      const found = this.findComponentInDir(searchDir, componentName, 0)
+      if (found) return found
+    }
+
+    return null
+  }
+
+  /**
+   * 在目录中递归查找组件文件（限制深度 4 层）
+   */
+  private findComponentInDir(dir: string, componentName: string, depth: number = 0): string | null {
+    if (depth > 4) return null
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true })
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name)
+        if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== 'dist' && entry.name !== '__tests__' && entry.name !== '.next') {
+          const found = this.findComponentInDir(fullPath, componentName, depth + 1)
+          if (found) return found
+        } else if (entry.isFile()) {
+          const baseName = entry.name.replace(/\.(tsx|ts|jsx|js)$/, '')
+          if (baseName === componentName) {
+            return fullPath.replace(/\\/g, '/')
+          }
+          if (/^index\.(tsx|ts|jsx|js)$/.test(entry.name) && path.basename(dir) === componentName) {
+            return fullPath.replace(/\\/g, '/')
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null
   }
 
   /**
@@ -389,5 +465,54 @@ export class ReactComponentParser implements Parser {
 
     // 文件不存在：返回原路径（降级，不抛异常）
     return resolvedPath
+  }
+
+  /**
+   * 解析 workspace package import（如 @calcom/ui、@calcom/features/auth/LoginForm）
+   * 返回包的实际文件路径，找不到时返回 null
+   */
+  private resolveWorkspaceImport(importPath: string, projectRoot: string): string | null {
+    // 匹配 @scope/package 或 @scope/package/subpath
+    const match = importPath.match(/^@[\w-]+\/([\w-]+)/)
+    if (!match) return null
+
+    const pkgName = match[1]
+    const subPath = importPath.slice(match[0].length) // 剩余子路径
+
+    // 在 packages/ 目录下找对应包
+    const packagesDir = path.join(projectRoot, 'packages')
+    if (!fs.existsSync(packagesDir)) return null
+
+    const pkgDir = path.join(packagesDir, pkgName)
+    if (!fs.existsSync(pkgDir)) return null
+
+    // 如果有子路径，尝试解析子路径下的组件文件
+    if (subPath) {
+      const subPathClean = subPath.replace(/^\//, '')
+      const candidates = [
+        path.join(pkgDir, 'src', subPathClean + '.tsx'),
+        path.join(pkgDir, 'src', subPathClean + '.ts'),
+        path.join(pkgDir, 'src', subPathClean, 'index.tsx'),
+        path.join(pkgDir, 'src', subPathClean, 'index.ts'),
+        path.join(pkgDir, subPathClean + '.tsx'),
+        path.join(pkgDir, subPathClean + '.ts'),
+      ]
+      for (const c of candidates) {
+        if (fs.existsSync(c)) return c.replace(/\\/g, '/')
+      }
+    }
+
+    // 尝试包的入口文件
+    const entryCandidates = [
+      path.join(pkgDir, 'src', 'index.ts'),
+      path.join(pkgDir, 'src', 'index.tsx'),
+      path.join(pkgDir, 'index.ts'),
+      path.join(pkgDir, 'index.tsx'),
+    ]
+    for (const c of entryCandidates) {
+      if (fs.existsSync(c)) return c.replace(/\\/g, '/')
+    }
+
+    return null
   }
 }

@@ -7,9 +7,9 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import type { Parser, ParseResult, ParseContext, ProjectMeta } from '@omnivis/shared'
-import { createNodeId, createEdgeId } from '@omnivis/shared'
-import type { OmniNode, OmniEdge } from '@omnivis/shared'
+import type { Parser, ParseResult, ParseContext, ProjectMeta } from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
+import type { OmniNode, OmniEdge } from '@codeomnivis/shared'
 import { parseKotlinSource } from './treeSitterInit'
 import { walkKotlinTree } from './kotlinWalker'
 
@@ -111,12 +111,12 @@ export class RoomParser implements Parser {
       }
 
       tree.delete()
-    } catch (err: any) {
+    } catch (err: unknown) {
       errors.push({
         file: filePath,
-        message: err.message ?? 'Unknown error in RoomParser',
+        message: err instanceof Error ? err.message : 'Unknown error in RoomParser',
         severity: 'warning',
-        originalError: err,
+        originalError: err instanceof Error ? err : undefined,
       })
     }
 

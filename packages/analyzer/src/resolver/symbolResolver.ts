@@ -20,7 +20,7 @@ import {
 } from 'ts-morph'
 import * as path from 'path'
 import * as fs from 'fs'
-import type { OmniNode } from '@omnivis/shared'
+import type { OmniNode } from '@codeomnivis/shared'
 
 // ============================================================
 // 类型定义
@@ -349,7 +349,10 @@ export class SymbolResolver {
   }
 
   private buildServiceNodeId(fn: FunctionLike): string {
-    const file = fn.getSourceFile().getFilePath()
+    // 标准化路径：转 POSIX 格式，去掉 Windows 盘符
+    let file = fn.getSourceFile().getFilePath().replace(/\\/g, '/')
+    // 去掉 Windows 盘符（D: → 空）
+    file = file.replace(/^[A-Z]:/i, '')
     const name = Node.isFunctionDeclaration(fn)
       ? fn.getName() ?? 'anonymous'
       : Node.isMethodDeclaration(fn)

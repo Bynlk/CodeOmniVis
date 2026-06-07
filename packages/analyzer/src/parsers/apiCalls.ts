@@ -7,7 +7,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, CallExpression, Node, StringLiteral } from 'ts-morph'
+import { Project, SyntaxKind, CallExpression, Node, StringLiteral, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -17,8 +17,8 @@ import type {
   OmniEdge,
   ProjectMeta,
   CallsApiMetadata,
-} from '@omnivis/shared'
-import { createEdgeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createEdgeId } from '@codeomnivis/shared'
 
 // ============================================================
 // API 调用类型
@@ -121,10 +121,10 @@ export class ApiCallsParser implements Parser {
   /**
    * 检测 API 调用
    */
-  private detectApiCalls(sourceFile: any): DetectedCall[] {
+  private detectApiCalls(sourceFile: SourceFile): DetectedCall[] {
     const calls: DetectedCall[] = []
 
-    sourceFile.forEachDescendant((node: any) => {
+    sourceFile.forEachDescendant((node: Node) => {
       if (node.getKind() !== SyntaxKind.CallExpression) return
 
       const callExpr = node as CallExpression
@@ -155,7 +155,7 @@ export class ApiCallsParser implements Parser {
   /**
    * 判断是否是 fetch 调用
    */
-  private isFetchCall(expression: any): boolean {
+  private isFetchCall(expression: Node): boolean {
     if (Node.isIdentifier(expression)) {
       return expression.getText() === 'fetch'
     }
@@ -208,7 +208,7 @@ export class ApiCallsParser implements Parser {
   /**
    * 判断是否是 axios 调用
    */
-  private isAxiosCall(expression: any): boolean {
+  private isAxiosCall(expression: Node): boolean {
     const text = expression.getText()
     return text.startsWith('axios.') || text === 'axios'
   }
@@ -268,7 +268,7 @@ export class ApiCallsParser implements Parser {
   /**
    * 判断是否是 tRPC hook
    */
-  private isTrpcHook(expression: any): boolean {
+  private isTrpcHook(expression: Node): boolean {
     const text = expression.getText()
     // 匹配 trpc.xxx.xxx.useQuery / useMutation
     return /trpc\..*\.(useQuery|useMutation|useSuspenseQuery)/.test(text)

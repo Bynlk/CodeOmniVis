@@ -7,7 +7,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, ClassDeclaration, Decorator, Node } from 'ts-morph'
+import { Project, SyntaxKind, ClassDeclaration, PropertyDeclaration, Decorator, Node, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -20,8 +20,8 @@ import type {
   DbModelMetadata,
   DbFieldInfo,
   DbRelationMetadata,
-} from '@omnivis/shared'
-import { createNodeId, createEdgeId } from '@omnivis/shared'
+} from '@codeomnivis/shared'
+import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 
 // ============================================================
 // 关系装饰器类型
@@ -97,7 +97,7 @@ export class TypeormParser implements Parser {
       const sourceFile = this.project.addSourceFileAtPath(fullPath)
 
       // 查找所有类声明
-      sourceFile.forEachDescendant((node: any) => {
+      sourceFile.forEachDescendant((node: Node) => {
         if (Node.isClassDeclaration(node)) {
           try {
             const result = this.parseEntity(node, filePath)
@@ -193,8 +193,7 @@ export class TypeormParser implements Parser {
   /**
    * 查找指定名称的装饰器
    */
-  private findDecorator(node: any, name: string): Decorator | undefined {
-    if (!node.getDecorators) return undefined
+  private findDecorator(node: ClassDeclaration | PropertyDeclaration, name: string): Decorator | undefined {
     return node.getDecorators().find((d: Decorator) => {
       const expression = d.getCallExpression()
       if (!expression) {

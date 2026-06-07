@@ -114,27 +114,34 @@ function walkNode(
       result.imports.push(extractImport(node))
       break
 
-    case 'class_declaration':
-      result.classes.push(extractClass(node, result.packageName, annotations))
+    case 'class_declaration': {
+      // tree-sitter-kotlin may parse `interface Foo` as class_declaration;
+      // detect by checking if the node text contains the 'interface' keyword
+      if (/\binterface\b/.test(node.text.split('{')[0])) {
+        result.interfaces.push(extractInterface(node, result.packageName, []))
+      } else {
+        result.classes.push(extractClass(node, result.packageName, []))
+      }
       break
+    }
 
     case 'interface_declaration':
-      result.interfaces.push(extractInterface(node, result.packageName, annotations))
+      result.interfaces.push(extractInterface(node, result.packageName, []))
       break
 
     case 'object_declaration':
-      result.objects.push(extractObject(node, result.packageName, annotations))
+      result.objects.push(extractObject(node, result.packageName, []))
       break
 
     case 'function_declaration':
-      result.functions.push(extractFunction(node, result.packageName, false, annotations))
+      result.functions.push(extractFunction(node, result.packageName, false, []))
       break
 
     case 'annotation':
     case 'single_annotation':
     case 'multi_annotation': {
-      const ann = extractAnnotationName(node)
-      if (ann) annotations.push(ann)
+      // Annotations are handled by extractAnnotationsFromModifiers within each declaration;
+      // no need to accumulate them in a shared array.
       break
     }
   }
@@ -170,7 +177,7 @@ function extractClass(
 ): KotlinClassInfo {
   const modifiers = extractModifiers(node)
   const kind = classifyClassKind(modifiers)
-  const name = findChildText(node, 'simple_identifier') ?? 'Anonymous'
+  const name = findChildText(node, 'type_identifier') ?? findChildText(node, 'simple_identifier') ?? 'Anonymous'
   const annotations = [...parentAnnotations, ...extractAnnotationsFromModifiers(node)]
   const superTypes = extractSuperTypes(node)
 
@@ -191,7 +198,7 @@ function extractInterface(
   packageName: string,
   parentAnnotations: string[],
 ): KotlinInterfaceInfo {
-  const name = findChildText(node, 'simple_identifier') ?? 'Anonymous'
+  const name = findChildText(node, 'type_identifier') ?? findChildText(node, 'simple_identifier') ?? 'Anonymous'
   const annotations = [...parentAnnotations, ...extractAnnotationsFromModifiers(node)]
   const superTypes = extractSuperTypes(node)
 
@@ -210,7 +217,7 @@ function extractObject(
   packageName: string,
   parentAnnotations: string[],
 ): KotlinObjectInfo {
-  const name = findChildText(node, 'simple_identifier') ?? 'Anonymous'
+  const name = findChildText(node, 'type_identifier') ?? findChildText(node, 'simple_identifier') ?? 'Anonymous'
   const annotations = [...parentAnnotations, ...extractAnnotationsFromModifiers(node)]
   const isCompanion = node.text.startsWith('companion') || node.parent?.type === 'companion_object'
 
