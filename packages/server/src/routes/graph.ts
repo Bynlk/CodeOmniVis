@@ -6,9 +6,9 @@
  */
 
 import { Router, Request, Response } from 'express'
-import type { OmniDatabase } from '@omnivis/analyzer'
-import { DataFlowTracer } from '@omnivis/analyzer'
-import type { NodeType, EdgeType } from '@omnivis/shared'
+import type { OmniDatabase } from '@codeomnivis/analyzer'
+import { DataFlowTracer } from '@codeomnivis/analyzer'
+import type { NodeType, EdgeType } from '@codeomnivis/shared'
 
 // 合法的节点类型和边类型
 const VALID_NODE_TYPES: ReadonlySet<string> = new Set<NodeType>([

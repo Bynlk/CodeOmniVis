@@ -1,5 +1,5 @@
 /**
- * @omnivis/server — Web 服务入口
+ * @codeomnivis/server — Web 服务入口
  *
  * 提供 REST API 和 WebSocket 服务。
  * 静态文件服务 UI 产物。
@@ -11,10 +11,10 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
-import type { OmniGraph } from '@omnivis/shared'
-import { OmniDatabase } from '@omnivis/analyzer'
+import type { OmniGraph } from '@codeomnivis/shared'
+import { OmniDatabase } from '@codeomnivis/analyzer'
 import { createGraphRouter } from './routes/graph'
-import { omniVisEvents, EVENTS } from './events'
+import { codeomnivisEvents, EVENTS } from './events'
 import { IncrementalAnalyzer } from './incremental'
 
 // ESM 兼容的 __dirname
@@ -89,10 +89,10 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
   // POST /api/analyze — 触发重新分析
   app.post('/api/analyze', async (req, res) => {
     try {
-      omniVisEvents.emit(EVENTS.ANALYSIS_STARTED)
+      codeomnivisEvents.emit(EVENTS.ANALYSIS_STARTED)
 
       // 动态导入分析器
-      const analyzer = await import('@omnivis/analyzer')
+      const analyzer = await import('@codeomnivis/analyzer')
       const fs = await import('fs')
 
       const builder = new analyzer.GraphBuilder(db)
@@ -163,7 +163,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
         })
       }
 
-      omniVisEvents.emit(EVENTS.GRAPH_UPDATED)
+      codeomnivisEvents.emit(EVENTS.GRAPH_UPDATED)
       res.json({ data: { success: true, message: 'Analysis completed', filesScanned: files.length }, meta: {} })
     } catch (err) {
       console.error('Analysis failed:', err)
@@ -232,7 +232,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
   }
 
   // 监听图更新事件，广播给所有 WebSocket 客户端
-  omniVisEvents.on(EVENTS.GRAPH_UPDATED, () => {
+  codeomnivisEvents.on(EVENTS.GRAPH_UPDATED, () => {
     broadcastGraphUpdate()
   })
 
@@ -245,7 +245,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
     return new Promise((resolve) => {
       server.listen(port, host, () => {
-        console.log(`OmniVis server running at http://${host}:${port}`)
+        console.log(`CodeOmniVis server running at http://${host}:${port}`)
         console.log(`WebSocket available at ws://${host}:${port}/ws`)
         resolve()
       })
@@ -264,7 +264,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     clients.clear()
 
     // 移除事件监听
-    omniVisEvents.removeAllListeners()
+    codeomnivisEvents.removeAllListeners()
 
     // 关闭数据库
     db.close()
