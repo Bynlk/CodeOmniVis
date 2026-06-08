@@ -109,21 +109,19 @@ function App() {
         />
 
         {/* 主内容区域 */}
-        <div className="flex flex-1 overflow-hidden relative">
-          {/* Tab 面板（absolute 覆盖，不挤压 canvas） */}
-          <TabPanel activeTab={activeTab} tabs={TABS} />
+        <div className="flex flex-1 overflow-hidden">
+          {/* 左侧边栏 — 始终显示 */}
+          <Sidebar
+            graph={graph}
+            selectedNode={selectedNode}
+            onNodeSelect={setSelectedNode}
+          />
 
-          {/* 左侧边栏 — 仅图谱 Tab 显示 */}
-          {(!activeTab || activeTab === 'graph') && (
-            <Sidebar
-              graph={graph}
-              selectedNode={selectedNode}
-              onNodeSelect={setSelectedNode}
-            />
-          )}
-
-          {/* 图可视化区域 */}
+          {/* 图可视化区域 + Tab 面板叠加 */}
           <main className="flex-1 relative">
+            {/* Tab 面板（覆盖在图谱上方） */}
+            <TabPanel activeTab={activeTab} tabs={TABS} />
+
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-slate-400">{t('app.loadingGraph')}</div>
@@ -142,8 +140,8 @@ function App() {
             )}
           </main>
 
-          {/* 右侧详情面板 — 仅图谱 Tab 显示 */}
-          {(!activeTab || activeTab === 'graph') && selectedNodeData && (
+          {/* 右侧详情面板 */}
+          {selectedNodeData && (
             <NodeDetailPanel
               node={selectedNodeData}
               inEdges={inEdges}

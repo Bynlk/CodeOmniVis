@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { OmniGraph, OmniNode, NodeType } from '@codeomnivis/shared'
 import { NODE_COLORS } from '@codeomnivis/shared'
 import { useTranslation } from 'react-i18next'
@@ -11,8 +11,9 @@ interface SidebarProps {
 
 export default function Sidebar({ graph, selectedNode, onNodeSelect }: SidebarProps) {
   const { t } = useTranslation()
+  const [collapsed, setCollapsed] = useState(false)
 
-  // 按类型分组节点（使用 useMemo 避免每次渲染重新计算）
+  // 按类型分组节点
   const nodesByType = useMemo(() => {
     return graph?.nodes.reduce((acc, node) => {
       if (!acc[node.type]) {
@@ -25,12 +26,48 @@ export default function Sidebar({ graph, selectedNode, onNodeSelect }: SidebarPr
 
   const nodeTypes = useMemo(() => Object.keys(nodesByType) as NodeType[], [nodesByType])
 
+  if (collapsed) {
+    return (
+      <aside className="w-10 bg-slate-800 border-r border-slate-700 flex flex-col items-center pt-3 shrink-0">
+        <button
+          onClick={() => setCollapsed(false)}
+          className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-700 transition-colors text-xs"
+          title="展开侧边栏"
+        >
+          ▶
+        </button>
+        <div className="mt-3 flex flex-col items-center gap-1">
+          {nodeTypes.slice(0, 8).map(type => (
+            <div
+              key={type}
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: NODE_COLORS[type] }}
+              title={`${t(`nodeType.${type}`)} (${nodesByType[type].length})`}
+            />
+          ))}
+          {nodeTypes.length > 8 && (
+            <span className="text-[10px] text-slate-500">+{nodeTypes.length - 8}</span>
+          )}
+        </div>
+      </aside>
+    )
+  }
+
   return (
-    <aside className="w-64 bg-slate-800 border-r border-slate-700 overflow-y-auto">
+    <aside className="w-64 bg-slate-800 border-r border-slate-700 overflow-y-auto shrink-0">
       <div className="p-4">
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-          {t('sidebar.nodes')} ({graph?.nodes.length || 0})
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+            {t('sidebar.nodes')} ({graph?.nodes.length || 0})
+          </h2>
+          <button
+            onClick={() => setCollapsed(true)}
+            className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-700 transition-colors text-xs"
+            title="收起侧边栏"
+          >
+            ◀
+          </button>
+        </div>
 
         {nodeTypes.length === 0 ? (
           <p className="text-slate-500 text-sm">{t('sidebar.noNodesFound')}</p>

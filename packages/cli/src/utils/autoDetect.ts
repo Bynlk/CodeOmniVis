@@ -88,6 +88,11 @@ async function doAutoDetect(root: string): Promise<ProjectMeta> {
 
   let databaseType = detectDatabaseType(root, dependencies)
 
+  // tsrpc.config.ts 存在也表示 TSRPC 项目
+  if (backendFramework === 'unknown' && fs.existsSync(path.join(root, 'tsrpc.config.ts'))) {
+    backendFramework = 'tsrpc'
+  }
+
   // 检测 Kotlin/Gradle 项目
   const gradleInfo = detectGradleFrameworks(root)
   if (gradleInfo.backendFramework !== 'unknown' && backendFramework === 'unknown') {
@@ -462,6 +467,83 @@ function scanForRouters(dir: string, projectRoot: string, results: string[], vis
 }
 
 /**
+ * 查找 TSRPC service 文件路径
+ */
+function findTsrpcServicePaths(root: string): string[] {
+  const possibleDirs = ['server/api', 'src/server/api', 'api', 'src/api', 'server/protocols', 'src/server/protocols', 'protocols', 'src/protocols']
+  const serviceFiles: string[] = []
+  const visited = new Set<string>()
+  for (const dir of possibleDirs) {
+    const fullPath = path.join(root, dir)
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      scanForTsrpcServices(fullPath, serviceFiles, visited)
+    }
+  }
+  return serviceFiles
+}
+
+function scanForTsrpcServices(dir: string, results: string[], visited: Set<string>): void {
+  const absDir = path.resolve(dir)
+  if (visited.has(absDir)) return
+  visited.add(absDir)
+  try {
+    const entries = fs.readdirSync(absDir, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = path.join(absDir, entry.name)
+      if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== 'dist') {
+        scanForTsrpcServices(fullPath, results, visited)
+      } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
+        try {
+          const content = fs.readFileSync(fullPath, 'utf-8')
+          if (content.includes('ApiCall') || content.includes('tsrpc')) {
+            results.push(fullPath)
+          }
+        } catch { /* skip */ }
+      }
+    }
+  } catch { /* ignore */ }
+}
+
+/**
+ * 查找 TSRPC 项目路径
+ */
+function findTsrpcPaths(root: string): { apiDirs: string[]; protocolDirs: string[]; serviceProto?: string } {
+  const apiDirs: string[] = []
+  const protocolDirs: string[] = []
+  let serviceProto: string | undefined
+  const visited = new Set<string>()
+  const searchDirs = ['src/api', 'api', 'src/server/api', 'server/api', 'src/shared/protocols', 'shared/protocols', 'protocols', 'src/protocols']
+  for (const dir of searchDirs) {
+    const fullPath = path.join(root, dir)
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      if (dir.includes('api')) apiDirs.push(fullPath)
+      if (dir.includes('protocol')) protocolDirs.push(fullPath)
+    }
+  }
+  function scanDir(dir: string): void {
+    const absDir = path.resolve(dir)
+    if (visited.has(absDir)) return
+    visited.add(absDir)
+    try {
+      const entries = fs.readdirSync(absDir, { withFileTypes: true })
+      for (const entry of entries) {
+        const fullPath = path.join(absDir, entry.name)
+        if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== 'dist') {
+          scanDir(fullPath)
+        } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
+          if (entry.name.startsWith('Api') && !apiDirs.includes(absDir)) apiDirs.push(absDir)
+          if (entry.name.startsWith('Ptl') && !protocolDirs.includes(absDir)) protocolDirs.push(absDir)
+          if (entry.name === 'serviceProto.ts' && !serviceProto) serviceProto = fullPath
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  const srcDir = path.join(root, 'src')
+  if (fs.existsSync(srcDir)) scanDir(srcDir)
+  return { apiDirs: [...new Set(apiDirs)], protocolDirs: [...new Set(protocolDirs)], serviceProto }
+}
+
+/**
  * 查找 TypeORM entity 文件目录
  * 扫描 entity/、entities/、model/、models/ 等常见目录
  */
@@ -548,7 +630,16 @@ export function collectScanDirs(root: string, config?: CodeOmniVisConfig): strin
   }
 
   // 标准子目录（在主应用目录下）
-  const standardSubDirs = ['pages', 'components', 'server', 'api']
+  const standardSubDirs = ['pages', 'components', 'server', 'api', 'shared/protocols']
+
+  // 兄弟目录（monorepo 风格：backend + frontend）
+  const siblingDirs = ['../frontend/src', '../frontend']
+  for (const sib of siblingDirs) {
+    const full = path.resolve(root, sib)
+    if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
+      dirs.push(full)
+    }
+  }
   for (const sub of standardSubDirs) {
     for (const mainDir of dirs.slice()) {
       const full = path.join(mainDir, sub)

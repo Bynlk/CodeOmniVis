@@ -144,6 +144,55 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
         'opacity': 0.5,
       } as unknown as cytoscape.Css.Edge,
     },
+    {
+      selector: 'edge[type="sends_msg"]',
+      style: {
+        'line-color': '#f97316',
+        'target-arrow-color': '#f97316',
+        'line-style': 'dashed',
+        'width': 2,
+      } as unknown as cytoscape.Css.Edge,
+    },
+    {
+      selector: 'edge[type="listens_msg"]',
+      style: {
+        'line-color': '#14b8a6',
+        'target-arrow-color': '#14b8a6',
+        'line-style': 'dashed',
+        'width': 2,
+      } as unknown as cytoscape.Css.Edge,
+    },
+    {
+      selector: 'edge[type="navigates_to"]',
+      style: {
+        'line-color': '#8b5cf6',
+        'target-arrow-color': '#8b5cf6',
+      } as unknown as cytoscape.Css.Edge,
+    },
+    {
+      selector: 'edge[type="contains"]',
+      style: {
+        'line-color': '#64748b',
+        'target-arrow-color': '#64748b',
+        'line-style': 'dotted',
+      } as unknown as cytoscape.Css.Edge,
+    },
+    {
+      selector: 'edge[type="data_flows_to"]',
+      style: {
+        'line-color': '#06b6d4',
+        'target-arrow-color': '#06b6d4',
+        'width': 2,
+      } as unknown as cytoscape.Css.Edge,
+    },
+    {
+      selector: 'edge[type="imports"]',
+      style: {
+        'line-color': '#475569',
+        'target-arrow-color': '#475569',
+        'opacity': 0.3,
+      } as unknown as cytoscape.Css.Edge,
+    },
 
     // 置信度样式 — inferred 边用虚线
     {

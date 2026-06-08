@@ -16,11 +16,19 @@ const TYPE_RING: Record<string, number> = {
   component: 1,
   api_route: 2,
   trpc_procedure: 2,
+  tsrpc_service: 2,
+  tsrpc_api: 2,
+  tsrpc_msg: 2,
   express_route: 2,
   handler: 3,
   service: 3,
   db_model: 4,
   module: 4,
+  kotlin_class: 3,
+  kotlin_interface: 3,
+  kotlin_object: 3,
+  kotlin_function: 3,
+  kotlin_route: 2,
 }
 
 /** 每环的半径 */

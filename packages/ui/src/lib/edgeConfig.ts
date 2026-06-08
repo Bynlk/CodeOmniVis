@@ -14,4 +14,6 @@ export const EDGE_TYPE_LIST: EdgeType[] = [
   'kotlin_implements',
   'kotlin_uses',
   'data_flows_to',
+  'sends_msg',
+  'listens_msg',
 ]

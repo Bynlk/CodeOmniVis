@@ -20,10 +20,17 @@ export function TabBar({ activeTab, onTabChange, issueBadgeCount, tabs }: TabBar
         return (
           <button
             key={tab.id}
-            onClick={() => onTabChange(isActive ? null : tab.id)}
+            onClick={() => {
+              // 图谱 tab 没有 panel，点击直接回到图谱视图
+              if (!tab.panelComponent) {
+                onTabChange(null)
+              } else {
+                onTabChange(isActive ? null : tab.id)
+              }
+            }}
             className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm
                         border-b-2 transition-colors ${
-                          isActive
+                          isActive || (!tab.panelComponent && !activeTab)
                             ? 'border-blue-500 text-white'
                             : 'border-transparent text-slate-400 hover:text-slate-200'
                         }`}
