@@ -1,11 +1,30 @@
-# CodeOmniVis
+<div align="center">
 
-> `npx codeomnivis serve` on cal.com →
-> **2,535 nodes · 4,592 edges · 15 seconds · zero config**
+```
+ ██████╗ ██████╗ ██████╗ ███████╗ ██████╗ ███╗   ███╗███╗   ██╗██╗██╗   ██╗██╗███████╗
+██╔════╝██╔═══██╗██╔══██╗██╔════╝██╔═══██╗████╗ ████║████╗  ██║██║██║   ██║██║██╔════╝
+██║     ██║   ██║██║  ██║█████╗  ██║   ██║██╔████╔██║██╔██╗ ██║██║██║   ██║██║███████╗
+██║     ██║   ██║██║  ██║██╔══╝  ██║   ██║██║╚██╔╝██║██║╚██╗██║██║╚██╗ ██╔╝██║╚════██║
+╚██████╗╚██████╔╝██████╔╝███████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚████║██║ ╚████╔╝ ██║███████║
+ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝ ╚═════╝╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝  ╚═╝╚══════╝
+```
+
+# 🔮 CodeOmniVis — 全栈架构可视化引擎
+
+**一行命令，60 秒，看清整个项目的架构。**
+
+不只是画图——是 **代码语义理解** × **跨层数据流追踪** × **AI 原生集成**。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-00d4aa.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node.js-≥18-339933.svg)](https://nodejs.org/)
+
+</div>
+
+---
+
+> `npx codeomnivis serve` on cal.com →
+> **2,535 nodes · 4,592 edges · 15 seconds · zero config**
 
 ## What it maps
 
