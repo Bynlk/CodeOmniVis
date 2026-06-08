@@ -13,6 +13,7 @@ import { AiPanel } from './components/TabBar/AiPanel'
 import { StatsPanel } from './components/TabBar/StatsPanel'
 import { DataFlowPanel } from './components/TabBar/DataFlowPanel'
 import { CommandPalette } from './components/CommandPalette'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { CytoscapeContext } from './lib/cytoscapeContext'
 import { useGraph } from './hooks/useGraph'
 import { useSearch } from './hooks/useSearch'
@@ -87,6 +88,7 @@ function App() {
   }, [graph, selectedNode])
 
   return (
+    <ErrorBoundary>
     <CytoscapeContext.Provider value={cyRef}>
       <div className="flex flex-col h-screen bg-slate-900">
         {/* 命令面板 */}
@@ -153,6 +155,7 @@ function App() {
         </div>
       </div>
     </CytoscapeContext.Provider>
+    </ErrorBoundary>
   )
 }
 

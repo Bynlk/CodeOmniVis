@@ -21,7 +21,7 @@ export function mcpCommand(program: Command): void {
       try {
         // 设置项目根路径环境变量，供 MCP 模块使用
         const projectRoot = path.resolve(options.project)
-        process.env.codeomnivis_PROJECT = projectRoot
+        process.env.CODEOMNIVIS_PROJECT = projectRoot
 
         // 动态导入 MCP 包
         const mcp = await import('@codeomnivis/mcp')

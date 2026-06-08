@@ -36,7 +36,7 @@ const server = new Server(
 )
 
 // 项目根路径
-const projectRoot = process.env.codeomnivis_PROJECT ?? process.cwd()
+const projectRoot = process.env.CODEOMNIVIS_PROJECT ?? process.cwd()
 
 // 数据库实例缓存（避免每次调用都重新初始化）
 let cachedDb: OmniDatabase | null = null

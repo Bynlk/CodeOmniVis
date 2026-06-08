@@ -140,25 +140,44 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       }
 
       if (files.length > 0) {
-        // 自动检测后端框架
-        let detectedBackend = 'trpc' as string
+        // 自动检测框架
+        let detectedFrontend = 'unknown' as string
+        let detectedBackend = 'unknown' as string
+        let detectedDb = 'unknown' as string
         try {
           const pkgPath = path.join(projectRoot, 'package.json')
           if (fs.existsSync(pkgPath)) {
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
             const deps = { ...pkg.dependencies, ...pkg.devDependencies }
+
+            // 前端框架
+            if (deps['next']) detectedFrontend = 'next'
+            else if (deps['react']) detectedFrontend = 'unknown'
+
+            // 后端框架
             if (deps['tsrpc'] || deps['tsrpc-browser'] || deps['tsrpc-base-client']) detectedBackend = 'tsrpc'
             else if (deps['@nestjs/core'] || deps['@nestjs/common']) detectedBackend = 'nestjs'
             else if (deps['@trpc/server']) detectedBackend = 'trpc'
             else if (deps['express']) detectedBackend = 'express'
+
+            // tsrpc.config.ts 也表示 TSRPC 项目
+            if (detectedBackend === 'unknown' && fs.existsSync(path.join(projectRoot, 'tsrpc.config.ts'))) {
+              detectedBackend = 'tsrpc'
+            }
+
+            // 数据库 ORM
+            if (fs.existsSync(path.join(projectRoot, 'prisma', 'schema.prisma'))) detectedDb = 'prisma'
+            else if (deps['prisma'] || deps['@prisma/client']) detectedDb = 'prisma'
+            else if (deps['drizzle-orm']) detectedDb = 'drizzle'
+            else if (deps['typeorm']) detectedDb = 'typeorm'
           }
         } catch { /* ignore */ }
 
         const projectMeta = {
           root: projectRoot,
-          frontendFramework: 'next' as const,
+          frontendFramework: detectedFrontend as 'next' | 'express' | 'trpc' | 'nestjs' | 'spring' | 'ktor' | 'tsrpc' | 'unknown',
           backendFramework: detectedBackend as 'trpc' | 'tsrpc' | 'express' | 'nestjs' | 'next' | 'spring' | 'ktor' | 'unknown',
-          databaseType: 'prisma' as const,
+          databaseType: detectedDb as 'prisma' | 'typeorm' | 'drizzle' | 'exposed' | 'room' | 'unknown',
           monorepoType: 'none' as const,
           packages: [] as Array<{ name: string; path: string; dependencies: string[]; devDependencies: string[] }>,
           frontendDirs: [] as string[],
