@@ -25,31 +25,31 @@
 
 ---
 
-> `npx codeomnivis serve` on cal.com →
-> **2,535 nodes · 4,592 edges · 15 seconds · zero config**
+> `npx codeomnivis serve` 在 cal.com 上 →
+> **2,535 节点 · 4,592 边 · 15 秒 · 零配置**
 
-## What it maps
+## 它能映射什么
 
-| Layer | cal.com coverage |
+| 层 | cal.com 覆盖 |
 |-------|-----------------|
-| Pages | 119 ✅ |
-| API Routes | 82 ✅ |
-| DB Models (Prisma/Drizzle) | 102 ✅ |
-| Components | 1,349 ✅ |
-| Frontend→API calls | 172 ✅ |
-| Render relationships | 3,117 ✅ |
+| 页面 | 119 ✅ |
+| API 路由 | 82 ✅ |
+| 数据库模型 (Prisma/Drizzle) | 102 ✅ |
+| 组件 | 1,349 ✅ |
+| 前端→API 调用 | 172 ✅ |
+| 渲染关系 | 3,117 ✅ |
 
-## Frameworks
+## 支持的框架
 
 Next.js · NestJS · Express · tRPC · **TSRPC**
 Prisma · Drizzle · TypeORM · Kotlin Spring/Ktor
 
-## AI Integration (MCP)
+## AI 集成 (MCP)
 
-Works with Cursor and Claude Desktop out of the box.
+开箱即用，支持 Cursor 和 Claude Desktop。
 `find_callers` · `get_api_routes` · `get_component_tree`
 
-## Install
+## 安装
 
 ```bash
 npx codeomnivis serve
@@ -74,7 +74,7 @@ npx @bynlk/CodeOmniVis serve   # 60 秒内看到完整架构
 
 自动检测框架 → 扫描文件 → AST 解析 → 跨层连线 → 可视化。不需要任何配置。
 
-### 2. 19 个解析器，覆盖主流生态
+### 2. 22 个解析器，覆盖主流生态
 
 <table>
 <tr>
@@ -100,6 +100,7 @@ npx @bynlk/CodeOmniVis serve   # 60 秒内看到完整架构
 ✅ tRPC Router<br/>
 ✅ Express 路由<br/>
 ✅ **NestJS** (Controller/Module/Service)<br/>
+✅ **TSRPC** (ApiCall/Msg)<br/>
 ✅ **Spring Boot + Kotlin**<br/>
 ✅ **Ktor Routing DSL**
 
@@ -296,7 +297,8 @@ Consuming Components:
           │  · Prisma          │ │  REST API   │ │  · get_api_routes  │
           │  · Next.js         │ │  WebSocket  │ │  · get_component   │
           │  · tRPC            │ │  增量分析    │ │  · find_callers    │
-          │  · Express         │ │  文件监听    │ │  · list_db_models  │
+          │  · TSRPC           │ │  文件监听    │ │  · list_db_models  │
+          │  · Express         │ │             │ │  · get_dataflow    │
           │  · NestJS          │ │             │ │  · get_dataflow    │
           │  · Drizzle         │ └──────┬──────┘ └─────────┬─────────┘
           │  · TypeORM         │        │                  │
@@ -337,8 +339,8 @@ Consuming Components:
 ```
 codeomnivis/
 ├── packages/
-│   ├── shared/       # 共享类型（13 种节点 + 13 种边 + 配置系统）
-│   ├── analyzer/     # 解析引擎（19 个解析器 + 图算法 + 存储）
+│   ├── shared/       # 共享类型（17 种节点 + 15 种边 + 配置系统）
+│   ├── analyzer/     # 解析引擎（22 个解析器 + 图算法 + 存储）
 │   ├── server/       # Express + WebSocket + 增量分析
 │   ├── ui/           # React + Cytoscape.js + 6 个 Tab 面板
 │   ├── mcp/          # MCP Server（5 个工具，并发安全）
@@ -354,7 +356,7 @@ codeomnivis/
 
 | 包 | 代码行数 | 功能 |
 |----|---------|------|
-| `@codeomnivis/shared` | 995 | 14 种节点类型、13 种边类型、配置加载器 |
+| `@codeomnivis/shared` | 995 | 17 种节点类型、15 种边类型、配置加载器 |
 | `@codeomnivis/analyzer` | 9,557 | 22 个解析器、数据流追踪、死代码/循环依赖检测 |
 | `@codeomnivis/server` | 759 | REST API、WebSocket 广播、文件监听增量分析 |
 | `@codeomnivis/ui` | 2,328 | 6 个 Tab 面板、Cytoscape 图、数据流可视化 |
@@ -428,7 +430,7 @@ codeomnivis/
 
 ### ✅ 已完成
 
-- [x] 19 个解析器（Next.js / tRPC / Express / NestJS / Prisma / Drizzle / TypeORM / Kotlin）
+- [x] 22 个解析器（Next.js / tRPC / TSRPC / Express / NestJS / Prisma / Drizzle / TypeORM / Kotlin）
 - [x] 跨层连线（前端 → API → Service → DB）
 - [x] 数据流追踪（Model → API → Component）
 - [x] 死代码检测（死路由 / 死组件 / 死 Service）
