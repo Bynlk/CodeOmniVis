@@ -42,7 +42,7 @@ export interface ParseResult {
 // 项目元数据
 // ============================================================
 
-export type FrameworkType = 'next' | 'express' | 'trpc' | 'nestjs' | 'spring' | 'ktor' | 'unknown'
+export type FrameworkType = 'next' | 'express' | 'trpc' | 'nestjs' | 'spring' | 'ktor' | 'tsrpc' | 'unknown'
 export type DatabaseType = 'prisma' | 'typeorm' | 'drizzle' | 'exposed' | 'room' | 'unknown'
 export type MonorepoType = 'turborepo' | 'pnpm' | 'none'
 
@@ -63,6 +63,14 @@ export interface ProjectMeta {
   backendDirs: string[]
   /** tRPC router 文件路径 */
   trpcRouterPaths: string[]
+  /** TSRPC 服务文件路径 */
+  tsrpcServicePaths: string[]
+  /** TSRPC API 目录 */
+  tsrpcApiDirs: string[]
+  /** TSRPC 协议目录 */
+  tsrpcProtocolDirs: string[]
+  /** TSRPC serviceProto.ts 路径 */
+  tsrpcServiceProto?: string
   /** Prisma schema 路径 */
   prismaSchemaPath: string | null
   /** TypeORM entity 目录 */

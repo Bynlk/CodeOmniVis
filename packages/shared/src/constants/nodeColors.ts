@@ -12,6 +12,9 @@ export const NODE_COLORS: Record<NodeType, string> = {
   component:        '#3b82f6',  // 蓝色 - 组件
   api_route:        '#10b981',  // 绿色 - API 路由
   trpc_procedure:   '#06b6d4',  // 青色 - tRPC
+  tsrpc_service:    '#14b8a6',  // 青绿色 - TSRPC
+  tsrpc_api:        '#0d9488',  // 深青色 - TSRPC API
+  tsrpc_msg:        '#2dd4bf',  // 浅青色 - TSRPC Msg
   express_route:    '#f59e0b',  // 橙色 - Express
   handler:          '#f59e0b',  // 橙色 - Handler
   service:          '#8b5cf6',  // 紫色 - Service
@@ -30,6 +33,9 @@ export const NODE_COLORS_ALPHA: Record<NodeType, string> = {
   component:        '#3b82f640',
   api_route:        '#10b98140',
   trpc_procedure:   '#06b6d440',
+  tsrpc_service:    '#14b8a640',
+  tsrpc_api:        '#0d948840',
+  tsrpc_msg:        '#2dd4bf40',
   express_route:    '#f59e0b40',
   handler:          '#f59e0b40',
   service:          '#8b5cf640',
@@ -48,6 +54,9 @@ export const NODE_ICONS: Record<NodeType, string> = {
   component:        '🧩',
   api_route:        '🌐',
   trpc_procedure:   '⚡',
+  tsrpc_service:    '🔗',
+  tsrpc_api:        '🔌',
+  tsrpc_msg:        '📨',
   express_route:    '🚂',
   handler:          '⚙️',
   service:          '🔧',
