@@ -80,6 +80,12 @@ async function doAutoDetect(root: string): Promise<ProjectMeta> {
   // 检测框架（TypeScript 项目）
   const frontendFramework = detectFrontendFramework(dependencies)
   let backendFramework = detectBackendFramework(dependencies)
+
+  // tsrpc.config.ts 存在也表示 TSRPC 项目
+  if (backendFramework === 'unknown' && fs.existsSync(path.join(root, 'tsrpc.config.ts'))) {
+    backendFramework = 'tsrpc'
+  }
+
   let databaseType = detectDatabaseType(root, dependencies)
 
   // 检测 Kotlin/Gradle 项目
@@ -97,6 +103,10 @@ async function doAutoDetect(root: string): Promise<ProjectMeta> {
   // 检测 tRPC router 路径
   const trpcRouterPaths = findTrpcRouterPaths(root)
 
+  // 检测 TSRPC 路径
+  const tsrpcServicePaths = findTsrpcServicePaths(root)
+  const tsrpcPaths = findTsrpcPaths(root)
+
   // 检测 TypeORM entity 目录
   const typeormEntityDirs = findTypeormEntityDirs(root)
 
@@ -109,6 +119,10 @@ async function doAutoDetect(root: string): Promise<ProjectMeta> {
     frontendDirs: ['app', 'src/app', 'pages', 'src/pages'],
     backendDirs: ['server', 'src/server', 'api', 'src/api'],
     trpcRouterPaths,
+    tsrpcServicePaths,
+    tsrpcApiDirs: tsrpcPaths.apiDirs,
+    tsrpcProtocolDirs: tsrpcPaths.protocolDirs,
+    tsrpcServiceProto: tsrpcPaths.serviceProto,
     prismaSchemaPath,
     typeormEntityDirs,
     tsConfigPath: findTsConfig(root) ?? null,
@@ -136,6 +150,7 @@ function detectBackendFramework(dependencies: Record<string, string>): Framework
   for (const dep of Object.keys(dependencies)) {
     if (dep.endsWith('/trpc') || dep === 'trpc') return 'trpc'
   }
+  if (dependencies['tsrpc'] || dependencies['tsrpc-browser'] || dependencies['tsrpc-base-client']) return 'tsrpc'
   if (dependencies['express']) return 'express'
   return 'unknown'
 }
@@ -190,7 +205,7 @@ function findPrismaSchema(root: string): string | null {
 
   for (const p of standardPaths) {
     if (fs.existsSync(path.join(root, p))) {
-      return path.join(root, p)
+      return p
     }
   }
 
@@ -269,7 +284,6 @@ export function findTsConfig(root: string): string | undefined {
  * 支持 monorepo 结构（packages/trpc/、packages/server/ 等）
  */
 function findTrpcRouterPaths(root: string): string[] {
-  // 先检查常见目录
   const possibleDirs = [
     'server/routers',
     'src/server/routers',
@@ -277,64 +291,145 @@ function findTrpcRouterPaths(root: string): string[] {
     'src/server/router',
     'api/trpc',
     'src/api/trpc',
-    // monorepo 路径
-    'packages/trpc/server/routers',
-    'packages/trpc/src/routers',
-    'packages/server/routers',
   ]
 
-  const routerFiles: string[] = []
-  const visited = new Set<string>()
-
-  // 搜索 root 和 monorepo 根目录
-  const searchRoots = [root]
-  const monorepoRoot = findMonorepoRoot(root)
-  if (monorepoRoot && monorepoRoot !== root) {
-    searchRoots.push(monorepoRoot)
-  }
-
-  for (const searchRoot of searchRoots) {
-    for (const dir of possibleDirs) {
-      const fullPath = path.join(searchRoot, dir)
-      const exists = fs.existsSync(fullPath)
-      const isDir = exists ? fs.statSync(fullPath).isDirectory() : false
-      if (exists && isDir) {
-        scanForRouters(fullPath, searchRoot, routerFiles, visited)
+  const paths: string[] = []
+  for (const dir of possibleDirs) {
+    const fullPath = path.join(root, dir)
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      try {
+        const entries = fs.readdirSync(fullPath, { withFileTypes: true })
+        for (const entry of entries) {
+          if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
+            paths.push(path.join(dir, entry.name))
+          }
+        }
+      } catch {
+        // 忽略读取错误
       }
     }
   }
 
-  // 如果标准路径没找到，在 packages/ 下递归搜索
-  if (routerFiles.length === 0) {
-    for (const searchRoot of searchRoots) {
-      const packagesDir = path.join(searchRoot, 'packages')
-      if (fs.existsSync(packagesDir)) {
+  return paths
+}
+
+/**
+ * 查找 TSRPC service 文件路径
+ * 递归搜索包含 ApiCall 的 TS 文件
+ */
+function findTsrpcServicePaths(root: string): string[] {
+  const possibleDirs = [
+    'server/api',
+    'src/server/api',
+    'api',
+    'src/api',
+    'server/protocols',
+    'src/server/protocols',
+    'protocols',
+    'src/protocols',
+  ]
+
+  const serviceFiles: string[] = []
+  const visited = new Set<string>()
+
+  for (const dir of possibleDirs) {
+    const fullPath = path.join(root, dir)
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      scanForTsrpcServices(fullPath, serviceFiles, visited)
+    }
+  }
+
+  return serviceFiles
+}
+
+// 递归扫描目录，查找包含 ApiCall 的 TS 文件
+function scanForTsrpcServices(dir: string, results: string[], visited: Set<string>): void {
+  const absDir = path.resolve(dir)
+  if (visited.has(absDir)) return
+  visited.add(absDir)
+
+  try {
+    const entries = fs.readdirSync(absDir, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = path.join(absDir, entry.name)
+      if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== 'dist') {
+        scanForTsrpcServices(fullPath, results, visited)
+      } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
         try {
-          const entries = fs.readdirSync(packagesDir, { withFileTypes: true })
-          for (const entry of entries) {
-            if (!entry.isDirectory()) continue
-            const pkgDir = path.join(packagesDir, entry.name)
-            // 搜索 packages/*/routers/ 和 packages/*/server/routers/
-            const candidates = [
-              path.join(pkgDir, 'routers'),
-              path.join(pkgDir, 'server', 'routers'),
-              path.join(pkgDir, 'src', 'routers'),
-              path.join(pkgDir, 'src', 'server', 'routers'),
-            ]
-            for (const candidate of candidates) {
-              if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
-                scanForRouters(candidate, searchRoot, routerFiles, visited)
-              }
-            }
+          const content = fs.readFileSync(fullPath, 'utf-8')
+          if (content.includes('ApiCall') || content.includes('tsrpc')) {
+            results.push(fullPath)
           }
         } catch {
-          // 忽略读取错误
+          // 跳过无法读取的文件
         }
       }
     }
+  } catch {
+    // 忽略读取错误
+  }
+}
+
+/**
+ * 查找 TSRPC 项目路径
+ * 返回 api 目录、protocol 目录、serviceProto.ts 路径
+ */
+function findTsrpcPaths(root: string): {
+  apiDirs: string[]
+  protocolDirs: string[]
+  serviceProto?: string
+} {
+  const apiDirs: string[] = []
+  const protocolDirs: string[] = []
+  let serviceProto: string | undefined
+  const visited = new Set<string>()
+
+  // 搜索常见目录
+  const searchDirs = [
+    'src/api', 'api', 'src/server/api', 'server/api',
+    'src/shared/protocols', 'shared/protocols', 'protocols', 'src/protocols',
+  ]
+
+  for (const dir of searchDirs) {
+    const fullPath = path.join(root, dir)
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      if (dir.includes('api')) apiDirs.push(fullPath)
+      if (dir.includes('protocol')) protocolDirs.push(fullPath)
+    }
   }
 
-  return routerFiles
+  // 递归搜索 Api*.ts、Ptl*.ts、serviceProto.ts
+  function scanDir(dir: string): void {
+    const absDir = path.resolve(dir)
+    if (visited.has(absDir)) return
+    visited.add(absDir)
+
+    try {
+      const entries = fs.readdirSync(absDir, { withFileTypes: true })
+      for (const entry of entries) {
+        const fullPath = path.join(absDir, entry.name)
+        if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== 'dist') {
+          scanDir(fullPath)
+        } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
+          if (entry.name.startsWith('Api') && !apiDirs.includes(absDir)) {
+            apiDirs.push(absDir)
+          }
+          if (entry.name.startsWith('Ptl') && !protocolDirs.includes(absDir)) {
+            protocolDirs.push(absDir)
+          }
+          if (entry.name === 'serviceProto.ts' && !serviceProto) {
+            serviceProto = fullPath
+          }
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  // 扫描 src 目录
+  const srcDir = path.join(root, 'src')
+  if (fs.existsSync(srcDir)) scanDir(srcDir)
+
+  return { apiDirs: [...new Set(apiDirs)], protocolDirs: [...new Set(protocolDirs)], serviceProto }
 }
 
 // 递归扫描目录，查找包含 createTRPCRouter 的 TS 文件（返回绝对路径）

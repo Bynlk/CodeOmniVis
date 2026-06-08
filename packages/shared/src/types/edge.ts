@@ -23,6 +23,8 @@ export type EdgeType =
   | 'kotlin_implements' // Kotlin 接口实现：Class → Interface
   | 'kotlin_uses'     // Kotlin 依赖关系：Class → Class（字段/参数/返回值类型）
   | 'data_flows_to'   // 数据流：Model → API → Component 类型传播路径
+  | 'sends_msg'       // client.sendMsg() / server.broadcast()
+  | 'listens_msg'     // client.listenMsg() / server.addMsgListener()
 
 // ============================================================
 // 置信度
@@ -52,8 +54,8 @@ export interface NavigatesToMetadata {
 export interface CallsApiMetadata {
   /** HTTP method（fetch/axios 时） */
   method?: string
-  /** 调用方式：fetch / axios / trpc_hook */
-  callType: 'fetch' | 'axios' | 'trpc_hook'
+  /** 调用方式：fetch / axios / trpc_hook / tsrpc_call_api / tsrpc_listen_msg */
+  callType: 'fetch' | 'axios' | 'trpc_hook' | 'tsrpc_call_api' | 'tsrpc_listen_msg'
   /** 调用位置 */
   callLine: number
 }
@@ -106,6 +108,20 @@ export interface KotlinUsesMetadata {
   line: number
 }
 
+export interface SendsMsgMetadata {
+  /** 消息名称 */
+  msgName: string
+  /** 调用位置 */
+  callLine: number
+}
+
+export interface ListensMsgMetadata {
+  /** 消息名称 */
+  msgName: string
+  /** 调用位置 */
+  callLine: number
+}
+
 // ============================================================
 // Metadata 联合类型
 // ============================================================
@@ -122,6 +138,8 @@ export type EdgeMetadata =
   | KotlinInheritsMetadata
   | KotlinImplementsMetadata
   | KotlinUsesMetadata
+  | SendsMsgMetadata
+  | ListensMsgMetadata
   | Record<string, unknown>
 
 // ============================================================

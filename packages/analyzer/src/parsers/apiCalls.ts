@@ -24,7 +24,7 @@ import { createEdgeId } from '@codeomnivis/shared'
 // API 调用类型
 // ============================================================
 
-type CallType = 'fetch' | 'axios' | 'trpc_hook'
+type CallType = 'fetch' | 'axios' | 'trpc_hook' | 'tsrpc_call_api' | 'tsrpc_listen_msg'
 
 interface DetectedCall {
   type: CallType
@@ -145,6 +145,24 @@ export class ApiCallsParser implements Parser {
       // 检测 tRPC hooks
       if (this.isTrpcHook(expression)) {
         const call = this.parseTrpcHook(callExpr)
+        if (call) calls.push(call)
+      }
+
+      // 检测 TSRPC client.callApi()
+      if (this.isTsrpcCallApi(expression)) {
+        const call = this.parseTsrpcCallApi(callExpr)
+        if (call) calls.push(call)
+      }
+
+      // 检测 TSRPC client.listenMsg()
+      if (this.isTsrpcListenMsg(expression)) {
+        const call = this.parseTsrpcListenMsg(callExpr)
+        if (call) calls.push(call)
+      }
+
+      // 检测 TSRPC client.sendMsg()
+      if (this.isTsrpcSendMsg(expression)) {
+        const call = this.parseTsrpcSendMsg(callExpr)
         if (call) calls.push(call)
       }
     })
@@ -298,6 +316,130 @@ export class ApiCallsParser implements Parser {
   }
 
   /**
+   * 判断是否是 TSRPC client.callApi() 调用
+   */
+  private isTsrpcCallApi(expression: Node): boolean {
+    const text = expression.getText()
+    // 匹配 client.callApi / tsClient.callApi / xxx.callApi
+    return /\.callApi$/.test(text)
+  }
+
+  /**
+   * 解析 TSRPC client.callApi() 调用
+   *
+   * 识别模式：
+   * - client.callApi('xxx/login', { username, password })
+   * - client.callApi('user/getInfo')
+   */
+  private parseTsrpcCallApi(call: CallExpression): DetectedCall | null {
+    const args = call.getArguments()
+    if (args.length === 0) return null
+
+    const servicePathArg = args[0]
+    let servicePath: string
+    let confidence: 'certain' | 'inferred' = 'certain'
+
+    // 提取 service 路径
+    if (Node.isStringLiteral(servicePathArg)) {
+      servicePath = servicePathArg.getLiteralValue()
+    } else if (Node.isTemplateExpression(servicePathArg)) {
+      servicePath = servicePathArg.getText()
+      confidence = 'inferred'
+    } else {
+      return null
+    }
+
+    return {
+      type: 'tsrpc_call_api',
+      url: servicePath,
+      method: 'callApi',
+      line: call.getStartLineNumber(),
+      confidence,
+    }
+  }
+
+  /**
+   * 判断是否是 TSRPC client.listenMsg() 调用
+   */
+  private isTsrpcListenMsg(expression: Node): boolean {
+    const text = expression.getText()
+    return /\.listenMsg$/.test(text)
+  }
+
+  /**
+   * 解析 TSRPC client.listenMsg() 调用
+   *
+   * 识别模式：
+   * - client.listenMsg('Chat', (msg) => { ... })
+   * - wsClient.listenMsg('TodoUpdate', (msg) => { ... })
+   */
+  private parseTsrpcListenMsg(call: CallExpression): DetectedCall | null {
+    const args = call.getArguments()
+    if (args.length === 0) return null
+
+    const msgNameArg = args[0]
+    let msgName: string
+    let confidence: 'certain' | 'inferred' = 'certain'
+
+    if (Node.isStringLiteral(msgNameArg)) {
+      msgName = msgNameArg.getLiteralValue()
+    } else if (Node.isTemplateExpression(msgNameArg)) {
+      msgName = msgNameArg.getText()
+      confidence = 'inferred'
+    } else {
+      return null
+    }
+
+    return {
+      type: 'tsrpc_listen_msg',
+      url: msgName,
+      method: 'listenMsg',
+      line: call.getStartLineNumber(),
+      confidence,
+    }
+  }
+
+  /**
+   * 判断是否是 TSRPC client.sendMsg() 调用
+   */
+  private isTsrpcSendMsg(expression: Node): boolean {
+    const text = expression.getText()
+    return /\.sendMsg$/.test(text)
+  }
+
+  /**
+   * 解析 TSRPC client.sendMsg() 调用
+   *
+   * 识别模式：
+   * - client.sendMsg('Chat', { content: 'hello' })
+   */
+  private parseTsrpcSendMsg(call: CallExpression): DetectedCall | null {
+    const args = call.getArguments()
+    if (args.length === 0) return null
+
+    const msgNameArg = args[0]
+    let msgName: string
+    let confidence: 'certain' | 'inferred' = 'certain'
+
+    if (Node.isStringLiteral(msgNameArg)) {
+      msgName = msgNameArg.getLiteralValue()
+    } else if (Node.isTemplateExpression(msgNameArg)) {
+      msgName = msgNameArg.getText()
+      confidence = 'inferred'
+    } else {
+      return null
+    }
+
+    return {
+      type: 'tsrpc_listen_msg', // 复用类型，实际是 sendMsg
+      url: msgName,
+      method: 'sendMsg',
+      line: call.getStartLineNumber(),
+      confidence,
+    }
+  }
+
+  /**
    * 将调用转换为边
    */
   private callToEdge(call: DetectedCall, filePath: string): OmniEdge | null {
@@ -309,13 +451,25 @@ export class ApiCallsParser implements Parser {
     let targetId: string
     if (call.type === 'trpc_hook') {
       targetId = `trpc_procedure:unknown:${call.url}`
+    } else if (call.type === 'tsrpc_call_api' || call.type === 'tsrpc_listen_msg') {
+      // TSRPC: 使用 service 路径作为 target
+      // crossLayer.ts 的 linkCallsApi 会通过路径匹配修复 target
+      targetId = `tsrpc_api:unknown:${call.url}`
     } else {
       // 对于 fetch/axios，使用 URL 作为 target
       // crossLayer.ts 的 linkCallsApi 会通过 URL 匹配修复 target
       targetId = `api_route:unknown:${call.url}`
     }
 
-    const edgeId = createEdgeId(sourceId, 'calls_api', targetId)
+    // 根据调用类型选择边类型
+    let edgeType: 'calls_api' | 'sends_msg' | 'listens_msg' = 'calls_api'
+    if (call.method === 'listenMsg') {
+      edgeType = 'listens_msg'
+    } else if (call.method === 'sendMsg') {
+      edgeType = 'sends_msg'
+    }
+
+    const edgeId = createEdgeId(sourceId, edgeType, targetId)
 
     const metadata: CallsApiMetadata = {
       method: call.method,
@@ -327,7 +481,7 @@ export class ApiCallsParser implements Parser {
       id: edgeId,
       source: sourceId,
       target: targetId,
-      type: 'calls_api',
+      type: edgeType,
       confidence: call.confidence,
       metadata,
     }

@@ -14,6 +14,9 @@ export type NodeType =
   | 'component'       // React 组件
   | 'api_route'       // Next.js API Route (/app/api/booking/route.ts)
   | 'trpc_procedure'  // tRPC procedure (booking.create)
+  | 'tsrpc_service'   // TSRPC service API (xxx/login)
+  | 'tsrpc_api'       // TSRPC API 接口（ApiCall 模式）
+  | 'tsrpc_msg'       // TSRPC 消息服务（Msg 模式，发布/订阅）
   | 'express_route'   // Express 路由 (POST /api/booking)
   | 'handler'         // 路由 handler 函数
   | 'service'         // Service 层函数/类方法
@@ -56,6 +59,49 @@ export interface TrpcProcedureMetadata {
   procedureName: string
   hasInput: boolean
   hasOutput: boolean
+}
+
+export interface TsrpcServiceMetadata {
+  /** TSRPC service 路径（如 xxx/login） */
+  servicePath: string
+  /** 传输协议 */
+  transport: 'http' | 'ws'
+  /** 请求类型名称 */
+  reqTypeName: string | null
+  /** 响应类型名称 */
+  resTypeName: string | null
+  /** 是否有自定义错误类型 */
+  hasCustomError: boolean
+  /** 是否是 WebSocket 消息类型（Msg* 前缀） */
+  isMessage?: boolean
+}
+
+export interface TsrpcApiMetadata {
+  /** TSRPC API 路径（如 user/login） */
+  apiPath: string
+  /** 传输协议 */
+  transport: 'http' | 'ws'
+  /** 请求类型名称 */
+  reqTypeName: string | null
+  /** 响应类型名称 */
+  resTypeName: string | null
+  /** 是否有自定义错误处理 */
+  hasCustomError: boolean
+  /** conf 配置项（如 needLogin） */
+  conf?: Record<string, unknown>
+  /** 对应的协议文件路径 */
+  protocolFilePath?: string
+}
+
+export interface TsrpcMsgMetadata {
+  /** 消息名称（如 Chat、TodoUpdate） */
+  msgName: string
+  /** 消息类型名称（如 MsgChat） */
+  msgTypeName: string
+  /** 传输协议（通常为 ws） */
+  transport: 'ws' | 'http'
+  /** 是否有实现文件（通常为 false，Msg 走发布/订阅） */
+  hasImplementation: boolean
 }
 
 export interface ExpressRouteMetadata {
@@ -148,6 +194,9 @@ export type NodeMetadata =
   | ComponentMetadata
   | ApiRouteMetadata
   | TrpcProcedureMetadata
+  | TsrpcServiceMetadata
+  | TsrpcApiMetadata
+  | TsrpcMsgMetadata
   | ExpressRouteMetadata
   | HandlerMetadata
   | ServiceMetadata
@@ -190,6 +239,9 @@ export type NodeTypeMetadataMap = {
   component: ComponentMetadata
   api_route: ApiRouteMetadata
   trpc_procedure: TrpcProcedureMetadata
+  tsrpc_service: TsrpcServiceMetadata
+  tsrpc_api: TsrpcApiMetadata
+  tsrpc_msg: TsrpcMsgMetadata
   express_route: ExpressRouteMetadata
   handler: HandlerMetadata
   service: ServiceMetadata

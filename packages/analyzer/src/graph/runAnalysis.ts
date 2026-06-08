@@ -15,6 +15,7 @@ import { PrismaParser } from '../parsers/prisma'
 import { NextjsAppParser } from '../parsers/nextjsApp'
 import { NextjsPagesParser } from '../parsers/nextjsPages'
 import { TrpcParser } from '../parsers/trpc'
+import { TsRpcParser } from '../parsers/tsrpc'
 import { ExpressParser } from '../parsers/express'
 import { TypeormParser } from '../parsers/typeorm'
 import { ApiCallsParser } from '../parsers/apiCalls'
@@ -68,6 +69,9 @@ function detectProjectMeta(projectRoot: string): ProjectMeta {
     frontendDirs: [],
     backendDirs: [],
     trpcRouterPaths: [],
+    tsrpcServicePaths: [],
+    tsrpcApiDirs: [],
+    tsrpcProtocolDirs: [],
     prismaSchemaPath: fs.existsSync(path.join(projectRoot, 'prisma', 'schema.prisma'))
       ? path.join(projectRoot, 'prisma', 'schema.prisma')
       : null,
@@ -97,6 +101,7 @@ export async function runAnalysis(options: RunAnalysisOptions): Promise<RunAnaly
     new NextjsAppParser(),
     new NextjsPagesParser(),
     new TrpcParser(),
+    new TsRpcParser(),
     new ExpressParser(),
     new TypeormParser(),
     new ApiCallsParser(),
@@ -117,6 +122,11 @@ export async function runAnalysis(options: RunAnalysisOptions): Promise<RunAnaly
 
   // 扫描常见目录
   const scanDirs = ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'server', 'src/server']
+
+  // TSRPC 项目：扫描 api/ 和 shared/protocols/ 目录
+  if (projectMeta.backendFramework === 'tsrpc') {
+    scanDirs.push('src/api', 'api', 'src/shared/protocols', 'shared/protocols', 'protocols', 'src/protocols')
+  }
   for (const dir of scanDirs) {
     scanDir(path.join(projectRoot, dir), files)
   }

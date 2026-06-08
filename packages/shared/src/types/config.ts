@@ -22,7 +22,7 @@ export interface CodeOmniVisConfig {
     /** 后端源码目录 */
     dirs?: string[]
     /** 后端框架（auto = 自动检测） */
-    framework?: 'express' | 'trpc' | 'fastify' | 'auto'
+    framework?: 'express' | 'trpc' | 'tsrpc' | 'fastify' | 'auto'
   }
 
   /** 数据库配置 */

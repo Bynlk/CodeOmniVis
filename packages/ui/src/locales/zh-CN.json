@@ -17,6 +17,9 @@
   "nodeType.component":      "组件",
   "nodeType.api_route":      "API 路由",
   "nodeType.trpc_procedure": "tRPC 接口",
+  "nodeType.tsrpc_service":  "TSRPC 服务",
+  "nodeType.tsrpc_api":      "TSRPC API",
+  "nodeType.tsrpc_msg":      "WebSocket 消息",
   "nodeType.express_route":  "Express 路由",
   "nodeType.handler":        "Handler",
   "nodeType.service":        "Service",
@@ -32,6 +35,8 @@
   "edgeType.db_relation":    "数据库关系",
   "edgeType.imports":        "导入",
   "edgeType.contains":       "包含",
+  "edgeType.sends_msg":      "发送消息",
+  "edgeType.listens_msg":    "监听消息",
 
   "confidence.certain":  "确定",
   "confidence.inferred": "推断",

@@ -120,12 +120,12 @@ export class CrossLayerLinker {
   private linkCallsApi(graph: OmniGraph, nodeMap: Map<string, OmniNode>): OmniEdge[] {
     const edges: OmniEdge[] = []
 
-    // 获取所有 calls_api 边
-    const existingCallEdges = graph.edges.filter(e => e.type === 'calls_api')
+    // 获取所有 calls_api / sends_msg / listens_msg 边
+    const existingCallEdges = graph.edges.filter(e => e.type === 'calls_api' || e.type === 'sends_msg' || e.type === 'listens_msg')
 
     // 获取所有后端路由节点
     const apiRoutes = graph.nodes.filter(n =>
-      n.type === 'api_route' || n.type === 'trpc_procedure' || n.type === 'express_route' || n.type === 'kotlin_route'
+      n.type === 'api_route' || n.type === 'trpc_procedure' || n.type === 'express_route' || n.type === 'kotlin_route' || n.type === 'tsrpc_service' || n.type === 'tsrpc_api' || n.type === 'tsrpc_msg'
     )
 
     // 获取所有组件节点（用于匹配 source）
@@ -184,6 +184,29 @@ export class CrossLayerLinker {
           }
           edges.push(newEdge)
         }
+      } else if (callType === 'tsrpc_call_api' || callType === 'tsrpc_listen_msg') {
+        // TSRPC client.callApi / client.listenMsg / client.sendMsg：匹配 service/msg 路径
+        const matchedService = this.matchTsrpcService(url, apiRoutes)
+
+        // 根据原始边类型决定新边类型
+        const resolvedEdgeType = callEdge.type === 'listens_msg' ? 'listens_msg'
+          : callEdge.type === 'sends_msg' ? 'sends_msg'
+          : 'calls_api'
+
+        if (matchedService) {
+          const newEdge: OmniEdge = {
+            id: createEdgeId(sourceId, resolvedEdgeType, matchedService.id),
+            source: sourceId,
+            target: matchedService.id,
+            type: resolvedEdgeType,
+            confidence: 'certain',
+            metadata: {
+              ...metadata,
+              matchedFrom: callEdge.id,
+            },
+          }
+          edges.push(newEdge)
+        }
       } else if (callType === 'fetch' || callType === 'axios') {
         // fetch/axios：匹配 URL 路径
         const matchedRoute = this.matchApiRoute(url, apiRoutes)
@@ -232,6 +255,73 @@ export class CrossLayerLinker {
     })
 
     return fuzzyMatch || null
+  }
+
+  /**
+   * 匹配 TSRPC service
+   * @param servicePath - client.callApi 的第一个参数（如 'Example' 或 'user/login'）
+   * @param services - 所有 tsrpc_service 节点
+   *
+   * 匹配策略（按优先级）：
+   * 1. 精确匹配 servicePath metadata（大小写不敏感）
+   * 2. 路径最后一段匹配（处理 'Example' vs 'user/example'）
+   * 3. 按节点名匹配（去掉 Api 前缀，大小写不敏感）
+   */
+  private matchTsrpcService(
+    servicePath: string,
+    services: OmniNode[]
+  ): OmniNode | null {
+    // 规范化路径
+    const normalizedPath = servicePath.replace(/^\//, '').replace(/\/$/, '')
+    const normalizedLower = normalizedPath.toLowerCase()
+
+    // 1. 精确匹配 apiPath/servicePath metadata（大小写不敏感）
+    const exactMatch = services.find(n => {
+      if (n.type === 'tsrpc_api') {
+        const meta = n.metadata as import('@codeomnivis/shared').TsrpcApiMetadata
+        return meta.apiPath.toLowerCase() === normalizedLower
+      }
+      if (n.type === 'tsrpc_service') {
+        const meta = n.metadata as import('@codeomnivis/shared').TsrpcServiceMetadata
+        return meta.servicePath.toLowerCase() === normalizedLower
+      }
+      if (n.type === 'tsrpc_msg') {
+        const meta = n.metadata as import('@codeomnivis/shared').TsrpcMsgMetadata
+        return meta.msgName.toLowerCase() === normalizedLower
+      }
+      return false
+    })
+    if (exactMatch) return exactMatch
+
+    // 2. 路径最后一段匹配（大小写不敏感）
+    const lastSegment = normalizedPath.split('/').pop()?.toLowerCase()
+    if (lastSegment) {
+      const fuzzyMatch = services.find(n => {
+        if (n.type === 'tsrpc_api') {
+          const meta = n.metadata as import('@codeomnivis/shared').TsrpcApiMetadata
+          return meta.apiPath.split('/').pop()?.toLowerCase() === lastSegment
+        }
+        if (n.type === 'tsrpc_service') {
+          const meta = n.metadata as import('@codeomnivis/shared').TsrpcServiceMetadata
+          return meta.servicePath.split('/').pop()?.toLowerCase() === lastSegment
+        }
+        if (n.type === 'tsrpc_msg') {
+          const meta = n.metadata as import('@codeomnivis/shared').TsrpcMsgMetadata
+          return meta.msgName.toLowerCase() === lastSegment
+        }
+        return false
+      })
+      if (fuzzyMatch) return fuzzyMatch
+    }
+
+    // 3. 按节点名匹配（去掉 Api/Ptl/Msg 前缀，大小写不敏感）
+    const nameMatch = services.find(n => {
+      if (n.type !== 'tsrpc_api' && n.type !== 'tsrpc_service' && n.type !== 'tsrpc_msg') return false
+      const strippedName = n.name.replace(/^(Api|Ptl|Msg)/i, '').toLowerCase()
+      return strippedName === normalizedLower || strippedName === lastSegment
+    })
+
+    return nameMatch || null
   }
 
   /**
@@ -381,6 +471,30 @@ export class CrossLayerLinker {
         nodeMap.set(resolver.id, resolver)
       }
       edges.push(makeEdge(proc.id, handlerId, 'handles', 'certain'))
+    }
+
+    // 处理 TSRPC service/api 节点
+    const tsrpcNodes = graph.nodes.filter(n => n.type === 'tsrpc_service' || n.type === 'tsrpc_api')
+    for (const svc of tsrpcNodes) {
+      const handlerId = `handler:${svc.filePath}:${svc.name}:handler`
+      if (!nodeMap.has(handlerId)) {
+        const handler: OmniNode = {
+          id: handlerId,
+          type: 'handler',
+          name: `${svc.name} handler`,
+          filePath: svc.filePath,
+          line: svc.line,
+          column: svc.column,
+          metadata: {
+            functionName: svc.name,
+            routeId: svc.id,
+            isSynthetic: true,
+          },
+        }
+        graph.nodes.push(handler)
+        nodeMap.set(handler.id, handler)
+      }
+      edges.push(makeEdge(svc.id, handlerId, 'handles', 'certain'))
     }
 
     // 处理 Express route 节点
