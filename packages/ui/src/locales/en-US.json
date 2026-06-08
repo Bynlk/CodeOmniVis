@@ -17,6 +17,9 @@
   "nodeType.component":      "Component",
   "nodeType.api_route":      "API Route",
   "nodeType.trpc_procedure": "tRPC Procedure",
+  "nodeType.tsrpc_service":  "TSRPC Service",
+  "nodeType.tsrpc_api":      "TSRPC API",
+  "nodeType.tsrpc_msg":      "WebSocket Message",
   "nodeType.express_route":  "Express Route",
   "nodeType.handler":        "Handler",
   "nodeType.service":        "Service",
@@ -32,6 +35,8 @@
   "edgeType.db_relation":    "DB Relation",
   "edgeType.imports":        "Imports",
   "edgeType.contains":       "Contains",
+  "edgeType.sends_msg":      "Sends Message",
+  "edgeType.listens_msg":    "Listens Message",
 
   "confidence.certain":  "Certain",
   "confidence.inferred": "Inferred",
