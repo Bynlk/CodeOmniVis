@@ -14,11 +14,15 @@ import type { NodeType, EdgeType } from '@codeomnivis/shared'
 const VALID_NODE_TYPES: ReadonlySet<string> = new Set<NodeType>([
   'page', 'component', 'api_route', 'trpc_procedure', 'express_route',
   'handler', 'service', 'db_model', 'module',
+  'tsrpc_service', 'tsrpc_api', 'tsrpc_msg',
+  'kotlin_class', 'kotlin_interface', 'kotlin_object', 'kotlin_function', 'kotlin_route',
 ])
 
 const VALID_EDGE_TYPES: ReadonlySet<string> = new Set<EdgeType>([
   'renders', 'navigates_to', 'calls_api', 'handles', 'calls_service',
   'queries_db', 'db_relation', 'imports', 'contains', 'data_flows_to',
+  'sends_msg', 'listens_msg',
+  'kotlin_inherits', 'kotlin_implements', 'kotlin_uses',
 ])
 
 // ============================================================

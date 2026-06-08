@@ -141,13 +141,13 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
       if (files.length > 0) {
         // 自动检测后端框架
-        let detectedBackend: 'trpc' | 'tsrpc' | 'express' | 'nestjs' | 'next' | 'spring' | 'ktor' | 'unknown' = 'trpc'
+        let detectedBackend = 'trpc' as string
         try {
           const pkgPath = path.join(projectRoot, 'package.json')
           if (fs.existsSync(pkgPath)) {
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
             const deps = { ...pkg.dependencies, ...pkg.devDependencies }
-            if (deps['tsrpc']) detectedBackend = 'tsrpc'
+            if (deps['tsrpc'] || deps['tsrpc-browser'] || deps['tsrpc-base-client']) detectedBackend = 'tsrpc'
             else if (deps['@nestjs/core'] || deps['@nestjs/common']) detectedBackend = 'nestjs'
             else if (deps['@trpc/server']) detectedBackend = 'trpc'
             else if (deps['express']) detectedBackend = 'express'
@@ -157,7 +157,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
         const projectMeta = {
           root: projectRoot,
           frontendFramework: 'next' as const,
-          backendFramework: detectedBackend,
+          backendFramework: detectedBackend as 'trpc' | 'tsrpc' | 'express' | 'nestjs' | 'next' | 'spring' | 'ktor' | 'unknown',
           databaseType: 'prisma' as const,
           monorepoType: 'none' as const,
           packages: [] as Array<{ name: string; path: string; dependencies: string[]; devDependencies: string[] }>,

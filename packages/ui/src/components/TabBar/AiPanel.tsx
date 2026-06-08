@@ -27,29 +27,21 @@ export function AiPanel() {
     setMessages(prev => [...prev, { id: generateId(), role: 'user', content: userMessage }])
     setIsLoading(true)
 
-    // 创建新的 AbortController
     const controller = new AbortController()
     abortControllerRef.current = controller
 
     try {
       // 获取当前图数据作为上下文
       const graphRes = await fetch('/api/graph', { signal: controller.signal })
-      if (!graphRes.ok) {
-        throw new Error(`Failed to fetch graph: ${graphRes.status}`)
-      }
+      if (!graphRes.ok) throw new Error(`Failed to fetch graph: ${graphRes.status}`)
       const graphData = await graphRes.json()
 
-      // 构建 prompt
       const context = `Project has ${graphData.meta?.nodeCount ?? 0} nodes and ${graphData.meta?.edgeCount ?? 0} edges. Node types: ${JSON.stringify(graphData.meta?.nodesByType ?? {})}`
 
-      // 调用 AI API（如果有的话）
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          context,
-        }),
+        body: JSON.stringify({ message: userMessage, context }),
         signal: controller.signal,
       })
 
@@ -59,10 +51,17 @@ export function AiPanel() {
       } else if (res.status === 429) {
         setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: 'Rate limit exceeded. Please try again later.' }])
       } else {
-        setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: t('ai.serviceUnavailable') }])
+        // 尝试解析错误响应，显示后端返回的具体信息
+        let errorMsg = t('ai.serviceUnavailable')
+        try {
+          const errData = await res.json()
+          if (errData.message || errData.error) {
+            errorMsg = errData.message || errData.error
+          }
+        } catch { /* 忽略解析错误 */ }
+        setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: errorMsg }])
       }
     } catch (err) {
-      // 忽略 abort 错误
       if (err instanceof DOMException && err.name === 'AbortError') return
       setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: t('ai.serviceUnavailable') }])
     } finally {
