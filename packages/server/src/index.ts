@@ -101,6 +101,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
         new analyzer.NextjsAppParser(),
         new analyzer.NextjsPagesParser(),
         new analyzer.TrpcParser(),
+        new analyzer.TsRpcParser(),
         new analyzer.ExpressParser(),
         new analyzer.TypeormParser(),
         new analyzer.ApiCallsParser(),
@@ -113,7 +114,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
       // 简单的文件扫描
       const files: string[] = []
-      const scanDirs = ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'server', 'src/server']
+      const scanDirs = ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'server', 'src/server', 'src/api', 'api', 'src/shared/protocols', 'shared/protocols', 'protocols', 'src/protocols']
 
       function scanDir(dir: string): void {
         if (!fs.existsSync(dir)) return
@@ -139,16 +140,33 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       }
 
       if (files.length > 0) {
+        // 自动检测后端框架
+        let detectedBackend: 'trpc' | 'tsrpc' | 'express' | 'nestjs' | 'next' | 'spring' | 'ktor' | 'unknown' = 'trpc'
+        try {
+          const pkgPath = path.join(projectRoot, 'package.json')
+          if (fs.existsSync(pkgPath)) {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+            const deps = { ...pkg.dependencies, ...pkg.devDependencies }
+            if (deps['tsrpc']) detectedBackend = 'tsrpc'
+            else if (deps['@nestjs/core'] || deps['@nestjs/common']) detectedBackend = 'nestjs'
+            else if (deps['@trpc/server']) detectedBackend = 'trpc'
+            else if (deps['express']) detectedBackend = 'express'
+          }
+        } catch { /* ignore */ }
+
         const projectMeta = {
           root: projectRoot,
           frontendFramework: 'next' as const,
-          backendFramework: 'trpc' as const,
+          backendFramework: detectedBackend,
           databaseType: 'prisma' as const,
           monorepoType: 'none' as const,
           packages: [] as Array<{ name: string; path: string; dependencies: string[]; devDependencies: string[] }>,
           frontendDirs: [] as string[],
           backendDirs: [] as string[],
           trpcRouterPaths: [] as string[],
+          tsrpcServicePaths: [] as string[],
+          tsrpcApiDirs: [] as string[],
+          tsrpcProtocolDirs: [] as string[],
           prismaSchemaPath: path.join(projectRoot, 'prisma', 'schema.prisma'),
           typeormEntityDirs: [] as string[],
           tsConfigPath: null as string | null,

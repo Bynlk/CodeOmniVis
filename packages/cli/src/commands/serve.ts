@@ -14,7 +14,7 @@ import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoD
 import { scanDirectory } from '../utils/scanDirectory'
 import { createOmniServer } from '@codeomnivis/server'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
-import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@codeomnivis/analyzer'
+import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, TsRpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@codeomnivis/analyzer'
 
 export function serveCommand(program: Command): void {
   program
@@ -61,6 +61,7 @@ export function serveCommand(program: Command): void {
           new NextjsAppParser(),
           new NextjsPagesParser(),
           new TrpcParser(),
+          new TsRpcParser(),
           new ExpressParser(),
           new TypeormParser(),
           new ApiCallsParser(),
