@@ -222,7 +222,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 function handleGetApiRoutes(db: OmniDatabase, args: Record<string, unknown> | undefined) {
   const filter = stringArg(args, 'filter')?.toLowerCase()
-  const apiNodes = db.getNodesByTypes(['api_route', 'trpc_procedure', 'express_route'] as NodeType[])
+  const apiNodes = db.getNodesByTypes(['api_route', 'trpc_procedure', 'express_route', 'tsrpc_api', 'tsrpc_service'] as NodeType[])
 
   const filtered = filter
     ? apiNodes.filter(n => {

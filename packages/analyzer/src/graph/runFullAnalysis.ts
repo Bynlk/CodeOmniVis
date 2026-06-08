@@ -115,6 +115,7 @@ function findTsConfig(root: string): string | undefined {
 
 /**
  * 递归扫描目录中的 TS/JS 文件
+ * 跳过软链接目录（避免 symlink 重复扫描）
  */
 function scanDir(dir: string, files: string[]): void {
   if (!fs.existsSync(dir)) return
@@ -122,6 +123,8 @@ function scanDir(dir: string, files: string[]): void {
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name)
     if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules' && entry.name !== 'dist') {
+      // 跳过软链接目录（避免 symlink 重复扫描）
+      if (entry.isSymbolicLink()) continue
       scanDir(fullPath, files)
     } else if (/\.(ts|tsx|js|jsx)$/.test(entry.name)) {
       files.push(fullPath)
