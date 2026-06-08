@@ -85,6 +85,9 @@ importers:
       '@codeomnivis/analyzer':
         specifier: workspace:*
         version: link:../analyzer
+      '@codeomnivis/mcp':
+        specifier: workspace:*
+        version: link:../mcp
       '@codeomnivis/server':
         specifier: workspace:*
         version: link:../server

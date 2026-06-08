@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@codeomnivis/analyzer": "workspace:*",
+    "@codeomnivis/mcp": "workspace:*",
     "@codeomnivis/server": "workspace:*",
     "@codeomnivis/shared": "workspace:*",
     "chalk": "^5.3.0",

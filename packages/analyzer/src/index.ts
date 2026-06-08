@@ -23,6 +23,8 @@ export type { BuildResult } from './graph/builder'
 // 一键分析
 export { runAnalysis } from './graph/runAnalysis'
 export type { RunAnalysisOptions, RunAnalysisResult } from './graph/runAnalysis'
+export { runFullAnalysis } from './graph/runFullAnalysis'
+export type { FullAnalysisOptions, FullAnalysisResult } from './graph/runFullAnalysis'
 
 // Resolver
 export { PathAliasResolver } from './resolver/pathAlias'

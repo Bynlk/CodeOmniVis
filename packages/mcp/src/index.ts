@@ -15,7 +15,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import { OmniDatabase, runAnalysis, DataFlowTracer } from '@codeomnivis/analyzer'
+import { OmniDatabase, runFullAnalysis, DataFlowTracer } from '@codeomnivis/analyzer'
 import { getDbPath, hasDbCache } from '@codeomnivis/shared/node'
 import type { NodeType, EdgeType } from '@codeomnivis/shared'
 
@@ -63,10 +63,10 @@ async function getDb(): Promise<OmniDatabase> {
   dbInitPromise = (async () => {
     const dbPath = getDbPath(projectRoot)
 
-    // 如果没有缓存，先运行分析
+    // 如果没有缓存，先运行完整分析（与 CLI serve 一致）
     if (!hasDbCache(projectRoot)) {
-      log('No cache found, running analysis...')
-      await runAnalysis({ projectRoot, dbPath })
+      log('No cache found, running full analysis...')
+      await runFullAnalysis({ projectRoot, dbPath })
     }
 
     // 创建数据库实例并缓存
