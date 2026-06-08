@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Full-stack architecture visualizer for TypeScript projects",
   "private": true,
-  "license": "MIT",
+  "license": "LicenseRef-PolyForm-Noncommercial-1.0.0",
   "engines": {
     "node": ">=18.0.0"
   },

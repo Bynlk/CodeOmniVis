@@ -17,7 +17,7 @@
 
 不只是画图——是 **代码语义理解** × **跨层数据流追踪** × **AI 原生集成**。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-00d4aa.svg)](https://opensource.org/licenses/MIT)
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-PolyForm%20Noncommercial-00d4aa.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node.js-≥18-339933.svg)](https://nodejs.org/)
 
@@ -456,9 +456,14 @@ codeomnivis/
 
 ---
 
-## 📄 License
+## 📄 开源协议
 
-MIT © 2026
+[PolyForm Noncommercial License 1.0.0](LICENSE) — 非商业使用许可
+
+✅ 个人使用、学习、研究、非营利组织、教育机构
+❌ 商业使用、售卖、付费服务、广告盈利
+
+商业用途请联系作者获取授权。
 
 ---
 

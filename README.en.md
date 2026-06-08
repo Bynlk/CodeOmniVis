@@ -15,7 +15,7 @@
 
 Not just drawing — it's **code semantic understanding** × **cross-layer data flow tracing** × **AI-native integration**.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-00d4aa.svg)](https://opensource.org/licenses/MIT)
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-PolyForm%20Noncommercial-00d4aa.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node.js-≥18-339933.svg)](https://nodejs.org/)
 
@@ -456,7 +456,12 @@ Verified on [cal.com](https://github.com/calcom/cal.com) (9,390 files, large ful
 
 ## 📄 License
 
-MIT © 2026
+[PolyForm Noncommercial License 1.0.0](LICENSE) — Noncommercial use only
+
+✅ Personal use, hobbyist, research, nonprofits, education
+❌ Commercial use, selling, paid services, advertising
+
+Contact the author for commercial licensing.
 
 ---
 

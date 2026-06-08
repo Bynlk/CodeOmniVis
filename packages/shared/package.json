@@ -2,7 +2,7 @@
   "name": "@codeomnivis/shared",
   "version": "0.0.1",
   "description": "Shared types and constants for CodeOmniVis",
-  "license": "MIT",
+  "license": "LicenseRef-PolyForm-Noncommercial-1.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/Bynlk/CodeOmniVis.git",
