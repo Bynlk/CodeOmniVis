@@ -18,6 +18,9 @@ const exposedProjectMeta: ProjectMeta = {
   frontendDirs: [],
   backendDirs: [],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
@@ -41,7 +44,7 @@ describe('ExposedParser', () => {
     })
 
     it('should not handle when database is not exposed', () => {
-      const meta = { ...exposedProjectMeta, databaseType: 'unknown' as const }
+      const meta: ProjectMeta = { ...exposedProjectMeta, databaseType: 'unknown' }
       expect(parser.canHandle('src/main/Tables.kt', meta)).toBe(false)
     })
   })

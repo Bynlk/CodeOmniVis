@@ -5,7 +5,8 @@
 import { describe, it, expect } from 'vitest'
 import * as path from 'path'
 import { SpringKotlinParser } from '../../../src/parsers/kotlin/springKotlinParser'
-import type { ProjectMeta, ParseContext, KotlinRouteMetadata } from '@codeomnivis/shared'
+import { isNodeOfType } from '@codeomnivis/shared'
+import type { ProjectMeta, ParseContext } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../../fixtures/kotlin')
 
@@ -18,6 +19,9 @@ const springProjectMeta: ProjectMeta = {
   frontendDirs: [],
   backendDirs: [],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
@@ -41,7 +45,7 @@ describe('SpringKotlinParser', () => {
     })
 
     it('should not handle when backend is not spring', () => {
-      const meta = { ...springProjectMeta, backendFramework: 'unknown' as const }
+      const meta: ProjectMeta = { ...springProjectMeta, backendFramework: 'unknown' }
       expect(parser.canHandle('src/main/Controller.kt', meta)).toBe(false)
     })
 
@@ -56,10 +60,10 @@ describe('SpringKotlinParser', () => {
 
       expect(result.errors).toHaveLength(0)
 
-      const routes = result.nodes.filter(n => n.type === 'kotlin_route')
+      const routes = result.nodes.filter(n => isNodeOfType(n, 'kotlin_route'))
       expect(routes.length).toBeGreaterThanOrEqual(3) // GET, POST, DELETE
 
-      const methods = routes.map(n => (n.metadata as KotlinRouteMetadata).method)
+      const methods = routes.map(n => n.metadata.method)
       expect(methods).toContain('GET')
       expect(methods).toContain('POST')
       expect(methods).toContain('DELETE')
@@ -73,9 +77,10 @@ describe('SpringKotlinParser', () => {
     })
 
     it('should not run on non-spring projects', async () => {
-      const nonSpringContext = {
+      const nonSpringProjectMeta: ProjectMeta = { ...springProjectMeta, backendFramework: 'unknown' }
+      const nonSpringContext: ParseContext = {
         ...springContext,
-        projectMeta: { ...springProjectMeta, backendFramework: 'unknown' as const },
+        projectMeta: nonSpringProjectMeta,
       }
       const result = await parser.parse('spring-controller.kt', nonSpringContext)
 

@@ -10,6 +10,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { OmniDatabase } from '../../src/storage/db'
+import type { DbError } from '../../src/storage/db'
 import type { OmniNode, OmniEdge } from '@codeomnivis/shared'
 
 // ============================================================
@@ -272,10 +273,10 @@ describe('OmniDatabase', () => {
 
   describe('Error Handling', () => {
     it('should insert and retrieve errors', () => {
-      const error = {
+      const error: DbError = {
         file: 'test.ts',
         message: 'Parse failed',
-        severity: 'warning' as const,
+        severity: 'warning',
       }
 
       const result = db.insertError(error)
@@ -287,9 +288,9 @@ describe('OmniDatabase', () => {
     })
 
     it('should batch insert errors', () => {
-      const errors = [
-        { file: 'test1.ts', message: 'Error 1', severity: 'error' as const },
-        { file: 'test2.ts', message: 'Error 2', severity: 'warning' as const },
+      const errors: DbError[] = [
+        { file: 'test1.ts', message: 'Error 1', severity: 'error' },
+        { file: 'test2.ts', message: 'Error 2', severity: 'warning' },
       ]
 
       const count = db.insertErrors(errors)

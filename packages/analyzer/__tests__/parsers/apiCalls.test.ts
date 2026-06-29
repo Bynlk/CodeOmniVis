@@ -5,8 +5,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
 import { ApiCallsParser } from '../../src/parsers/apiCalls'
-import type { ParseContext, ProjectMeta } from '@codeomnivis/shared'
-import type { CallsApiMetadata } from '@codeomnivis/shared'
+import { isEdgeOfType } from '@codeomnivis/shared'
+import type { ParseContext, ProjectMeta, TypedOmniEdge } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures')
 
@@ -19,10 +19,13 @@ const projectMeta: ProjectMeta = {
   frontendDirs: ['app'],
   backendDirs: ['server'],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
-    buildFile: null,
+  buildFile: null,
   packages: [],
 }
 
@@ -62,8 +65,8 @@ describe('ApiCallsParser', () => {
     it('should detect fetch calls', async () => {
       const result = await parser.parse('components/BookingList.tsx', context)
 
-      const fetchEdge = result.edges.find(e =>
-        (e.metadata as CallsApiMetadata).callType === 'fetch'
+      const fetchEdge = result.edges.find((e): e is TypedOmniEdge<'calls_api'> =>
+        isEdgeOfType(e, 'calls_api') && e.metadata.callType === 'fetch'
       )
 
       expect(fetchEdge).toBeDefined()
@@ -73,8 +76,8 @@ describe('ApiCallsParser', () => {
     it('should detect tRPC hooks', async () => {
       const result = await parser.parse('components/BookingList.tsx', context)
 
-      const trpcEdge = result.edges.find(e =>
-        (e.metadata as CallsApiMetadata).callType === 'trpc_hook'
+      const trpcEdge = result.edges.find((e): e is TypedOmniEdge<'calls_api'> =>
+        isEdgeOfType(e, 'calls_api') && e.metadata.callType === 'trpc_hook'
       )
 
       expect(trpcEdge).toBeDefined()
@@ -84,11 +87,11 @@ describe('ApiCallsParser', () => {
     it('should extract HTTP methods', async () => {
       const result = await parser.parse('components/BookingList.tsx', context)
 
-      const fetchEdge = result.edges.find(e =>
-        (e.metadata as CallsApiMetadata).callType === 'fetch'
+      const fetchEdge = result.edges.find((e): e is TypedOmniEdge<'calls_api'> =>
+        isEdgeOfType(e, 'calls_api') && e.metadata.callType === 'fetch'
       )
 
-      expect((fetchEdge?.metadata as CallsApiMetadata).method).toBe('POST')
+      expect(fetchEdge?.metadata.method).toBe('POST')
     })
 
     it('should handle non-existent file gracefully', async () => {

@@ -4,6 +4,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { createNodeId, parseNodeId } from '../../src/types/node'
+import type { NodeType } from '../../src/types/node'
 
 describe('createNodeId', () => {
   it('生成标准节点 ID', () => {
@@ -37,7 +38,7 @@ describe('parseNodeId', () => {
   })
 
   it('round-trip: createNodeId → parseNodeId', () => {
-    const original = { type: 'page' as const, filePath: 'app/booking/page.tsx', name: '/booking' }
+    const original: { type: NodeType; filePath: string; name: string } = { type: 'page', filePath: 'app/booking/page.tsx', name: '/booking' }
     const id = createNodeId(original.type, original.filePath, original.name)
     const parsed = parseNodeId(id)
     expect(parsed).toEqual(original)

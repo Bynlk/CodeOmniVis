@@ -4,6 +4,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { createEdgeId, parseEdgeId } from '../../src/types/edge'
+import type { EdgeType } from '../../src/types/edge'
 
 describe('createEdgeId', () => {
   it('生成标准边 ID', () => {
@@ -12,7 +13,7 @@ describe('createEdgeId', () => {
   })
 
   it('处理所有边类型', () => {
-    const types = ['renders', 'navigates_to', 'calls_api', 'handles', 'calls_service', 'queries_db', 'db_relation', 'imports', 'contains'] as const
+    const types: EdgeType[] = ['renders', 'navigates_to', 'calls_api', 'handles', 'calls_service', 'queries_db', 'db_relation', 'imports', 'contains']
     for (const type of types) {
       const id = createEdgeId('src', type, 'tgt')
       expect(id).toContain(`--${type}--`)
@@ -36,7 +37,7 @@ describe('parseEdgeId', () => {
   it('round-trip: createEdgeId → parseEdgeId', () => {
     const source = 'page:app/page.tsx:/'
     const target = 'component:app/Button.tsx:Button'
-    const type = 'renders' as const
+    const type: EdgeType = 'renders'
     const id = createEdgeId(source, type, target)
     const parsed = parseEdgeId(id)
     expect(parsed).toEqual({ source, type, target })

@@ -15,10 +15,13 @@ const expressMeta: ProjectMeta = {
   frontendDirs: [],
   backendDirs: ['server'],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
-    buildFile: null,
+  buildFile: null,
   packages: [],
 }
 
@@ -46,7 +49,7 @@ describe('ExpressParser', () => {
     })
 
     it('非 express 项目返回 false', () => {
-      const meta = { ...expressMeta, backendFramework: 'unknown' as const }
+      const meta: ProjectMeta = { ...expressMeta, backendFramework: 'unknown' }
       expect(parser.canHandle('server/routes/users.ts', meta)).toBe(false)
     })
 

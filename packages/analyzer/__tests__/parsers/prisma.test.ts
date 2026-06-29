@@ -10,7 +10,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
 import { PrismaParser } from '../../src/parsers/prisma'
-import type { ParseContext, ProjectMeta, DbModelMetadata } from '@codeomnivis/shared'
+import { isNodeOfType } from '@codeomnivis/shared'
+import type { ParseContext, ProjectMeta, TypedOmniNode } from '@codeomnivis/shared'
 
 // ============================================================
 // 测试数据
@@ -28,10 +29,13 @@ const projectMeta: ProjectMeta = {
   frontendDirs: ['app'],
   backendDirs: ['server'],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: 'schema.prisma',
   typeormEntityDirs: [],
   tsConfigPath: null,
-    buildFile: null,
+  buildFile: null,
   packages: [],
 }
 
@@ -72,7 +76,7 @@ describe('PrismaParser', () => {
 
     it('should still handle .prisma files even when database type is different', () => {
       // .prisma 文件扩展名是强信号，应该总是处理
-      const meta = { ...projectMeta, databaseType: 'typeorm' as const }
+      const meta: ProjectMeta = { ...projectMeta, databaseType: 'typeorm' }
       expect(parser.canHandle('schema.prisma', meta)).toBe(true)
     })
   })
@@ -102,15 +106,16 @@ describe('PrismaParser', () => {
 
     it('should extract model metadata correctly', async () => {
       const result = await parser.parse('schema.prisma', context)
-      const userNode = result.nodes.find(n => n.name === 'User')
+      const userNode = result.nodes.find((n): n is TypedOmniNode<'db_model'> =>
+        isNodeOfType(n, 'db_model') && n.name === 'User'
+      )
 
       expect(userNode).toBeDefined()
       expect(userNode?.metadata).toBeDefined()
 
-      const metadata = userNode?.metadata as DbModelMetadata
-      expect(metadata.tableName).toBe('users')
-      expect(metadata.fieldCount).toBeGreaterThan(0)
-      expect(metadata.fields).toBeInstanceOf(Array)
+      expect(userNode?.metadata.tableName).toBe('users')
+      expect(userNode?.metadata.fieldCount).toBeGreaterThan(0)
+      expect(userNode?.metadata.fields).toBeInstanceOf(Array)
     })
 
     it('should parse relations correctly', async () => {

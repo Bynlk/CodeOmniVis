@@ -48,7 +48,7 @@ const COLUMN_TYPES = [
   'blob', 'mediumblob', 'longblob',
   'enum',
   'custom',
-] as const
+]
 
 // ============================================================
 // Drizzle 解析器

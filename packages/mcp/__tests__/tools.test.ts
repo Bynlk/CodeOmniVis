@@ -6,12 +6,11 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { OmniDatabase } from '@codeomnivis/analyzer'
-import type { NodeType, EdgeType } from '@codeomnivis/shared'
 
 // 模拟 MCP 工具逻辑（从 index.ts 提取）
 async function executeGetApiRoutes(db: OmniDatabase) {
-  const apiRoutes = db.getNodesByType('api_route' as NodeType)
-  const trpcProcedures = db.getNodesByType('trpc_procedure' as NodeType)
+  const apiRoutes = db.getNodesByType('api_route')
+  const trpcProcedures = db.getNodesByType('trpc_procedure')
   return {
     apiRoutes: apiRoutes.map(n => ({ id: n.id, name: n.name, filePath: n.filePath, metadata: n.metadata })),
     trpcProcedures: trpcProcedures.map(n => ({ id: n.id, name: n.name, filePath: n.filePath, metadata: n.metadata })),
@@ -19,8 +18,8 @@ async function executeGetApiRoutes(db: OmniDatabase) {
 }
 
 async function executeGetComponentTree(db: OmniDatabase) {
-  const components = db.getNodesByType('component' as NodeType)
-  const rendersEdges = db.getEdgesByType('renders' as EdgeType)
+  const components = db.getNodesByType('component')
+  const rendersEdges = db.getEdgesByType('renders')
   return components.map(c => ({
     id: c.id,
     name: c.name,
@@ -137,14 +136,16 @@ describe('MCP Tools', () => {
       expect(tree).toHaveLength(2)
       const card = tree.find(c => c.name === 'Card')
       expect(card).toBeDefined()
-      expect(card!.children).toContain('component:app/Button.tsx:Button')
+      if (!card) throw new Error('Expected Card component')
+      expect(card.children).toContain('component:app/Button.tsx:Button')
     })
 
     it('无子组件的节点 children 为空', async () => {
       const tree = await executeGetComponentTree(db)
       const button = tree.find(c => c.name === 'Button')
       expect(button).toBeDefined()
-      expect(button!.children).toHaveLength(0)
+      if (!button) throw new Error('Expected Button component')
+      expect(button.children).toHaveLength(0)
     })
   })
 

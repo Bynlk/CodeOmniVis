@@ -18,6 +18,7 @@ import {
 import { OmniDatabase, runFullAnalysis, DataFlowTracer } from '@codeomnivis/analyzer'
 import { getDbPath, hasDbCache } from '@codeomnivis/shared/node'
 import type { NodeType, EdgeType, OmniNode } from '@codeomnivis/shared'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 
 const API_NODE_TYPES: NodeType[] = ['api_route', 'trpc_procedure', 'express_route', 'tsrpc_api', 'tsrpc_service']
 const API_DOWNSTREAM_EDGE_TYPES: EdgeType[] = ['handles', 'calls_service', 'queries_db']
@@ -383,15 +384,15 @@ function handleGetDataFlow(db: OmniDatabase, args: Record<string, unknown> | und
 // 辅助函数
 // ============================================================
 
-function success(data: unknown) {
+function success(data: unknown): CallToolResult {
   return {
-    content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
+    content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
   }
 }
 
-function errorResponse(message: string) {
+function errorResponse(message: string): CallToolResult {
   return {
-    content: [{ type: 'text' as const, text: JSON.stringify({ error: message }) }],
+    content: [{ type: 'text', text: JSON.stringify({ error: message }) }],
     isError: true,
   }
 }

@@ -15,10 +15,13 @@ const typeormMeta: ProjectMeta = {
   frontendDirs: [],
   backendDirs: ['server'],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: ['src/entity'],
   tsConfigPath: null,
-    buildFile: null,
+  buildFile: null,
   packages: [],
 }
 
@@ -50,7 +53,7 @@ describe('TypeormParser', () => {
     })
 
     it('非 typeorm 项目返回 false', () => {
-      const meta = { ...typeormMeta, databaseType: 'unknown' as const }
+      const meta: ProjectMeta = { ...typeormMeta, databaseType: 'unknown' }
       expect(parser.canHandle('src/entity/User.ts', meta)).toBe(false)
     })
 

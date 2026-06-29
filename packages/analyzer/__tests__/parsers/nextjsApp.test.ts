@@ -5,7 +5,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
 import { NextjsAppParser } from '../../src/parsers/nextjsApp'
-import type { ParseContext, ProjectMeta, PageMetadata, ApiRouteMetadata } from '@codeomnivis/shared'
+import { isNodeOfType } from '@codeomnivis/shared'
+import type { ParseContext, ProjectMeta } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures')
 
@@ -18,10 +19,13 @@ const projectMeta: ProjectMeta = {
   frontendDirs: ['app'],
   backendDirs: ['server'],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
-    buildFile: null,
+  buildFile: null,
   packages: [],
 }
 
@@ -49,7 +53,7 @@ describe('NextjsAppParser', () => {
     })
 
     it('should not handle non-nextjs projects', () => {
-      const meta = { ...projectMeta, frontendFramework: 'unknown' as const }
+      const meta: ProjectMeta = { ...projectMeta, frontendFramework: 'unknown' }
       expect(parser.canHandle('app/booking/page.tsx', meta)).toBe(false)
     })
 
@@ -79,18 +83,24 @@ describe('NextjsAppParser', () => {
 
     it('should detect dynamic routes', async () => {
       const result = await parser.parse('app/booking/[id]/page.tsx', context)
-      const metadata = result.nodes[0].metadata as PageMetadata
+      const pageNode = result.nodes[0]
 
-      expect(metadata.isDynamic).toBe(true)
-      expect(metadata.params).toContain('id')
+      expect(isNodeOfType(pageNode, 'page')).toBe(true)
+      if (!isNodeOfType(pageNode, 'page')) throw new Error('Expected page node')
+
+      expect(pageNode.metadata.isDynamic).toBe(true)
+      expect(pageNode.metadata.params).toContain('id')
     })
 
     it('should extract HTTP methods from route', async () => {
       const result = await parser.parse('app/api/booking/route.ts', context)
-      const metadata = result.nodes[0].metadata as ApiRouteMetadata
+      const routeNode = result.nodes[0]
 
-      expect(metadata.method).toContain('GET')
-      expect(metadata.method).toContain('POST')
+      expect(isNodeOfType(routeNode, 'api_route')).toBe(true)
+      if (!isNodeOfType(routeNode, 'api_route')) throw new Error('Expected API route node')
+
+      expect(routeNode.metadata.method).toContain('GET')
+      expect(routeNode.metadata.method).toContain('POST')
     })
 
     it('should handle non-existent file gracefully', async () => {

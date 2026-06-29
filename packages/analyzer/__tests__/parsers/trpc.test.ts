@@ -5,7 +5,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
 import { TrpcParser } from '../../src/parsers/trpc'
-import type { ParseContext, ProjectMeta, TrpcProcedureMetadata } from '@codeomnivis/shared'
+import { isNodeOfType } from '@codeomnivis/shared'
+import type { ParseContext, ProjectMeta, TypedOmniNode } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures')
 
@@ -18,10 +19,13 @@ const projectMeta: ProjectMeta = {
   frontendDirs: ['app'],
   backendDirs: ['server'],
   trpcRouterPaths: ['server/routers'],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
-    buildFile: null,
+  buildFile: null,
   packages: [],
 }
 
@@ -49,7 +53,7 @@ describe('TrpcParser', () => {
     })
 
     it('should not handle non-trpc projects', () => {
-      const meta = { ...projectMeta, backendFramework: 'express' as const }
+      const meta: ProjectMeta = { ...projectMeta, backendFramework: 'express' }
       expect(parser.canHandle('server/routers/booking.ts', meta)).toBe(false)
     })
 
@@ -79,15 +83,15 @@ describe('TrpcParser', () => {
     it('should detect procedure types', async () => {
       const result = await parser.parse('server/routers/booking.ts', context)
 
-      const createProc = result.nodes.find(n => n.name === 'create')
-      if (createProc) {
-        expect((createProc.metadata as TrpcProcedureMetadata).procedureType).toBe('mutation')
-      }
+      const createProc = result.nodes.find((n): n is TypedOmniNode<'trpc_procedure'> =>
+        isNodeOfType(n, 'trpc_procedure') && n.name === 'create'
+      )
+      expect(createProc?.metadata.procedureType).toBe('mutation')
 
-      const listProc = result.nodes.find(n => n.name === 'list')
-      if (listProc) {
-        expect((listProc.metadata as TrpcProcedureMetadata).procedureType).toBe('query')
-      }
+      const listProc = result.nodes.find((n): n is TypedOmniNode<'trpc_procedure'> =>
+        isNodeOfType(n, 'trpc_procedure') && n.name === 'list'
+      )
+      expect(listProc?.metadata.procedureType).toBe('query')
     })
 
     it('should handle non-existent file gracefully', async () => {

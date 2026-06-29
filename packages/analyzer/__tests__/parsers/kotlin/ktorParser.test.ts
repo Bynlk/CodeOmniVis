@@ -5,7 +5,8 @@
 import { describe, it, expect } from 'vitest'
 import * as path from 'path'
 import { KtorParser } from '../../../src/parsers/kotlin/ktorParser'
-import type { ProjectMeta, ParseContext, KotlinRouteMetadata } from '@codeomnivis/shared'
+import { isNodeOfType } from '@codeomnivis/shared'
+import type { ProjectMeta, ParseContext } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../../fixtures/kotlin')
 
@@ -18,6 +19,9 @@ const ktorProjectMeta: ProjectMeta = {
   frontendDirs: [],
   backendDirs: [],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
@@ -41,7 +45,7 @@ describe('KtorParser', () => {
     })
 
     it('should not handle when backend is not ktor', () => {
-      const meta = { ...ktorProjectMeta, backendFramework: 'unknown' as const }
+      const meta: ProjectMeta = { ...ktorProjectMeta, backendFramework: 'unknown' }
       expect(parser.canHandle('src/main/Routing.kt', meta)).toBe(false)
     })
   })
@@ -52,10 +56,10 @@ describe('KtorParser', () => {
 
       expect(result.errors).toHaveLength(0)
 
-      const routes = result.nodes.filter(n => n.type === 'kotlin_route')
+      const routes = result.nodes.filter(n => isNodeOfType(n, 'kotlin_route'))
       expect(routes.length).toBeGreaterThanOrEqual(3) // get, post, delete
 
-      const methods = routes.map(n => (n.metadata as KotlinRouteMetadata).method)
+      const methods = routes.map(n => n.metadata.method)
       expect(methods).toContain('GET')
       expect(methods).toContain('POST')
       expect(methods).toContain('DELETE')
@@ -64,8 +68,8 @@ describe('KtorParser', () => {
     it('should extract route paths', async () => {
       const result = await parser.parse('ktor-routing.kt', ktorContext)
 
-      const routes = result.nodes.filter(n => n.type === 'kotlin_route')
-      const paths = routes.map(n => (n.metadata as KotlinRouteMetadata).path)
+      const routes = result.nodes.filter(n => isNodeOfType(n, 'kotlin_route'))
+      const paths = routes.map(n => n.metadata.path)
       expect(paths).toContain('/api/users')
     })
   })

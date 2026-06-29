@@ -126,4 +126,4 @@ export const SQL = {
   countErrors: `SELECT COUNT(*) as count FROM parse_errors`,
   nodeTypeCounts: `SELECT type, COUNT(*) as count FROM nodes GROUP BY type`,
   edgeTypeCounts: `SELECT type, COUNT(*) as count FROM edges GROUP BY type`,
-} as const;
+}

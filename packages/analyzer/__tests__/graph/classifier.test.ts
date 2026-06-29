@@ -15,11 +15,18 @@ const baseMeta: ProjectMeta = {
   frontendDirs: ['app'],
   backendDirs: ['server'],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: 'prisma/schema.prisma',
   typeormEntityDirs: [],
   tsConfigPath: null,
-    buildFile: null,
+  buildFile: null,
   packages: [],
+}
+
+function withProjectMeta(overrides: Partial<ProjectMeta>): ProjectMeta {
+  return { ...baseMeta, ...overrides }
 }
 
 describe('classifyFile', () => {
@@ -53,26 +60,26 @@ describe('classifyFile', () => {
 
   // ─── Next.js Pages Router ───
   it('识别 pages router 页面', () => {
-    const meta = { ...baseMeta, frontendFramework: 'next' as const }
+    const meta = withProjectMeta({ frontendFramework: 'next' })
     expect(classifyFile('pages/index.tsx', meta).type).toBe('nextjs_page')
     expect(classifyFile('pages/about.tsx', meta).type).toBe('nextjs_page')
   })
 
   it('识别 pages router API 路由', () => {
-    const meta = { ...baseMeta, frontendFramework: 'next' as const }
+    const meta = withProjectMeta({ frontendFramework: 'next' })
     // classifyNextjsPagesRouter 的正则 /\/pages\/api\// 需要前导 /
     expect(classifyFile('/pages/api/users.ts', meta).type).toBe('nextjs_api_route')
     expect(classifyFile('src/pages/api/users.ts', meta).type).toBe('nextjs_api_route')
   })
 
   it('非 next 项目不识别 pages 文件', () => {
-    const meta = { ...baseMeta, frontendFramework: 'unknown' as const }
+    const meta = withProjectMeta({ frontendFramework: 'unknown' })
     expect(classifyFile('pages/index.tsx', meta).type).toBe('react_component')
   })
 
   // ─── tRPC Router ───
   it('识别 trpc router 文件', () => {
-    const meta = { ...baseMeta, backendFramework: 'trpc' as const }
+    const meta = withProjectMeta({ backendFramework: 'trpc' })
     // 文件名包含 router
     expect(classifyFile('server/routers/user.router.ts', meta).type).toBe('trpc_router')
     // 路径包含 /trpc/
@@ -80,31 +87,31 @@ describe('classifyFile', () => {
   })
 
   it('非 trpc 项目不识别 router 文件', () => {
-    const meta = { ...baseMeta, backendFramework: 'unknown' as const }
+    const meta = withProjectMeta({ backendFramework: 'unknown' })
     expect(classifyFile('server/routers/user.ts', meta).type).toBe('unknown')
   })
 
   // ─── Express Route ───
   it('识别 express route 文件', () => {
-    const meta = { ...baseMeta, backendFramework: 'express' as const }
+    const meta = withProjectMeta({ backendFramework: 'express' })
     expect(classifyFile('server/routes/users.ts', meta).type).toBe('express_route')
     expect(classifyFile('server/routes.ts', meta).type).toBe('express_route')
   })
 
   it('非 express 项目不识别 routes 文件', () => {
-    const meta = { ...baseMeta, backendFramework: 'unknown' as const }
+    const meta = withProjectMeta({ backendFramework: 'unknown' })
     expect(classifyFile('server/routes/users.ts', meta).type).toBe('unknown')
   })
 
   // ─── TypeORM Entity ───
   it('识别 typeorm entity 文件', () => {
-    const meta = { ...baseMeta, databaseType: 'typeorm' as const }
+    const meta = withProjectMeta({ databaseType: 'typeorm' })
     expect(classifyFile('src/entity/User.ts', meta).type).toBe('typeorm_entity')
     expect(classifyFile('src/entities/User.ts', meta).type).toBe('typeorm_entity')
   })
 
   it('非 typeorm 项目不识别 entity 文件', () => {
-    const meta = { ...baseMeta, databaseType: 'unknown' as const }
+    const meta = withProjectMeta({ databaseType: 'unknown' })
     expect(classifyFile('src/entity/User.ts', meta).type).toBe('unknown')
   })
 

@@ -6,7 +6,8 @@ import { describe, it, expect } from 'vitest'
 import * as path from 'path'
 import * as fs from 'fs'
 import { KotlinParser } from '../../../src/parsers/kotlin/kotlinParser'
-import type { ProjectMeta, ParseContext, KotlinClassMetadata } from '@codeomnivis/shared'
+import { isNodeOfType } from '@codeomnivis/shared'
+import type { ProjectMeta, ParseContext } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../../fixtures/kotlin')
 
@@ -19,6 +20,9 @@ const mockProjectMeta: ProjectMeta = {
   frontendDirs: [],
   backendDirs: [],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
@@ -71,11 +75,13 @@ describe('KotlinParser', () => {
         n.type === 'kotlin_class' && n.name === 'User'
       )
       expect(dataClass).toBeDefined()
-      if (dataClass) {
-        const meta = dataClass.metadata as KotlinClassMetadata
-        expect(meta.kind).toBe('data')
-        expect(meta.packageName).toBe('com.example.demo.controller')
-      }
+      if (!dataClass) throw new Error('Expected User data class')
+
+      expect(isNodeOfType(dataClass, 'kotlin_class')).toBe(true)
+      if (!isNodeOfType(dataClass, 'kotlin_class')) throw new Error('Expected Kotlin class node')
+
+      expect(dataClass.metadata.kind).toBe('data')
+      expect(dataClass.metadata.packageName).toBe('com.example.demo.controller')
     })
 
     it('should parse classes from ktor-routing.kt', async () => {

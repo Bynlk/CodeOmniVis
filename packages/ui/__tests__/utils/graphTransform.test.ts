@@ -6,6 +6,16 @@ import { describe, it, expect } from 'vitest'
 import { graphToCytoscapeElements } from '../../src/utils/graphTransform'
 import type { OmniGraph, OmniNode, OmniEdge } from '@codeomnivis/shared'
 
+type CytoscapeElement = ReturnType<typeof graphToCytoscapeElements>[number]
+
+function isNodeElement(element: CytoscapeElement): element is Extract<CytoscapeElement, { group: 'nodes' }> {
+  return element.group === 'nodes'
+}
+
+function isEdgeElement(element: CytoscapeElement): element is Extract<CytoscapeElement, { group: 'edges' }> {
+  return element.group === 'edges'
+}
+
 const nodeA: OmniNode = {
   id: 'page:app/page.tsx:/',
   type: 'page',
@@ -59,9 +69,11 @@ describe('graphToCytoscapeElements', () => {
     const graph: OmniGraph = { nodes: [nodeA, nodeB], edges: [edge1] }
     const elements = graphToCytoscapeElements(graph)
 
-    const edgeEl = elements.find(e => 'source' in e.data)
+    const edgeEl = elements.find(isEdgeElement)
     expect(edgeEl).toBeDefined()
-    expect(edgeEl!).toEqual({
+    if (!edgeEl) throw new Error('Expected edge element')
+
+    expect(edgeEl).toEqual({
       group: 'edges',
       data: {
         id: 'edge-1',
@@ -101,7 +113,10 @@ describe('graphToCytoscapeElements', () => {
   it('节点颜色来自 NODE_COLORS', () => {
     const graph: OmniGraph = { nodes: [nodeA], edges: [] }
     const elements = graphToCytoscapeElements(graph)
-    const nodeEl = elements[0] as { data: { color: string } }
+    const nodeEl = elements.find(isNodeElement)
+    expect(nodeEl).toBeDefined()
+    if (!nodeEl) throw new Error('Expected node element')
+
     expect(nodeEl.data.color).toBe('#6366f1') // page 颜色
   })
 })

@@ -18,6 +18,9 @@ const roomProjectMeta: ProjectMeta = {
   frontendDirs: [],
   backendDirs: [],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
@@ -41,7 +44,7 @@ describe('RoomParser', () => {
     })
 
     it('should not handle when database is not room', () => {
-      const meta = { ...roomProjectMeta, databaseType: 'unknown' as const }
+      const meta: ProjectMeta = { ...roomProjectMeta, databaseType: 'unknown' }
       expect(parser.canHandle('src/main/Entity.kt', meta)).toBe(false)
     })
   })

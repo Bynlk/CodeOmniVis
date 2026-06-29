@@ -15,10 +15,13 @@ const projectMeta: ProjectMeta = {
   frontendDirs: ['pages'],
   backendDirs: ['server'],
   trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
-    buildFile: null,
+  buildFile: null,
   packages: [],
 }
 
@@ -52,7 +55,7 @@ describe('NextjsPagesParser', () => {
     })
 
     it('非 next 项目返回 false', () => {
-      const meta = { ...projectMeta, frontendFramework: 'unknown' as const }
+      const meta: ProjectMeta = { ...projectMeta, frontendFramework: 'unknown' }
       expect(parser.canHandle('pages/index.tsx', meta)).toBe(false)
     })
 

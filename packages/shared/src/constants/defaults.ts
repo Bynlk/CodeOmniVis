@@ -29,7 +29,17 @@ export const DEFAULT_EXCLUDE = [
 ]
 
 /** 文件分类正则表达式 */
-export const FILE_PATTERNS = {
+export const FILE_PATTERNS: Readonly<{
+  prismaSchema: RegExp
+  typeormEntity: RegExp
+  nextjsPage: RegExp
+  nextjsApiRoute: RegExp
+  nextjsPagesApi: RegExp
+  nextjsPageLegacy: RegExp
+  reactComponent: RegExp
+  typescriptFile: RegExp
+  testFile: RegExp
+}> = {
   prismaSchema: /schema\.prisma$/,
   typeormEntity: /\.entity\.(ts|js)$/,
   nextjsPage: /app\/.*\/page\.(tsx|jsx|ts|js)$/,
@@ -39,4 +49,4 @@ export const FILE_PATTERNS = {
   reactComponent: /\.(tsx|jsx)$/,
   typescriptFile: /\.(ts|js)$/,
   testFile: /__tests__/,
-} as const
+}

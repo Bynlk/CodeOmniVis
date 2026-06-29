@@ -175,7 +175,7 @@ export class SpringKotlinParser implements Parser {
       }
 
       tree.delete()
-    } catch (err: unknown) {
+      } catch (err) {
       errors.push({
         file: filePath,
         message: err instanceof Error ? err.message : 'Unknown error in SpringKotlinParser',

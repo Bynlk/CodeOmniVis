@@ -49,6 +49,32 @@ interface DmmfDocument {
   datamodel: DmmfDatamodel
 }
 
+type GetDMMF = (options: { datamodel: string }) => Promise<unknown>
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isGetDMMF(value: unknown): value is GetDMMF {
+  return typeof value === 'function'
+}
+
+function resolveGetDMMF(prismaInternals: typeof import('@prisma/internals')): GetDMMF | undefined {
+  if (isGetDMMF(prismaInternals.getDMMF)) return prismaInternals.getDMMF
+
+  if ('default' in prismaInternals && isRecord(prismaInternals.default)) {
+    const getDMMF = prismaInternals.default.getDMMF
+    if (isGetDMMF(getDMMF)) return getDMMF
+  }
+
+  return undefined
+}
+
+function isDmmfDocument(value: unknown): value is DmmfDocument {
+  if (!isRecord(value) || !isRecord(value.datamodel)) return false
+  return Array.isArray(value.datamodel.models)
+}
+
 // ============================================================
 // Prisma 解析器
 // ============================================================
@@ -84,7 +110,7 @@ export class PrismaParser implements Parser {
     try {
       // 动态导入 @prisma/internals (CJS 兼容)
       const prismaInternals = await import('@prisma/internals')
-      const getDMMF = prismaInternals.getDMMF || prismaInternals.default?.getDMMF
+      const getDMMF = resolveGetDMMF(prismaInternals)
 
       if (!getDMMF) {
         errors.push({
@@ -108,10 +134,19 @@ export class PrismaParser implements Parser {
 
       const schemaContent = fs.readFileSync(schemaPath, 'utf-8')
 
-      // 使用 DMMF 解析（Prisma 返回 readonly 类型，转为可变类型）
+      // 使用 DMMF 解析
       const dmmf = (await getDMMF({
         datamodel: schemaContent,
-      })) as unknown as DmmfDocument
+      }))
+
+      if (!isDmmfDocument(dmmf)) {
+        errors.push({
+          file: filePath,
+          message: 'Prisma DMMF response has an unexpected shape',
+          severity: 'error',
+        })
+        return { nodes, edges, errors }
+      }
 
       // 解析所有 Model
       for (const model of dmmf.datamodel.models) {
