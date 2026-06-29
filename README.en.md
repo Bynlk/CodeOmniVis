@@ -1,474 +1,276 @@
 <div align="center">
 
-```
- ██████╗ ██████╗ ██████╗ ███████╗ ██████╗ ███╗   ███╗███╗   ██╗██╗██╗   ██╗██╗███████╗
-██╔════╝██╔═══██╗██╔══██╗██╔════╝██╔═══██╗████╗ ████║████╗  ██║██║██║   ██║██║██╔════╝
-██║     ██║   ██║██║  ██║█████╗  ██║   ██║██╔████╔██║██╔████╔██║██╔██╗ ██║██║██║   ██║██║███████╗
-██║     ██║   ██║██║  ██║██╔══╝  ██║   ██║██║╚██╔╝██║██║╚██╗██║██║╚██╗ ██╔╝██║╚════██║
-╚██████╗╚██████╔╝██████╔╝███████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚████║██║ ╚████╔╝ ██║███████║
- ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝ ╚═════╝╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝  ╚═╝╚══════╝
-```
+# CodeOmniVis
 
-# 🔮 CodeOmniVis — Full-Stack Architecture Visualizer
+**Architecture visualization and AI-query toolkit for TypeScript full-stack repositories**
 
-**One command, 60 seconds, see your entire project architecture.**
+English | **[中文](README.md)**
 
-Not just drawing — it's **code semantic understanding** × **cross-layer data flow tracing** × **AI-native integration**.
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-PolyForm%20Noncommercial-00d4aa.svg)](LICENSE)
+[![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A518-339933.svg)](https://nodejs.org/)
+[![pnpm 9](https://img.shields.io/badge/pnpm-9-f69220.svg?logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6.svg)](https://www.typescriptlang.org/)
+[![GitHub stars](https://img.shields.io/github/stars/Bynlk/CodeOmniVis?style=social)](https://github.com/Bynlk/CodeOmniVis)
 
-[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-PolyForm%20Noncommercial-00d4aa.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
-[![Node](https://img.shields.io/badge/Node.js-≥18-339933.svg)](https://nodejs.org/)
+One command to put pages, components, APIs, RPC endpoints, database models, and cross-layer data flow on the same map.
 
 </div>
 
----
+CodeOmniVis scans TypeScript / JavaScript full-stack projects and builds a unified architecture graph. It ships with a browser UI, CLI commands, a REST API, WebSocket updates, and an MCP server so both humans and AI tools can inspect the same project structure.
 
-> `npx codeomnivis serve` on cal.com →
-> **2,535 nodes · 4,592 edges · 15 seconds · zero config**
+## Where it helps
 
-## What it maps
+- Understand an unfamiliar repository before changing it
+- Check callers, impacted pages, and data paths before refactors or migrations
+- Give Cursor, Claude, or any MCP-aware client real architecture context
+- Keep a searchable, filterable, auto-refreshing project map alongside daily development
 
-| Layer | cal.com coverage |
-|-------|-----------------|
-| Pages | 119 ✅ |
-| API Routes | 82 ✅ |
-| DB Models (Prisma/Drizzle) | 102 ✅ |
-| Components | 1,349 ✅ |
-| Frontend→API calls | 172 ✅ |
-| Render relationships | 3,117 ✅ |
+## What is available today
 
-## Frameworks
+| Area | What is currently available |
+| --- | --- |
+| CLI | `serve`, `analyze`, `check`, `mcp`, `init` |
+| UI | Graph canvas, search, filters, node details, data flow, issue list, stats panel |
+| Server | `GET /api/graph*`, `POST /api/analyze`, `GET /api/health`, `ws://.../ws` |
+| MCP | `get_api_routes`, `get_component_tree`, `find_callers`, `list_db_models`, `get_dataflow` |
+| Cache | Persistent `sql.js` database at `~/.codeomnivis/projects/{hash}.db` |
 
-Next.js · NestJS · Express · tRPC · **TSRPC**
-Prisma · Drizzle · TypeORM · Kotlin Spring/Ktor
+> This repository is currently best used in source-first mode: build CodeOmniVis here, then point it at the project you want to analyze.
 
-## AI Integration (MCP)
+## Supported scope
 
-Works with Cursor and Claude Desktop out of the box.
-`find_callers` · `get_api_routes` · `get_component_tree`
+| Dimension | Current support |
+| --- | --- |
+| Frontend | Next.js App Router, Next.js Pages Router, React component tree, `fetch` / `axios` call detection |
+| API / RPC | Next.js Route Handlers, tRPC, TSRPC, Express, NestJS |
+| Data layer | Prisma, Drizzle, TypeORM |
+| Kotlin ecosystem | Spring controllers, Ktor routing, Room, Exposed |
+| Workspace layouts | Basic path discovery for `pnpm workspace` / Turborepo |
 
-## Install
+> Monorepo support is currently best-effort path discovery, not full multi-package graph federation.
 
-```bash
-npx codeomnivis serve
-```
+## Quick Start
 
----
-
-## 🤯 TL;DR
-
-> CodeOmniVis statically analyzes your TypeScript full-stack project, automatically generates a complete **frontend → API → database** topology graph,
-> and detects dead code, circular dependencies, and data flow paths. Built-in MCP Server lets AI assistants understand your architecture directly.
-
----
-
-## 🔥 Core Capabilities
-
-### 1. Zero-Config Full-Stack Analysis
+### 1. Run the demo shipped in this repository
 
 ```bash
-npx @bynlk/CodeOmniVis serve   # See full architecture in 60 seconds
+pnpm install
+pnpm build
+node packages/cli/bin/codeomnivis.js serve --project ./demo --no-open
 ```
 
-Auto-detect frameworks → scan files → AST parsing → cross-layer linking → visualization. No configuration needed.
+Then open `http://localhost:4321`.
 
-### 2. 22 Parsers, Covering the Ecosystem
-
-<table>
-<tr>
-<td align="center" colspan="3"><b>Supported Frameworks</b></td>
-</tr>
-<tr>
-<td><b>Frontend</b></td>
-<td><b>Backend</b></td>
-<td><b>Database</b></td>
-</tr>
-<tr>
-<td>
-
-✅ Next.js App Router<br/>
-✅ Next.js Pages Router<br/>
-✅ React component tree<br/>
-✅ fetch / axios calls<br/>
-✅ tRPC hooks
-
-</td>
-<td>
-
-✅ tRPC Router<br/>
-✅ Express routes<br/>
-✅ **NestJS** (Controller/Module/Service)<br/>
-✅ **TSRPC** (ApiCall/Msg)<br/>
-✅ **Spring Boot + Kotlin**<br/>
-✅ **Ktor Routing DSL**
-
-</td>
-<td>
-
-✅ Prisma Schema<br/>
-✅ TypeORM Entity<br/>
-✅ **Drizzle ORM** (pg/mysql/sqlite)<br/>
-✅ **Exposed ORM**<br/>
-✅ **Room (Android)**
-
-</td>
-</tr>
-</table>
-
-### 3. Not Just Topology — Architecture Intelligence
-
-| Capability | Description |
-|------|------|
-| **Cross-layer linking** | `fetch('/api/user')` → `GET /api/user` → `User.findUnique()` → `User` table, full chain auto-linked |
-| **Data flow tracing** | Select a Model, see which APIs and components consume it 🌊 |
-| **Dead code detection** | 🚫 Routes with no callers, 🗑️ Components never rendered, 🔇 Services never used |
-| **Circular dependency detection** | 🔄 Tarjan SCC algorithm, precise cycle identification |
-| **Consistency checks** | Dead API links, HTTP method mismatches, missing tRPC procedures |
-
-### 4. MCP Server — AI-Native Integration
+### 2. Analyze any local repository
 
 ```bash
-codeomnivis mcp   # Start MCP Server
+node /absolute/path/to/CodeOmniVis/packages/cli/bin/codeomnivis.js serve \
+  --project /absolute/path/to/your-repo \
+  --no-open
 ```
 
-**5 tools** for Cursor / Claude / any AI assistant to query your architecture:
-
-| Tool | Function | What AI can ask |
-|------|------|------------|
-| `get_api_routes` | API routes + downstream DB | "What APIs exist? Which connect to the database?" |
-| `get_component_tree` | Component tree | "What components does the Booking page use?" |
-| `find_callers` | Call chain tracing | "Who calls the User model?" |
-| `list_db_models` | Database model list | "What tables exist?" |
-| `get_dataflow` | Data flow tracing | "How does User data flow from DB to UI?" |
-
-```
-You: What's the authentication flow in this project?
-
-AI (via CodeOmniVis):
-  User → /api/auth → middleware → protectedProcedure → Session
-  
-  Complete call chain, not a guess.
-```
-
----
-
-## ⚡ Quick Start
+If the CLI is already in your `PATH`, the equivalent command is:
 
 ```bash
-# Global install
-npm install -g @bynlk/CodeOmniVis
-
-# Or run directly
-npx @bynlk/CodeOmniVis serve
+codeomnivis serve --project /absolute/path/to/your-repo --no-open
 ```
 
-Browser opens automatically → see the full three-layer architecture → click nodes → search/filter/zoom.
-
-### Commands
+### 3. Export graph JSON or run consistency checks
 
 ```bash
-codeomnivis serve          # 🚀 Start visual server (auto-analysis + file watching)
-codeomnivis analyze        # 📊 Output JSON graph data
-codeomnivis check          # 🔍 Consistency check + dead code + circular deps
-codeomnivis mcp            # 🤖 Start MCP Server
-codeomnivis init           # ⚙️ Generate .codeomnivis.json config file
+cd /absolute/path/to/your-repo
+node /absolute/path/to/CodeOmniVis/packages/cli/bin/codeomnivis.js analyze -o codeomnivis-graph.json
+node /absolute/path/to/CodeOmniVis/packages/cli/bin/codeomnivis.js check
 ```
 
-### Configuration (Optional)
+`analyze` and `check` currently operate on the current working directory, so the most reliable workflow is to `cd` into the target repository first.
+
+## CLI Commands
+
+| Command | What it does | Notes |
+| --- | --- | --- |
+| `serve --project <path> [--port 4321] [--host localhost] [--no-open]` | Starts the visualization server and runs initial analysis | Also starts file watching, REST API, and WebSocket |
+| `analyze [-o codeomnivis-graph.json]` | Analyzes the current directory and writes graph JSON | Useful for offline inspection or CI artifacts |
+| `check` | Runs consistency checks | Prints stats, parse errors, and consistency issues |
+| `mcp --project <path>` | Starts the stdio MCP server | Intended for AI client integration |
+| `init` | Generates a starter `.codeomnivis.json` | Recommended to tweak manually afterward |
+
+## What the UI and API expose
+
+| Capability | Notes |
+| --- | --- |
+| Graph canvas | React + Cytoscape.js visualization of nodes and edges |
+| Search and filtering | Filter by node type, edge type, confidence, and isolated nodes |
+| Node details | Inspect metadata, incoming edges, and outgoing edges |
+| Data Flow panel | Trace a database model into API routes and consuming components |
+| Issues panel | Shows parse-error output from the server |
+| Stats panel | Shows node / edge distribution and overall graph size |
+| AI panel | Frontend shell exists, but `/api/ai/chat` currently returns `501` |
+
+The server also exposes a directly usable surface:
+
+- `GET /api/graph`
+- `GET /api/graph/nodes`
+- `GET /api/graph/nodes/:id`
+- `GET /api/graph/edges`
+- `GET /api/graph/stats`
+- `GET /api/graph/errors`
+- `GET /api/graph/dataflow`
+- `POST /api/analyze`
+- `GET /api/health`
+- `ws://<host>:<port>/ws`, which emits `graph_updated`
+
+See [docs/api/rest-api.md](docs/api/rest-api.md) for the full contract.
+
+## MCP Integration
+
+CodeOmniVis includes a stdio MCP server so Cursor, Claude Desktop, and other MCP-capable clients can query your repository structure directly.
+
+### Available tools
+
+| Tool | Typical questions it answers |
+| --- | --- |
+| `get_api_routes` | What API, tRPC, or TSRPC entries exist? Which ones touch the database? |
+| `get_component_tree` | What component tree renders from a given route or file? |
+| `find_callers` | Who calls this node, and which pages are affected? |
+| `list_db_models` | What database models exist in this project? |
+| `get_dataflow` | How does a model move from DB to API to UI? |
+
+### Example client configuration
 
 ```json
-// .codeomnivis.json — works with zero config, config makes it more precise
 {
-  "frontend": { "dirs": ["src"], "framework": "next" },
-  "backend": { "dirs": ["server"], "framework": "nestjs" },
-  "database": { "prismaSchema": "prisma/schema.prisma" },
-  "exclude": ["node_modules", "dist", ".next"]
+  "mcpServers": {
+    "codeomnivis": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/CodeOmniVis/packages/cli/bin/codeomnivis.js",
+        "mcp",
+        "--project",
+        "/absolute/path/to/your-repo"
+      ]
+    }
+  }
 }
 ```
 
----
+On first startup, if the project does not already have a cache database, the MCP server runs a full analysis before serving queries. Later calls reuse `~/.codeomnivis/projects/{hash}.db`.
 
-## 🧠 What Can It Understand?
+See [docs/api/mcp-tools.md](docs/api/mcp-tools.md) for tool inputs and outputs.
 
-### Auto-Detection Output
+## Configuration
 
-```
-$ codeomnivis serve --project ./cal.com
+`serve`, `analyze`, and `check` read `.codeomnivis.json` from the project root. The example below uses the fields the runtime currently recognizes:
 
-✔ Server running at http://localhost:4321
-
-Scanning 9390 files...
-Analysis results:
-  Files scanned: 9,390
-  Nodes: 1,892
-  Edges: 3,347
-
-Node types:
-  component:      693   ← React components + props
-  handler:        490   ← Route handlers
-  trpc_procedure: 408   ← tRPC procedures
-  page:           104   ← Page routes + dynamic params
-  db_model:       102   ← Database models + relations
-  api_route:       82   ← API routes + HTTP methods
-  service:         13   ← Service layer
-
-Edge types:
-  renders:       1,622   ← Component render relationships
-  handles:         490   ← Route handler bindings
-  contains:        342   ← Module containment
-  db_relation:     323   ← Database table relations
-  calls_service:   311   ← Service call chains
-  calls_api:       172   ← Frontend API calls
-  queries_db:       87   ← Database queries
-```
-
-### Cross-Layer Linking
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📄 /admin/page.tsx                                          │
-│      └──→ 🧩 AdminDashboard                                 │
-│              ├──→ 🌐 GET /api/feedback        (calls_api)    │
-│              ├──→ 🌐 GET /api/admin/stats     (calls_api)    │
-│              └──→ 🧩 PasswordModal                           │
-│                      └──→ 🌐 POST /api/verify (calls_api)    │
-│                                                              │
-│  🌐 POST /api/verify                                         │
-│      └──→ ⚡ verifyPassword()                 (handles)      │
-│              └──→ 🗄️ User.findUnique          (queries_db)   │
-└──────────────────────────────────────────────────────────────┘
+```json
+{
+  "frontend": {
+    "dirs": ["app", "components"],
+    "framework": "auto"
+  },
+  "backend": {
+    "dirs": ["server", "api"],
+    "framework": "trpc"
+  },
+  "database": {
+    "prismaSchema": "prisma/schema.prisma",
+    "typeormDirs": ["src/entities"]
+  },
+  "exclude": ["node_modules", "dist", ".next", "coverage"],
+  "port": 4321,
+  "parser": {
+    "maxTraceDepth": 5,
+    "incremental": true
+  },
+  "ui": {
+    "theme": "dark",
+    "layout": "dagre",
+    "aggregateThreshold": 100
+  }
+}
 ```
 
-### Dead Code + Circular Dependency Detection
+If you just want a quick starter file, begin with:
 
 ```bash
-$ codeomnivis check
-
-Consistency Issues:
-  Total: 15
-  Critical: 0
-  Warning: 3
-  Info: 12
-
-  🚫 [dead_route] Route has no callers: GET /api/admin/stats
-  🗑️ [dead_component] Component not rendered: AdminSidebar
-  🔇 [dead_service] Service has no callers: NotificationService
-  🔄 [circular_dependency] Circular: UserRepo → AuthService → UserRepo
+codeomnivis init
 ```
 
-### Data Flow Tracing 🌊
+Then adjust it to match the repository you are analyzing.
 
-```
-Select Model: User
+## Repository Layout
 
-🗄️ User → 3 routes → 5 components
+| Directory / package | Responsibility |
+| --- | --- |
+| [`packages/shared`](packages/shared) | Shared types, config, colors, and defaults |
+| [`packages/analyzer`](packages/analyzer) | Parsers, graph building, data-flow tracing, consistency checks |
+| [`packages/server`](packages/server) | REST API, WebSocket, incremental analysis |
+| [`packages/ui`](packages/ui) | React + Cytoscape.js frontend |
+| [`packages/mcp`](packages/mcp) | stdio MCP server |
+| [`packages/cli`](packages/cli) | CLI entrypoints and project auto-detection |
+| [`demo`](demo) | A small full-stack sample used to validate graph quality |
+| [`docs`](docs) | API docs, architecture docs, reports, and plans |
 
-API Routes:
-  🔗 GET /api/user/:id
-  🔗 POST /api/auth/login
-  🔗 GET /api/admin/users
+For a more detailed tree, see [docs/project-directory.md](docs/project-directory.md).
 
-Consuming Components:
-  ⚛️ UserProfile
-  ⚛️ AdminDashboard
-  ⚛️ LoginForm
-  ⚛️ UserCard
-  ⚛️ SettingsPage
-```
+## Demo
 
----
+[`demo/`](demo) is a compact sample repository designed for graph validation. It includes:
 
-## 🏗️ Architecture
+- Next.js App Router pages
+- Route Handler APIs
+- tRPC router files
+- React component trees
+- A Prisma schema with model relationships
 
-```
-                         ┌─────────────────────────────────────┐
-                         │          CLI (commander)             │
-                         │  serve · analyze · check · mcp · init│
-                         └──────────────┬──────────────────────┘
-                                        │
-                    ┌───────────────────┼───────────────────┐
-                    │                   │                   │
-          ┌─────────┴─────────┐ ┌──────┴──────┐ ┌─────────┴─────────┐
-          │   Analysis Engine  │ │   Server    │ │    MCP Server      │
-          │                    │ │             │ │                    │
-          │  22 Parsers:       │ │  Express    │ │  5 Tools:          │
-          │  · Prisma          │ │  REST API   │ │  · get_api_routes  │
-          │  · Next.js         │ │  WebSocket  │ │  · get_component   │
-          │  · tRPC            │ │  Incremental│ │  · find_callers    │
-          │  · TSRPC           │ │  File watch │ │  · list_db_models  │
-          │  · Express         │ │             │ │  · get_dataflow    │
-          │  · NestJS          │ └──────┬──────┘ └─────────┬─────────┘
-          │  · Drizzle         │        │                  │
-          │  · TypeORM         │        │                  │
-          │  · Kotlin/Spring   │        │                  │
-          │  · Ktor            │        │                  │
-          │  · Exposed         │        │                  │
-          │  · Room            │        │                  │
-          │                    │        │                  │
-          │  CrossLayerLinker  │        │                  │
-          │  DataFlowTracer    │        │                  │
-          │  ConsistencyChecker│        │                  │
-          │  · Dead code det.  │        │                  │
-          │  · Circular dep.   │        │                  │
-          │  · Consistency     │        │                  │
-          └────────┬───────────┘        │                  │
-                   │                    │                  │
-          ┌────────┴────────────────────┴──────────────────┴───┐
-          │              SQLite (sql.js WASM)                   │
-          │         ~/.codeomnivis/projects/{hash}.db               │
-          │         Zero-config · File persistence · Cross-process │
-          └────────────────────────┬───────────────────────────┘
-                                   │
-                         ┌─────────┴─────────┐
-                         │     Web UI         │
-                         │  React + Cytoscape │
-                         │  dagre layout      │
-                         │  Search/Filter/Detail│
-                         │  🌊 Data Flow Panel │
-                         │  ⚠️ Issues Panel    │
-                         │  📊 Stats Panel     │
-                         └───────────────────┘
+How to run it and what to inspect in the graph is documented in [demo/README.md](demo/README.md).
+
+## Documentation
+
+- [Documentation index](docs/README.md)
+- [REST API](docs/api/rest-api.md)
+- [MCP tools](docs/api/mcp-tools.md)
+- [Project directory](docs/project-directory.md)
+- [Project status report](docs/PROJECT_STATUS_REPORT.md)
+- [Parser pipeline](docs/architecture/parser-pipeline.md)
+- [Data model](docs/architecture/data-model.md)
+- [Visualization design](docs/architecture/visualization.md)
+
+## Development
+
+### Requirements
+
+- Node.js `>= 18`
+- `pnpm@9`
+
+### Common commands
+
+```bash
+pnpm install
+pnpm build
+pnpm test
+pnpm lint
+pnpm typecheck
 ```
 
----
+The repository uses `pnpm workspace` and `turbo` for package orchestration.
 
-## 📦 Monorepo Structure
+## Roadmap
 
-```
-codeomnivis/
-├── packages/
-│   ├── shared/       # Shared types (17 node types + 15 edge types + config)
-│   ├── analyzer/     # Analysis engine (22 parsers + graph algorithms + storage)
-│   ├── server/       # Express + WebSocket + incremental analysis
-│   ├── ui/           # React + Cytoscape.js + 6 tab panels
-│   ├── mcp/          # MCP Server (5 tools, concurrent safe)
-│   └── cli/          # 5 commands + auto-detection + config loading
-├── demo/             # Full-stack demo project
-└── docs/
-    ├── plans/        # Four-week execution plans + Claude Code Prompts
-    ├── architecture/ # Analysis pipeline, data model, visualization design
-    ├── api/          # REST API + MCP tool docs
-    ├── rules/        # AI development constraint rules
-    └── reports/      # Status reports
-```
+- More reliable monorepo and multi-package analysis
+- Module folding / aggregation for large graphs
+- Richer AI workflows beyond exposing MCP queries
+- More frameworks and language ecosystems
+- Better demo assets, screenshots, and publishing docs
 
-| Package | Lines | Function |
-|----|---------|------|
-| `@codeomnivis/shared` | 995 | 17 node types, 15 edge types, config loader |
-| `@codeomnivis/analyzer` | 9,557 | 22 parsers, data flow tracing, dead code/circular dep detection |
-| `@codeomnivis/server` | 759 | REST API, WebSocket broadcast, file watch incremental analysis |
-| `@codeomnivis/ui` | 2,328 | 6 tab panels, Cytoscape graph, data flow visualization |
-| `@codeomnivis/mcp` | 411 | 5 MCP tools, concurrent safe, graceful shutdown |
-| `@codeomnivis/cli` | 1,312 | 5 commands, config integration, auto framework detection |
-| **Total** | **~15,362** | |
+## Contributing
 
----
+- Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Community rules: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- Security reporting: [SECURITY.md](SECURITY.md)
 
-## 🛠️ Tech Stack
+## License
 
-| Layer | Technology | Why |
-|----|------|-----------|
-| Analysis core | **ts-morph** | Type-safe TypeScript AST analysis |
-| DB parsing | **@prisma/internals** | Prisma official DMMF |
-| Graph storage | **sql.js** (WASM SQLite) | Zero-config, zero-dependency, file persistence |
-| Visualization | **React** + **Cytoscape.js** + **dagre** | Designed for large graphs, auto hierarchical layout |
-| Web server | **Express** + **ws** | WebSocket real-time push |
-| MCP | **@modelcontextprotocol/sdk** | AI assistant standard protocol |
-| CLI | **commander** + **ora** + **chalk** | Elegant CLI experience |
-| Build | **tsup** + **Vite** | ESM native, fast builds |
-| Styling | **Tailwind CSS** | Dark theme |
+[PolyForm Noncommercial License 1.0.0](LICENSE)
 
----
-
-## 🎯 Performance Benchmark (cal.com)
-
-Verified on [cal.com](https://github.com/calcom/cal.com) (9,390 files, large full-stack project):
-
-| Metric | Value |
-|------|------|
-| Files scanned | 9,390 |
-| Nodes | 1,892 |
-| Edges | 3,347 |
-| Errors | 0 |
-
-### Node Type Distribution
-
-| Type | Count | Description |
-|------|------|------|
-| component | 693 | React components |
-| handler | 490 | Request handlers |
-| trpc_procedure | 408 | tRPC procedures |
-| page | 104 | Page routes |
-| db_model | 102 | Database models |
-| api_route | 82 | API routes |
-| service | 13 | Service layer |
-
-### Edge Type Distribution
-
-| Type | Count | Description |
-|------|------|------|
-| renders | 1,622 | Component render relationships |
-| handles | 490 | Route handler bindings |
-| contains | 342 | Module containment |
-| db_relation | 323 | Database table relations |
-| calls_service | 311 | Service call chains |
-| calls_api | 172 | Frontend API calls |
-| queries_db | 87 | Database queries |
-
-### Code Quality
-
-- **0 `any`** — Zero `any` in source code + test files
-- **0 `this.db!`** — All replaced with type-safe `getDb()` helper
-- **Degrade, don't crash** — All parsers try-catch, WASM failure doesn't crash
-- **Incremental updates** — Graph diff updates, no full layout rebuilds
-
----
-
-## 🗺️ Roadmap
-
-### ✅ Completed
-
-- [x] 22 parsers (Next.js / tRPC / TSRPC / Express / NestJS / Prisma / Drizzle / TypeORM / Kotlin)
-- [x] Cross-layer linking (Frontend → API → Service → DB)
-- [x] Data flow tracing (Model → API → Component)
-- [x] Dead code detection (Dead routes / Dead components / Dead services)
-- [x] Circular dependency detection (Tarjan SCC)
-- [x] Consistency checks (Dead links / Method mismatches / Missing procedures)
-- [x] MCP Server (5 tools)
-- [x] Configuration file system (.codeomnivis.json)
-- [x] File watch incremental analysis
-- [x] WebSocket real-time push
-- [x] 6 UI panels (Graph / Filter / Issues / Data Flow / AI / Stats)
-- [x] Full code review (61 findings, 59 fixed)
-- [x] Zero `any` type safety (74 → 0)
-- [x] Degrade, don't crash (All parsers + database + WebSocket)
-- [x] Performance optimization (Incremental layout, caching, no polling)
-
-### 🔜 Future Goals
-
-- [ ] Module aggregation (Large graph folding)
-- [ ] AI conversational queries
-- [ ] VS Code extension
-- [ ] Monorepo multi-package analysis
-- [ ] More framework support (Vue / Svelte / Fastify / Hono)
-
----
-
-## 📄 License
-
-[PolyForm Noncommercial License 1.0.0](LICENSE) — Noncommercial use only
-
-✅ Personal use, hobbyist, research, nonprofits, education
-❌ Commercial use, selling, paid services, advertising
-
-Contact the author for commercial licensing.
-
----
-
-<div align="center">
-
-**If you find this project useful, give it a ⭐ Star!**
-
-[![GitHub stars](https://img.shields.io/github/stars/Bynlk/CodeOmniVis?style=social)](https://github.com/Bynlk/CodeOmniVis)
-
-</div>
+By default, this repository is intended for learning, research, personal, and other non-commercial use. Commercial usage requires separate permission.
