@@ -1,34 +1,45 @@
-# CodeOmniVis 文档索引
+# CodeOmniVis 文档导航
 
-## 设计文档
-- [项目设计文档](superpowers/specs/2026-06-06-codeomnivis-design.md) — 整体架构、技术选型、设计决策
+这份目录把当前仓库里仍然有参考价值的文档按用途重新整理了一遍。部分文件是历史计划或阶段性快照，阅读时请优先以源码和根目录 `README.md` 为准。
 
-## 开发计划
-- [开发计划书](plans/development-plan.md) — 分阶段开发步骤和验收标准
-- [全框架扩展设计文档](plans/framework-expansion-design.md) — 14 个新解析器的详细设计（Vue/Nuxt/Angular/Svelte/NestJS/Fastify/Drizzle 等）
-- [计划修改历史](plans/changelog.md) — 计划变更记录
-- [项目状态报告](plans/PROJECT_STATUS.md) — 实测数据与完成度评估
-- [Phase 1+2 实施计划](plans/codeomnivis-phase1-phase2-plan.md) — 跨层连线完整化方案
-- [Kotlin 支持计划](plans/kotlin-support-plan.md) — Kotlin 解析器、Spring/Ktor/Room/Exposed 支持
+## 快速入口
 
-## 规则
-- [AI 开发约束规则](rules/ai-development-rules.md) — AI 生成代码必须遵守的规则
+- [项目首页 README](../README.md) — 产品定位、快速开始、命令行、MCP 集成
+- [Demo 指南](../demo/README.md) — 如何用仓库内样例项目体验图谱
+- [REST API](api/rest-api.md) — `serve` 启动后暴露的 HTTP / WebSocket 接口
+- [MCP 工具说明](api/mcp-tools.md) — MCP tool 的输入、输出和典型问题
 
-## 项目结构
-- [完整目录结构](project-directory.md) — 所有文件和职责说明
+## 架构与实现
 
-## 架构文档
-- [数据模型](architecture/data-model.md) — 节点/边类型和 SQLite schema（待编写）
-- [解析流水线](architecture/parser-pipeline.md) — 解析器分工和执行顺序（待编写）
-- [可视化设计](architecture/visualization.md) — Cytoscape.js 配置和交互设计（待编写）
+- [项目目录结构](project-directory.md) — 仓库目录和主要职责
+- [解析流水线](architecture/parser-pipeline.md) — 解析器、构图与连线设计
+- [数据模型](architecture/data-model.md) — 节点、边与存储结构
+- [可视化设计](architecture/visualization.md) — UI 层与图谱展示思路
 
-## API 文档
-- [REST API](api/rest-api.md) — Web 服务接口（待编写）
-- [MCP 工具](api/mcp-tools.md) — MCP Server 工具定义（待编写）
+## 状态与报告
 
-## Demo
-- [Demo 项目说明](demo/demo-project.md) — 自建 demo 项目结构（待编写）
-- [cal.com 验证](demo/cal-com-validation.md) — cal.com 兼容性测试结果（待编写）
+- [项目状态报告](PROJECT_STATUS_REPORT.md) — 当前代码基线与阶段性评估
+- [补充状态报告](reports/codeomnivis-status-report.md) — 另一份阶段报告快照
+- [已验证计划](VERIFIED_PLAN.md) — 计划校验记录
 
-## 归档
-- [项目大纲 v1.0](archive/项目大纲.md) — 早期完整规格文档（中文）
+## 计划与演进记录
+
+- [开发计划书](plans/development-plan.md)
+- [框架扩展设计](plans/framework-expansion-design.md)
+- [Kotlin 支持计划](plans/kotlin-support-plan.md)
+- [Phase 1 + 2 实施计划](plans/codeomnivis-phase1-phase2-plan.md)
+- [计划变更记录](plans/changelog.md)
+- [计划状态快照](plans/PROJECT_STATUS.md)
+
+## 历史 / 归档
+
+- [工程计划 V2](DEVELOPMENT_PLAN_V2.md)
+- [工程总计划](ENGINEERING_PLAN.md)
+- [旧版计划草稿](codeomnivis-plan-3.md)
+- [项目大纲归档](archive/项目大纲.md)
+- [Superpowers 设计稿](superpowers/specs/2026-06-06-codeomnivis-design.md)
+
+## Demo 与验证资料
+
+- [Demo 项目说明](demo/demo-project.md)
+- [cal.com 验证记录](demo/cal-com-validation.md)
