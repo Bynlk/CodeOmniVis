@@ -14,7 +14,12 @@ import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoD
 import { scanDirectory } from '../utils/scanDirectory'
 import { createOmniServer } from '@codeomnivis/server'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
+import type { OmniNode } from '@codeomnivis/shared'
 import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, TsRpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@codeomnivis/analyzer'
+
+function isSyntheticNode(node: OmniNode): boolean {
+  return 'isSynthetic' in node.metadata && node.metadata.isSynthetic === true
+}
 
 export function serveCommand(program: Command): void {
   program
@@ -115,7 +120,7 @@ export function serveCommand(program: Command): void {
             server.db.upsertEdges(crossLayerResult.edges)
           }
           // 将跨层连线产生的 synthetic 节点写入 DB
-          const syntheticNodes = graph.nodes.filter(n => 'isSynthetic' in n.metadata && (n.metadata as { isSynthetic?: boolean }).isSynthetic)
+            const syntheticNodes = graph.nodes.filter(isSyntheticNode)
           if (syntheticNodes.length > 0) {
             server.db.upsertNodes(syntheticNodes)
           }

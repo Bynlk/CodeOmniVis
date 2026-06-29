@@ -13,7 +13,12 @@ import * as path from 'path'
 import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
+import type { OmniNode } from '@codeomnivis/shared'
 import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker, NPlusOneDetector, AuthDetector, RSCBoundaryDetector } from '@codeomnivis/analyzer'
+
+function isSyntheticNode(node: OmniNode): boolean {
+  return 'isSynthetic' in node.metadata && node.metadata.isSynthetic === true
+}
 
 export function analyzeCommand(program: Command): void {
   program
@@ -95,7 +100,7 @@ export function analyzeCommand(program: Command): void {
           db.upsertEdges(crossLayerResult.edges)
         }
         // linker.link 可能向 graph.nodes 中添加了 synthetic 节点
-        const syntheticNodes = graph.nodes.filter(n => 'isSynthetic' in n.metadata && (n.metadata as { isSynthetic?: boolean }).isSynthetic)
+          const syntheticNodes = graph.nodes.filter(isSyntheticNode)
         if (syntheticNodes.length > 0) {
           db.upsertNodes(syntheticNodes)
         }

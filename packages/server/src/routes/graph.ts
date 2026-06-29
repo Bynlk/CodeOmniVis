@@ -9,6 +9,7 @@ import { Router, Request, Response } from 'express'
 import type { OmniDatabase } from '@codeomnivis/analyzer'
 import { DataFlowTracer } from '@codeomnivis/analyzer'
 import type { NodeType, EdgeType } from '@codeomnivis/shared'
+import { isEdgeType, isNodeType } from '@codeomnivis/shared'
 
 // 合法的节点类型和边类型
 const VALID_NODE_TYPES: ReadonlySet<string> = new Set<NodeType>([
@@ -71,7 +72,7 @@ export function createGraphRouter(db: OmniDatabase): Router {
 
       let nodes
       if (type && typeof type === 'string') {
-        if (!VALID_NODE_TYPES.has(type)) {
+        if (!isNodeType(type)) {
           return res.status(400).json({
             error: {
               code: 'INVALID_TYPE',
@@ -79,7 +80,7 @@ export function createGraphRouter(db: OmniDatabase): Router {
             },
           })
         }
-        nodes = db.getNodesByType(type as NodeType)
+          nodes = db.getNodesByType(type)
       } else {
         nodes = db.getAllNodes()
       }
@@ -172,7 +173,7 @@ export function createGraphRouter(db: OmniDatabase): Router {
 
       let edges
       if (type && typeof type === 'string') {
-        if (!VALID_EDGE_TYPES.has(type)) {
+        if (!isEdgeType(type)) {
           return res.status(400).json({
             error: {
               code: 'INVALID_TYPE',
@@ -180,7 +181,7 @@ export function createGraphRouter(db: OmniDatabase): Router {
             },
           })
         }
-        edges = db.getEdgesByType(type as EdgeType)
+          edges = db.getEdgesByType(type)
       } else {
         edges = db.getAllEdges()
       }
@@ -279,7 +280,7 @@ export function createGraphRouter(db: OmniDatabase): Router {
       const graph = db.loadGraph()
       const tracer = new DataFlowTracer(graph)
 
-      const model = req.query.model as string | undefined
+      const model = typeof req.query.model === 'string' ? req.query.model : undefined
 
       if (model) {
         // 追踪指定 model

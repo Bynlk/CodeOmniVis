@@ -17,7 +17,14 @@ import {
 } from '@modelcontextprotocol/sdk/types.js'
 import { OmniDatabase, runFullAnalysis, DataFlowTracer } from '@codeomnivis/analyzer'
 import { getDbPath, hasDbCache } from '@codeomnivis/shared/node'
-import type { NodeType, EdgeType } from '@codeomnivis/shared'
+import type { NodeType, EdgeType, OmniNode } from '@codeomnivis/shared'
+
+const API_NODE_TYPES: NodeType[] = ['api_route', 'trpc_procedure', 'express_route', 'tsrpc_api', 'tsrpc_service']
+const API_DOWNSTREAM_EDGE_TYPES: EdgeType[] = ['handles', 'calls_service', 'queries_db']
+const API_CALLER_EDGE_TYPES: EdgeType[] = ['calls_api']
+const CALL_CHAIN_EDGE_TYPES: EdgeType[] = ['calls_api', 'handles', 'calls_service', 'queries_db']
+const RENDERS_EDGE_TYPE: EdgeType = 'renders'
+const DB_MODEL_NODE_TYPE: NodeType = 'db_model'
 
 // ============================================================
 // MCP Server
@@ -106,6 +113,10 @@ function numberArg(args: Record<string, unknown> | undefined, key: string, fallb
     if (!isNaN(parsed)) return parsed
   }
   return fallback
+}
+
+function metadataValue(node: Pick<OmniNode, 'metadata'>, key: string): unknown {
+  return Reflect.get(node.metadata, key)
 }
 
 // ============================================================
@@ -222,23 +233,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 function handleGetApiRoutes(db: OmniDatabase, args: Record<string, unknown> | undefined) {
   const filter = stringArg(args, 'filter')?.toLowerCase()
-  const apiNodes = db.getNodesByTypes(['api_route', 'trpc_procedure', 'express_route', 'tsrpc_api', 'tsrpc_service'] as NodeType[])
+  const apiNodes = db.getNodesByTypes(API_NODE_TYPES)
 
   const filtered = filter
     ? apiNodes.filter(n => {
         if (n.name.toLowerCase().includes(filter)) return true
-        const route = (n.metadata as Record<string, unknown>)?.route
+          const route = metadataValue(n, 'route')
         return typeof route === 'string' && route.toLowerCase().includes(filter)
       })
     : apiNodes
 
   const result = filtered.map(node => {
-    const downstream = db.getDownstreamNodes(node.id, ['handles', 'calls_service', 'queries_db'] as EdgeType[])
-    const callers = db.getUpstreamNodes(node.id, ['calls_api'] as EdgeType[])
+    const method = metadataValue(node, 'method')
+    const route = metadataValue(node, 'route')
+    const downstream = db.getDownstreamNodes(node.id, API_DOWNSTREAM_EDGE_TYPES)
+    const callers = db.getUpstreamNodes(node.id, API_CALLER_EDGE_TYPES)
     return {
       id: node.id,
-      method: (node.metadata as Record<string, unknown>)?.method ?? 'UNKNOWN',
-      path: (node.metadata as Record<string, unknown>)?.route ?? node.name,
+      method: typeof method === 'string' ? method : 'UNKNOWN',
+      path: typeof route === 'string' ? route : node.name,
       file: node.filePath,
       line: node.line,
       calledBy: callers.map(c => ({ id: c.id, name: c.name, type: c.type })),
@@ -267,7 +280,7 @@ function handleGetComponentTree(db: OmniDatabase, args: Record<string, unknown> 
     })
   }
 
-  const tree = db.getSubtree(rootNode.id, 'renders' as EdgeType, depth)
+  const tree = db.getSubtree(rootNode.id, RENDERS_EDGE_TYPE, depth)
   if (!tree || Object.keys(tree).length === 0) {
     return success({ root: rootNode.name, children: [], message: 'No child components found' })
   }
@@ -289,7 +302,7 @@ function handleFindCallers(db: OmniDatabase, args: Record<string, unknown> | und
     })
   }
 
-  const callers = db.getUpstreamNodes(targetNode.id, ['calls_api', 'handles', 'calls_service', 'queries_db'] as EdgeType[])
+  const callers = db.getUpstreamNodes(targetNode.id, CALL_CHAIN_EDGE_TYPES)
   const affectedPages = db.getAffectedPages(targetNode.id)
 
   return success({
@@ -302,24 +315,29 @@ function handleFindCallers(db: OmniDatabase, args: Record<string, unknown> | und
       name: c.name,
       file: c.filePath,
     })),
-    affectedFrontendPages: affectedPages.map(p => ({
-      name: p.name,
-      route: (p.metadata as Record<string, unknown>)?.route ?? p.name,
-      file: p.filePath,
-    })),
+    affectedFrontendPages: affectedPages.map(p => {
+      const route = metadataValue(p, 'route')
+      return {
+        name: p.name,
+        route: typeof route === 'string' ? route : p.name,
+        file: p.filePath,
+      }
+    }),
   })
 }
 
 function handleListDbModels(db: OmniDatabase) {
-  const models = db.getNodesByType('db_model' as NodeType)
+  const models = db.getNodesByType(DB_MODEL_NODE_TYPE)
   return success({
-    models: models.map(m => ({
-      id: m.id,
-      name: m.name,
-      file: m.filePath,
-      tableName: (m.metadata as Record<string, unknown>)?.tableName,
-      fieldCount: (m.metadata as Record<string, unknown>)?.fieldCount,
-    })),
+    models: models.map(m => {
+      return {
+        id: m.id,
+        name: m.name,
+        file: m.filePath,
+        tableName: metadataValue(m, 'tableName'),
+        fieldCount: metadataValue(m, 'fieldCount'),
+      }
+    }),
     totalCount: models.length,
   })
 }

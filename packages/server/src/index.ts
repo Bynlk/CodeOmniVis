@@ -11,7 +11,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
-import type { OmniGraph } from '@codeomnivis/shared'
+import type { OmniGraph, ProjectMeta } from '@codeomnivis/shared'
 import { OmniDatabase } from '@codeomnivis/analyzer'
 import { createGraphRouter } from './routes/graph'
 import { codeomnivisEvents, EVENTS } from './events'
@@ -141,9 +141,9 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
       if (files.length > 0) {
         // 自动检测框架
-        let detectedFrontend = 'unknown' as string
-        let detectedBackend = 'unknown' as string
-        let detectedDb = 'unknown' as string
+          let detectedFrontend: ProjectMeta['frontendFramework'] = 'unknown'
+          let detectedBackend: ProjectMeta['backendFramework'] = 'unknown'
+          let detectedDb: ProjectMeta['databaseType'] = 'unknown'
         try {
           const pkgPath = path.join(projectRoot, 'package.json')
           if (fs.existsSync(pkgPath)) {
@@ -173,23 +173,23 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
           }
         } catch { /* ignore */ }
 
-        const projectMeta = {
+          const projectMeta: ProjectMeta = {
           root: projectRoot,
-          frontendFramework: detectedFrontend as 'next' | 'express' | 'trpc' | 'nestjs' | 'spring' | 'ktor' | 'tsrpc' | 'unknown',
-          backendFramework: detectedBackend as 'trpc' | 'tsrpc' | 'express' | 'nestjs' | 'next' | 'spring' | 'ktor' | 'unknown',
-          databaseType: detectedDb as 'prisma' | 'typeorm' | 'drizzle' | 'exposed' | 'room' | 'unknown',
-          monorepoType: 'none' as const,
-          packages: [] as Array<{ name: string; path: string; dependencies: string[]; devDependencies: string[] }>,
-          frontendDirs: [] as string[],
-          backendDirs: [] as string[],
-          trpcRouterPaths: [] as string[],
-          tsrpcServicePaths: [] as string[],
-          tsrpcApiDirs: [] as string[],
-          tsrpcProtocolDirs: [] as string[],
+            frontendFramework: detectedFrontend,
+            backendFramework: detectedBackend,
+            databaseType: detectedDb,
+            monorepoType: 'none',
+            packages: [],
+            frontendDirs: [],
+            backendDirs: [],
+            trpcRouterPaths: [],
+            tsrpcServicePaths: [],
+            tsrpcApiDirs: [],
+            tsrpcProtocolDirs: [],
           prismaSchemaPath: path.join(projectRoot, 'prisma', 'schema.prisma'),
-          typeormEntityDirs: [] as string[],
-          tsConfigPath: null as string | null,
-          buildFile: null as string | null,
+            typeormEntityDirs: [],
+            tsConfigPath: null,
+            buildFile: null,
         }
 
         await builder.parseFiles(files, {

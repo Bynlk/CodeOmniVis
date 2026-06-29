@@ -10,6 +10,21 @@ import * as path from 'path'
 import type { ProjectMeta, FrameworkType, DatabaseType, MonorepoType, CodeOmniVisConfig } from '@codeomnivis/shared'
 import { detectGradleFrameworks } from './gradleDetect'
 
+const FRAMEWORK_TYPES = new Set<string>([
+  'next',
+  'express',
+  'trpc',
+  'nestjs',
+  'spring',
+  'ktor',
+  'tsrpc',
+  'unknown',
+])
+
+function isFrameworkType(value: string): value is FrameworkType {
+  return FRAMEWORK_TYPES.has(value)
+}
+
 // ============================================================
 // 检测函数
 // ============================================================
@@ -22,8 +37,9 @@ export async function autoDetectProject(root: string, config?: CodeOmniVisConfig
 
   if (config) {
     // 前端框架覆盖
-    if (config.frontend?.framework && config.frontend.framework !== 'auto') {
-      detected.frontendFramework = config.frontend.framework as FrameworkType
+      const frontendFramework = config.frontend?.framework
+      if (frontendFramework && frontendFramework !== 'auto' && isFrameworkType(frontendFramework)) {
+        detected.frontendFramework = frontendFramework
     }
     // 前端目录覆盖
     if (config.frontend?.dirs && config.frontend.dirs.length > 0) {
