@@ -52,8 +52,9 @@ export class NestjsServiceParser implements Parser {
 
     try {
       if (!this.project) {
+          const configFilePath = context.tsConfig?.options?.configFilePath
         this.project = new Project({
-          tsConfigFilePath: context.tsConfig?.options?.configFilePath as string,
+            tsConfigFilePath: typeof configFilePath === 'string' ? configFilePath : undefined,
           skipAddingFilesFromTsConfig: true,
         })
       }

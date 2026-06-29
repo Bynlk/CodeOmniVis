@@ -13,7 +13,7 @@
  * - 自动生成：serviceProto.ts（跳过）
  */
 
-import { Project, SyntaxKind, CallExpression, Node, SourceFile, InterfaceDeclaration, TypeAliasDeclaration, VariableStatement } from 'ts-morph'
+import { Project, SyntaxKind, CallExpression, Node, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import * as fs from 'fs'
 import type {
@@ -24,10 +24,30 @@ import type {
   OmniNode,
   OmniEdge,
   ProjectMeta,
-  TsrpcApiMetadata,
-  TsrpcMsgMetadata,
 } from '@codeomnivis/shared'
-import { createNodeId, createEdgeId } from '@codeomnivis/shared'
+import { createNodeId } from '@codeomnivis/shared'
+
+interface ServiceProtoEntry {
+  id: number
+  name: string
+  type: 'api' | 'msg'
+}
+
+function isServiceProtoEntry(value: unknown): value is ServiceProtoEntry {
+  return typeof value === 'object'
+    && value !== null
+    && 'id' in value
+    && typeof value.id === 'number'
+    && 'name' in value
+    && typeof value.name === 'string'
+    && 'type' in value
+    && (value.type === 'api' || value.type === 'msg')
+}
+
+function parseServiceProtoEntries(json: string): ServiceProtoEntry[] {
+  const parsed = JSON.parse(json)
+  return Array.isArray(parsed) ? parsed.filter(isServiceProtoEntry) : []
+}
 
 // ============================================================
 // TSRPC 解析器
@@ -88,8 +108,9 @@ export class TsRpcParser implements Parser {
 
     try {
       if (!this.project) {
+          const configFilePath = context.tsConfig?.options?.configFilePath
         this.project = new Project({
-          tsConfigFilePath: context.tsConfig?.options?.configFilePath as string,
+            tsConfigFilePath: typeof configFilePath === 'string' ? configFilePath : undefined,
           skipAddingFilesFromTsConfig: true,
         })
       }
@@ -198,8 +219,8 @@ export class TsRpcParser implements Parser {
     const conf = protocolFilePath ? this.extractConf(protocolFilePath) : undefined
 
     sourceFile.forEachDescendant((node: Node) => {
-      if (node.getKind() === SyntaxKind.FunctionDeclaration) {
-        const funcDecl = node as import('ts-morph').FunctionDeclaration
+        if (Node.isFunctionDeclaration(node)) {
+          const funcDecl = node
         let funcName = funcDecl.getName() || ''
 
         // 匿名默认导出：从文件名推导
@@ -239,8 +260,8 @@ export class TsRpcParser implements Parser {
       }
 
       // 箭头函数形式
-      if (node.getKind() === SyntaxKind.VariableStatement) {
-        const varStmt = node as VariableStatement
+        if (Node.isVariableStatement(node)) {
+          const varStmt = node
         for (const decl of varStmt.getDeclarations()) {
           const varName = decl.getName()
           if (!varName.startsWith('Api') && !varName.startsWith('api')) continue
@@ -248,8 +269,7 @@ export class TsRpcParser implements Parser {
           const initializer = decl.getInitializer()
           if (!initializer || !Node.isArrowFunction(initializer)) continue
 
-          const arrowFunc = initializer as import('ts-morph').ArrowFunction
-          const { hasApiCall, reqTypeName, resTypeName } = this.extractApiCallTypes(arrowFunc.getParameters())
+            const { hasApiCall, reqTypeName, resTypeName } = this.extractApiCallTypes(initializer.getParameters())
 
           if (hasApiCall) {
             const serviceName = varName.replace(/^Api/i, '')
@@ -290,8 +310,8 @@ export class TsRpcParser implements Parser {
     const conf = this.extractConfFromSource(sourceFile)
 
     sourceFile.forEachDescendant((node: Node) => {
-      if (node.getKind() === SyntaxKind.InterfaceDeclaration) {
-        const iface = node as InterfaceDeclaration
+        if (Node.isInterfaceDeclaration(node)) {
+          const iface = node
         const name = iface.getName()
 
         if (!name.startsWith('Req') && !name.startsWith('Res')) return
@@ -317,8 +337,8 @@ export class TsRpcParser implements Parser {
         })
       }
 
-      if (node.getKind() === SyntaxKind.TypeAliasDeclaration) {
-        const typeAlias = node as TypeAliasDeclaration
+        if (Node.isTypeAliasDeclaration(node)) {
+          const typeAlias = node
         const name = typeAlias.getName()
 
         if (!name.startsWith('Req') && !name.startsWith('Res')) return
@@ -357,8 +377,8 @@ export class TsRpcParser implements Parser {
     const nodes: OmniNode[] = []
 
     sourceFile.forEachDescendant((node: Node) => {
-      if (node.getKind() === SyntaxKind.InterfaceDeclaration) {
-        const iface = node as InterfaceDeclaration
+        if (Node.isInterfaceDeclaration(node)) {
+          const iface = node
         const name = iface.getName()
 
         if (!name.startsWith('Msg')) return
@@ -381,8 +401,8 @@ export class TsRpcParser implements Parser {
         })
       }
 
-      if (node.getKind() === SyntaxKind.TypeAliasDeclaration) {
-        const typeAlias = node as TypeAliasDeclaration
+        if (Node.isTypeAliasDeclaration(node)) {
+          const typeAlias = node
         const name = typeAlias.getName()
 
         if (!name.startsWith('Msg')) return
@@ -617,15 +637,13 @@ export class TsRpcParser implements Parser {
       const match = content.match(/"services"\s*:\s*(\[[\s\S]*?\])/m)
       if (!match) return { apis: [], msgs: [] }
 
-      const services = JSON.parse(match[1]) as Array<{
-        id: number; name: string; type: 'api' | 'msg'
-      }>
+      const services = parseServiceProtoEntries(match[1])
 
       const apis = services
         .filter(s => s.type === 'api')
         .map(s => ({
           id: s.id,
-          name: s.name.split('/').pop()!,   // 'todo/GetTodos' → 'GetTodos'
+          name: s.name.split('/').pop() ?? s.name,   // 'todo/GetTodos' → 'GetTodos'
           path: s.name,                      // 完整路径用于匹配
         }))
 

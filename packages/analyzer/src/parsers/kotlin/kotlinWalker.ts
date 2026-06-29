@@ -297,20 +297,21 @@ function extractSuperTypes(
   const superTypeList = findChildOfType(node, 'super_type_list')
   if (!superTypeList) return []
 
-  return superTypeList.namedChildren
-    .map(c => {
-      if (c.type === 'super_type') {
-        const userType = findChildOfType(c, 'user_type') ?? findChildOfType(c, 'type_reference')
-        // 简单启发式：带构造函数调用的通常是类继承，否则是接口实现
-        const hasConstructor = c.text.includes('(')
-        return {
-          name: userType?.text ?? c.text.split('(')[0].trim(),
-          isInterface: !hasConstructor,
-        }
-      }
-      return null
+  const superTypes: Array<{ name: string; isInterface: boolean }> = []
+
+  for (const child of superTypeList.namedChildren) {
+    if (child.type !== 'super_type') continue
+
+    const userType = findChildOfType(child, 'user_type') ?? findChildOfType(child, 'type_reference')
+    // 简单启发式：带构造函数调用的通常是类继承，否则是接口实现
+    const hasConstructor = child.text.includes('(')
+    superTypes.push({
+      name: userType?.text ?? child.text.split('(')[0].trim(),
+      isInterface: !hasConstructor,
     })
-    .filter(Boolean) as Array<{ name: string; isInterface: boolean }>
+  }
+
+  return superTypes
 }
 
 function extractAnnotationName(node: Parser.SyntaxNode): string | null {

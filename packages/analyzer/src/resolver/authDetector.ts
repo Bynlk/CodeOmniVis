@@ -48,6 +48,13 @@ const PUBLIC_ROUTE_PATTERNS = [
   /^\/api\/track$/,
 ]
 
+function routeFromNode(node: OmniNode): string | undefined {
+  const { metadata } = node
+  return 'route' in metadata && typeof metadata.route === 'string'
+    ? metadata.route
+    : undefined
+}
+
 // ============================================================
 // Auth 检测器
 // ============================================================
@@ -105,7 +112,7 @@ export class AuthDetector {
 
     for (const node of nodes) {
       // 跳过公开路由
-      const route = (node.metadata as Record<string, unknown>)?.route as string
+        const route = routeFromNode(node)
       if (route && this.isPublicRoute(route)) continue
 
       // 如果文件整体有 auth 调用，认为已覆盖
@@ -187,7 +194,7 @@ export class AuthDetector {
    * 创建未鉴权路由 Issue
    */
   private createIssue(node: OmniNode): Issue {
-    const route = (node.metadata as Record<string, unknown>)?.route as string || node.name
+    const route = routeFromNode(node) || node.name
 
     return {
       id: `auth-${node.id}`,

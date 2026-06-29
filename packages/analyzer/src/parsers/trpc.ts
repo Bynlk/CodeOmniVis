@@ -69,10 +69,11 @@ export class TrpcParser implements Parser {
     try {
       // 初始化 ts-morph Project
       if (!this.project) {
-        this.project = new Project({
-          tsConfigFilePath: context.tsConfig?.options?.configFilePath as string,
+          const configFilePath = context.tsConfig?.options?.configFilePath
+          this.project = new Project({
+            tsConfigFilePath: typeof configFilePath === 'string' ? configFilePath : undefined,
           skipAddingFilesFromTsConfig: true,
-        })
+          })
       }
 
       const fullPath = path.resolve(context.projectRoot, filePath)
@@ -138,8 +139,8 @@ export class TrpcParser implements Parser {
 
     // 递归查找所有函数调用
     sourceFile.forEachDescendant((node: Node) => {
-      if (node.getKind() === SyntaxKind.CallExpression) {
-        const callExpr = node as CallExpression
+      if (!Node.isCallExpression(node)) return
+      const callExpr = node
         const expression = callExpr.getExpression()
 
         // 检查是否是 createTRPCRouter(...) 或类似调用
@@ -147,7 +148,6 @@ export class TrpcParser implements Parser {
           const name = expression.getText()
           if (name === 'createTRPCRouter' || name === 'createRouter' || name === 'router') {
             calls.push(callExpr)
-          }
         }
       }
     })

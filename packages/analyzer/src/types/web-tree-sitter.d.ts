@@ -19,7 +19,6 @@ declare module 'web-tree-sitter' {
       children: SyntaxNode[]
       namedChildren: SyntaxNode[]
       parent: SyntaxNode | null
-      namedChildren: SyntaxNode[]
       childForFieldName(name: string): SyntaxNode | null
       walk(): TreeCursor
     }
@@ -45,7 +44,6 @@ declare module 'web-tree-sitter' {
     }
 
     function init(): Promise<void>
-    function Language.load(path: string): Promise<Language>
   }
 
   class Parser {

@@ -7,8 +7,14 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import type { OmniGraph, OmniNode, OmniEdge, EdgeType, ComponentMetadata, CallsApiMetadata, PageMetadata, ApiRouteMetadata, TrpcProcedureMetadata } from '@codeomnivis/shared'
-import { createEdgeId } from '@codeomnivis/shared'
+import type {
+  CallsApiMetadata,
+  EdgeType,
+  OmniEdge,
+  OmniGraph,
+  OmniNode,
+} from '@codeomnivis/shared'
+import { createEdgeId, isNodeOfType } from '@codeomnivis/shared'
 import * as fs from 'fs'
 import * as path from 'path'
 import { SymbolResolver, type DbCall } from './symbolResolver'
@@ -41,6 +47,29 @@ function capitalize(str: string): string {
 interface ServiceImport {
   importedName: string
   resolvedPath: string
+}
+
+const API_CALL_TYPES = new Set<string>([
+  'fetch',
+  'axios',
+  'trpc_hook',
+  'tsrpc_call_api',
+  'tsrpc_listen_msg',
+])
+
+function isCallsApiMetadata(metadata: OmniEdge['metadata']): metadata is CallsApiMetadata {
+  return 'callType' in metadata
+    && typeof metadata.callType === 'string'
+    && API_CALL_TYPES.has(metadata.callType)
+    && 'callLine' in metadata
+    && typeof metadata.callLine === 'number'
+}
+
+function routeFromMetadata(node: OmniNode): string | undefined {
+  const { metadata } = node
+  return 'route' in metadata && typeof metadata.route === 'string'
+    ? metadata.route
+    : undefined
 }
 
 // ============================================================
@@ -129,7 +158,7 @@ export class CrossLayerLinker {
     )
 
     // 获取所有组件节点（用于匹配 source）
-    const components = graph.nodes.filter(n => n.type === 'component')
+    const components = graph.nodes.filter(n => isNodeOfType(n, 'component'))
 
     // 尝试匹配
     for (const callEdge of existingCallEdges) {
@@ -150,7 +179,7 @@ export class CrossLayerLinker {
           const filePath = sourceParts[1]
           // 优先找 page 组件（通常发起 API 调用的是页面）
           const matchedComponent = components.find(c =>
-            c.filePath === filePath && (c.metadata as ComponentMetadata)?.isPage
+            c.filePath === filePath && c.metadata.isPage
           ) || components.find(c => c.filePath === filePath)
           if (matchedComponent) {
             sourceId = matchedComponent.id
@@ -163,7 +192,9 @@ export class CrossLayerLinker {
       const targetParts = callEdge.target.split(':')
       const url = targetParts.slice(2).join(':') // 处理 URL 中可能包含 : 的情况
 
-      const metadata = callEdge.metadata as CallsApiMetadata
+      if (!isCallsApiMetadata(callEdge.metadata)) continue
+
+      const metadata = callEdge.metadata
       const callType = metadata.callType
 
       if (callType === 'trpc_hook') {
@@ -249,10 +280,11 @@ export class CrossLayerLinker {
     if (!router || !proc) return null
 
     // 查找匹配的 procedure
-    const fuzzyMatch = procedures.find(p => {
-      const meta = p.metadata as TrpcProcedureMetadata
-      return meta.routerName === router && meta.procedureName === proc
-    })
+    const fuzzyMatch = procedures.find(p =>
+      isNodeOfType(p, 'trpc_procedure')
+        && p.metadata.routerName === router
+        && p.metadata.procedureName === proc
+    )
 
     return fuzzyMatch || null
   }
@@ -277,17 +309,14 @@ export class CrossLayerLinker {
 
     // 1. 精确匹配 apiPath/servicePath metadata（大小写不敏感）
     const exactMatch = services.find(n => {
-      if (n.type === 'tsrpc_api') {
-        const meta = n.metadata as import('@codeomnivis/shared').TsrpcApiMetadata
-        return meta.apiPath.toLowerCase() === normalizedLower
+      if (isNodeOfType(n, 'tsrpc_api')) {
+        return n.metadata.apiPath.toLowerCase() === normalizedLower
       }
-      if (n.type === 'tsrpc_service') {
-        const meta = n.metadata as import('@codeomnivis/shared').TsrpcServiceMetadata
-        return meta.servicePath.toLowerCase() === normalizedLower
+      if (isNodeOfType(n, 'tsrpc_service')) {
+        return n.metadata.servicePath.toLowerCase() === normalizedLower
       }
-      if (n.type === 'tsrpc_msg') {
-        const meta = n.metadata as import('@codeomnivis/shared').TsrpcMsgMetadata
-        return meta.msgName.toLowerCase() === normalizedLower
+      if (isNodeOfType(n, 'tsrpc_msg')) {
+        return n.metadata.msgName.toLowerCase() === normalizedLower
       }
       return false
     })
@@ -297,17 +326,14 @@ export class CrossLayerLinker {
     const lastSegment = normalizedPath.split('/').pop()?.toLowerCase()
     if (lastSegment) {
       const fuzzyMatch = services.find(n => {
-        if (n.type === 'tsrpc_api') {
-          const meta = n.metadata as import('@codeomnivis/shared').TsrpcApiMetadata
-          return meta.apiPath.split('/').pop()?.toLowerCase() === lastSegment
+        if (isNodeOfType(n, 'tsrpc_api')) {
+          return n.metadata.apiPath.split('/').pop()?.toLowerCase() === lastSegment
         }
-        if (n.type === 'tsrpc_service') {
-          const meta = n.metadata as import('@codeomnivis/shared').TsrpcServiceMetadata
-          return meta.servicePath.split('/').pop()?.toLowerCase() === lastSegment
+        if (isNodeOfType(n, 'tsrpc_service')) {
+          return n.metadata.servicePath.split('/').pop()?.toLowerCase() === lastSegment
         }
-        if (n.type === 'tsrpc_msg') {
-          const meta = n.metadata as import('@codeomnivis/shared').TsrpcMsgMetadata
-          return meta.msgName.toLowerCase() === lastSegment
+        if (isNodeOfType(n, 'tsrpc_msg')) {
+          return n.metadata.msgName.toLowerCase() === lastSegment
         }
         return false
       })
@@ -316,7 +342,7 @@ export class CrossLayerLinker {
 
     // 3. 按节点名匹配（去掉 Api/Ptl/Msg 前缀，大小写不敏感）
     const nameMatch = services.find(n => {
-      if (n.type !== 'tsrpc_api' && n.type !== 'tsrpc_service' && n.type !== 'tsrpc_msg') return false
+      if (!isNodeOfType(n, 'tsrpc_api') && !isNodeOfType(n, 'tsrpc_service') && !isNodeOfType(n, 'tsrpc_msg')) return false
       const strippedName = n.name.replace(/^(Api|Ptl|Msg)/i, '').toLowerCase()
       return strippedName === normalizedLower || strippedName === lastSegment
     })
@@ -338,7 +364,7 @@ export class CrossLayerLinker {
 
     // 精确匹配
     const exactMatch = routes.find(r => {
-      const route = (r.metadata as { route?: string })?.route
+      const route = routeFromMetadata(r)
       if (!route) return false
       return this.normalizeUrl(route) === normalizedUrl
     })
@@ -347,7 +373,7 @@ export class CrossLayerLinker {
     // 去掉 /api/ 前缀匹配
     const withoutApi = normalizedUrl.replace(/^\/api/, '')
     const withoutApiMatch = routes.find(r => {
-      const route = (r.metadata as { route?: string })?.route
+      const route = routeFromMetadata(r)
       if (!route) return false
       return this.normalizeUrl(route) === withoutApi
     })
@@ -358,7 +384,7 @@ export class CrossLayerLinker {
     if (basePrefixMatch) {
       const withoutPrefix = basePrefixMatch[1]
       const prefixMatch = routes.find(r => {
-        const route = (r.metadata as { route?: string })?.route
+        const route = routeFromMetadata(r)
         if (!route) return false
         return this.normalizeUrl(route) === withoutPrefix
       })
@@ -370,7 +396,7 @@ export class CrossLayerLinker {
     const lastSegment = urlSegments[urlSegments.length - 1]
     if (lastSegment) {
       const segmentMatch = routes.find(r => {
-        const route = (r.metadata as { route?: string })?.route
+        const route = routeFromMetadata(r)
         if (!route) return false
         const routeSegments = this.normalizeUrl(route).split('/').filter(Boolean)
         const routeLastSegment = routeSegments[routeSegments.length - 1]
@@ -410,10 +436,9 @@ export class CrossLayerLinker {
     const edges: OmniEdge[] = []
 
     // 处理 Next.js API Route 节点
-    const apiRouteNodes = graph.nodes.filter(n => n.type === 'api_route')
+    const apiRouteNodes = graph.nodes.filter(n => isNodeOfType(n, 'api_route'))
     for (const routeNode of apiRouteNodes) {
-      const meta = routeNode.metadata as ApiRouteMetadata
-      const methodsStr = meta?.method
+      const methodsStr = routeNode.metadata.method
       if (!methodsStr) continue
 
       // method 可能是逗号分隔的："GET,POST" → 拆分为每个方法单独创建 handler
@@ -450,7 +475,7 @@ export class CrossLayerLinker {
     }
 
     // 处理 tRPC procedure 节点
-    const trpcNodes = graph.nodes.filter(n => n.type === 'trpc_procedure')
+    const trpcNodes = graph.nodes.filter(n => isNodeOfType(n, 'trpc_procedure'))
     for (const proc of trpcNodes) {
       const handlerId = `handler:${proc.filePath}:${proc.name}:resolver`
       if (!nodeMap.has(handlerId)) {
@@ -474,7 +499,7 @@ export class CrossLayerLinker {
     }
 
     // 处理 TSRPC service/api 节点
-    const tsrpcNodes = graph.nodes.filter(n => n.type === 'tsrpc_service' || n.type === 'tsrpc_api')
+    const tsrpcNodes = graph.nodes.filter(n => isNodeOfType(n, 'tsrpc_service') || isNodeOfType(n, 'tsrpc_api'))
     for (const svc of tsrpcNodes) {
       const handlerId = `handler:${svc.filePath}:${svc.name}:handler`
       if (!nodeMap.has(handlerId)) {
@@ -498,10 +523,11 @@ export class CrossLayerLinker {
     }
 
     // 处理 Express route 节点
-    const expressNodes = graph.nodes.filter(n => n.type === 'express_route')
+    const expressNodes = graph.nodes.filter(n => isNodeOfType(n, 'express_route'))
     for (const route of expressNodes) {
-      const meta = route.metadata as Record<string, unknown>
-      const handlerName = meta?.handlerName as string | undefined
+      const handlerName = 'handlerName' in route.metadata && typeof route.metadata.handlerName === 'string'
+        ? route.metadata.handlerName
+        : undefined
       if (!handlerName) {
         // 内联 callback，创建 synthetic
         const handlerId = `handler:${route.filePath}:${route.name}:callback`
@@ -811,14 +837,13 @@ export class CrossLayerLinker {
   private linkKotlinCrossLayer(graph: OmniGraph, nodeMap: Map<string, OmniNode>): OmniEdge[] {
     const edges: OmniEdge[] = []
 
-    const kotlinRoutes = graph.nodes.filter(n => n.type === 'kotlin_route')
-    const kotlinFunctions = graph.nodes.filter(n => n.type === 'kotlin_function')
-    const kotlinClasses = graph.nodes.filter(n => n.type === 'kotlin_class')
+    const kotlinRoutes = graph.nodes.filter(n => isNodeOfType(n, 'kotlin_route'))
+    const kotlinFunctions = graph.nodes.filter(n => isNodeOfType(n, 'kotlin_function'))
+    const kotlinClasses = graph.nodes.filter(n => isNodeOfType(n, 'kotlin_class'))
     const dbModels = graph.nodes.filter(n => n.type === 'db_model')
 
     // 1. kotlin_route → kotlin_function (handles)
     for (const route of kotlinRoutes) {
-      const routeMeta = route.metadata as import('@codeomnivis/shared').KotlinRouteMetadata
       // 查找同文件中的 kotlin_function（Spring: 函数名匹配，Ktor: 函数名匹配）
       const matchingFn = kotlinFunctions.find(fn =>
         fn.filePath === route.filePath && fn.name === route.name
@@ -830,12 +855,10 @@ export class CrossLayerLinker {
 
     // 2. kotlin_function → kotlin_class @Service (calls_service)
     for (const fn of kotlinFunctions) {
-      const fnMeta = fn.metadata as import('@codeomnivis/shared').KotlinFunctionMetadata
       // 查找同文件中的 @Service 类
-      const serviceClass = kotlinClasses.find(cls => {
-        const meta = cls.metadata as import('@codeomnivis/shared').KotlinClassMetadata
-        return cls.filePath === fn.filePath && meta.annotations.includes('Service')
-      })
+      const serviceClass = kotlinClasses.find(cls =>
+        cls.filePath === fn.filePath && cls.metadata.annotations.includes('Service')
+      )
       if (serviceClass) {
         edges.push(makeEdge(fn.id, serviceClass.id, 'calls_service', 'inferred', { serviceName: serviceClass.name }))
       }
@@ -843,8 +866,7 @@ export class CrossLayerLinker {
 
     // 3. kotlin_class @Repository → db_model (queries_db)
     for (const cls of kotlinClasses) {
-      const meta = cls.metadata as import('@codeomnivis/shared').KotlinClassMetadata
-      const isRepository = meta.annotations.includes('Repository')
+      const isRepository = cls.metadata.annotations.includes('Repository')
       if (!isRepository) continue
 
       // 查找同文件中的 db_model

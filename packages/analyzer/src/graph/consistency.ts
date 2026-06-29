@@ -8,7 +8,37 @@
  * - tRPC procedure 不存在
  */
 
-import type { OmniGraph, OmniNode, Issue, IssueType, IssueSeverity, ConsistencyReport, CallsApiMetadata, ApiRouteMetadata } from '@codeomnivis/shared'
+import type { ConsistencyReport, Issue, OmniGraph, OmniNode } from '@codeomnivis/shared'
+import { isEdgeOfType, isNodeOfType } from '@codeomnivis/shared'
+
+function getOrCreateMap<K, InnerK, InnerV>(
+  map: Map<K, Map<InnerK, InnerV>>,
+  key: K
+): Map<InnerK, InnerV> {
+  const existing = map.get(key)
+  if (existing) return existing
+
+  const created = new Map<InnerK, InnerV>()
+  map.set(key, created)
+  return created
+}
+
+function getOrCreateArray<K, V>(map: Map<K, V[]>, key: K): V[] {
+  const existing = map.get(key)
+  if (existing) return existing
+
+  const created: V[] = []
+  map.set(key, created)
+  return created
+}
+
+function mustGetNumber(map: Map<string, number>, key: string): number {
+  const value = map.get(key)
+  if (value === undefined) {
+    throw new Error(`Missing Tarjan index for ${key}`)
+  }
+  return value
+}
 
 // ============================================================
 // 一致性检测器
@@ -162,16 +192,16 @@ export class ConsistencyChecker {
     const issues: Issue[] = []
 
     for (const edge of graph.edges) {
-      if (edge.type !== 'calls_api') continue
+      if (!isEdgeOfType(edge, 'calls_api')) continue
 
       const sourceNode = nodeMap.get(edge.source)
       const targetNode = nodeMap.get(edge.target)
 
       if (!sourceNode || !targetNode) continue
-      if (targetNode.type !== 'api_route') continue
+      if (!isNodeOfType(targetNode, 'api_route')) continue
 
-      const edgeMetadata = edge.metadata as CallsApiMetadata
-      const targetMetadata = targetNode.metadata as ApiRouteMetadata
+      const edgeMetadata = edge.metadata
+      const targetMetadata = targetNode.metadata
 
       if (!edgeMetadata?.method || !targetMetadata?.method) continue
 
@@ -212,15 +242,15 @@ export class ConsistencyChecker {
     )
 
     for (const edge of graph.edges) {
-      if (edge.type !== 'calls_api') continue
+      if (!isEdgeOfType(edge, 'calls_api')) continue
 
       const targetNode = nodeMap.get(edge.target)
       if (targetNode) continue // target 存在，跳过
 
-      const edgeMetadata = edge.metadata as CallsApiMetadata
+      const edgeMetadata = edge.metadata
       if (edgeMetadata?.callType !== 'trpc_hook') continue
 
-      const procedureName = (edgeMetadata as unknown as Record<string, unknown>).url as string | undefined // 格式：router.procedure
+      const procedureName = edgeMetadata.url // 格式：router.procedure
       if (!procedureName) continue
 
       // 检查 procedure 是否存在
@@ -264,14 +294,8 @@ export class ConsistencyChecker {
     const incomingByType = new Map<string, Map<string, string[]>>() // edgeType → targetId → sourceIds[]
 
     for (const edge of graph.edges) {
-      if (!incomingByType.has(edge.type)) {
-        incomingByType.set(edge.type, new Map())
-      }
-      const targets = incomingByType.get(edge.type)!
-      if (!targets.has(edge.target)) {
-        targets.set(edge.target, [])
-      }
-      targets.get(edge.target)!.push(edge.source)
+      const targets = getOrCreateMap(incomingByType, edge.type)
+      getOrCreateArray(targets, edge.target).push(edge.source)
     }
 
     for (const node of graph.nodes) {
@@ -342,8 +366,7 @@ export class ConsistencyChecker {
     const adj = new Map<string, string[]>()
     for (const edge of graph.edges) {
       if (edge.type !== 'imports') continue
-      if (!adj.has(edge.source)) adj.set(edge.source, [])
-      adj.get(edge.source)!.push(edge.target)
+        getOrCreateArray(adj, edge.source).push(edge.target)
     }
 
     if (adj.size === 0) return issues
@@ -368,9 +391,9 @@ export class ConsistencyChecker {
       for (const w of neighbors) {
         if (!index.has(w)) {
           strongConnect(w)
-          lowlink.set(v, Math.min(lowlink.get(v)!, lowlink.get(w)!))
+            lowlink.set(v, Math.min(mustGetNumber(lowlink, v), mustGetNumber(lowlink, w)))
         } else if (onStack.has(w)) {
-          lowlink.set(v, Math.min(lowlink.get(v)!, index.get(w)!))
+            lowlink.set(v, Math.min(mustGetNumber(lowlink, v), mustGetNumber(index, w)))
         }
       }
 
@@ -379,7 +402,10 @@ export class ConsistencyChecker {
         const scc: string[] = []
         let w: string
         do {
-          w = stack.pop()!
+            const popped = stack.pop()
+            if (!popped) break
+
+            w = popped
           onStack.delete(w)
           scc.push(w)
         } while (w !== v)

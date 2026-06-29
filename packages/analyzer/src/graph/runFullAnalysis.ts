@@ -7,7 +7,7 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import type { ProjectMeta, FrameworkType, DatabaseType } from '@codeomnivis/shared'
+import type { DatabaseType, FrameworkType, OmniNode, ProjectMeta } from '@codeomnivis/shared'
 import { OmniDatabase } from '../storage/db'
 import { GraphBuilder } from './builder'
 import { CrossLayerLinker } from '../resolver/crossLayer'
@@ -24,6 +24,10 @@ import { NestjsControllerParser } from '../parsers/nestjs/nestjsControllerParser
 import { NestjsModuleParser } from '../parsers/nestjs/nestjsModuleParser'
 import { NestjsServiceParser } from '../parsers/nestjs/nestjsServiceParser'
 import { DrizzleParser } from '../parsers/drizzle'
+
+function isSyntheticNode(node: OmniNode): boolean {
+  return 'isSynthetic' in node.metadata && node.metadata.isSynthetic === true
+}
 
 export interface FullAnalysisOptions {
   projectRoot: string
@@ -252,7 +256,7 @@ export async function runFullAnalysis(options: FullAnalysisOptions): Promise<Ful
     }
 
     // 将跨层连线产生的 synthetic 节点写入 DB
-    const syntheticNodes = graph.nodes.filter(n => 'isSynthetic' in n.metadata && (n.metadata as { isSynthetic?: boolean }).isSynthetic)
+      const syntheticNodes = graph.nodes.filter(isSyntheticNode)
     if (syntheticNodes.length > 0) {
       db.upsertNodes(syntheticNodes)
     }

@@ -8,7 +8,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, CallExpression, Node, Decorator, ClassDeclaration, MethodDeclaration, SourceFile } from 'ts-morph'
+import { Project, Node, Decorator, ClassDeclaration, MethodDeclaration, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -28,7 +28,7 @@ import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 // 常量
 // ============================================================
 
-const HTTP_DECORATORS = ['Get', 'Post', 'Put', 'Delete', 'Patch', 'Options', 'Head'] as const
+const HTTP_DECORATORS = new Set<string>(['Get', 'Post', 'Put', 'Delete', 'Patch', 'Options', 'Head'])
 const HTTP_METHOD_MAP: Record<string, string> = {
   Get: 'GET',
   Post: 'POST',
@@ -67,8 +67,9 @@ export class NestjsControllerParser implements Parser {
 
     try {
       if (!this.project) {
+          const configFilePath = context.tsConfig?.options?.configFilePath
         this.project = new Project({
-          tsConfigFilePath: context.tsConfig?.options?.configFilePath as string,
+            tsConfigFilePath: typeof configFilePath === 'string' ? configFilePath : undefined,
           skipAddingFilesFromTsConfig: true,
         })
       }
@@ -170,7 +171,7 @@ export class NestjsControllerParser implements Parser {
    */
   private findHttpDecorator(method: MethodDeclaration): Decorator | undefined {
     return method.getDecorators().find((d: Decorator) =>
-      (HTTP_DECORATORS as readonly string[]).includes(d.getName())
+      HTTP_DECORATORS.has(d.getName())
     )
   }
 

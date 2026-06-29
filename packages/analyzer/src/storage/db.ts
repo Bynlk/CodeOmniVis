@@ -6,7 +6,7 @@
  * 遵循"降级而非崩溃"原则，操作失败返回错误而非抛出异常。
  */
 
-import initSqlJs, { Database as SqlJsDatabase } from 'sql.js'
+import initSqlJs, { type Database as SqlJsDatabase, type SqlValue } from 'sql.js'
 import * as fs from 'fs'
 import type { OmniNode, OmniEdge, OmniGraph, NodeType, EdgeType } from '@codeomnivis/shared'
 import { CREATE_TABLES_SQL, SQL } from './schema'
@@ -30,6 +30,99 @@ export interface DbStats {
   edgeTypeCounts: Record<string, number>
 }
 
+const NODE_TYPES = new Set<string>([
+  'page',
+  'component',
+  'api_route',
+  'trpc_procedure',
+  'tsrpc_service',
+  'tsrpc_api',
+  'tsrpc_msg',
+  'express_route',
+  'handler',
+  'service',
+  'db_model',
+  'module',
+  'kotlin_class',
+  'kotlin_interface',
+  'kotlin_object',
+  'kotlin_function',
+  'kotlin_route',
+])
+
+const EDGE_TYPES = new Set<string>([
+  'renders',
+  'navigates_to',
+  'calls_api',
+  'handles',
+  'calls_service',
+  'queries_db',
+  'db_relation',
+  'imports',
+  'contains',
+  'kotlin_inherits',
+  'kotlin_implements',
+  'kotlin_uses',
+  'data_flows_to',
+  'sends_msg',
+  'listens_msg',
+])
+
+const EDGE_CONFIDENCES = new Set<string>(['certain', 'inferred'])
+const DB_ERROR_SEVERITIES = new Set<string>(['error', 'warning', 'info'])
+
+function isNodeType(value: string): value is NodeType {
+  return NODE_TYPES.has(value)
+}
+
+function isEdgeType(value: string): value is EdgeType {
+  return EDGE_TYPES.has(value)
+}
+
+function isEdgeConfidence(value: string): value is OmniEdge['confidence'] {
+  return EDGE_CONFIDENCES.has(value)
+}
+
+function isDbErrorSeverity(value: string): value is DbError['severity'] {
+  return DB_ERROR_SEVERITIES.has(value)
+}
+
+function sqlString(value: SqlValue | undefined): string {
+  return typeof value === 'string' ? value : String(value ?? '')
+}
+
+function sqlOptionalString(value: SqlValue | undefined): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+function sqlNumber(value: SqlValue | undefined): number {
+  return typeof value === 'number' ? value : Number(value ?? 0)
+}
+
+function sqlNodeType(value: SqlValue | undefined): NodeType {
+  const type = sqlString(value)
+  return isNodeType(type) ? type : 'module'
+}
+
+function sqlEdgeType(value: SqlValue | undefined): EdgeType {
+  const type = sqlString(value)
+  return isEdgeType(type) ? type : 'imports'
+}
+
+function sqlEdgeConfidence(value: SqlValue | undefined): OmniEdge['confidence'] {
+  const confidence = sqlString(value)
+  return isEdgeConfidence(confidence) ? confidence : 'inferred'
+}
+
+function sqlDbErrorSeverity(value: SqlValue | undefined): DbError['severity'] {
+  const severity = sqlString(value)
+  return isDbErrorSeverity(severity) ? severity : 'warning'
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 // ============================================================
 // 数据库类
 // ============================================================
@@ -39,7 +132,7 @@ export class OmniDatabase {
   private dbPath: string
   private initPromise: Promise<void>
 
-  constructor(dbPath: string) {
+  constructor(dbPath = ':memory:') {
     this.dbPath = dbPath
     this.initPromise = this.initialize()
   }
@@ -98,10 +191,11 @@ export class OmniDatabase {
   /**
    * 检查数据库是否已初始化
    */
-  private ensureReady(): void {
+  private ensureReady(): SqlJsDatabase {
     if (!this.db) {
       throw new Error('Database not initialized. Call ready() first.')
     }
+    return this.db
   }
 
   // ============================================================
@@ -115,14 +209,14 @@ export class OmniDatabase {
   upsertNode(node: OmniNode): boolean {
     try {
       this.ensureReady()
-      this.db!.run(SQL.insertNode, [
+      this.ensureReady().run(SQL.insertNode, [
         node.id,
         node.type,
         node.name,
         node.filePath,
         node.line,
         node.column,
-        JSON.stringify(node.metadata),
+        JSON.stringify(node.metadata) ?? null,
       ])
       return true
     } catch (err) {
@@ -142,30 +236,30 @@ export class OmniDatabase {
       this.ensureReady()
       let count = 0
 
-      this.db!.run('BEGIN TRANSACTION')
+      this.ensureReady().run('BEGIN TRANSACTION')
       for (const node of nodes) {
         try {
-          this.db!.run(SQL.insertNode, [
+          this.ensureReady().run(SQL.insertNode, [
             node.id,
             node.type,
             node.name,
             node.filePath,
             node.line,
             node.column,
-            JSON.stringify(node.metadata),
+            JSON.stringify(node.metadata) ?? null,
           ])
           count++
         } catch (err) {
           console.error(`Failed to upsert node ${node.id}:`, err)
         }
       }
-      this.db!.run('COMMIT')
+      this.ensureReady().run('COMMIT')
 
       return count
     } catch (err) {
       console.error('Failed to upsert nodes:', err)
       try {
-        this.db!.run('ROLLBACK')
+        this.ensureReady().run('ROLLBACK')
       } catch (rollbackErr) {
         console.error('ROLLBACK failed after upsertNodes error:', rollbackErr)
       }
@@ -179,7 +273,7 @@ export class OmniDatabase {
   getNode(id: string): OmniNode | null {
     try {
       this.ensureReady()
-      const stmt = this.db!.prepare(SQL.selectNode)
+      const stmt = this.ensureReady().prepare(SQL.selectNode)
       stmt.bind([id])
       if (stmt.step()) {
         const row = stmt.getAsObject()
@@ -200,7 +294,7 @@ export class OmniDatabase {
   getAllNodes(): OmniNode[] {
     try {
       this.ensureReady()
-      const results = this.db!.exec(SQL.selectAllNodes)
+      const results = this.ensureReady().exec(SQL.selectAllNodes)
       if (results.length === 0) return []
       return results[0].values.map(row => this.arrayToNode(row))
     } catch (err) {
@@ -215,7 +309,7 @@ export class OmniDatabase {
   getNodesByType(type: NodeType): OmniNode[] {
     try {
       this.ensureReady()
-      const stmt = this.db!.prepare(SQL.selectNodesByType)
+      const stmt = this.ensureReady().prepare(SQL.selectNodesByType)
       stmt.bind([type])
       const nodes: OmniNode[] = []
       while (stmt.step()) {
@@ -236,7 +330,7 @@ export class OmniDatabase {
   getNodesByFile(filePath: string): OmniNode[] {
     try {
       this.ensureReady()
-      const stmt = this.db!.prepare(SQL.selectNodesByFile)
+      const stmt = this.ensureReady().prepare(SQL.selectNodesByFile)
       stmt.bind([filePath])
       const nodes: OmniNode[] = []
       while (stmt.step()) {
@@ -257,7 +351,7 @@ export class OmniDatabase {
   deleteNode(id: string): boolean {
     try {
       this.ensureReady()
-      this.db!.run(SQL.deleteNode, [id])
+      this.ensureReady().run(SQL.deleteNode, [id])
       return true
     } catch (err) {
       console.error(`Failed to delete node ${id}:`, err)
@@ -271,7 +365,7 @@ export class OmniDatabase {
   deleteAllNodes(): boolean {
     try {
       this.ensureReady()
-      this.db!.run(SQL.deleteAllNodes)
+      this.ensureReady().run(SQL.deleteAllNodes)
       return true
     } catch (err) {
       console.error('Failed to delete all nodes:', err)
@@ -290,20 +384,20 @@ export class OmniDatabase {
   upsertEdge(edge: OmniEdge): boolean {
     try {
       this.ensureReady()
-      this.db!.run('PRAGMA foreign_keys = OFF')
-      this.db!.run(SQL.insertEdge, [
+      this.ensureReady().run('PRAGMA foreign_keys = OFF')
+      this.ensureReady().run(SQL.insertEdge, [
         edge.id,
         edge.source,
         edge.target,
         edge.type,
         edge.confidence,
-        JSON.stringify(edge.metadata),
+        JSON.stringify(edge.metadata) ?? null,
       ])
-      this.db!.run('PRAGMA foreign_keys = ON')
+      this.ensureReady().run('PRAGMA foreign_keys = ON')
       return true
     } catch (err) {
       console.error(`Failed to upsert edge ${edge.id}:`, err)
-      try { this.db!.run('PRAGMA foreign_keys = ON') } catch { /* ignore */ }
+      try { this.ensureReady().run('PRAGMA foreign_keys = ON') } catch { /* ignore */ }
       return false
     }
   }
@@ -320,32 +414,32 @@ export class OmniDatabase {
       let count = 0
 
       // 暂时禁用 FK 检查，允许引用尚未存在的节点的边写入
-      this.db!.run('PRAGMA foreign_keys = OFF')
-      this.db!.run('BEGIN TRANSACTION')
+      this.ensureReady().run('PRAGMA foreign_keys = OFF')
+      this.ensureReady().run('BEGIN TRANSACTION')
       for (const edge of edges) {
         try {
-          this.db!.run(SQL.insertEdge, [
+          this.ensureReady().run(SQL.insertEdge, [
             edge.id,
             edge.source,
             edge.target,
             edge.type,
             edge.confidence,
-            JSON.stringify(edge.metadata),
+            JSON.stringify(edge.metadata) ?? null,
           ])
           count++
         } catch (err) {
           console.error(`Failed to upsert edge ${edge.id}:`, err)
         }
       }
-      this.db!.run('COMMIT')
-      this.db!.run('PRAGMA foreign_keys = ON')
+      this.ensureReady().run('COMMIT')
+      this.ensureReady().run('PRAGMA foreign_keys = ON')
 
       return count
     } catch (err) {
       console.error('Failed to upsert edges:', err)
       try {
-        this.db!.run('ROLLBACK')
-        this.db!.run('PRAGMA foreign_keys = ON')
+        this.ensureReady().run('ROLLBACK')
+        this.ensureReady().run('PRAGMA foreign_keys = ON')
       } catch (rollbackErr) {
         console.error('ROLLBACK failed after upsertEdges error:', rollbackErr)
       }
@@ -359,7 +453,7 @@ export class OmniDatabase {
   getEdge(id: string): OmniEdge | null {
     try {
       this.ensureReady()
-      const stmt = this.db!.prepare(SQL.selectEdge)
+      const stmt = this.ensureReady().prepare(SQL.selectEdge)
       stmt.bind([id])
       if (stmt.step()) {
         const row = stmt.getAsObject()
@@ -380,7 +474,7 @@ export class OmniDatabase {
   getAllEdges(): OmniEdge[] {
     try {
       this.ensureReady()
-      const results = this.db!.exec(SQL.selectAllEdges)
+      const results = this.ensureReady().exec(SQL.selectAllEdges)
       if (results.length === 0) return []
       return results[0].values.map(row => this.arrayToEdge(row))
     } catch (err) {
@@ -395,7 +489,7 @@ export class OmniDatabase {
   getEdgesByType(type: EdgeType): OmniEdge[] {
     try {
       this.ensureReady()
-      const stmt = this.db!.prepare(SQL.selectEdgesByType)
+      const stmt = this.ensureReady().prepare(SQL.selectEdgesByType)
       stmt.bind([type])
       const edges: OmniEdge[] = []
       while (stmt.step()) {
@@ -416,7 +510,7 @@ export class OmniDatabase {
   getOutEdges(nodeId: string): OmniEdge[] {
     try {
       this.ensureReady()
-      const stmt = this.db!.prepare(SQL.selectEdgesBySource)
+      const stmt = this.ensureReady().prepare(SQL.selectEdgesBySource)
       stmt.bind([nodeId])
       const edges: OmniEdge[] = []
       while (stmt.step()) {
@@ -437,7 +531,7 @@ export class OmniDatabase {
   getInEdges(nodeId: string): OmniEdge[] {
     try {
       this.ensureReady()
-      const stmt = this.db!.prepare(SQL.selectEdgesByTarget)
+      const stmt = this.ensureReady().prepare(SQL.selectEdgesByTarget)
       stmt.bind([nodeId])
       const edges: OmniEdge[] = []
       while (stmt.step()) {
@@ -458,7 +552,7 @@ export class OmniDatabase {
   deleteEdge(id: string): boolean {
     try {
       this.ensureReady()
-      this.db!.run(SQL.deleteEdge, [id])
+      this.ensureReady().run(SQL.deleteEdge, [id])
       return true
     } catch (err) {
       console.error(`Failed to delete edge ${id}:`, err)
@@ -472,7 +566,7 @@ export class OmniDatabase {
   deleteAllEdges(): boolean {
     try {
       this.ensureReady()
-      this.db!.run(SQL.deleteAllEdges)
+      this.ensureReady().run(SQL.deleteAllEdges)
       return true
     } catch (err) {
       console.error('Failed to delete all edges:', err)
@@ -490,7 +584,7 @@ export class OmniDatabase {
   insertError(error: DbError): boolean {
     try {
       this.ensureReady()
-      this.db!.run(SQL.insertError, [
+      this.ensureReady().run(SQL.insertError, [
         error.file,
         error.message,
         error.severity,
@@ -513,10 +607,10 @@ export class OmniDatabase {
       this.ensureReady()
       let count = 0
 
-      this.db!.run('BEGIN TRANSACTION')
+      this.ensureReady().run('BEGIN TRANSACTION')
       for (const error of errors) {
         try {
-          this.db!.run(SQL.insertError, [
+          this.ensureReady().run(SQL.insertError, [
             error.file,
             error.message,
             error.severity,
@@ -527,13 +621,13 @@ export class OmniDatabase {
           console.error('Failed to insert error:', err)
         }
       }
-      this.db!.run('COMMIT')
+      this.ensureReady().run('COMMIT')
 
       return count
     } catch (err) {
       console.error('Failed to insert errors:', err)
       try {
-        this.db!.run('ROLLBACK')
+        this.ensureReady().run('ROLLBACK')
       } catch (rollbackErr) {
         console.error('ROLLBACK failed after insertErrors error:', rollbackErr)
       }
@@ -547,14 +641,14 @@ export class OmniDatabase {
   getAllErrors(): DbError[] {
     try {
       this.ensureReady()
-      const results = this.db!.exec(SQL.selectAllErrors)
+      const results = this.ensureReady().exec(SQL.selectAllErrors)
       if (results.length === 0) return []
       // 列顺序: id, file, message, severity, original_error, created_at
       return results[0].values.map(row => ({
-        file: row[1] as string,
-        message: row[2] as string,
-        severity: row[3] as 'error' | 'warning' | 'info',
-        originalError: row[4] as string | undefined,
+          file: sqlString(row[1]),
+          message: sqlString(row[2]),
+          severity: sqlDbErrorSeverity(row[3]),
+          originalError: sqlOptionalString(row[4]),
       }))
     } catch (err) {
       console.error('Failed to get all errors:', err)
@@ -568,7 +662,7 @@ export class OmniDatabase {
   deleteAllErrors(): boolean {
     try {
       this.ensureReady()
-      this.db!.run(SQL.deleteAllErrors)
+      this.ensureReady().run(SQL.deleteAllErrors)
       return true
     } catch (err) {
       console.error('Failed to delete all errors:', err)
@@ -586,7 +680,7 @@ export class OmniDatabase {
   setMeta(key: string, value: string): boolean {
     try {
       this.ensureReady()
-      this.db!.run(SQL.setMeta, [key, value])
+      this.ensureReady().run(SQL.setMeta, [key, value])
       return true
     } catch (err) {
       console.error(`Failed to set meta ${key}:`, err)
@@ -600,12 +694,12 @@ export class OmniDatabase {
   getMeta(key: string): string | null {
     try {
       this.ensureReady()
-      const stmt = this.db!.prepare(SQL.getMeta)
+      const stmt = this.ensureReady().prepare(SQL.getMeta)
       stmt.bind([key])
       if (stmt.step()) {
         const row = stmt.getAsObject()
         stmt.free()
-        return row.value as string
+          return sqlString(row.value)
       }
       stmt.free()
       return null
@@ -644,9 +738,9 @@ export class OmniDatabase {
   clearGraph(): boolean {
     try {
       this.ensureReady()
-      this.db!.run('DELETE FROM edges')
-      this.db!.run('DELETE FROM nodes')
-      this.db!.run('DELETE FROM parse_errors')
+      this.ensureReady().run('DELETE FROM edges')
+      this.ensureReady().run('DELETE FROM nodes')
+      this.ensureReady().run('DELETE FROM parse_errors')
       return true
     } catch (err) {
       console.error('Failed to clear graph:', err)
@@ -665,28 +759,28 @@ export class OmniDatabase {
     try {
       this.ensureReady()
 
-      const nodeCountResult = this.db!.exec(SQL.countNodes)
-      const nodeCount = nodeCountResult.length > 0 ? (nodeCountResult[0].values[0][0] as number) : 0
+      const nodeCountResult = this.ensureReady().exec(SQL.countNodes)
+      const nodeCount = nodeCountResult.length > 0 ? sqlNumber(nodeCountResult[0].values[0][0]) : 0
 
-      const edgeCountResult = this.db!.exec(SQL.countEdges)
-      const edgeCount = edgeCountResult.length > 0 ? (edgeCountResult[0].values[0][0] as number) : 0
+      const edgeCountResult = this.ensureReady().exec(SQL.countEdges)
+      const edgeCount = edgeCountResult.length > 0 ? sqlNumber(edgeCountResult[0].values[0][0]) : 0
 
-      const errorCountResult = this.db!.exec(SQL.countErrors)
-      const errorCount = errorCountResult.length > 0 ? (errorCountResult[0].values[0][0] as number) : 0
+      const errorCountResult = this.ensureReady().exec(SQL.countErrors)
+      const errorCount = errorCountResult.length > 0 ? sqlNumber(errorCountResult[0].values[0][0]) : 0
 
       const nodeTypeCounts: Record<string, number> = {}
-      const nodeTypeResult = this.db!.exec(SQL.nodeTypeCounts)
+      const nodeTypeResult = this.ensureReady().exec(SQL.nodeTypeCounts)
       if (nodeTypeResult.length > 0) {
         for (const row of nodeTypeResult[0].values) {
-          nodeTypeCounts[row[0] as string] = row[1] as number
+            nodeTypeCounts[sqlString(row[0])] = sqlNumber(row[1])
         }
       }
 
       const edgeTypeCounts: Record<string, number> = {}
-      const edgeTypeResult = this.db!.exec(SQL.edgeTypeCounts)
+      const edgeTypeResult = this.ensureReady().exec(SQL.edgeTypeCounts)
       if (edgeTypeResult.length > 0) {
         for (const row of edgeTypeResult[0].values) {
-          edgeTypeCounts[row[0] as string] = row[1] as number
+            edgeTypeCounts[sqlString(row[0])] = sqlNumber(row[1])
         }
       }
 
@@ -709,7 +803,7 @@ export class OmniDatabase {
       this.ensureReady()
       if (types.length === 0) return []
       const placeholders = types.map(() => '?').join(',')
-      const stmt = this.db!.prepare(`SELECT * FROM nodes WHERE type IN (${placeholders})`)
+      const stmt = this.ensureReady().prepare(`SELECT * FROM nodes WHERE type IN (${placeholders})`)
       stmt.bind(types)
       const nodes: OmniNode[] = []
       while (stmt.step()) {
@@ -741,7 +835,7 @@ export class OmniDatabase {
       const params = edgeTypes && edgeTypes.length > 0
         ? [nodeId, ...edgeTypes]
         : [nodeId]
-      const stmt = this.db!.prepare(sql)
+      const stmt = this.ensureReady().prepare(sql)
       stmt.bind(params)
       const nodes: OmniNode[] = []
       while (stmt.step()) {
@@ -773,7 +867,7 @@ export class OmniDatabase {
       const params = edgeTypes && edgeTypes.length > 0
         ? [nodeId, ...edgeTypes]
         : [nodeId]
-      const stmt = this.db!.prepare(sql)
+      const stmt = this.ensureReady().prepare(sql)
       stmt.bind(params)
       const nodes: OmniNode[] = []
       while (stmt.step()) {
@@ -794,7 +888,7 @@ export class OmniDatabase {
   findNodeByRoute(route: string): OmniNode | null {
     try {
       this.ensureReady()
-      const stmt = this.db!.prepare(
+      const stmt = this.ensureReady().prepare(
         `SELECT * FROM nodes WHERE json_extract(metadata, '$.route') = ? LIMIT 1`
       )
       stmt.bind([route])
@@ -817,7 +911,7 @@ export class OmniDatabase {
   findNodeByFilePath(filePath: string): OmniNode | null {
     try {
       this.ensureReady()
-      const stmt = this.db!.prepare(`SELECT * FROM nodes WHERE file_path = ? LIMIT 1`)
+      const stmt = this.ensureReady().prepare(`SELECT * FROM nodes WHERE file_path = ? LIMIT 1`)
       stmt.bind([filePath])
       if (stmt.step()) {
         const row = stmt.getAsObject()
@@ -841,7 +935,7 @@ export class OmniDatabase {
       ?? (() => {
         try {
           this.ensureReady()
-          const stmt = this.db!.prepare(`SELECT * FROM nodes WHERE name = ? LIMIT 1`)
+          const stmt = this.ensureReady().prepare(`SELECT * FROM nodes WHERE name = ? LIMIT 1`)
           stmt.bind([query])
           if (stmt.step()) {
             const row = stmt.getAsObject()
@@ -869,7 +963,10 @@ export class OmniDatabase {
     const callEdgeTypes: EdgeType[] = ['calls_api', 'handles', 'calls_service', 'queries_db']
 
     while (queue.length > 0) {
-      const { id, depth } = queue.shift()!
+      const current = queue.shift()
+      if (!current) break
+
+      const { id, depth } = current
       if (visited.has(id) || depth > maxDepth) continue
       visited.add(id)
 
@@ -912,9 +1009,14 @@ export class OmniDatabase {
   /**
    * 安全解析 JSON 字符串，失败返回空对象
    */
-  private safeJsonParse(jsonStr: string, context: string): Record<string, unknown> {
+  private safeJsonParse(jsonStr: SqlValue | undefined, context: string): Record<string, unknown> {
+    if (typeof jsonStr !== 'string') {
+      return {}
+    }
+
     try {
-      return JSON.parse(jsonStr) as Record<string, unknown>
+      const parsed = JSON.parse(jsonStr)
+      return isRecord(parsed) ? parsed : {}
     } catch (err) {
       console.warn(`Failed to parse JSON for ${context}, using empty object:`, err)
       return {}
@@ -924,58 +1026,58 @@ export class OmniDatabase {
   /**
    * 将数据库行对象转换为 OmniNode
    */
-  private rowToNode(row: Record<string, unknown>): OmniNode {
+  private rowToNode(row: Record<string, SqlValue>): OmniNode {
     return {
-      id: row.id as string,
-      type: row.type as NodeType,
-      name: row.name as string,
-      filePath: row.file_path as string,
-      line: row.line as number,
-      column: row.column as number,
-      metadata: this.safeJsonParse(row.metadata as string, `node ${row.id}`),
+      id: sqlString(row.id),
+      type: sqlNodeType(row.type),
+      name: sqlString(row.name),
+      filePath: sqlString(row.file_path),
+      line: sqlNumber(row.line),
+      column: sqlNumber(row.column),
+      metadata: this.safeJsonParse(row.metadata, `node ${row.id}`),
     }
   }
 
   /**
    * 将数组形式的行转换为 OmniNode
    */
-  private arrayToNode(row: unknown[]): OmniNode {
+  private arrayToNode(row: SqlValue[]): OmniNode {
     return {
-      id: row[0] as string,
-      type: row[1] as NodeType,
-      name: row[2] as string,
-      filePath: row[3] as string,
-      line: row[4] as number,
-      column: row[5] as number,
-      metadata: this.safeJsonParse(row[6] as string, `node ${row[0]}`),
+      id: sqlString(row[0]),
+      type: sqlNodeType(row[1]),
+      name: sqlString(row[2]),
+      filePath: sqlString(row[3]),
+      line: sqlNumber(row[4]),
+      column: sqlNumber(row[5]),
+      metadata: this.safeJsonParse(row[6], `node ${row[0]}`),
     }
   }
 
   /**
    * 将数据库行对象转换为 OmniEdge
    */
-  private rowToEdge(row: Record<string, unknown>): OmniEdge {
+  private rowToEdge(row: Record<string, SqlValue>): OmniEdge {
     return {
-      id: row.id as string,
-      source: row.source as string,
-      target: row.target as string,
-      type: row.type as EdgeType,
-      confidence: row.confidence as 'certain' | 'inferred',
-      metadata: this.safeJsonParse(row.metadata as string, `edge ${row.id}`),
+      id: sqlString(row.id),
+      source: sqlString(row.source),
+      target: sqlString(row.target),
+      type: sqlEdgeType(row.type),
+      confidence: sqlEdgeConfidence(row.confidence),
+      metadata: this.safeJsonParse(row.metadata, `edge ${row.id}`),
     }
   }
 
   /**
    * 将数组形式的行转换为 OmniEdge
    */
-  private arrayToEdge(row: unknown[]): OmniEdge {
+  private arrayToEdge(row: SqlValue[]): OmniEdge {
     return {
-      id: row[0] as string,
-      source: row[1] as string,
-      target: row[2] as string,
-      type: row[3] as EdgeType,
-      confidence: row[4] as 'certain' | 'inferred',
-      metadata: this.safeJsonParse(row[5] as string, `edge ${row[0]}`),
+      id: sqlString(row[0]),
+      source: sqlString(row[1]),
+      target: sqlString(row[2]),
+      type: sqlEdgeType(row[3]),
+      confidence: sqlEdgeConfidence(row[4]),
+      metadata: this.safeJsonParse(row[5], `edge ${row[0]}`),
     }
   }
 }

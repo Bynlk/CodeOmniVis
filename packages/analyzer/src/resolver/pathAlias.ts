@@ -67,7 +67,10 @@ export class PathAliasResolver {
       // 转换 paths 格式
       const aliases: Record<string, string[]> = {}
       for (const [key, values] of Object.entries(paths)) {
-        aliases[key] = (values as string[]).map(v =>
+          const pathValues = Array.isArray(values)
+            ? values.filter((value): value is string => typeof value === 'string')
+            : []
+          aliases[key] = pathValues.map(v =>
           path.resolve(this.projectRoot, baseUrl, v)
         )
       }
@@ -92,6 +95,8 @@ export class PathAliasResolver {
     if (!this.config) {
       this.loadConfig()
     }
+      const config = this.config
+      if (!config) return null
 
     // 如果不是别名路径，直接返回 null
     if (!this.isAliasPath(importPath)) {
@@ -99,7 +104,7 @@ export class PathAliasResolver {
     }
 
     // 尝试匹配别名
-    for (const [alias, targets] of Object.entries(this.config!.aliases)) {
+      for (const [alias, targets] of Object.entries(config.aliases)) {
       const aliasPattern = alias.replace('*', '(.*)')
       const match = importPath.match(new RegExp(`^${aliasPattern}$`))
 
@@ -208,8 +213,10 @@ export class PathAliasResolver {
     if (!this.config) {
       this.loadConfig()
     }
+      const config = this.config
+      if (!config) return []
 
-    return Object.keys(this.config!.aliases).map(alias =>
+      return Object.keys(config.aliases).map(alias =>
       alias.replace('/*', '')
     )
   }

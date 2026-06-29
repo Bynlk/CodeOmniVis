@@ -15,6 +15,24 @@ import { walkKotlinTree } from './kotlinWalker'
 
 const KTOR_HTTP_METHODS = new Set(['get', 'post', 'put', 'delete', 'patch', 'head', 'options'])
 
+type KotlinHttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS'
+
+function toKotlinHttpMethod(value: string): KotlinHttpMethod | null {
+  const method = value.toUpperCase()
+  if (
+    method === 'GET'
+    || method === 'POST'
+    || method === 'PUT'
+    || method === 'DELETE'
+    || method === 'PATCH'
+    || method === 'HEAD'
+    || method === 'OPTIONS'
+  ) {
+    return method
+  }
+  return null
+}
+
 export class KtorParser implements Parser {
   readonly name = 'ktor'
 
@@ -75,7 +93,8 @@ export class KtorParser implements Parser {
       const routingPattern = /\b(get|post|put|delete|patch|head|options)\s*\(\s*"([^"]*)"/g
       let match: RegExpExecArray | null
       while ((match = routingPattern.exec(source)) !== null) {
-        const method = match[1].toUpperCase() as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+          const method = toKotlinHttpMethod(match[1])
+          if (!method) continue
         const routePath = match[2]
 
         // 计算行号

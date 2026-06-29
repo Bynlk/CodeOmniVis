@@ -7,7 +7,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, CallExpression, Node, StringLiteral, SourceFile } from 'ts-morph'
+import { Project, CallExpression, Node, StringLiteral, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -76,8 +76,9 @@ export class ApiCallsParser implements Parser {
     try {
       // 初始化 ts-morph Project
       if (!this.project) {
+          const configFilePath = context.tsConfig?.options?.configFilePath
         this.project = new Project({
-          tsConfigFilePath: context.tsConfig?.options?.configFilePath as string,
+            tsConfigFilePath: typeof configFilePath === 'string' ? configFilePath : undefined,
           skipAddingFilesFromTsConfig: true,
         })
       }
@@ -125,9 +126,9 @@ export class ApiCallsParser implements Parser {
     const calls: DetectedCall[] = []
 
     sourceFile.forEachDescendant((node: Node) => {
-      if (node.getKind() !== SyntaxKind.CallExpression) return
+        if (!Node.isCallExpression(node)) return
 
-      const callExpr = node as CallExpression
+        const callExpr = node
       const expression = callExpr.getExpression()
 
       // 检测 fetch() 调用
@@ -474,6 +475,7 @@ export class ApiCallsParser implements Parser {
     const metadata: CallsApiMetadata = {
       method: call.method,
       callType: call.type,
+        url: call.url,
       callLine: call.line,
     }
 

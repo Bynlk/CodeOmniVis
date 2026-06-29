@@ -7,8 +7,17 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import type { OmniGraph, OmniNode, OmniEdge, EdgeType } from '@codeomnivis/shared'
+import type { OmniEdge, OmniGraph, OmniNode } from '@codeomnivis/shared'
 import { createEdgeId } from '@codeomnivis/shared'
+
+function getOrCreateEdges(map: Map<string, OmniEdge[]>, key: string): OmniEdge[] {
+  const existing = map.get(key)
+  if (existing) return existing
+
+  const created: OmniEdge[] = []
+  map.set(key, created)
+  return created
+}
 
 // ============================================================
 // 类型定义
@@ -56,11 +65,8 @@ export class DataFlowTracer {
     this.incomingEdges = new Map()
     this.outgoingEdges = new Map()
     for (const edge of graph.edges) {
-      if (!this.incomingEdges.has(edge.target)) this.incomingEdges.set(edge.target, [])
-      this.incomingEdges.get(edge.target)!.push(edge)
-
-      if (!this.outgoingEdges.has(edge.source)) this.outgoingEdges.set(edge.source, [])
-      this.outgoingEdges.get(edge.source)!.push(edge)
+      getOrCreateEdges(this.incomingEdges, edge.target).push(edge)
+      getOrCreateEdges(this.outgoingEdges, edge.source).push(edge)
     }
   }
 
@@ -167,17 +173,18 @@ export class DataFlowTracer {
   pathToEdges(path: DataFlowPath): OmniEdge[] {
     return path.edges.map(e => {
       const edgeId = createEdgeId(e.from, 'data_flows_to', `${e.to}:${e.typeName}`)
-      return {
+      const edge: OmniEdge = {
         id: edgeId,
         source: e.from,
         target: e.to,
-        type: 'data_flows_to' as EdgeType,
-        confidence: 'inferred' as const,
+        type: 'data_flows_to',
+        confidence: 'inferred',
         metadata: {
           typeName: e.typeName,
           transferMethod: e.transferMethod,
         },
       }
+      return edge
     })
   }
 

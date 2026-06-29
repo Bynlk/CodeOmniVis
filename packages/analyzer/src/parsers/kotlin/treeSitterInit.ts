@@ -5,20 +5,42 @@
  * 懒加载单例，只需初始化一次。
  */
 
+import ParserDefault from 'web-tree-sitter'
 import * as webTreeSitter from 'web-tree-sitter'
 import * as path from 'path'
 
-// 兼容 CJS/ESM：default import 可能是构造函数本身，也可能是 { default: Constructor } 包装
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const Parser: any = (webTreeSitter as any).default ?? webTreeSitter
+type ParserConstructor = typeof ParserDefault
+type KotlinParser = InstanceType<ParserConstructor>
+type KotlinTree = ReturnType<KotlinParser['parse']>
 
-let parserInstance: any = null
-let initPromise: Promise<any> | null = null
+function isParserConstructor(value: unknown): value is ParserConstructor {
+  return typeof value === 'function'
+    && 'init' in value
+    && typeof value.init === 'function'
+}
+
+function resolveParser(primary: unknown, namespace: unknown): ParserConstructor {
+  if (isParserConstructor(primary)) return primary
+
+  if (typeof namespace === 'object' && namespace !== null && 'default' in namespace) {
+    const defaultExport = namespace.default
+    if (isParserConstructor(defaultExport)) return defaultExport
+  }
+
+  if (isParserConstructor(namespace)) return namespace
+
+  throw new Error('Unable to load web-tree-sitter parser constructor')
+}
+
+const Parser = resolveParser(ParserDefault, webTreeSitter)
+
+let parserInstance: KotlinParser | null = null
+let initPromise: Promise<KotlinParser> | null = null
 
 /**
  * 获取已初始化的 tree-sitter Kotlin 解析器（单例）
  */
-export async function getKotlinParser(): Promise<any> {
+export async function getKotlinParser(): Promise<KotlinParser> {
   if (parserInstance) return parserInstance
   if (initPromise) return initPromise
 
@@ -40,7 +62,7 @@ export async function getKotlinParser(): Promise<any> {
 /**
  * 解析 Kotlin 源码，返回语法树
  */
-export async function parseKotlinSource(source: string): Promise<any> {
+export async function parseKotlinSource(source: string): Promise<KotlinTree> {
   const parser = await getKotlinParser()
   return parser.parse(source)
 }

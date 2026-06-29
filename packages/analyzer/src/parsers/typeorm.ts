@@ -87,8 +87,9 @@ export class TypeormParser implements Parser {
     try {
       // 初始化 ts-morph Project
       if (!this.project) {
+          const configFilePath = context.tsConfig?.options?.configFilePath
         this.project = new Project({
-          tsConfigFilePath: context.tsConfig?.options?.configFilePath as string,
+            tsConfigFilePath: typeof configFilePath === 'string' ? configFilePath : undefined,
           skipAddingFilesFromTsConfig: true,
         })
       }

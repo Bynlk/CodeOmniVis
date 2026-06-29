@@ -8,7 +8,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, CallExpression, Node, SourceFile } from 'ts-morph'
+import { Project, CallExpression, Node, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -26,7 +26,7 @@ import { createNodeId } from '@codeomnivis/shared'
 // Express 路由解析器
 // ============================================================
 
-const HTTP_METHODS = ['get', 'post', 'put', 'delete', 'patch'] as const
+const HTTP_METHODS = new Set<string>(['get', 'post', 'put', 'delete', 'patch'])
 
 export class ExpressParser implements Parser {
   readonly name = 'express'
@@ -77,8 +77,9 @@ export class ExpressParser implements Parser {
     try {
       // 初始化 ts-morph Project
       if (!this.project) {
+          const configFilePath = context.tsConfig?.options?.configFilePath
         this.project = new Project({
-          tsConfigFilePath: context.tsConfig?.options?.configFilePath as string,
+            tsConfigFilePath: typeof configFilePath === 'string' ? configFilePath : undefined,
           skipAddingFilesFromTsConfig: true,
         })
       }
@@ -114,9 +115,9 @@ export class ExpressParser implements Parser {
     const routerPrefixes = this.detectAllRouterPrefixes(sourceFile)
 
     sourceFile.forEachDescendant((node: Node) => {
-      if (node.getKind() !== SyntaxKind.CallExpression) return
+      if (!Node.isCallExpression(node)) return
 
-      const callExpr = node as CallExpression
+      const callExpr = node
       const expression = callExpr.getExpression()
 
       // 检查是否是 app.get/post/... 或 router.get/post/...
@@ -167,9 +168,9 @@ export class ExpressParser implements Parser {
     const prefixes = new Map<string, string>()
 
     sourceFile.forEachDescendant((node: Node) => {
-      if (node.getKind() !== SyntaxKind.CallExpression) return
+      if (!Node.isCallExpression(node)) return
 
-      const callExpr = node as CallExpression
+      const callExpr = node
       const expression = callExpr.getExpression()
 
       // 检查 Router() 或 express.Router()
@@ -209,9 +210,9 @@ export class ExpressParser implements Parser {
     let prefix = ''
 
     sourceFile.forEachDescendant((node: Node) => {
-      if (node.getKind() !== SyntaxKind.CallExpression) return
+      if (!Node.isCallExpression(node)) return
 
-      const callExpr = node as CallExpression
+      const callExpr = node
       const expression = callExpr.getExpression()
 
       // 检查 router.use('/prefix', ...)
@@ -238,7 +239,7 @@ export class ExpressParser implements Parser {
     // app.get / router.get
     if (Node.isPropertyAccessExpression(expression)) {
       const methodName = expression.getName()
-      if ((HTTP_METHODS as readonly string[]).includes(methodName)) {
+        if (HTTP_METHODS.has(methodName)) {
         return methodName
       }
     }

@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
 import { TsRpcParser } from '../../src/parsers/tsrpc'
 import { ApiCallsParser } from '../../src/parsers/apiCalls'
-import type { ProjectMeta, ParseContext } from '@codeomnivis/shared'
+import { isEdgeOfType, isNodeOfType } from '@codeomnivis/shared'
+import type { NodeType, OmniEdge, OmniNode, ParseContext, ProjectMeta, TypedOmniNode } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures/tsrpc')
 
@@ -37,6 +38,20 @@ function makeContext(overrides?: Partial<ProjectMeta>): ParseContext {
   }
 }
 
+function expectNodeOfType<T extends NodeType>(
+  node: OmniNode | undefined,
+  type: T
+): asserts node is TypedOmniNode<T> {
+  expect(node).toBeDefined()
+  if (!node || !isNodeOfType(node, type)) {
+    throw new Error(`Expected node type ${type}`)
+  }
+}
+
+function isTsrpcCallApiEdge(edge: OmniEdge): boolean {
+  return isEdgeOfType(edge, 'calls_api') && edge.metadata.callType === 'tsrpc_call_api'
+}
+
 describe('TSRPC Parser', () => {
   let parser: TsRpcParser
 
@@ -53,10 +68,10 @@ describe('TSRPC Parser', () => {
     expect(apiNodes.length).toBeGreaterThanOrEqual(1)
 
     const apiNode = apiNodes.find(n => n.name === 'ApiGetTodos')
-    expect(apiNode).toBeDefined()
-    expect(apiNode!.filePath).toContain('ApiGetTodos.ts')
-    expect((apiNode!.metadata as any).reqTypeName).toBe('ReqGetTodos')
-    expect((apiNode!.metadata as any).resTypeName).toBe('ResGetTodos')
+      expectNodeOfType(apiNode, 'tsrpc_api')
+      expect(apiNode.filePath).toContain('ApiGetTodos.ts')
+      expect(apiNode.metadata.reqTypeName).toBe('ReqGetTodos')
+      expect(apiNode.metadata.resTypeName).toBe('ResGetTodos')
   })
 
   it('从 Ptl*.ts 生成 Req/Res 协议节点对', async () => {
@@ -69,12 +84,12 @@ describe('TSRPC Parser', () => {
     expect(names).toContain('ResGetTodos')
 
     const reqNode = result.nodes.find(n => n.name === 'ReqGetTodos')
-    expect(reqNode!.type).toBe('tsrpc_api')
-    expect((reqNode!.metadata as any).reqTypeName).toBe('ReqGetTodos')
+      expectNodeOfType(reqNode, 'tsrpc_api')
+      expect(reqNode.metadata.reqTypeName).toBe('ReqGetTodos')
 
     const resNode = result.nodes.find(n => n.name === 'ResGetTodos')
-    expect(resNode!.type).toBe('tsrpc_api')
-    expect((resNode!.metadata as any).resTypeName).toBe('ResGetTodos')
+      expectNodeOfType(resNode, 'tsrpc_api')
+      expect(resNode.metadata.resTypeName).toBe('ResGetTodos')
   })
 
   it('从 Msg*.ts 生成 tsrpc_msg 节点，transport=ws', async () => {
@@ -86,9 +101,10 @@ describe('TSRPC Parser', () => {
     expect(msgNodes).toHaveLength(1)
 
     const msgNode = msgNodes[0]
+      expectNodeOfType(msgNode, 'tsrpc_msg')
     expect(msgNode.name).toBe('MsgTodoUpdate')
-    expect((msgNode.metadata as any).transport).toBe('ws')
-    expect((msgNode.metadata as any).msgName).toBe('TodoUpdate')
+      expect(msgNode.metadata.transport).toBe('ws')
+      expect(msgNode.metadata.msgName).toBe('TodoUpdate')
   })
 
   it('识别 client.callApi() 生成 calls_api 边', async () => {
@@ -97,9 +113,7 @@ describe('TSRPC Parser', () => {
     const result = await apiCallsParser.parse(filePath, makeContext())
 
     expect(result.errors).toHaveLength(0)
-    const callApiEdges = result.edges.filter(e =>
-      e.metadata && (e.metadata as any).callType === 'tsrpc_call_api'
-    )
+      const callApiEdges = result.edges.filter(isTsrpcCallApiEdge)
     expect(callApiEdges.length).toBeGreaterThanOrEqual(1)
     expect(callApiEdges[0].type).toBe('calls_api')
   })
@@ -131,9 +145,7 @@ describe('TSRPC Parser', () => {
     const filePath = 'frontend/calls.ts'
     const result = await apiCallsParser.parse(filePath, makeContext())
 
-    const callApiEdges = result.edges.filter(e =>
-      e.metadata && (e.metadata as any).callType === 'tsrpc_call_api'
-    )
+      const callApiEdges = result.edges.filter(isTsrpcCallApiEdge)
     expect(callApiEdges.length).toBeGreaterThanOrEqual(1)
     // target 应包含 todo/GetTodos 路径
     expect(callApiEdges[0].target).toContain('todo/GetTodos')

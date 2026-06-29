@@ -8,7 +8,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, CallExpression, Node, VariableDeclaration, SourceFile, ObjectLiteralExpression } from 'ts-morph'
+import { Project, Node, VariableDeclaration, SourceFile, ObjectLiteralExpression } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -27,7 +27,7 @@ import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 // 常量
 // ============================================================
 
-const TABLE_FUNCTIONS = ['pgTable', 'mysqlTable', 'sqliteTable'] as const
+const TABLE_FUNCTIONS = new Set<string>(['pgTable', 'mysqlTable', 'sqliteTable'])
 
 const DIALECT_MAP: Record<string, string> = {
   pgTable: 'pg',
@@ -79,8 +79,9 @@ export class DrizzleParser implements Parser {
 
     try {
       if (!this.project) {
+          const configFilePath = context.tsConfig?.options?.configFilePath
         this.project = new Project({
-          tsConfigFilePath: context.tsConfig?.options?.configFilePath as string,
+            tsConfigFilePath: typeof configFilePath === 'string' ? configFilePath : undefined,
           skipAddingFilesFromTsConfig: true,
         })
       }
@@ -117,9 +118,9 @@ export class DrizzleParser implements Parser {
     const tableMap = new Map<string, string>() // constName → nodeId
 
     sourceFile.forEachDescendant((node: Node) => {
-      if (node.getKind() !== SyntaxKind.CallExpression) return
+      if (!Node.isCallExpression(node)) return
 
-      const callExpr = node as CallExpression
+      const callExpr = node
       const expression = callExpr.getExpression()
 
       // 检查是否是 pgTable/mysqlTable/sqliteTable 调用
@@ -232,9 +233,9 @@ export class DrizzleParser implements Parser {
     const edges: OmniEdge[] = []
 
     sourceFile.forEachDescendant((node: Node) => {
-      if (node.getKind() !== SyntaxKind.CallExpression) return
+      if (!Node.isCallExpression(node)) return
 
-      const callExpr = node as CallExpression
+      const callExpr = node
       const expression = callExpr.getExpression()
 
       // 检查是否是 relations() 调用
@@ -312,12 +313,12 @@ export class DrizzleParser implements Parser {
   private getTableFunctionName(expression: Node): string | null {
     if (Node.isIdentifier(expression)) {
       const name = expression.getText()
-      if ((TABLE_FUNCTIONS as readonly string[]).includes(name)) return name
+      if (TABLE_FUNCTIONS.has(name)) return name
     }
 
     if (Node.isPropertyAccessExpression(expression)) {
       const methodName = expression.getName()
-      if ((TABLE_FUNCTIONS as readonly string[]).includes(methodName)) return methodName
+      if (TABLE_FUNCTIONS.has(methodName)) return methodName
     }
 
     return null

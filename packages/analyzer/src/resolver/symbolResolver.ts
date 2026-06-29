@@ -82,8 +82,9 @@ export class SymbolResolver {
   ): Promise<TraceResult> {
     // 缓存
     const cacheKey = handlerNode.id
-    if (this.traceCache.has(cacheKey)) {
-      return this.traceCache.get(cacheKey)!
+    const cached = this.traceCache.get(cacheKey)
+    if (cached) {
+      return cached
     }
 
     // 超时保护
@@ -173,14 +174,17 @@ export class SymbolResolver {
       // 尝试通过 TypeScript 类型系统找到定义
       const definitions = expr.getType()
         ?.getCallSignatures()
-        .flatMap(sig => sig.getDeclaration() ? [sig.getDeclaration()!] : [])
+          .flatMap(sig => {
+            const declaration = sig.getDeclaration()
+            return declaration ? [declaration] : []
+          })
 
       if (definitions && definitions.length > 0) {
         const def = definitions[0]
         if (this.isFunctionLike(def)) {
           const srcFile = def.getSourceFile().getFilePath()
           if (!srcFile.includes('node_modules')) {
-            return def as FunctionLike
+              return def
           }
         }
       }
@@ -196,7 +200,7 @@ export class SymbolResolver {
         if (this.isFunctionLike(decl)) {
           const srcFile = decl.getSourceFile().getFilePath()
           if (!srcFile.includes('node_modules')) {
-            return decl as FunctionLike
+              return decl
           }
         }
       }
@@ -333,7 +337,7 @@ export class SymbolResolver {
     return null
   }
 
-  private isFunctionLike(node: Node): boolean {
+  private isFunctionLike(node: Node): node is FunctionLike {
     return (
       Node.isFunctionDeclaration(node) ||
       Node.isArrowFunction(node) ||
