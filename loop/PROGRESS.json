@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T03:02:42.289633+08:00",
+  "updatedAt": "2026-06-30T03:18:00+08:00",
   "currentStage": "Stage A",
-  "currentTask": "A6",
+  "currentTask": "A7",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -118,10 +118,20 @@
       "id": "A6",
       "stage": "Stage A",
       "name": "storage typed",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "9ca053a",
+      "gates": {
+        "analyzerTypecheck": "pass",
+        "analyzerTests": "pass (172/172)",
+        "mcpTypecheck": "pass",
+        "mcpTests": "pass (6/6)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=32(boundary)",
+        "gitDiffCheck": "pass"
+      },
+      "metrics": {
+        "storageTyped": "parseStoredNode/parseStoredEdge switch-based revivers via createTypedNode/createTypedEdge, no cast/no wide fallback",
+        "getSubtree": "typed GraphSubtree | null (null when root absent); MCP get_component_tree distinguishes missing-node vs no-children"
+      }
     },
     {
       "id": "A7",

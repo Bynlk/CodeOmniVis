@@ -103,3 +103,13 @@
 - GREEN principle honored: types adjusted to reality, runtime behavior unchanged.
 - Gates: git diff --check ✓; shared tsc --noEmit ✓; analyzer vitest 150/150 ✓; AST any=0 assertions=0 doubleCasts=0.
 - Staged-RED: analyzer pkg typecheck still has 2 db.ts errors → A6 scope.
+
+## Task A6 — deserialize typed graph metadata (storage boundary)  ✅
+- Commit: `9ca053a` (pushed)
+- storage/metadataGuards.ts (new): `parseStoredNode`/`parseStoredEdge` switch-based revivers; each branch narrows `type` to a literal so `createTypedNode`/`createTypedEdge` infer the matching metadata shape. NO cast, NO wide `Record<string,unknown>` fallback, NO string-key metadata reads. Field readers (str/optStr/strOrNull/num/optNum/bool/optBool/strArr/literal) supply the "降级而非崩溃" conservative defaults.
+- `literal<T>` refactored to a rest-parameter signature `(o, key, fallback, ...rest)` so call sites no longer pass `[...] as const` arrays; `isNodeType` uses a `Set<string>` — together this eliminated all 15 AST-counted `as` expressions (the scanner counts `as const`).
+- storage/db.ts: `safeJsonParse` returns `JsonObject` (unknown boundary via `jsonObjectOrEmpty`); `rowToNode/arrayToNode/rowToEdge/arrayToEdge` delegate to the typed revivers. `getSubtree` now returns typed `GraphSubtree | null` (null when root absent) instead of `Record<string,unknown>`.
+- mcp/src/index.ts: `get_component_tree` distinguishes `tree === null` (no such node) from `tree.children.length === 0` (no children).
+- GREEN principle honored: runtime behavior preserved; types converged at the DB boundary.
+- Gates: git diff --check ✓; analyzer tsc --noEmit ✓; analyzer vitest 172/172 ✓; mcp tsc --noEmit ✓; mcp vitest 6/6 ✓; AST any=0 assertions=0 doubleCasts=0 unknown=32(boundary).
+- Note: shared rebuilt (tsup --dts) before mcp typecheck so `GraphSubtree` resolves from dist.
