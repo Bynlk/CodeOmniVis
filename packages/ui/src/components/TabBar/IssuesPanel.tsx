@@ -7,11 +7,22 @@ interface ParseError {
   severity: 'error' | 'warning' | 'info'
 }
 
+function isParseError(value: unknown): value is ParseError {
+  return typeof value === 'object'
+    && value !== null
+    && 'file' in value
+    && typeof value.file === 'string'
+    && 'message' in value
+    && typeof value.message === 'string'
+    && 'severity' in value
+    && (value.severity === 'error' || value.severity === 'warning' || value.severity === 'info')
+}
+
 async function fetchErrors(): Promise<ParseError[]> {
   const res = await fetch('/api/graph/errors')
   if (!res.ok) throw new Error(`Failed to fetch errors: ${res.statusText}`)
   const json = await res.json()
-  return (json.data ?? []) as ParseError[]
+    return Array.isArray(json.data) ? json.data.filter(isParseError) : []
 }
 
 const SEVERITY_EMOJI: Record<string, string> = {

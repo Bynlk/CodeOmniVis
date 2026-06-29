@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
+import { isNodeType } from '@codeomnivis/shared'
 import type { NodeType } from '@codeomnivis/shared'
 
 interface StatsResponse {
@@ -11,11 +12,35 @@ interface StatsResponse {
   edgeTypeCounts: Record<string, number>
 }
 
+function isNumberRecord(value: unknown): value is Record<string, number> {
+  return typeof value === 'object'
+    && value !== null
+    && Object.values(value).every(item => typeof item === 'number')
+}
+
+function isStatsResponse(value: unknown): value is StatsResponse {
+  return typeof value === 'object'
+    && value !== null
+    && 'nodeCount' in value
+    && typeof value.nodeCount === 'number'
+    && 'edgeCount' in value
+    && typeof value.edgeCount === 'number'
+    && 'errorCount' in value
+    && typeof value.errorCount === 'number'
+    && 'nodeTypeCounts' in value
+    && isNumberRecord(value.nodeTypeCounts)
+    && 'edgeTypeCounts' in value
+    && isNumberRecord(value.edgeTypeCounts)
+}
+
 async function fetchStats(): Promise<StatsResponse> {
   const res = await fetch('/api/graph/stats')
   if (!res.ok) throw new Error(`Failed to fetch stats: ${res.statusText}`)
   const json = await res.json()
-  return json.data as StatsResponse
+    if (!isStatsResponse(json.data)) {
+      throw new Error('Invalid stats response')
+    }
+    return json.data
 }
 
 export function StatsPanel() {
@@ -34,7 +59,8 @@ export function StatsPanel() {
     return <div className="p-4 text-red-400 text-sm">{t('stats.failedToLoad')}</div>
   }
 
-  const nodeTypes = Object.entries(stats?.nodeTypeCounts ?? {}) as [NodeType, number][]
+  const nodeTypes: Array<[NodeType, number]> = Object.entries(stats.nodeTypeCounts)
+    .filter((entry): entry is [NodeType, number] => isNodeType(entry[0]))
   const totalNodes = stats?.nodeCount ?? 0
   // module 是聚合节点，不是孤立节点；暂时显示 0，后续需要从 API 获取真实孤立节点数
   const isolatedCount = 0

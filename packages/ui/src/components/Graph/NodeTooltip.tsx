@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
 import { useCytoscapeRef } from '../../lib/cytoscapeContext'
+import { isNodeType } from '@codeomnivis/shared'
 import type { NodeType } from '@codeomnivis/shared'
 import type cytoscape from 'cytoscape'
 
@@ -18,6 +19,21 @@ interface TooltipData {
 
 const HOVER_DELAY_MS = 600
 
+function getStringData(node: cytoscape.NodeSingular, key: string, fallback: string): string {
+  const value = node.data(key)
+  return typeof value === 'string' ? value : fallback
+}
+
+function getNumberData(node: cytoscape.NodeSingular, key: string, fallback: number): number {
+  const value = node.data(key)
+  return typeof value === 'number' ? value : fallback
+}
+
+function getNodeType(node: cytoscape.NodeSingular): NodeType {
+  const value = node.data('type')
+  return typeof value === 'string' && isNodeType(value) ? value : 'module'
+}
+
 export function NodeTooltip() {
   const { t } = useTranslation()
   const cyRef = useCytoscapeRef()
@@ -28,8 +44,11 @@ export function NodeTooltip() {
     const cy = cyRef?.current
     if (!cy) return
 
-    const onMouseOver = (evt: cytoscape.EventObject) => {
-      const node = evt.target as cytoscape.NodeSingular
+      const onMouseOver = (evt: cytoscape.EventObject) => {
+        const target = evt.target
+        if (!target.isNode()) return
+
+        const node = target
       const renderedPos = node.renderedPosition()
       const container = cy.container()
       const rect = container?.getBoundingClientRect()
@@ -41,10 +60,10 @@ export function NodeTooltip() {
           x: rect.left + renderedPos.x,
           y: rect.top + renderedPos.y - 20,
           nodeId: node.id(),
-          type: node.data('type') as NodeType,
-          name: (node.data('label') as string) ?? node.id(),
-          filePath: (node.data('filePath') as string) ?? '',
-          line: (node.data('line') as number) ?? 0,
+            type: getNodeType(node),
+            name: getStringData(node, 'label', node.id()),
+            filePath: getStringData(node, 'filePath', ''),
+            line: getNumberData(node, 'line', 0),
           edgeCount: {
             in: node.indegree(false),
             out: node.outdegree(false),

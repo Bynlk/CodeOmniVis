@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI } from '../lib/nodeConfig'
-import type { OmniGraph, NodeType } from '@codeomnivis/shared'
+import type { OmniGraph } from '@codeomnivis/shared'
 
 interface CommandPaletteProps {
   graph?: OmniGraph
@@ -73,8 +73,10 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
   // 滚动到选中项
   useEffect(() => {
     if (listRef.current) {
-      const selected = listRef.current.children[selectedIndex] as HTMLElement
-      selected?.scrollIntoView({ block: 'nearest' })
+      const selected = listRef.current.children.item(selectedIndex)
+      if (selected instanceof HTMLElement) {
+        selected.scrollIntoView({ block: 'nearest' })
+      }
     }
   }, [selectedIndex])
 
@@ -127,7 +129,7 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
               }}
               onMouseEnter={() => setSelectedIndex(idx)}
             >
-              <span className="w-6 text-center">{NODE_EMOJI[node.type as NodeType] ?? '●'}</span>
+              <span className="w-6 text-center">{NODE_EMOJI[node.type] ?? '●'}</span>
               <div className="flex-1 min-w-0">
                 <div className="truncate">{node.name}</div>
                 <div className="text-xs text-slate-500 truncate">{node.filePath}</div>

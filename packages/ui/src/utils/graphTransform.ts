@@ -4,7 +4,7 @@
  * 将 OmniGraph 转换为 Cytoscape.js 的元素格式。
  */
 
-import type { OmniGraph, OmniNode, OmniEdge } from '@codeomnivis/shared'
+import type { EdgeMetadata, NodeMetadata, OmniEdge, OmniGraph, OmniNode } from '@codeomnivis/shared'
 import { NODE_COLORS } from '@codeomnivis/shared'
 
 // ============================================================
@@ -19,7 +19,7 @@ interface CytoscapeNode {
     type: string
     filePath: string
     line: number
-    metadata: Record<string, unknown>
+      metadata: NodeMetadata
     color: string
   }
   position?: { x: number; y: number }
@@ -33,7 +33,7 @@ interface CytoscapeEdge {
     target: string
     type: string
     confidence: string
-    metadata: Record<string, unknown>
+      metadata: EdgeMetadata
   }
 }
 
@@ -79,7 +79,7 @@ function nodeToCytoscape(node: OmniNode): CytoscapeNode {
       type: node.type,
       filePath: node.filePath,
       line: node.line,
-      metadata: node.metadata as Record<string, unknown>,
+        metadata: node.metadata,
       color: NODE_COLORS[node.type] || '#94a3b8',
     },
   }
@@ -97,7 +97,7 @@ function edgeToCytoscape(edge: OmniEdge): CytoscapeEdge {
       target: edge.target,
       type: edge.type,
       confidence: edge.confidence,
-      metadata: edge.metadata as Record<string, unknown>,
+        metadata: edge.metadata,
     },
   }
 }

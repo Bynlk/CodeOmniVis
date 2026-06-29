@@ -4,7 +4,7 @@ import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
 import { useGraphFilter } from '../../hooks/useGraphFilter'
 import { useGraph } from '../../hooks/useGraph'
 import { FilterChip } from './FilterChip'
-import type { NodeType, EdgeType } from '@codeomnivis/shared'
+import type { EdgeConfidence, EdgeType, NodeType } from '@codeomnivis/shared'
 
 export function FilterPanel() {
   const { t } = useTranslation()
@@ -26,7 +26,7 @@ export function FilterPanel() {
     if (!graph) return new Map<NodeType, number>()
     const counts = new Map<NodeType, number>()
     for (const n of graph.nodes) {
-      counts.set(n.type as NodeType, (counts.get(n.type as NodeType) ?? 0) + 1)
+      counts.set(n.type, (counts.get(n.type) ?? 0) + 1)
     }
     return counts
   }, [graph])
@@ -35,14 +35,14 @@ export function FilterPanel() {
     if (!graph) return new Map<EdgeType, number>()
     const counts = new Map<EdgeType, number>()
     for (const e of graph.edges) {
-      counts.set(e.type as EdgeType, (counts.get(e.type as EdgeType) ?? 0) + 1)
+      counts.set(e.type, (counts.get(e.type) ?? 0) + 1)
     }
     return counts
   }, [graph])
 
   const confidenceCounts = useMemo(() => {
-    if (!graph) return new Map<string, number>()
-    const counts = new Map<string, number>()
+    if (!graph) return new Map<EdgeConfidence, number>()
+    const counts = new Map<EdgeConfidence, number>()
     for (const e of graph.edges) {
       const c = e.confidence ?? 'certain'
       counts.set(c, (counts.get(c) ?? 0) + 1)
@@ -68,7 +68,7 @@ export function FilterPanel() {
   const presentConfidences = useMemo(() =>
     [...confidenceCounts.entries()]
       .sort((a, b) => b[1] - a[1])
-      .map(([c]) => c as 'certain' | 'inferred'),
+      .map(([c]) => c),
     [confidenceCounts]
   )
 

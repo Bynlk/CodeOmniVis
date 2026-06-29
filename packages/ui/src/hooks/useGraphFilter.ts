@@ -2,14 +2,18 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useCytoscapeRef } from '../lib/cytoscapeContext'
 import { NODE_TYPE_LIST } from '../lib/nodeConfig'
 import { EDGE_TYPE_LIST } from '../lib/edgeConfig'
-import type { NodeType } from '@codeomnivis/shared'
-import type { EdgeType } from '@codeomnivis/shared'
+import { isEdgeType, isNodeType } from '@codeomnivis/shared'
+import type { EdgeConfidence, EdgeType, NodeType } from '@codeomnivis/shared'
 
 interface GraphFilterState {
   nodeTypeFilter: Set<NodeType>
   edgeTypeFilter: Set<EdgeType>
-  confidenceFilter: Set<'certain' | 'inferred'>
+  confidenceFilter: Set<EdgeConfidence>
   showIsolated: boolean
+}
+
+function isEdgeConfidence(value: unknown): value is EdgeConfidence {
+  return value === 'certain' || value === 'inferred'
 }
 
 // 创建默认状态的工厂函数（避免共享可变对象）
@@ -45,11 +49,12 @@ export function useGraphFilter() {
     cy.batch(() => {
       // 节点类型过滤
       cy.nodes().forEach(node => {
-        const type = node.data('type') as NodeType
+          const rawType = node.data('type')
+          const type = typeof rawType === 'string' && isNodeType(rawType) ? rawType : undefined
         const hasEdges = node.degree() > 0
         const isIsolated = !hasEdges
 
-        const typeVisible = state.nodeTypeFilter.has(type)
+          const typeVisible = type ? state.nodeTypeFilter.has(type) : false
         const isolatedVisible = state.showIsolated || !isIsolated
 
         node.style('display', typeVisible && isolatedVisible ? 'element' : 'none')
@@ -57,11 +62,13 @@ export function useGraphFilter() {
 
       // 边类型 + 置信度过滤
       cy.edges().forEach(edge => {
-        const edgeType = edge.data('type') as EdgeType
-        const confidence = edge.data('confidence') as 'certain' | 'inferred'
+          const rawEdgeType = edge.data('type')
+          const edgeType = typeof rawEdgeType === 'string' && isEdgeType(rawEdgeType) ? rawEdgeType : undefined
+          const rawConfidence = edge.data('confidence')
+          const confidence = isEdgeConfidence(rawConfidence) ? rawConfidence : undefined
 
-        const typeVisible = state.edgeTypeFilter.has(edgeType)
-        const confVisible = state.confidenceFilter.has(confidence)
+          const typeVisible = edgeType ? state.edgeTypeFilter.has(edgeType) : false
+          const confVisible = confidence ? state.confidenceFilter.has(confidence) : false
 
         edge.style('display', typeVisible && confVisible ? 'element' : 'none')
       })
@@ -95,7 +102,7 @@ export function useGraphFilter() {
     })
   }, [])
 
-  const toggleConfidence = useCallback((c: 'certain' | 'inferred') => {
+  const toggleConfidence = useCallback((c: EdgeConfidence) => {
     setState(prev => {
       const next = { ...prev, confidenceFilter: new Set(prev.confidenceFilter) }
       if (next.confidenceFilter.has(c)) {

@@ -50,8 +50,9 @@ function layoutByTypeNetwork(cy: cytoscape.Core): void {
   const groups = new Map<string, cytoscape.NodeSingular[]>()
   nodes.forEach(node => {
     const type = node.data('type') || 'unknown'
-    if (!groups.has(type)) groups.set(type, [])
-    groups.get(type)!.push(node)
+      const group = groups.get(type) ?? []
+      group.push(node)
+      groups.set(type, group)
   })
 
   for (const [type, typeNodes] of groups) {
