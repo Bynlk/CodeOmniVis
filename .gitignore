@@ -42,6 +42,13 @@ coverage/
 *.db
 *.db-journal
 *.db-wal
+codeomnivis-graph.json
+codeomnivis-*.json
+
+# Lock files (pnpm only)
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
 
 # Claude Code
 .claude/projects/
