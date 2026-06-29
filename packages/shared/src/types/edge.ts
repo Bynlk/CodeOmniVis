@@ -26,6 +26,25 @@ export type EdgeType =
   | 'sends_msg'       // client.sendMsg() / server.broadcast()
   | 'listens_msg'     // client.listenMsg() / server.addMsgListener()
 
+const EDGE_TYPES: EdgeType[] = [
+  'renders',
+  'navigates_to',
+  'calls_api',
+  'handles',
+  'calls_service',
+  'queries_db',
+  'db_relation',
+  'imports',
+  'contains',
+  'kotlin_inherits',
+  'kotlin_implements',
+  'kotlin_uses',
+  'data_flows_to',
+  'sends_msg',
+  'listens_msg',
+]
+const EDGE_TYPE_SET = new Set<string>(EDGE_TYPES)
+
 // ============================================================
 // 置信度
 // ============================================================
@@ -56,6 +75,8 @@ export interface CallsApiMetadata {
   method?: string
   /** 调用方式：fetch / axios / trpc_hook / tsrpc_call_api / tsrpc_listen_msg */
   callType: 'fetch' | 'axios' | 'trpc_hook' | 'tsrpc_call_api' | 'tsrpc_listen_msg'
+  /** 调用目标 URL、procedure 或 TSRPC service/msg 名称 */
+  url?: string
   /** 调用位置 */
   callLine: number
 }
@@ -161,9 +182,43 @@ export interface OmniEdge {
   metadata: EdgeMetadata
 }
 
+export type EdgeTypeMetadataMap = {
+  renders: RendersMetadata
+  navigates_to: NavigatesToMetadata
+  calls_api: CallsApiMetadata
+  handles: HandlesMetadata
+  calls_service: CallsServiceMetadata
+  queries_db: QueriesDbMetadata
+  db_relation: DbRelationMetadata
+  imports: Record<string, unknown>
+  contains: ContainsMetadata
+  kotlin_inherits: KotlinInheritsMetadata
+  kotlin_implements: KotlinImplementsMetadata
+  kotlin_uses: KotlinUsesMetadata
+  data_flows_to: Record<string, unknown>
+  sends_msg: CallsApiMetadata | SendsMsgMetadata
+  listens_msg: CallsApiMetadata | ListensMsgMetadata
+}
+
+export type TypedOmniEdge<T extends EdgeType> = OmniEdge & {
+  type: T
+  metadata: EdgeTypeMetadataMap[T]
+}
+
 // ============================================================
 // 工具函数
 // ============================================================
+
+export function isEdgeType(value: string): value is EdgeType {
+  return EDGE_TYPE_SET.has(value)
+}
+
+export function isEdgeOfType<T extends EdgeType>(
+  edge: OmniEdge,
+  type: T
+): edge is TypedOmniEdge<T> {
+  return edge.type === type
+}
 
 /** 生成边 ID */
 export function createEdgeId(source: string, type: EdgeType, target: string): string {
@@ -178,9 +233,12 @@ export function parseEdgeId(id: string): { source: string; type: EdgeType; targe
   if (!match) {
     throw new Error(`Invalid edge ID format: ${id}`)
   }
+  if (!isEdgeType(match[2])) {
+    throw new Error(`Invalid edge type in ID: ${id}`)
+  }
   return {
     source: match[1],
-    type: match[2] as EdgeType,
+    type: match[2],
     target: match[3],
   }
 }

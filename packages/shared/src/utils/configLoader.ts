@@ -11,6 +11,10 @@ import type { CodeOmniVisConfig } from '../types/config'
 
 const CONFIG_FILENAME = '.codeomnivis.json'
 
+function isPartialConfig(value: unknown): value is Partial<CodeOmniVisConfig> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 /**
  * 加载项目配置
  * 优先级：.codeomnivis.json > 默认值
@@ -24,7 +28,10 @@ export function loadConfig(projectRoot: string): CodeOmniVisConfig {
 
   try {
     const raw = fs.readFileSync(configPath, 'utf-8')
-    const parsed = JSON.parse(raw) as Partial<CodeOmniVisConfig>
+      const parsed = JSON.parse(raw)
+      if (!isPartialConfig(parsed)) {
+        return getDefaultConfig(projectRoot)
+      }
     return mergeWithDefaults(parsed, projectRoot)
   } catch (err) {
     console.warn(`[codeomnivis] Failed to parse ${CONFIG_FILENAME}: ${err}. Using defaults.`)

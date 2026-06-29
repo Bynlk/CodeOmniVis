@@ -11,6 +11,7 @@ export type {
   OmniNode,
   NodeMetadata,
   NodeTypeMetadataMap,
+  TypedOmniNode,
   PageMetadata,
   ComponentMetadata,
   ApiRouteMetadata,
@@ -33,6 +34,8 @@ export type {
 
 export {
   createNodeId,
+  isNodeOfType,
+  isNodeType,
   parseNodeId,
 } from './types/node'
 
@@ -41,6 +44,8 @@ export type {
   EdgeConfidence,
   OmniEdge,
   EdgeMetadata,
+  EdgeTypeMetadataMap,
+  TypedOmniEdge,
   RendersMetadata,
   NavigatesToMetadata,
   CallsApiMetadata,
@@ -53,6 +58,8 @@ export type {
 
 export {
   createEdgeId,
+  isEdgeOfType,
+  isEdgeType,
   parseEdgeId,
 } from './types/edge'
 

@@ -28,6 +28,27 @@ export type NodeType =
   | 'kotlin_function' // Kotlin 顶级函数 / 扩展函数
   | 'kotlin_route'    // Kotlin 路由端点（Spring @RequestMapping / Ktor routing）
 
+const NODE_TYPES: NodeType[] = [
+  'page',
+  'component',
+  'api_route',
+  'trpc_procedure',
+  'tsrpc_service',
+  'tsrpc_api',
+  'tsrpc_msg',
+  'express_route',
+  'handler',
+  'service',
+  'db_model',
+  'module',
+  'kotlin_class',
+  'kotlin_interface',
+  'kotlin_object',
+  'kotlin_function',
+  'kotlin_route',
+]
+const NODE_TYPE_SET = new Set<string>(NODE_TYPES)
+
 // ============================================================
 // 各类型节点的 Metadata
 // ============================================================
@@ -179,7 +200,7 @@ export interface KotlinFunctionMetadata {
 }
 
 export interface KotlinRouteMetadata {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS'
   path: string
   framework: 'ktor' | 'spring'
   annotations: string[]
@@ -230,6 +251,11 @@ export interface OmniNode {
   metadata: NodeMetadata
 }
 
+export type TypedOmniNode<T extends NodeType> = OmniNode & {
+  type: T
+  metadata: NodeTypeMetadataMap[T]
+}
+
 // ============================================================
 // 节点类型 → Metadata 类型映射（用于类型推导）
 // ============================================================
@@ -258,6 +284,17 @@ export type NodeTypeMetadataMap = {
 // 工具函数
 // ============================================================
 
+export function isNodeType(value: string): value is NodeType {
+  return NODE_TYPE_SET.has(value)
+}
+
+export function isNodeOfType<T extends NodeType>(
+  node: OmniNode,
+  type: T
+): node is TypedOmniNode<T> {
+  return node.type === type
+}
+
 /** 生成节点 ID */
 export function createNodeId(type: NodeType, filePath: string, name: string): string {
   return `${type}:${filePath}:${name}`
@@ -269,8 +306,11 @@ export function parseNodeId(id: string): { type: NodeType; filePath: string; nam
   if (parts.length < 3) {
     throw new Error(`Invalid node ID format: ${id}`)
   }
+  if (!isNodeType(parts[0])) {
+    throw new Error(`Invalid node type in ID: ${id}`)
+  }
   return {
-    type: parts[0] as NodeType,
+    type: parts[0],
     filePath: parts[1],
     name: parts.slice(2).join(':'),  // name 可能包含 ':'
   }
