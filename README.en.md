@@ -2,7 +2,7 @@
 
 # CodeOmniVis
 
-**Architecture visualization and AI-query toolkit for TypeScript full-stack repositories**
+**Stop Letting AI Guess Your Architecture**
 
 English | **[中文](README.md)**
 
@@ -12,22 +12,64 @@ English | **[中文](README.md)**
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6.svg)](https://www.typescriptlang.org/)
 [![GitHub stars](https://img.shields.io/github/stars/Bynlk/CodeOmniVis?style=social)](https://github.com/Bynlk/CodeOmniVis)
 
-One command to put pages, components, APIs, RPC endpoints, database models, and cross-layer data flow on the same map.
+Turn your repo into an AI-queryable architecture graph across pages, components, APIs / RPC, and databases.
 
 </div>
 
-CodeOmniVis scans TypeScript / JavaScript full-stack projects and builds a unified architecture graph. It ships with a browser UI, CLI commands, a REST API, WebSocket updates, and an MCP server so both humans and AI tools can inspect the same project structure.
+CodeOmniVis is not another coding agent. It is a shared architecture context layer for coding agents, IDE assistants, and human developers: scan the repo, build one graph, then expose that same graph through a browser UI, REST, and MCP.
 
-## Where it helps
+Plug it into Claude, Cline, Cursor, or any MCP-capable client and the value becomes immediate.
+
+Claude, Cline, Cursor, and similar tools are already good at editing files, running commands, and calling tools. Where they still drift is system boundaries and cross-layer impact:
+
+- Which route or procedure does this page actually hit?
+- If I change this model, which APIs, components, and data flows move with it?
+- Is this service really dead code, or did I just fail to trace it?
+- What context should I give the AI so it stops guessing?
+
+CodeOmniVis exists to answer those questions from the codebase itself.
+
+## Get Running In 5 Minutes
+
+```bash
+pnpm install
+pnpm build
+node packages/cli/bin/codeomnivis.js serve --project ./demo --no-open
+```
+
+Open `http://localhost:4321` and you immediately get three ways into the same graph:
+
+- browser UI
+- REST API
+- MCP server
+
+## Why It Matters Now
+
+- **Not another coding agent**: it does not compete with Claude / Cline / Cursor, it gives them architecture context
+- **One graph, three surfaces**: the same graph powers UI, CLI, REST, and MCP
+- **Works on existing repos**: no IDE migration, no invasive instrumentation
+- **Built for repeated queries**: cache persists at `~/.codeomnivis/projects/{hash}.db`, then watcher / WebSocket keep the map live
+
+## Why Not Just Use Cursor / Cline / Claude Code?
+
+Because those tools are optimized to **act**. CodeOmniVis is optimized to **prove structure**.
+
+- let the agent implement, refactor, and fix
+- let CodeOmniVis answer callers, impact, boundaries, and data flow
+- the best workflow is not either-or; it is using CodeOmniVis as the architecture context layer under those tools
+
+If you already work through MCP, this becomes even more direct: let the AI query the graph before it edits the repo.
+
+## What You Can Do With It
 
 - Understand an unfamiliar repository before changing it
 - Check callers, impacted pages, and data paths before refactors or migrations
-- Give Cursor, Claude, or any MCP-aware client real architecture context
+- Give Claude, Cline, Cursor, or any MCP-aware client real architecture context
 - Keep a searchable, filterable, auto-refreshing project map alongside daily development
 
-## What is available today
+## What Is Available Today
 
-| Area | What is currently available |
+| Area | Current surface |
 | --- | --- |
 | CLI | `serve`, `analyze`, `check`, `mcp`, `init` |
 | UI | Graph canvas, search, filters, node details, data flow, issue list, stats panel |
@@ -37,31 +79,22 @@ CodeOmniVis scans TypeScript / JavaScript full-stack projects and builds a unifi
 
 > This repository is currently best used in source-first mode: build CodeOmniVis here, then point it at the project you want to analyze.
 
-## Supported scope
+## Current Mainline Runtime Focus
 
-| Dimension | Current support |
+| Dimension | Current mainline runtime |
 | --- | --- |
 | Frontend | Next.js App Router, Next.js Pages Router, React component tree, `fetch` / `axios` call detection |
-| API / RPC | Next.js Route Handlers, tRPC, TSRPC, Express, NestJS |
+| API / RPC | Next.js Route Handlers, tRPC, TSRPC (`serve` / MCP path), Express, NestJS |
 | Data layer | Prisma, Drizzle, TypeORM |
-| Kotlin ecosystem | Spring controllers, Ktor routing, Room, Exposed |
 | Workspace layouts | Basic path discovery for `pnpm workspace` / Turborepo |
+
+> The repository already contains Kotlin / Spring / Ktor / Room / Exposed parser work, but those paths are not yet fully wired into the main README-recommended runtime flow, so they are not marketed here as first-class runtime coverage.
 
 > Monorepo support is currently best-effort path discovery, not full multi-package graph federation.
 
-## Quick Start
+## More Ways To Run It
 
-### 1. Run the demo shipped in this repository
-
-```bash
-pnpm install
-pnpm build
-node packages/cli/bin/codeomnivis.js serve --project ./demo --no-open
-```
-
-Then open `http://localhost:4321`.
-
-### 2. Analyze any local repository
+### 1. Analyze any local repository directly
 
 ```bash
 node /absolute/path/to/CodeOmniVis/packages/cli/bin/codeomnivis.js serve \
@@ -75,7 +108,7 @@ If the CLI is already in your `PATH`, the equivalent command is:
 codeomnivis serve --project /absolute/path/to/your-repo --no-open
 ```
 
-### 3. Export graph JSON or run consistency checks
+### 2. Export graph JSON or run consistency checks
 
 ```bash
 cd /absolute/path/to/your-repo
@@ -160,7 +193,9 @@ See [docs/api/mcp-tools.md](docs/api/mcp-tools.md) for tool inputs and outputs.
 
 ## Configuration
 
-`serve`, `analyze`, and `check` read `.codeomnivis.json` from the project root. The example below uses the fields the runtime currently recognizes:
+You can place `.codeomnivis.json` in the project root. Configuration support is not yet perfectly aligned across every command: `serve` is the most complete consumer today, while `check` and `init` still have gaps and mismatches. Treat config as an **optional advanced override layer**, not as a fully stable contract.
+
+The example below is closer to the target config shape than to a guarantee that every command fully honors every field today:
 
 ```json
 {
