@@ -12,7 +12,10 @@ function makeHandlerNode(overrides: Pick<OmniNode, 'id' | 'name' | 'filePath' | 
     ...overrides,
     type: 'handler',
     column: 0,
-    metadata: {},
+    metadata: {
+      functionName: 'handler',
+      routeId: null,
+    },
   }
 }
 

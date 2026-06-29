@@ -38,6 +38,7 @@ export type {
 
 export {
   createNodeId,
+  createTypedNode,
   isNodeOfType,
   isNodeType,
   parseNodeId,

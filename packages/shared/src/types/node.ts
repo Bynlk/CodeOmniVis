@@ -210,35 +210,21 @@ export interface KotlinRouteMetadata {
 // Metadata 联合类型
 // ============================================================
 
-export type NodeMetadata =
-  | PageMetadata
-  | ComponentMetadata
-  | ApiRouteMetadata
-  | TrpcProcedureMetadata
-  | TsrpcServiceMetadata
-  | TsrpcApiMetadata
-  | TsrpcMsgMetadata
-  | ExpressRouteMetadata
-  | HandlerMetadata
-  | ServiceMetadata
-  | DbModelMetadata
-  | ModuleMetadata
-  | KotlinClassMetadata
-  | KotlinInterfaceMetadata
-  | KotlinObjectMetadata
-  | KotlinFunctionMetadata
-  | KotlinRouteMetadata
-  | Record<string, unknown>  // fallback
+export type NodeMetadata = NodeTypeMetadataMap[NodeType]
 
 // ============================================================
 // 核心节点接口
 // ============================================================
 
-export interface OmniNode {
+/**
+ * 由 `type` 字段驱动 `metadata` 的封闭节点类型。
+ * `type` 决定 `metadata` 的具体形状，业务层通过 isNodeOfType 收窄后直接读字段。
+ */
+export type TypedOmniNode<T extends NodeType> = {
   /** 唯一 ID，格式：{type}:{filePath}:{name} */
   id: string
   /** 节点类型 */
-  type: NodeType
+  type: T
   /** 显示名称 */
   name: string
   /** 相对于项目根目录的文件路径 */
@@ -248,13 +234,13 @@ export interface OmniNode {
   /** 定义所在列号 */
   column: number
   /** 类型特定的额外信息 */
-  metadata: NodeMetadata
-}
-
-export type TypedOmniNode<T extends NodeType> = OmniNode & {
-  type: T
   metadata: NodeTypeMetadataMap[T]
 }
+
+/** 所有节点类型的判别联合（discriminated union）。 */
+export type OmniNode = {
+  [T in NodeType]: TypedOmniNode<T>
+}[NodeType]
 
 // ============================================================
 // 节点类型 → Metadata 类型映射（用于类型推导）
@@ -291,8 +277,15 @@ export function isNodeType(value: string): value is NodeType {
 export function isNodeOfType<T extends NodeType>(
   node: OmniNode,
   type: T
-): node is TypedOmniNode<T> {
+): node is Extract<OmniNode, { type: T }> {
   return node.type === type
+}
+
+/** 类型安全的节点工厂：`type` 与 `metadata` 由编译器强制对应。 */
+export function createTypedNode<T extends NodeType>(
+  node: TypedOmniNode<T>
+): TypedOmniNode<T> {
+  return node
 }
 
 /** 生成节点 ID */

@@ -55,3 +55,23 @@
   - doubleCasts: 0
 - Notes:
   - New file src/types/json.ts (JsonPrimitive/JsonValue/JsonObject + isJsonObject/jsonObjectOrEmpty), exported from index.
+
+## Task 3 - Close node metadata types
+
+- Commit: (this commit)
+- Gates (focused, per plan Task 3 Step 5):
+  - pnpm turbo typecheck --filter=@codeomnivis/shared: pass
+  - vitest shared (node.test.ts + all): pass (36)
+  - vitest analyzer resolver/symbolResolver.test.ts: pass (5)
+  - git diff --check: pass
+- Metrics:
+  - any: 0
+  - unknown: 39 (-1: removed Record<string,unknown> fallback)
+  - assertions: 0
+  - doubleCasts: 0
+- Notes:
+  - NodeMetadata now derived: `NodeTypeMetadataMap[NodeType]` (no fallback).
+  - OmniNode is a true discriminated union over NodeType; TypedOmniNode<T> is the per-type shape.
+  - isNodeOfType predicate uses `Extract<OmniNode,{type:T}>` (TS cannot assign generic TypedOmniNode<T> to the union in a predicate; Extract is the no-cast equivalent).
+  - Added createTypedNode<T> factory, exported from index.
+  - PLANNED STAGED MIGRATION: full `pnpm turbo typecheck` is RED on analyzer (crossLayer.ts isSynthetic/discoveredBySymbolResolver props, db.ts Record return). These are scheduled for repair in A5 (parser/graph/resolver) and A6 (storage), exactly as the plan sequences. shared package (the changed src) is green.

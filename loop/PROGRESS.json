@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T02:40:00+08:00",
+  "updatedAt": "2026-06-30T02:45:00+08:00",
   "currentStage": "A",
-  "currentTask": "A2",
+  "currentTask": "A3",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -64,10 +64,20 @@
       "id": "A3",
       "stage": "Stage A",
       "name": "封闭 Node metadata",
-      "status": "pending",
+      "status": "done",
       "commit": null,
-      "gates": {},
-      "metrics": {}
+      "gates": {
+        "turbo typecheck shared": "pass",
+        "vitest shared": "pass",
+        "vitest resolver": "pass",
+        "git diff --check": "pass"
+      },
+      "metrics": {
+        "any": 0,
+        "unknown": 39,
+        "assertions": 0,
+        "doubleCasts": 0
+      }
     },
     {
       "id": "A4",
