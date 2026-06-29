@@ -282,7 +282,13 @@ function handleGetComponentTree(db: OmniDatabase, args: Record<string, unknown> 
   }
 
   const tree = db.getSubtree(rootNode.id, RENDERS_EDGE_TYPE, depth)
-  if (!tree || Object.keys(tree).length === 0) {
+  if (tree === null) {
+    return success({
+      error: `No node found for: ${rootPath}`,
+      suggestion: 'Try with a file path like "app/booking/page.tsx" or a route like "/booking"',
+    })
+  }
+  if (tree.children.length === 0) {
     return success({ root: rootNode.name, children: [], message: 'No child components found' })
   }
 

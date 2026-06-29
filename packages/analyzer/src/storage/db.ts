@@ -8,7 +8,9 @@
 
 import initSqlJs, { type Database as SqlJsDatabase, type SqlValue } from 'sql.js'
 import * as fs from 'fs'
-import type { OmniNode, OmniEdge, OmniGraph, NodeType, EdgeType } from '@codeomnivis/shared'
+import type { OmniNode, OmniEdge, OmniGraph, NodeType, EdgeType, JsonObject } from '@codeomnivis/shared'
+import { jsonObjectOrEmpty } from '@codeomnivis/shared'
+import { parseStoredNode, parseStoredEdge } from './metadataGuards'
 import { CREATE_TABLES_SQL, SQL } from './schema'
 
 // ============================================================
@@ -28,6 +30,14 @@ export interface DbStats {
   errorCount: number
   nodeTypeCounts: Record<string, number>
   edgeTypeCounts: Record<string, number>
+}
+
+/** 子树节点：getSubtree 的递归返回结构。 */
+export interface GraphSubtree {
+  id: string
+  name: string
+  type: NodeType
+  children: GraphSubtree[]
 }
 
 const NODE_TYPES = new Set<string>([
@@ -119,9 +129,6 @@ function sqlDbErrorSeverity(value: SqlValue | undefined): DbError['severity'] {
   return isDbErrorSeverity(severity) ? severity : 'warning'
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 // ============================================================
 // 数据库类
@@ -983,22 +990,28 @@ export class OmniDatabase {
   }
 
   /**
-   * 获取子树（递归获取下游节点）
+   * 获取子树（递归获取下游节点）。
+   * 根节点不存在时返回 null（由调用方区分「无此节点」与「无子节点」）。
    */
-  getSubtree(rootId: string, edgeType: EdgeType, maxDepth: number): Record<string, unknown> {
+  getSubtree(rootId: string, edgeType: EdgeType, maxDepth: number): GraphSubtree | null {
     const root = this.getNode(rootId)
-    if (!root) return {}
+    if (!root) return null
 
     if (maxDepth === 0) {
       return { id: root.id, name: root.name, type: root.type, children: [] }
     }
 
     const children = this.getDownstreamNodes(rootId, [edgeType])
+    const childTrees: GraphSubtree[] = []
+    for (const c of children) {
+      const sub = this.getSubtree(c.id, edgeType, maxDepth - 1)
+      if (sub) childTrees.push(sub)
+    }
     return {
       id: root.id,
       name: root.name,
       type: root.type,
-      children: children.map(c => this.getSubtree(c.id, edgeType, maxDepth - 1)),
+      children: childTrees,
     }
   }
 
@@ -1009,14 +1022,14 @@ export class OmniDatabase {
   /**
    * 安全解析 JSON 字符串，失败返回空对象
    */
-  private safeJsonParse(jsonStr: SqlValue | undefined, context: string): Record<string, unknown> {
+  private safeJsonParse(jsonStr: SqlValue | undefined, context: string): JsonObject {
     if (typeof jsonStr !== 'string') {
       return {}
     }
 
     try {
-      const parsed = JSON.parse(jsonStr)
-      return isRecord(parsed) ? parsed : {}
+      const parsed: unknown = JSON.parse(jsonStr)
+      return jsonObjectOrEmpty(parsed)
     } catch (err) {
       console.warn(`Failed to parse JSON for ${context}, using empty object:`, err)
       return {}
@@ -1027,57 +1040,65 @@ export class OmniDatabase {
    * 将数据库行对象转换为 OmniNode
    */
   private rowToNode(row: Record<string, SqlValue>): OmniNode {
-    return {
-      id: sqlString(row.id),
-      type: sqlNodeType(row.type),
-      name: sqlString(row.name),
-      filePath: sqlString(row.file_path),
-      line: sqlNumber(row.line),
-      column: sqlNumber(row.column),
-      metadata: this.safeJsonParse(row.metadata, `node ${row.id}`),
-    }
+    return parseStoredNode(
+      {
+        id: sqlString(row.id),
+        name: sqlString(row.name),
+        filePath: sqlString(row.file_path),
+        line: sqlNumber(row.line),
+        column: sqlNumber(row.column),
+      },
+      sqlNodeType(row.type),
+      this.safeJsonParse(row.metadata, `node ${row.id}`)
+    )
   }
 
   /**
    * 将数组形式的行转换为 OmniNode
    */
   private arrayToNode(row: SqlValue[]): OmniNode {
-    return {
-      id: sqlString(row[0]),
-      type: sqlNodeType(row[1]),
-      name: sqlString(row[2]),
-      filePath: sqlString(row[3]),
-      line: sqlNumber(row[4]),
-      column: sqlNumber(row[5]),
-      metadata: this.safeJsonParse(row[6], `node ${row[0]}`),
-    }
+    return parseStoredNode(
+      {
+        id: sqlString(row[0]),
+        name: sqlString(row[2]),
+        filePath: sqlString(row[3]),
+        line: sqlNumber(row[4]),
+        column: sqlNumber(row[5]),
+      },
+      sqlNodeType(row[1]),
+      this.safeJsonParse(row[6], `node ${row[0]}`)
+    )
   }
 
   /**
    * 将数据库行对象转换为 OmniEdge
    */
   private rowToEdge(row: Record<string, SqlValue>): OmniEdge {
-    return {
-      id: sqlString(row.id),
-      source: sqlString(row.source),
-      target: sqlString(row.target),
-      type: sqlEdgeType(row.type),
-      confidence: sqlEdgeConfidence(row.confidence),
-      metadata: this.safeJsonParse(row.metadata, `edge ${row.id}`),
-    }
+    return parseStoredEdge(
+      {
+        id: sqlString(row.id),
+        source: sqlString(row.source),
+        target: sqlString(row.target),
+        confidence: sqlEdgeConfidence(row.confidence),
+      },
+      sqlEdgeType(row.type),
+      this.safeJsonParse(row.metadata, `edge ${row.id}`)
+    )
   }
 
   /**
    * 将数组形式的行转换为 OmniEdge
    */
   private arrayToEdge(row: SqlValue[]): OmniEdge {
-    return {
-      id: sqlString(row[0]),
-      source: sqlString(row[1]),
-      target: sqlString(row[2]),
-      type: sqlEdgeType(row[3]),
-      confidence: sqlEdgeConfidence(row[4]),
-      metadata: this.safeJsonParse(row[5], `edge ${row[0]}`),
-    }
+    return parseStoredEdge(
+      {
+        id: sqlString(row[0]),
+        source: sqlString(row[1]),
+        target: sqlString(row[2]),
+        confidence: sqlEdgeConfidence(row[4]),
+      },
+      sqlEdgeType(row[3]),
+      this.safeJsonParse(row[5], `edge ${row[0]}`)
+    )
   }
 }
