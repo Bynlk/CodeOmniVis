@@ -59,10 +59,13 @@ export type {
   QueriesDbMetadata,
   DbRelationMetadata,
   ContainsMetadata,
+  ImportsMetadata,
+  DataFlowsToMetadata,
 } from './types/edge'
 
 export {
   createEdgeId,
+  createTypedEdge,
   isEdgeOfType,
   isEdgeType,
   parseEdgeId,

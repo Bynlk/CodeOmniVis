@@ -75,3 +75,22 @@
   - isNodeOfType predicate uses `Extract<OmniNode,{type:T}>` (TS cannot assign generic TypedOmniNode<T> to the union in a predicate; Extract is the no-cast equivalent).
   - Added createTypedNode<T> factory, exported from index.
   - PLANNED STAGED MIGRATION: full `pnpm turbo typecheck` is RED on analyzer (crossLayer.ts isSynthetic/discoveredBySymbolResolver props, db.ts Record return). These are scheduled for repair in A5 (parser/graph/resolver) and A6 (storage), exactly as the plan sequences. shared package (the changed src) is green.
+
+## Task 4 - Close edge metadata types
+
+- Commit: (this commit)
+- Gates:
+  - pnpm turbo typecheck --filter=@codeomnivis/shared: pass
+  - vitest shared: pass (36)
+  - git diff --check: pass
+- Metrics:
+  - any: 0
+  - unknown: 36 (-3: removed EdgeMetadata fallback + imports/data_flows_to Record entries)
+  - assertions: 0
+  - doubleCasts: 0
+- Notes:
+  - EdgeMetadata now derived `EdgeTypeMetadataMap[EdgeType]`; OmniEdge is discriminated union.
+  - Added ImportsMetadata {importPath, importedNames[], isTypeOnly}.
+  - DataFlowsToMetadata modeled to MATCH RUNTIME: {typeName, transferMethod} (tracer emits exactly this; LOOP GREEN "preserve runtime behavior" overrides the plan's illustrative {path,sourceField,targetField} shape).
+  - isEdgeOfType predicate uses Extract<OmniEdge,{type:T}>; added createTypedEdge<T>.
+  - Same planned staged downstream RED as A3 (analyzer) — repaired in A5/A6.

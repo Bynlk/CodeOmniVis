@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T02:45:00+08:00",
+  "updatedAt": "2026-06-30T02:50:00+08:00",
   "currentStage": "A",
-  "currentTask": "A3",
+  "currentTask": "A4",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -83,10 +83,19 @@
       "id": "A4",
       "stage": "Stage A",
       "name": "封闭 Edge metadata",
-      "status": "pending",
+      "status": "done",
       "commit": null,
-      "gates": {},
-      "metrics": {}
+      "gates": {
+        "turbo typecheck shared": "pass",
+        "vitest shared": "pass",
+        "git diff --check": "pass"
+      },
+      "metrics": {
+        "any": 0,
+        "unknown": 36,
+        "assertions": 0,
+        "doubleCasts": 0
+      }
     },
     {
       "id": "A5",

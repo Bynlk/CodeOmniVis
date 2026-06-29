@@ -143,31 +143,36 @@ export interface ListensMsgMetadata {
   callLine: number
 }
 
+export interface ImportsMetadata {
+  /** 被导入模块的路径 */
+  importPath: string
+  /** 导入的符号名 */
+  importedNames: string[]
+  /** 是否是 type-only 导入 */
+  isTypeOnly: boolean
+}
+
+export interface DataFlowsToMetadata {
+  /** 流动的类型名（通常是 DB Model 名） */
+  typeName: string
+  /** 传播方式 */
+  transferMethod: 'return_type' | 'prop_type' | 'hook_data' | 'prisma_result'
+}
+
 // ============================================================
 // Metadata 联合类型
 // ============================================================
 
-export type EdgeMetadata =
-  | RendersMetadata
-  | NavigatesToMetadata
-  | CallsApiMetadata
-  | HandlesMetadata
-  | CallsServiceMetadata
-  | QueriesDbMetadata
-  | DbRelationMetadata
-  | ContainsMetadata
-  | KotlinInheritsMetadata
-  | KotlinImplementsMetadata
-  | KotlinUsesMetadata
-  | SendsMsgMetadata
-  | ListensMsgMetadata
-  | Record<string, unknown>
+export type EdgeMetadata = EdgeTypeMetadataMap[EdgeType]
 
 // ============================================================
 // 核心边接口
 // ============================================================
 
-export interface OmniEdge {
+/**
+ * 由 `type` 字段驱动 `metadata` 的封闭边类型。
+ */
+export type TypedOmniEdge<T extends EdgeType> = {
   /** 唯一 ID，格式：{sourceId}--{type}--{targetId} */
   id: string
   /** 源节点 ID */
@@ -175,12 +180,17 @@ export interface OmniEdge {
   /** 目标节点 ID */
   target: string
   /** 边类型 */
-  type: EdgeType
+  type: T
   /** 置信度 */
   confidence: EdgeConfidence
   /** 类型特定的额外信息 */
-  metadata: EdgeMetadata
+  metadata: EdgeTypeMetadataMap[T]
 }
+
+/** 所有边类型的判别联合（discriminated union）。 */
+export type OmniEdge = {
+  [T in EdgeType]: TypedOmniEdge<T>
+}[EdgeType]
 
 export type EdgeTypeMetadataMap = {
   renders: RendersMetadata
@@ -190,20 +200,16 @@ export type EdgeTypeMetadataMap = {
   calls_service: CallsServiceMetadata
   queries_db: QueriesDbMetadata
   db_relation: DbRelationMetadata
-  imports: Record<string, unknown>
+  imports: ImportsMetadata
   contains: ContainsMetadata
   kotlin_inherits: KotlinInheritsMetadata
   kotlin_implements: KotlinImplementsMetadata
   kotlin_uses: KotlinUsesMetadata
-  data_flows_to: Record<string, unknown>
+  data_flows_to: DataFlowsToMetadata
   sends_msg: CallsApiMetadata | SendsMsgMetadata
   listens_msg: CallsApiMetadata | ListensMsgMetadata
 }
 
-export type TypedOmniEdge<T extends EdgeType> = OmniEdge & {
-  type: T
-  metadata: EdgeTypeMetadataMap[T]
-}
 
 // ============================================================
 // 工具函数
@@ -216,8 +222,15 @@ export function isEdgeType(value: string): value is EdgeType {
 export function isEdgeOfType<T extends EdgeType>(
   edge: OmniEdge,
   type: T
-): edge is TypedOmniEdge<T> {
+): edge is Extract<OmniEdge, { type: T }> {
   return edge.type === type
+}
+
+/** 类型安全的边工厂：`type` 与 `metadata` 由编译器强制对应。 */
+export function createTypedEdge<T extends EdgeType>(
+  edge: TypedOmniEdge<T>
+): TypedOmniEdge<T> {
+  return edge
 }
 
 /** 生成边 ID */
