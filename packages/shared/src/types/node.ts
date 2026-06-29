@@ -134,11 +134,15 @@ export interface ExpressRouteMetadata {
 export interface HandlerMetadata {
   functionName: string
   routeId: string | null  // 关联的路由节点 ID
+  isSynthetic?: boolean   // 跨层连线器合成的 handler 节点
 }
 
 export interface ServiceMetadata {
   className: string | null
   methodName: string
+  isSynthetic?: boolean              // 跨层连线器合成的 service 节点
+  importedFrom?: string              // 合成来源文件路径
+  discoveredBySymbolResolver?: boolean  // 由符号追踪发现的调用链中间节点
 }
 
 export interface DbFieldInfo {

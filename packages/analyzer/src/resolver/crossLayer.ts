@@ -10,11 +10,13 @@
 import type {
   CallsApiMetadata,
   EdgeType,
+  EdgeTypeMetadataMap,
   OmniEdge,
   OmniGraph,
   OmniNode,
+  TypedOmniEdge,
 } from '@codeomnivis/shared'
-import { createEdgeId, isNodeOfType } from '@codeomnivis/shared'
+import { createEdgeId, createTypedEdge, createTypedNode, isNodeOfType } from '@codeomnivis/shared'
 import * as fs from 'fs'
 import * as path from 'path'
 import { SymbolResolver, type DbCall } from './symbolResolver'
@@ -23,21 +25,21 @@ import { SymbolResolver, type DbCall } from './symbolResolver'
 // 辅助函数
 // ============================================================
 
-function makeEdge(
+function makeEdge<T extends EdgeType>(
   source: string,
   target: string,
-  type: EdgeType,
+  type: T,
   confidence: 'certain' | 'inferred',
-  metadata: Record<string, unknown> = {}
-): OmniEdge {
-  return {
+  metadata: EdgeTypeMetadataMap[T]
+): TypedOmniEdge<T> {
+  return createTypedEdge({
     id: createEdgeId(source, type, target),
     source,
     target,
     type,
     confidence,
     metadata,
-  }
+  })
 }
 
 function capitalize(str: string): string {
@@ -450,12 +452,12 @@ export class CrossLayerLinker {
         const handlerNode = nodeMap.get(expectedHandlerId)
 
         if (handlerNode) {
-          edges.push(makeEdge(routeNode.id, handlerNode.id, 'handles', 'certain'))
+          edges.push(makeEdge(routeNode.id, handlerNode.id, 'handles', 'certain', {}))
           continue
         }
 
         // handler 节点不存在时：动态创建（内联 handler）
-        const syntheticHandler: OmniNode = {
+        const syntheticHandler = createTypedNode({
           id: `handler:${routeNode.filePath}:${method}`,
           type: 'handler',
           name: `${method} handler`,
@@ -467,10 +469,10 @@ export class CrossLayerLinker {
             routeId: routeNode.id,
             isSynthetic: true,
           },
-        }
+        })
         graph.nodes.push(syntheticHandler)
         nodeMap.set(syntheticHandler.id, syntheticHandler)
-        edges.push(makeEdge(routeNode.id, syntheticHandler.id, 'handles', 'certain'))
+        edges.push(makeEdge(routeNode.id, syntheticHandler.id, 'handles', 'certain', {}))
       }
     }
 
@@ -479,7 +481,7 @@ export class CrossLayerLinker {
     for (const proc of trpcNodes) {
       const handlerId = `handler:${proc.filePath}:${proc.name}:resolver`
       if (!nodeMap.has(handlerId)) {
-        const resolver: OmniNode = {
+        const resolver = createTypedNode({
           id: handlerId,
           type: 'handler',
           name: `${proc.name} resolver`,
@@ -491,11 +493,11 @@ export class CrossLayerLinker {
             routeId: proc.id,
             isSynthetic: true,
           },
-        }
+        })
         graph.nodes.push(resolver)
         nodeMap.set(resolver.id, resolver)
       }
-      edges.push(makeEdge(proc.id, handlerId, 'handles', 'certain'))
+      edges.push(makeEdge(proc.id, handlerId, 'handles', 'certain', {}))
     }
 
     // 处理 TSRPC service/api 节点
@@ -503,7 +505,7 @@ export class CrossLayerLinker {
     for (const svc of tsrpcNodes) {
       const handlerId = `handler:${svc.filePath}:${svc.name}:handler`
       if (!nodeMap.has(handlerId)) {
-        const handler: OmniNode = {
+        const handler = createTypedNode({
           id: handlerId,
           type: 'handler',
           name: `${svc.name} handler`,
@@ -515,11 +517,11 @@ export class CrossLayerLinker {
             routeId: svc.id,
             isSynthetic: true,
           },
-        }
+        })
         graph.nodes.push(handler)
         nodeMap.set(handler.id, handler)
       }
-      edges.push(makeEdge(svc.id, handlerId, 'handles', 'certain'))
+      edges.push(makeEdge(svc.id, handlerId, 'handles', 'certain', {}))
     }
 
     // 处理 Express route 节点
@@ -532,7 +534,7 @@ export class CrossLayerLinker {
         // 内联 callback，创建 synthetic
         const handlerId = `handler:${route.filePath}:${route.name}:callback`
         if (!nodeMap.has(handlerId)) {
-          const syntheticHandler: OmniNode = {
+          const syntheticHandler = createTypedNode({
             id: handlerId,
             type: 'handler',
             name: `${route.name} callback`,
@@ -540,18 +542,18 @@ export class CrossLayerLinker {
             line: route.line,
             column: route.column,
             metadata: { functionName: route.name, routeId: route.id, isSynthetic: true },
-          }
+          })
           graph.nodes.push(syntheticHandler)
           nodeMap.set(syntheticHandler.id, syntheticHandler)
         }
-        edges.push(makeEdge(route.id, handlerId, 'handles', 'inferred'))
+        edges.push(makeEdge(route.id, handlerId, 'handles', 'inferred', {}))
       } else {
         // 具名 handler
         const existing = graph.nodes.find(n =>
           n.type === 'handler' && n.name === handlerName
         )
         if (existing) {
-          edges.push(makeEdge(route.id, existing.id, 'handles', 'certain'))
+          edges.push(makeEdge(route.id, existing.id, 'handles', 'certain', {}))
         }
       }
     }
@@ -591,12 +593,12 @@ export class CrossLayerLinker {
         }
 
         if (matched) {
-          edges.push(makeEdge(handler.id, matched.id, 'calls_service', 'certain'))
+          edges.push(makeEdge(handler.id, matched.id, 'calls_service', 'certain', {}))
         } else if (this.looksLikeServicePath(imp.resolvedPath)) {
           // 只在路径看起来像 service 时才创建 synthetic 节点
           const serviceId = `service:${imp.resolvedPath}:${imp.importedName}`
           if (!nodeMap.has(serviceId)) {
-            const syntheticService: OmniNode = {
+            const syntheticService = createTypedNode({
               id: serviceId,
               type: 'service',
               name: imp.importedName,
@@ -604,11 +606,11 @@ export class CrossLayerLinker {
               line: 0,
               column: 0,
               metadata: { className: null, methodName: imp.importedName, isSynthetic: true, importedFrom: filePath },
-            }
+            })
             graph.nodes.push(syntheticService)
             nodeMap.set(syntheticService.id, syntheticService)
           }
-          edges.push(makeEdge(handler.id, serviceId, 'calls_service', 'inferred'))
+          edges.push(makeEdge(handler.id, serviceId, 'calls_service', 'inferred', {}))
         }
       }
     }
@@ -648,14 +650,18 @@ export class CrossLayerLinker {
             const nodeId = callChain[i]
             if (nodeId.startsWith('service:') && !nodeMap.has(nodeId)) {
               const parts = nodeId.split(':')
-              const syntheticService: OmniNode = {
+              const syntheticService = createTypedNode({
                 id: nodeId,
                 type: 'service',
                 name: parts[2] ?? 'unknown',
                 filePath: parts[1] ?? '',
                 line: 0, column: 0,
-                metadata: { discoveredBySymbolResolver: true },
-              }
+                metadata: {
+                  className: null,
+                  methodName: parts[2] ?? 'unknown',
+                  discoveredBySymbolResolver: true,
+                },
+              })
               graph.nodes.push(syntheticService)
               nodeMap.set(syntheticService.id, syntheticService)
             }
@@ -664,7 +670,7 @@ export class CrossLayerLinker {
               const prevId = callChain[i - 1]
               const edgeId = `${prevId}--calls_service--${nodeId}`
               if (!edges.find(e => e.id === edgeId)) {
-                edges.push(makeEdge(prevId, nodeId, 'calls_service', 'inferred'))
+                edges.push(makeEdge(prevId, nodeId, 'calls_service', 'inferred', {}))
               }
             }
           }
@@ -683,7 +689,7 @@ export class CrossLayerLinker {
         if (dbNode) {
           const edgeId = createEdgeId(caller.id, 'queries_db', dbNode.id)
           if (!graph.edges.find(e => e.id === edgeId)) {
-            edges.push(makeEdge(caller.id, dbNode.id, 'queries_db', call.confidence))
+            edges.push(makeEdge(caller.id, dbNode.id, 'queries_db', call.confidence, {}))
           }
         }
       }

@@ -61,8 +61,8 @@ export type EdgeConfidence = 'certain' | 'inferred'
 // ============================================================
 
 export interface RendersMetadata {
-  /** 子组件在 JSX 中的位置 */
-  jsxLine: number
+  /** 子组件在 JSX 中的位置（推断渲染边可能未知） */
+  jsxLine?: number
 }
 
 export interface NavigatesToMetadata {
@@ -79,39 +79,47 @@ export interface CallsApiMetadata {
   url?: string
   /** 调用位置 */
   callLine: number
+  /** 跨层连线器匹配来源边 ID（resolver 补连时记录原始边） */
+  matchedFrom?: string
 }
 
 export interface HandlesMetadata {
-  /** handler 函数名 */
-  handlerName: string
+  /** handler 函数名（resolver 合成的 handles 边可能未知） */
+  handlerName?: string
 }
 
 export interface CallsServiceMetadata {
-  /** service 函数名 */
-  serviceName: string
-  /** 调用位置 */
-  callLine: number
+  /** service 函数名（resolver 跨层补连时可能未知） */
+  serviceName?: string
+  /** 调用位置（跨文件推断边可能无具体行号） */
+  callLine?: number
 }
 
 export interface QueriesDbMetadata {
   /** Prisma/TypeORM 操作类型 */
-  operation: string
+  operation?: string
   /** 调用位置 */
-  callLine: number
+  callLine?: number
+  /** NestJS @InjectRepository 注入的仓储类型 */
+  repository?: string
 }
 
 export interface DbRelationMetadata {
   /** 关系类型 */
-  relationType: 'one_to_one' | 'one_to_many' | 'many_to_many'
-  /** 关系字段名 */
-  fieldName: string
+  relationType: 'one_to_one' | 'one_to_many' | 'many_to_many' | 'many_to_one'
+  /** 关系字段名（Drizzle relations() 无单一字段名时省略） */
+  fieldName?: string
   /** Prisma relation name */
   relationName: string
 }
 
 export interface ContainsMetadata {
   /** 聚合原因 */
-  reason: 'route_prefix' | 'directory' | 'manual'
+  reason?: 'route_prefix' | 'directory' | 'manual'
+  /** tRPC router 名称（router → procedure 聚合边） */
+  routerName?: string
+  /** tRPC procedure 名称 */
+  procedureName?: string
 }
 
 export interface KotlinInheritsMetadata {
