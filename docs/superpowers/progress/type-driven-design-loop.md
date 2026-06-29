@@ -28,3 +28,15 @@
   - Repo confirmed at /Users/new/CodeOmniVis on master-derived branch.
   - node at /Users/new/.local/bin/node (v24.10.0), pnpm 9.0.0; AST script lives at loop/ast-scan.cjs (node loop/ast-scan.cjs).
   - turbo typecheck currently fails only with TS6306 composite blocker -> fixed in Task 1.
+
+## Task 1 - Make typecheck a reliable gate
+
+- Commit: (this commit)
+- Gates:
+  - pnpm turbo typecheck: pass (10/10 tasks)
+  - git diff --check: pass
+- Notes:
+  - Root cause of TS6306: vestigial `references` arrays in analyzer/server/mcp/cli tsconfig.
+  - This build uses tsup `--dts`, not `tsc -b`; cross-package types resolve via node_modules dist (.d.mts). Adding `composite:true` (plan Step 1) broke tsup DTS (TS6307: entry-only file list).
+  - Per Task 1 Step 2 (remove references that conflict), removed the references arrays. `pnpm turbo typecheck` (dependsOn ^build) now green and is the authoritative gate going forward.
+  - tsconfig.base.json unchanged (composite trialed then reverted). No tsbuildinfo committed.

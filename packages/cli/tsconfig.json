@@ -4,10 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src"],
-  "references": [
-    { "path": "../shared" },
-    { "path": "../analyzer" },
-    { "path": "../server" }
+  "include": [
+    "src"
   ]
 }

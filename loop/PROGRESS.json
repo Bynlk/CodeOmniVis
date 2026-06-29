@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T02:25:00+08:00",
+  "updatedAt": "2026-06-30T02:35:00+08:00",
   "currentStage": "A",
-  "currentTask": "A0",
+  "currentTask": "A1",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -29,10 +29,18 @@
       "id": "A1",
       "stage": "Stage A",
       "name": "typecheck 门禁",
-      "status": "pending",
+      "status": "done",
       "commit": null,
-      "gates": {},
-      "metrics": {}
+      "gates": {
+        "pnpm turbo typecheck": "pass",
+        "git diff --check": "pass"
+      },
+      "metrics": {
+        "any": 0,
+        "unknown": 38,
+        "assertions": 0,
+        "doubleCasts": 0
+      }
     },
     {
       "id": "A2",
