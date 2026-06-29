@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T02:50:00+08:00",
-  "currentStage": "A",
-  "currentTask": "A4",
+  "updatedAt": "2026-06-30T03:02:42.289633+08:00",
+  "currentStage": "Stage A",
+  "currentTask": "A6",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -101,10 +101,18 @@
       "id": "A5",
       "stage": "Stage A",
       "name": "parser typed factory",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "1575449",
+      "gates": {
+        "gitDiffCheck": "pass",
+        "sharedTypecheck": "pass",
+        "analyzerTests": "pass (150/150)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=35(boundary)"
+      },
+      "metrics": {
+        "parsersTyped": "all edge/node emits via createTypedEdge/createTypedNode",
+        "note": "analyzer pkg typecheck still RED on 2 db.ts errors (A6 scope, staged)"
+      }
     },
     {
       "id": "A6",

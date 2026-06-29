@@ -94,3 +94,12 @@
   - DataFlowsToMetadata modeled to MATCH RUNTIME: {typeName, transferMethod} (tracer emits exactly this; LOOP GREEN "preserve runtime behavior" overrides the plan's illustrative {path,sourceField,targetField} shape).
   - isEdgeOfType predicate uses Extract<OmniEdge,{type:T}>; added createTypedEdge<T>.
   - Same planned staged downstream RED as A3 (analyzer) — repaired in A5/A6.
+
+## Task A5 — emit typed graph entities  ✅
+- Commit: `1575449` (pushed)
+- shared/types/node.ts: HandlerMetadata/ServiceMetadata gained genuine optional synthetic markers (`isSynthetic?`, `importedFrom?`, `discoveredBySymbolResolver?`).
+- shared/types/edge.ts: edge metadata loosened to match real runtime emits (no cast, no Record fallback): `CallsApiMetadata.matchedFrom?`, `HandlesMetadata.handlerName?`, `CallsServiceMetadata.serviceName?/callLine?`, `QueriesDbMetadata.operation?/callLine?/repository?`, `DbRelationMetadata` +`many_to_one`/`fieldName?`, `ContainsMetadata.routerName?/procedureName?/reason?`, `RendersMetadata.jsxLine?`.
+- resolver/crossLayer.ts: synthetic nodes via `createTypedNode`; `makeEdge<T>` now generic returning `TypedOmniEdge<T>` via `createTypedEdge`; 4-arg callers pass explicit `{}`.
+- GREEN principle honored: types adjusted to reality, runtime behavior unchanged.
+- Gates: git diff --check ✓; shared tsc --noEmit ✓; analyzer vitest 150/150 ✓; AST any=0 assertions=0 doubleCasts=0.
+- Staged-RED: analyzer pkg typecheck still has 2 db.ts errors → A6 scope.
