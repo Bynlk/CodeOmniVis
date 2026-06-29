@@ -1,0 +1,14 @@
+{
+  "repo": "/Users/new/CodeOmniVis",
+  "capturedAt": "2026-06-30T02:15:00+08:00",
+  "git": { "branch": "master", "remote": "origin/master" },
+  "env": { "pnpm": "9.0.0", "node": "26.3.1", "typescript": "^5.5.0", "turbo": "^2.0.0", "eslint": "^10.4.1" },
+  "astMetrics": { "any": 0, "unknown": 38, "assertions": 0, "doubleCasts": 0, "satisfies": 22 },
+  "gates": {
+    "typecheck": "pnpm turbo typecheck",
+    "lint": "pnpm turbo lint",
+    "test": "pnpm turbo test",
+    "build": "pnpm turbo build"
+  },
+  "notes": "pnpm 已就绪，turbo 门禁有效；类型计划中的“找不到包管理器”为过时环境注记。AI 路由已合并进 server/src/index.ts，无独立 routes/ai.ts。"
+}

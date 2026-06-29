@@ -1,0 +1,182 @@
+{
+  "updatedAt": "2026-06-30T02:25:00+08:00",
+  "currentStage": "A",
+  "currentTask": "A0",
+  "baseline": {
+    "any": 0,
+    "unknown": 38,
+    "assertions": 0,
+    "satisfies": 22
+  },
+  "tasks": [
+    {
+      "id": "A0",
+      "stage": "Stage A",
+      "name": "Bootstrap loop",
+      "status": "done",
+      "commit": null,
+      "gates": {
+        "git diff --check": "pass"
+      },
+      "metrics": {
+        "any": 0,
+        "unknown": 38,
+        "assertions": 0,
+        "doubleCasts": 0
+      }
+    },
+    {
+      "id": "A1",
+      "stage": "Stage A",
+      "name": "typecheck 门禁",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "A2",
+      "stage": "Stage A",
+      "name": "JSON 边界类型",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "A3",
+      "stage": "Stage A",
+      "name": "封闭 Node metadata",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "A4",
+      "stage": "Stage A",
+      "name": "封闭 Edge metadata",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "A5",
+      "stage": "Stage A",
+      "name": "parser typed factory",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "A6",
+      "stage": "Stage A",
+      "name": "storage typed",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "A7",
+      "stage": "Stage A",
+      "name": "MCP 去 metadataValue",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "A8",
+      "stage": "Stage A",
+      "name": "UI 边界 typed",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "A9",
+      "stage": "Stage A",
+      "name": "type-aware ESLint",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "A-MERGE",
+      "stage": "Stage A",
+      "name": "合并 master",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "B15",
+      "stage": "Stage B",
+      "name": "AI 契约+localStorage",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "B16",
+      "stage": "Stage B",
+      "name": "自包含打包",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "B17",
+      "stage": "Stage B",
+      "name": "数据新鲜度方案一",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "B18",
+      "stage": "Stage B",
+      "name": "全链路追踪 tab",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "B19",
+      "stage": "Stage B",
+      "name": "噪声治理+选目录",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "B20",
+      "stage": "Stage B",
+      "name": "设置抽屉+推广",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    },
+    {
+      "id": "B-MERGE",
+      "stage": "Stage B",
+      "name": "回归+合并+报告",
+      "status": "pending",
+      "commit": null,
+      "gates": {},
+      "metrics": {}
+    }
+  ]
+}
