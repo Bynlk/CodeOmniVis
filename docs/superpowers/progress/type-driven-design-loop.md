@@ -113,3 +113,20 @@
 - GREEN principle honored: runtime behavior preserved; types converged at the DB boundary.
 - Gates: git diff --check ✓; analyzer tsc --noEmit ✓; analyzer vitest 172/172 ✓; mcp tsc --noEmit ✓; mcp vitest 6/6 ✓; AST any=0 assertions=0 doubleCasts=0 unknown=32(boundary).
 - Note: shared rebuilt (tsup --dts) before mcp typecheck so `GraphSubtree` resolves from dist.
+
+## Task 7 - Remove weak metadata reads from MCP
+
+- Commit: (this commit)
+- Gates:
+  - mcp tsc --noEmit: pass
+  - vitest __tests__/tools.test.ts: pass (6/6)
+  - git diff --check: pass
+- Metrics:
+  - any: 0
+  - unknown: 31
+  - assertions: 0
+  - doubleCasts: 0
+- Notes:
+  - Deleted metadataValue(node, key): unknown (Reflect.get string-key access).
+  - Added getRouteDisplay()/getNodeRoute() using isNodeOfType narrowing for api_route/express_route/trpc_procedure/tsrpc_api/tsrpc_service/page.
+  - list_db_models now reads tableName/fieldCount via db_model narrowing, no string keys.

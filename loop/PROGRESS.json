@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T03:18:00+08:00",
+  "updatedAt": "2026-06-30T03:24:00+08:00",
   "currentStage": "Stage A",
-  "currentTask": "A7",
+  "currentTask": "A8",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -137,10 +137,18 @@
       "id": "A7",
       "stage": "Stage A",
       "name": "MCP 去 metadataValue",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "PENDING",
+      "gates": {
+        "mcpTypecheck": "pass",
+        "mcpTests": "pass (6/6)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=31(boundary)",
+        "gitDiffCheck": "pass"
+      },
+      "metrics": {
+        "metadataValueRemoved": "deleted; replaced by getRouteDisplay/getNodeRoute + isNodeOfType narrowing",
+        "typedReads": "api routes, find_callers pages, list_db_models all read via discriminated-union narrowing, no string-key Reflect.get"
+      }
     },
     {
       "id": "A8",

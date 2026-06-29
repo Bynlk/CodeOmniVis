@@ -18,6 +18,7 @@ import {
 import { OmniDatabase, runFullAnalysis, DataFlowTracer } from '@codeomnivis/analyzer'
 import { getDbPath, hasDbCache } from '@codeomnivis/shared/node'
 import type { NodeType, EdgeType, OmniNode } from '@codeomnivis/shared'
+import { isNodeOfType } from '@codeomnivis/shared'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 
 const API_NODE_TYPES: NodeType[] = ['api_route', 'trpc_procedure', 'express_route', 'tsrpc_api', 'tsrpc_service']
@@ -116,8 +117,30 @@ function numberArg(args: Record<string, unknown> | undefined, key: string, fallb
   return fallback
 }
 
-function metadataValue(node: Pick<OmniNode, 'metadata'>, key: string): unknown {
-  return Reflect.get(node.metadata, key)
+function getRouteDisplay(node: OmniNode): { method: string; path: string } {
+  if (isNodeOfType(node, 'api_route')) {
+    return { method: node.metadata.method, path: node.metadata.route }
+  }
+  if (isNodeOfType(node, 'express_route')) {
+    return { method: node.metadata.method, path: node.metadata.route }
+  }
+  if (isNodeOfType(node, 'trpc_procedure')) {
+    return { method: node.metadata.procedureType.toUpperCase(), path: node.name }
+  }
+  if (isNodeOfType(node, 'tsrpc_api')) {
+    return { method: node.metadata.transport.toUpperCase(), path: node.metadata.apiPath }
+  }
+  if (isNodeOfType(node, 'tsrpc_service')) {
+    return { method: node.metadata.transport.toUpperCase(), path: node.metadata.servicePath }
+  }
+  return { method: 'UNKNOWN', path: node.name }
+}
+
+function getNodeRoute(node: OmniNode): string {
+  if (isNodeOfType(node, 'page')) return node.metadata.route
+  if (isNodeOfType(node, 'api_route')) return node.metadata.route
+  if (isNodeOfType(node, 'express_route')) return node.metadata.route
+  return node.name
 }
 
 // ============================================================
@@ -239,20 +262,19 @@ function handleGetApiRoutes(db: OmniDatabase, args: Record<string, unknown> | un
   const filtered = filter
     ? apiNodes.filter(n => {
         if (n.name.toLowerCase().includes(filter)) return true
-          const route = metadataValue(n, 'route')
-        return typeof route === 'string' && route.toLowerCase().includes(filter)
+        const { path } = getRouteDisplay(n)
+        return path.toLowerCase().includes(filter)
       })
     : apiNodes
 
   const result = filtered.map(node => {
-    const method = metadataValue(node, 'method')
-    const route = metadataValue(node, 'route')
+    const { method, path } = getRouteDisplay(node)
     const downstream = db.getDownstreamNodes(node.id, API_DOWNSTREAM_EDGE_TYPES)
     const callers = db.getUpstreamNodes(node.id, API_CALLER_EDGE_TYPES)
     return {
       id: node.id,
-      method: typeof method === 'string' ? method : 'UNKNOWN',
-      path: typeof route === 'string' ? route : node.name,
+      method,
+      path,
       file: node.filePath,
       line: node.line,
       calledBy: callers.map(c => ({ id: c.id, name: c.name, type: c.type })),
@@ -322,29 +344,24 @@ function handleFindCallers(db: OmniDatabase, args: Record<string, unknown> | und
       name: c.name,
       file: c.filePath,
     })),
-    affectedFrontendPages: affectedPages.map(p => {
-      const route = metadataValue(p, 'route')
-      return {
-        name: p.name,
-        route: typeof route === 'string' ? route : p.name,
-        file: p.filePath,
-      }
-    }),
+    affectedFrontendPages: affectedPages.map(p => ({
+      name: p.name,
+      route: getNodeRoute(p),
+      file: p.filePath,
+    })),
   })
 }
 
 function handleListDbModels(db: OmniDatabase) {
   const models = db.getNodesByType(DB_MODEL_NODE_TYPE)
   return success({
-    models: models.map(m => {
-      return {
-        id: m.id,
-        name: m.name,
-        file: m.filePath,
-        tableName: metadataValue(m, 'tableName'),
-        fieldCount: metadataValue(m, 'fieldCount'),
-      }
-    }),
+    models: models.map(m => ({
+      id: m.id,
+      name: m.name,
+      file: m.filePath,
+      tableName: isNodeOfType(m, 'db_model') ? m.metadata.tableName : m.name,
+      fieldCount: isNodeOfType(m, 'db_model') ? m.metadata.fieldCount : 0,
+    })),
     totalCount: models.length,
   })
 }
