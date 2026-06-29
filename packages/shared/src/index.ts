@@ -5,6 +5,10 @@
  * 不包含任何运行时逻辑，仅类型定义和常量。
  */
 
+// JSON 边界类型导出
+export type { JsonPrimitive, JsonValue, JsonObject } from './types/json'
+export { isJsonObject, jsonObjectOrEmpty } from './types/json'
+
 // 类型导出
 export type {
   NodeType,

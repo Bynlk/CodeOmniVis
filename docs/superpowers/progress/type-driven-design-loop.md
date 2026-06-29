@@ -40,3 +40,18 @@
   - This build uses tsup `--dts`, not `tsc -b`; cross-package types resolve via node_modules dist (.d.mts). Adding `composite:true` (plan Step 1) broke tsup DTS (TS6307: entry-only file list).
   - Per Task 1 Step 2 (remove references that conflict), removed the references arrays. `pnpm turbo typecheck` (dependsOn ^build) now green and is the authoritative gate going forward.
   - tsconfig.base.json unchanged (composite trialed then reverted). No tsbuildinfo committed.
+
+## Task 2 - Add JSON boundary types
+
+- Commit: (this commit)
+- Gates:
+  - vitest __tests__/types/json.test.ts: pass (3)
+  - pnpm turbo typecheck --filter=@codeomnivis/shared: pass
+  - git diff --check: pass
+- Metrics:
+  - any: 0
+  - unknown: 40 (+2 boundary guard params in json.ts)
+  - assertions: 0
+  - doubleCasts: 0
+- Notes:
+  - New file src/types/json.ts (JsonPrimitive/JsonValue/JsonObject + isJsonObject/jsonObjectOrEmpty), exported from index.

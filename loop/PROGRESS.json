@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T02:35:00+08:00",
+  "updatedAt": "2026-06-30T02:40:00+08:00",
   "currentStage": "A",
-  "currentTask": "A1",
+  "currentTask": "A2",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -46,10 +46,19 @@
       "id": "A2",
       "stage": "Stage A",
       "name": "JSON 边界类型",
-      "status": "pending",
+      "status": "done",
       "commit": null,
-      "gates": {},
-      "metrics": {}
+      "gates": {
+        "vitest json": "pass",
+        "turbo typecheck shared": "pass",
+        "git diff --check": "pass"
+      },
+      "metrics": {
+        "any": 0,
+        "unknown": 40,
+        "assertions": 0,
+        "doubleCasts": 0
+      }
     },
     {
       "id": "A3",
