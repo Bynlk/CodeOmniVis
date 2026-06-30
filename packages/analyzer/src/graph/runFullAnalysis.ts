@@ -138,9 +138,23 @@ function scanDir(dir: string, files: string[]): void {
 }
 
 /**
- * 收集扫描目录（含兄弟 frontend 目录）
+ * 判断 candidate 是否位于 projectRoot 之内（含 root 本身）。
+ * 阻止自动探测目录越界到 root 之外（S-08）。
  */
-function collectScanDirs(projectRoot: string, meta: ProjectMeta): string[] {
+function isWithinRoot(projectRoot: string, candidate: string): boolean {
+  const resolvedRoot = path.resolve(projectRoot)
+  const resolved = path.resolve(candidate)
+  if (resolved === resolvedRoot) return true
+  const rel = path.relative(resolvedRoot, resolved)
+  return rel.length > 0 && !rel.startsWith('..') && !path.isAbsolute(rel)
+}
+
+/**
+ * 收集扫描目录。
+ * 默认仅扫描 projectRoot 之内的目录；越界的兄弟 frontend 目录只有在
+ * 显式确认为 monorepo（meta.monorepoType !== 'none'）时才纳入（S-08/F4）。
+ */
+export function collectScanDirs(projectRoot: string, meta: ProjectMeta): string[] {
   const dirs: string[] = []
 
   // 标准目录
@@ -163,12 +177,15 @@ function collectScanDirs(projectRoot: string, meta: ProjectMeta): string[] {
     }
   }
 
-  // 兄弟 frontend 目录（monorepo 风格）
-  const siblingDirs = ['../frontend/src', '../frontend']
-  for (const sib of siblingDirs) {
-    const full = path.resolve(projectRoot, sib)
-    if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
-      dirs.push(full)
+  // 兄弟 frontend 目录（monorepo 风格）——仅在显式确认为 monorepo 时启用，
+  // 且必须通过越界校验。
+  if (meta.monorepoType !== 'none') {
+    const siblingDirs = ['../frontend/src', '../frontend']
+    for (const sib of siblingDirs) {
+      const full = path.resolve(projectRoot, sib)
+      if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
+        dirs.push(full)
+      }
     }
   }
 
@@ -183,7 +200,18 @@ function collectScanDirs(projectRoot: string, meta: ProjectMeta): string[] {
     }
   }
 
-  return [...new Set(dirs)]
+  // 仅保留 root 内的自动探测目录；sibling 已在 monorepo 分支内显式纳入，
+  // 但为防御越界，统一做一次过滤（monorepo sibling 例外白名单）。
+  const siblingWhitelist = new Set(
+    meta.monorepoType !== 'none'
+      ? ['../frontend/src', '../frontend'].map(s => path.resolve(projectRoot, s))
+      : []
+  )
+  const filtered = dirs.filter(
+    d => isWithinRoot(projectRoot, d) || siblingWhitelist.has(path.resolve(d))
+  )
+
+  return [...new Set(filtered)]
 }
 
 /**

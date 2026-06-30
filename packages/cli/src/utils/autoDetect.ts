@@ -515,47 +515,60 @@ function collectTsDirs(dir: string, results: string[], depth: number, maxDepth: 
   }
 }
 
-// 收集需要扫描的目录
-// 当检测到 Turborepo/pnpm monorepo 时，自动加入 packages/*/src
-export function collectScanDirs(root: string, config?: CodeOmniVisConfig): string[] {
-  const dirs: string[] = []
+/**
+ * 判断 candidate 是否位于 root 之内（含 root 本身）。
+ * 用于阻止自动探测的目录越界到 root 之外（S-08）。
+ */
+function isWithinRoot(root: string, candidate: string): boolean {
+  const resolvedRoot = path.resolve(root)
+  const resolved = path.resolve(candidate)
+  if (resolved === resolvedRoot) return true
+  const rel = path.relative(resolvedRoot, resolved)
+  return rel.length > 0 && !rel.startsWith('..') && !path.isAbsolute(rel)
+}
 
-  // 用户配置的目录（最高优先）
+// 收集需要扫描的目录
+// 默认仅扫描 projectRoot 之内的目录；越界的兄弟目录只有通过
+// 显式 frontend.dirs / backend.dirs 配置才会纳入（S-08/F4）。
+// 当检测到 Turborepo/pnpm monorepo 时，自动加入 packages/*/src（仍在 root 内）。
+export function collectScanDirs(root: string, config?: CodeOmniVisConfig): string[] {
+  // 用户显式配置的目录（最高优先，允许指向 root 之外，因为是显式选择）
+  const explicitDirs: string[] = []
   if (config?.frontend?.dirs?.length) {
-    dirs.push(...config.frontend.dirs.map(d => path.resolve(root, d)))
+    explicitDirs.push(...config.frontend.dirs.map(d => path.resolve(root, d)))
   }
   if (config?.backend?.dirs?.length) {
-    dirs.push(...config.backend.dirs.map(d => path.resolve(root, d)))
+    explicitDirs.push(...config.backend.dirs.map(d => path.resolve(root, d)))
   }
+
+  // 自动探测的目录（必须位于 root 之内）
+  const autoDirs: string[] = []
 
   // 主应用目录
   const mainAppCandidates = ['apps/web/src', 'apps/web', 'src', 'app']
   for (const c of mainAppCandidates) {
     const full = path.join(root, c)
     if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
-      dirs.push(full)
+      autoDirs.push(full)
       break
     }
   }
 
   // 标准子目录（在主应用目录下）
   const standardSubDirs = ['pages', 'components', 'server', 'api', 'shared/protocols']
-
-  // 兄弟目录（monorepo 风格：backend + frontend）
-  const siblingDirs = ['../frontend/src', '../frontend']
-  for (const sib of siblingDirs) {
-    const full = path.resolve(root, sib)
-    if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
-      dirs.push(full)
-    }
-  }
   for (const sub of standardSubDirs) {
-    for (const mainDir of dirs.slice()) {
+    for (const mainDir of autoDirs.slice()) {
       const full = path.join(mainDir, sub)
       if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
-        dirs.push(full)
+        autoDirs.push(full)
       }
     }
+  }
+
+  const dirs: string[] = [...explicitDirs]
+  // 自动探测目录做越界过滤后再纳入
+  for (const d of autoDirs) {
+    if (isWithinRoot(root, d)) dirs.push(d)
   }
 
   // Turborepo/pnpm monorepo：自动加入 packages/ 下有 TS 文件的目录
