@@ -53,22 +53,62 @@ describe('GraphBuilder', () => {
     db.close()
   })
 
-  it('registerParser 注册解析器', () => {
-    const parser: Parser = {
+  it('registerParser 注册的解析器会被 parseFiles 调用', async () => {
+    const freshDb = new OmniDatabase(':memory:')
+    await freshDb.ready()
+    const freshBuilder = new GraphBuilder(freshDb)
+
+    let handled = 0
+    let parsed = 0
+    freshBuilder.registerParser({
       name: 'test',
-      canHandle: () => true,
-      parse: async () => ({ nodes: [], edges: [], errors: [] }),
-    }
-    builder.registerParser(parser)
-    // 不抛异常即成功
+      canHandle: () => { handled += 1; return true },
+      parse: async (): Promise<ParseResult> => {
+        parsed += 1
+        return { nodes: [makeNode('n1')], edges: [], errors: [] }
+      },
+    })
+
+    const result = await freshBuilder.parseFiles(['test.tsx'], context)
+    expect(handled).toBe(1)
+    expect(parsed).toBe(1)
+    expect(result.stats.totalNodes).toBe(1)
+
+    freshDb.close()
   })
 
-  it('registerParsers 批量注册', () => {
-    const parsers: Parser[] = [
-      { name: 'a', canHandle: () => false, parse: async () => ({ nodes: [], edges: [], errors: [] }) },
-      { name: 'b', canHandle: () => false, parse: async () => ({ nodes: [], edges: [], errors: [] }) },
-    ]
-    builder.registerParsers(parsers)
+  it('registerParsers 批量注册:仅 canHandle 命中的解析器产出节点', async () => {
+    const freshDb = new OmniDatabase(':memory:')
+    await freshDb.ready()
+    const freshBuilder = new GraphBuilder(freshDb)
+
+    const invoked: string[] = []
+    freshBuilder.registerParsers([
+      {
+        name: 'a',
+        canHandle: () => false,
+        parse: async (): Promise<ParseResult> => {
+          invoked.push('a')
+          return { nodes: [makeNode('a-node')], edges: [], errors: [] }
+        },
+      },
+      {
+        name: 'b',
+        canHandle: () => true,
+        parse: async (): Promise<ParseResult> => {
+          invoked.push('b')
+          return { nodes: [makeNode('b-node')], edges: [], errors: [] }
+        },
+      },
+    ])
+
+    const result = await freshBuilder.parseFiles(['test.tsx'], context)
+    // a 的 canHandle 为 false,不应被调用;只有 b 产出节点。
+    expect(invoked).toEqual(['b'])
+    expect(result.stats.totalNodes).toBe(1)
+    expect(result.graph.nodes[0].id).toBe('b-node')
+
+    freshDb.close()
   })
 
   it('parseFiles 正确解析并写入数据库', async () => {
@@ -175,23 +215,44 @@ describe('GraphBuilder', () => {
     freshDb.close()
   })
 
-  it('loadGraph 从数据库加载', async () => {
-    const graph = builder.loadGraph()
-    expect(graph).toBeDefined()
-    expect(Array.isArray(graph.nodes)).toBe(true)
-    expect(Array.isArray(graph.edges)).toBe(true)
+  it('loadGraph 从数据库加载已写入的节点', async () => {
+    const freshDb = new OmniDatabase(':memory:')
+    await freshDb.ready()
+    const freshBuilder = new GraphBuilder(freshDb)
+
+    freshBuilder.registerParser({
+      name: 'mock',
+      canHandle: () => true,
+      parse: async (): Promise<ParseResult> => ({
+        nodes: [makeNode('lg-a'), makeNode('lg-b', 'component')],
+        edges: [makeEdge('lg-e', 'lg-a', 'lg-b')],
+        errors: [],
+      }),
+    })
+    await freshBuilder.parseFiles(['test.tsx'], context)
+
+    const graph = freshBuilder.loadGraph()
+    expect(graph.nodes.map(n => n.id).sort()).toEqual(['lg-a', 'lg-b'])
+    expect(graph.edges).toHaveLength(1)
+    expect(graph.edges[0].id).toBe('lg-e')
+
+    freshDb.close()
   })
 
-  it('clearGraph 清空图', () => {
+  it('clearGraph 清空图', async () => {
     const freshDb = new OmniDatabase(':memory:')
-    freshDb.ready().then(() => {
-      freshDb.upsertNode(makeNode('x'))
-      const freshBuilder = new GraphBuilder(freshDb)
-      freshBuilder.clearGraph()
-      const graph = freshBuilder.loadGraph()
-      expect(graph.nodes).toHaveLength(0)
-      freshDb.close()
-    })
+    await freshDb.ready()
+    freshDb.upsertNode(makeNode('x'))
+    const freshBuilder = new GraphBuilder(freshDb)
+
+    // 清空前确有数据
+    expect(freshBuilder.loadGraph().nodes).toHaveLength(1)
+
+    freshBuilder.clearGraph()
+    const graph = freshBuilder.loadGraph()
+    expect(graph.nodes).toHaveLength(0)
+
+    freshDb.close()
   })
 
   it('解析器异常被捕获并记录', async () => {

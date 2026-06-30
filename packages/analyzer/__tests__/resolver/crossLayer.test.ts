@@ -60,13 +60,20 @@ describe('CrossLayerLinker', () => {
               callType: 'trpc_hook',
               url: 'booking.list',
               method: 'query',
+              callLine: 12,
             },
           },
         ],
       }
 
       const result = await linker.link(graph)
-      expect(result.stats.callsApiEdges).toBeGreaterThanOrEqual(0)
+      // tRPC hook 'booking.list' 应模糊匹配到 routerName=booking/procedureName=list 的 procedure。
+      expect(result.stats.callsApiEdges).toBe(1)
+      const matched = result.edges.find(e => e.type === 'calls_api')
+      expect(matched).toBeTruthy()
+      expect(matched?.target).toBe('trpc_procedure:server/routers/booking.ts:list')
+      expect(matched?.source).toBe('component:src/page.tsx:BookingPage')
+      expect(matched?.confidence).toBe('certain')
     })
 
     it('should handle empty graph', async () => {

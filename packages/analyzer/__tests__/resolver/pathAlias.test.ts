@@ -3,6 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
+import * as os from 'os'
+import * as fs from 'fs'
 import * as path from 'path'
 import { PathAliasResolver } from '../../src/resolver/pathAlias'
 
@@ -33,11 +35,46 @@ describe('PathAliasResolver', () => {
       expect(result).toBeNull()
     })
 
-    it('should handle @ alias', () => {
-      resolver.loadConfig()
-      const result = resolver.resolve('@/components/Button', 'src/page.tsx')
-      // 结果取决于是否有实际文件存在
-      expect(result === null || typeof result === 'string').toBe(true)
+    it('resolves an @ alias to a real file via tsconfig paths', () => {
+      const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'omni-alias-'))
+      try {
+        fs.writeFileSync(
+          path.join(tmpRoot, 'tsconfig.json'),
+          JSON.stringify({
+            compilerOptions: { baseUrl: '.', paths: { '@/*': ['src/*'] } },
+          }),
+        )
+        fs.mkdirSync(path.join(tmpRoot, 'src', 'components'), { recursive: true })
+        const buttonFile = path.join(tmpRoot, 'src', 'components', 'Button.tsx')
+        fs.writeFileSync(buttonFile, 'export const Button = () => null\n')
+
+        const aliasResolver = new PathAliasResolver(tmpRoot)
+        aliasResolver.loadConfig()
+        const result = aliasResolver.resolve('@/components/Button', 'src/page.tsx')
+
+        expect(result).not.toBeNull()
+        expect(path.resolve(result ?? '')).toBe(path.resolve(buttonFile))
+      } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true })
+      }
+    })
+
+    it('returns null for an @ alias with no matching file', () => {
+      const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'omni-alias-'))
+      try {
+        fs.writeFileSync(
+          path.join(tmpRoot, 'tsconfig.json'),
+          JSON.stringify({
+            compilerOptions: { baseUrl: '.', paths: { '@/*': ['src/*'] } },
+          }),
+        )
+        const aliasResolver = new PathAliasResolver(tmpRoot)
+        aliasResolver.loadConfig()
+        const result = aliasResolver.resolve('@/components/DoesNotExist', 'src/page.tsx')
+        expect(result).toBeNull()
+      } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true })
+      }
     })
   })
 

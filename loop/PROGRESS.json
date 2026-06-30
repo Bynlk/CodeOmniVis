@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T16:48:40+08:00",
+  "updatedAt": "2026-06-30T17:00:00+08:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H6",
+  "currentTask": "H7",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -602,6 +602,32 @@
           "doubleCasts": 0,
           "recordUnknown": 1
         }
+      }
+    },
+    {
+      "id": "H7",
+      "code": "TEST-BUG-01/02/03",
+      "title": "rewrite fake tests with real assertions",
+      "status": "done",
+      "commit": "2d08759",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "analyzer 189 (+1 net; 3 fake tests rewritten -> 5 real)",
+        "lint": "0 error (33 warn baseline)",
+        "build": "success",
+        "ast": {
+          "any": 0,
+          "unknown": 81,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      },
+      "metrics": {
+        "builderTest": "registerParser/registerParsers/loadGraph/clearGraph now drive real parseFiles + assert node IDs/counts (was no-op/then-callback)",
+        "crossLayerTest": "tRPC hook fuzzy-match asserts exact procedure target/source/confidence + callsApiEdges===1 (was >=0)",
+        "pathAliasTest": "@ alias resolves to real tmp file via tsconfig paths + null for missing (was true||string)"
       }
     }
   ]
