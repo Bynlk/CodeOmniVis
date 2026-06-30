@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T17:00:00+08:00",
+  "updatedAt": "2026-06-30T17:05:00+08:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H7",
+  "currentTask": "H8",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -628,6 +628,30 @@
         "builderTest": "registerParser/registerParsers/loadGraph/clearGraph now drive real parseFiles + assert node IDs/counts (was no-op/then-callback)",
         "crossLayerTest": "tRPC hook fuzzy-match asserts exact procedure target/source/confidence + callsApiEdges===1 (was >=0)",
         "pathAliasTest": "@ alias resolves to real tmp file via tsconfig paths + null for missing (was true||string)"
+      }
+    },
+    {
+      "id": "H8",
+      "code": "S-03",
+      "title": "basic security response headers middleware",
+      "status": "done",
+      "commit": "PENDING",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "server 50 (+3)",
+        "lint": "0 error",
+        "build": "success",
+        "ast": {
+          "any": 0,
+          "unknown": 81,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      },
+      "metrics": {
+        "middleware": "index.ts: app.disable('x-powered-by') + hand-written header middleware (X-Content-Type-Options nosniff / X-Frame-Options DENY / Referrer-Policy no-referrer / X-DNS-Prefetch-Control off); no new dependency to keep self-contained bundle"
       }
     }
   ]

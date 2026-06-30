@@ -64,6 +64,17 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
   // 初始化 Express
   const app = express()
 
+  // H8 · S-03:基础安全响应头。手写中间件,不引入额外依赖。
+  // - 关闭 x-powered-by 指纹;nosniff 阻断 MIME 嗅探;DENY 阻断点击劫持;no-referrer 防 Referrer 泄露。
+  app.disable('x-powered-by')
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Frame-Options', 'DENY')
+    res.setHeader('Referrer-Policy', 'no-referrer')
+    res.setHeader('X-DNS-Prefetch-Control', 'off')
+    next()
+  })
+
   // 存储项目根路径供路由使用
   app.locals.projectRoot = projectRoot
   app.locals.dbPath = dbPath
