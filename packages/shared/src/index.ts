@@ -133,6 +133,21 @@ export {
   isFreshnessStatus,
 } from './types/freshness'
 
+// 全链路追踪契约导出
+export type {
+  TraceLayer,
+  TraceStep,
+  TraceResult,
+} from './types/trace'
+
+export {
+  TRACE_LAYER_ORDER,
+  traceLayerForNodeType,
+  isTraceLayer,
+  isTraceStep,
+  isTraceResult,
+} from './types/trace'
+
 // 常量导出
 export { NODE_COLORS, NODE_COLORS_ALPHA, NODE_ICONS } from './constants/nodeColors'
 

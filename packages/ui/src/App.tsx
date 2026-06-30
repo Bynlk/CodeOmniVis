@@ -12,9 +12,11 @@ import { IssuesPanel } from './components/TabBar/IssuesPanel'
 import { AiPanel } from './components/TabBar/AiPanel'
 import { StatsPanel } from './components/TabBar/StatsPanel'
 import { DataFlowPanel } from './components/TabBar/DataFlowPanel'
+import { TracePanel } from './components/TabBar/TracePanel'
 import { CommandPalette } from './components/CommandPalette'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { CytoscapeContext } from './lib/cytoscapeContext'
+import { SelectionContext } from './lib/selectionContext'
 import { useGraph } from './hooks/useGraph'
 import { useSearch } from './hooks/useSearch'
 import { useWebSocket } from './hooks/useWebSocket'
@@ -25,6 +27,7 @@ const TABS: TabConfig[] = [
   { id: 'filter',   labelKey: 'tab.filter',   emoji: '🔍', panelComponent: FilterPanel },
   { id: 'issues',   labelKey: 'tab.issues',   emoji: '⚠️', panelComponent: IssuesPanel },
   { id: 'dataflow', labelKey: 'tab.dataflow', emoji: '🌊', panelComponent: DataFlowPanel },
+  { id: 'trace',    labelKey: 'tab.trace',    emoji: '🛤️', panelComponent: TracePanel },
   { id: 'ai',       labelKey: 'tab.ai',       emoji: '🤖', panelComponent: AiPanel },
   { id: 'stats',    labelKey: 'tab.stats',    emoji: '📊', panelComponent: StatsPanel },
 ]
@@ -90,6 +93,7 @@ function App() {
   return (
     <ErrorBoundary>
     <CytoscapeContext.Provider value={cyRef}>
+      <SelectionContext.Provider value={selectedNode}>
       <div className="flex flex-col h-screen bg-slate-900">
         {/* 命令面板 */}
         <CommandPalette
@@ -154,6 +158,7 @@ function App() {
           )}
         </div>
       </div>
+      </SelectionContext.Provider>
     </CytoscapeContext.Provider>
     </ErrorBoundary>
   )

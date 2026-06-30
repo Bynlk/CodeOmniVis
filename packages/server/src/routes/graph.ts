@@ -272,6 +272,36 @@ export function createGraphRouter(db: OmniDatabase): Router {
   })
 
   /**
+   * GET /api/graph/trace?node=<nodeId>
+   * 从指定节点出发,双向(上游+下游)追踪全链路,返回有序站点序列。
+   */
+  router.get('/trace', (req: Request, res: Response) => {
+    try {
+      const nodeId = typeof req.query.node === 'string' ? req.query.node : undefined
+      if (!nodeId) {
+        return res.status(400).json({
+          error: { code: 'MISSING_PARAM', message: 'Query param "node" is required' },
+        })
+      }
+      const graph = db.loadGraph()
+      const exists = graph.nodes.some(n => n.id === nodeId)
+      if (!exists) {
+        return res.status(404).json({
+          error: { code: 'NOT_FOUND', message: `Node not found: ${nodeId}` },
+        })
+      }
+      const tracer = new DataFlowTracer(graph)
+      const result = tracer.traceFromNode(nodeId)
+      res.json({ data: result, meta: { totalSteps: result.totalSteps } })
+    } catch (err) {
+      console.error('Failed to trace from node:', err)
+      res.status(500).json({
+        error: { code: 'INTERNAL_ERROR', message: 'Failed to trace from node' },
+      })
+    }
+  })
+
+  /**
    * GET /api/graph/dataflow
    * 追踪数据流：Model → API → Component
    */

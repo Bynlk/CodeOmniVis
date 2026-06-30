@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react'
 
-export type TabId = 'graph' | 'filter' | 'issues' | 'ai' | 'stats' | 'dataflow'
+export type TabId = 'graph' | 'filter' | 'issues' | 'ai' | 'stats' | 'dataflow' | 'trace'
 
 export interface TabConfig {
   id: TabId

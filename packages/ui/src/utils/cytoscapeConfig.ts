@@ -243,5 +243,39 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
         'overlay-opacity': 0.1,
       } satisfies cytoscape.Css.Node,
     },
+
+    // 链路追踪 — 当前站点光点
+    {
+      selector: 'node.trace-active',
+      style: {
+        'border-width': 5,
+        'border-color': '#fbbf24',
+        'background-color': '#b45309',
+        'font-weight': 'bold',
+        'z-index': 9999,
+      } satisfies cytoscape.Css.Node,
+    },
+
+    // 链路追踪 — 已点亮的链路边
+    {
+      selector: 'edge.trace-path',
+      style: {
+        'line-color': '#fbbf24',
+        'target-arrow-color': '#fbbf24',
+        'width': 3,
+        'opacity': 1,
+        'z-index': 9998,
+      } satisfies cytoscape.Css.Edge,
+    },
+
+    // 链路追踪 — 链路上的节点(暗黄描边)
+    {
+      selector: 'node.trace-path',
+      style: {
+        'border-width': 3,
+        'border-color': '#f59e0b',
+        'opacity': 1,
+      } satisfies cytoscape.Css.Node,
+    },
   ]
 }
