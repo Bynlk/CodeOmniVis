@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T11:45:37.088362+08:00",
+  "updatedAt": "2026-06-30T11:53:01.591947+08:00",
   "currentStage": "Stage B",
-  "currentTask": "B20",
+  "currentTask": "B-MERGE",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -312,10 +312,23 @@
       "id": "B20",
       "stage": "Stage B",
       "name": "设置抽屉+推广",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "954e883",
+      "gates": {
+        "gitDiffCheck": "clean",
+        "typecheck": "ui pass",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=86",
+        "tests": "ui 20 (incl. +8 new)",
+        "lint": "0 errors (2 pre-existing warnings)",
+        "build": "ui build success"
+      },
+      "metrics": {
+        "newTests": 8,
+        "newComponents": "SettingsDrawer",
+        "newLibs": "lib/aiConfig.ts, lib/promotion.ts",
+        "i18nKeys": "+18 per locale",
+        "license": "PolyForm Noncommercial 1.0.0 wording surfaced in About group"
+      }
     },
     {
       "id": "B-MERGE",
