@@ -253,6 +253,8 @@ export class IncrementalAnalyzer {
       await runAnalysis({
         projectRoot: this.projectRoot,
         dbPath: this.dbPath,
+        // 共享 server 持有的同一 DB 句柄(修复 RACE-01::memory: 下查询层才读得到结果)。
+        db: this.db,
       })
       // 切根作废:本轮针对的是旧 root,结果不再广播,也不更新新鲜度。
       if (myGeneration !== this.generation) {

@@ -29,6 +29,13 @@ export interface RunAnalysisOptions {
   projectRoot: string
   dbPath: string
   projectMeta?: ProjectMeta
+  /**
+   * 复用调用方持有的数据库实例。
+   * 提供时:分析结果直接写入该实例,且分析结束后不关闭(由调用方管理生命周期)。
+   * 省略时:按 dbPath 自建实例并在结束时关闭(CLI/一次性场景)。
+   * 修复 RACE-01:server 用 :memory: 时必须共享同一句柄,否则查询层读不到分析结果。
+   */
+  db?: OmniDatabase
 }
 
 export interface RunAnalysisResult {
@@ -87,11 +94,13 @@ function detectProjectMeta(projectRoot: string): ProjectMeta {
  * 执行完整的项目分析
  */
 export async function runAnalysis(options: RunAnalysisOptions): Promise<RunAnalysisResult> {
-  const { projectRoot, dbPath, projectMeta: providedMeta } = options
+  const { projectRoot, dbPath, projectMeta: providedMeta, db: injectedDb } = options
   const projectMeta = providedMeta ?? detectProjectMeta(projectRoot)
 
-  // 初始化数据库
-  const db = new OmniDatabase(dbPath)
+  // 初始化数据库:优先复用调用方注入的实例(共享句柄,修复 RACE-01);
+  // 否则按 dbPath 自建并在结束时关闭。
+  const ownsDb = injectedDb === undefined
+  const db = injectedDb ?? new OmniDatabase(dbPath)
   await db.ready()
 
   // 创建图构建器
@@ -159,8 +168,10 @@ export async function runAnalysis(options: RunAnalysisOptions): Promise<RunAnaly
     edgesCreated += crossLayerResult.edges.length
   }
 
-  // 持久化
-  db.close()
+  // 持久化:仅在自建实例时关闭;注入实例的生命周期由调用方管理。
+  if (ownsDb) {
+    db.close()
+  }
 
   return {
     filesScanned: files.length,

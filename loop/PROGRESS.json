@@ -458,7 +458,7 @@
       "stage": "HEALTH-FIX",
       "name": "Bootstrap（建分支 + 基线快照）",
       "status": "done",
-      "commit": null,
+      "commit": "f0cee6e",
       "gates": {
         "git diff --check": "pass"
       },
