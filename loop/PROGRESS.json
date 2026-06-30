@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-06-30T02:38:58.367754Z",
   "currentStage": "Stage B",
-  "currentTask": "B18",
+  "currentTask": "B19",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -271,10 +271,22 @@
       "id": "B18",
       "stage": "Stage B",
       "name": "全链路追踪 tab",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "5158b7a",
+      "gates": {
+        "gitDiffCheck": "pass",
+        "typecheck": "shared/analyzer/server/ui all pass",
+        "astScan": "any=0 unknown=84 assertions=0 doubleCasts=0",
+        "tests": "shared 66, analyzer 177, server 25, ui 12",
+        "lint": "0 errors (pre-existing warnings only)"
+      },
+      "metrics": {
+        "contract": "shared/types/trace.ts: TraceLayer/TraceStep/TraceResult + TRACE_LAYER_ORDER/traceLayerForNodeType/isTraceLayer/isTraceStep/isTraceResult",
+        "analyzer": "DataFlowTracer.traceFromNode bidirectional (upstream incomingEdges reversed + downstream outgoingEdges, max 64, visited cycle guard, LINK_EDGE_TYPES) + explainStep static explanation",
+        "server": "GET /api/graph/trace?node=<id> (400 no param, 404 unknown node)",
+        "ui": "trace tab + SelectionContext + useTrace hook; TraceStepCard (第N站 three-column node/via/explain + layer accent); TraceRunner (cytoscape trace-active/trace-path classes, 1s/station loop, center focus); TracePanel (run/replay/stop + static-first cards + AI-fallback /api/ai/explain link summary); cytoscapeConfig trace-* style classes",
+        "i18n": "trace.* keys both locales"
+      }
     },
     {
       "id": "B19",
