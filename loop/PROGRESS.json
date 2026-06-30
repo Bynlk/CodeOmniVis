@@ -609,7 +609,7 @@
       "code": "TEST-BUG-01/02/03",
       "title": "rewrite fake tests with real assertions",
       "status": "done",
-      "commit": "2d08759",
+      "commit": "a57ae44",
       "gates": {
         "diffCheck": "clean",
         "typecheck": "0 error",
