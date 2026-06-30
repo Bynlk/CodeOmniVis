@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-06-30T18:05:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H14",
+  "currentTask": "H15",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -780,6 +780,34 @@
         "selfCheck": "injected `const x: number = 'str'` into a test -> tsc -p tsconfig.test.json reported TS2322, reverted",
         "graphExport": "shared/types/graph.ts re-exports OmniNode/NodeType/OmniEdge/EdgeType for convenience",
         "noCast": "zero as-casts / non-null assertions / wide fallback"
+      }
+    },
+    {
+      "id": "H14",
+      "code": "E-06",
+      "title": "eliminate unused-vars lint warnings",
+      "status": "done",
+      "commit": "012dbe9",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error (8/8 incl deps)",
+        "test": "all pass (analyzer 189 / cli 13 / ui 39 = 241)",
+        "lint": "0 error, 0 warning (was 38: analyzer 33 / cli 3 / ui 2 -> 0)",
+        "build": "success (6/6)",
+        "ast": {
+          "any": 0,
+          "unknown": 83,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      },
+      "metrics": {
+        "change": "removed unused imports (ts-morph SyntaxKind/CallExpression/SourceFile/etc, shared EdgeType/DbRelationMetadata/TrpcProcedureMetadata/IssueLocation, node path), dropped unused locals (createEdgeId, prisma relation, builder nodesSaved/edgesSaved assignments -> keep side-effect calls), removed dead empty render-loop in builder.ts and dead scanForRouters fn in cli autoDetect.ts, destructure [,proc] in consistency.ts, optional catch in scanDirectory.ts",
+        "argsPrefixed": "unused args prefixed with _ to match /^_/u: typeorm _filePath, authDetector _projectRoot, crossLayer _nodeMap, pathAlias _fromFile",
+        "uiBugfix": "Header.tsx now renders refreshError via role=alert span (was captured but never surfaced); GraphCanvas drops unused useCallback; no TailwindCSS introduced (existing className scheme reused)",
+        "residual": "MODULE_TYPELESS_PACKAGE_JSON node runtime notice remains (eslint.config.js loaded as ESM without root type:module) — not a lint rule violation, 0 eslint problems; left untouched to avoid altering module resolution across packages",
+        "noCast": "zero as-casts / non-null assertions / wide fallback / string-key metadata"
       }
     }
   ]
