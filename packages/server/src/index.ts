@@ -218,6 +218,15 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     })
   })
 
+  // LEAK-02 · F11:ws 在 { server } 模式下会把底层 HTTP server 的 'error' 事件
+  // 转发到 WebSocketServer 实例。若 wss 上没有 'error' 监听器,监听失败(如 EADDRINUSE)
+  // 会以未处理 'error' 事件的形式直接 throw,使进程崩溃,且早于 start() 内的
+  // server.once('error') 生效。这里挂一个 wss 级 error 处理器把错误交还给 server,
+  // 由 start() 的 onError 统一 reject + 清理。
+  wss.on('error', (err) => {
+    console.error('WebSocketServer error:', err)
+  })
+
   // 广播图更新
   function broadcastGraphUpdate(): void {
     try {
@@ -261,6 +270,10 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     broadcastStatus(status)
   })
 
+  // LEAK-02 · F11:start 状态机,防止重复启动并支撑监听失败时的 reject + cleanup。
+  // 'idle' 未启动 → 'starting' 启动中 → 'listening' 已监听 → 'stopped' 已停止。
+  let startState: 'idle' | 'starting' | 'listening' | 'stopped' = 'idle'
+
   // H9 · LEAK-01:进程退出钩子(start 注册 / stop 注销),保证 wss + DB + watcher 释放。
   let tearingDown = false
   const handleExit = (signal: NodeJS.Signals): void => {
@@ -277,6 +290,12 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
   // 启动服务器
   async function start(): Promise<void> {
+    // LEAK-02 · F11:防重复启动。非 idle 状态直接 reject,避免重复注册监听 / 退出钩子。
+    if (startState !== 'idle') {
+      throw new Error(`server.start() cannot run in state '${startState}'`)
+    }
+    startState = 'starting'
+
     await db.ready()
 
     // 启动文件监听
@@ -286,12 +305,30 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     process.on('SIGINT', handleExit)
     process.on('SIGTERM', handleExit)
 
-    return new Promise((resolve) => {
-      server.listen(port, host, () => {
+    return new Promise<void>((resolve, reject) => {
+      // LEAK-02 · F11:监听失败(如 EADDRINUSE)时清理 start() 已获取的资源并 reject,
+      // 避免 Promise 永久挂起与退出钩子 / watcher 泄漏。
+      const onError = (err: Error): void => {
+        server.removeListener('listening', onListening)
+        process.removeListener('SIGINT', handleExit)
+        process.removeListener('SIGTERM', handleExit)
+        startState = 'stopped'
+        // LEAK-02 · F11:先同步 reject,再异步清理 watcher。
+        // 不能让 reject 依赖 incrementalAnalyzer.stop() 完成——若 watcher 关闭挂起,
+        // Promise 将永久无法 settle。
+        reject(err)
+        void incrementalAnalyzer.stop().catch(() => {})
+      }
+      const onListening = (): void => {
+        server.removeListener('error', onError)
+        startState = 'listening'
         console.log(`CodeOmniVis server running at http://${host}:${port}`)
         console.log(`WebSocket available at ws://${host}:${port}/ws`)
         resolve()
-      })
+      }
+      server.once('error', onError)
+      server.once('listening', onListening)
+      server.listen(port, host)
     })
   }
 
@@ -321,7 +358,14 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     // 关闭数据库
     db.close()
 
-    // 关闭服务器
+    const wasListening = startState === 'listening'
+    startState = 'stopped'
+
+    // 关闭服务器。LEAK-02 · F11:仅在曾经成功监听时才 close(),
+    // 否则 server.close() 会抛 ERR_SERVER_NOT_RUNNING(start 失败后调用 stop 的场景)。
+    if (!wasListening) {
+      return
+    }
     return new Promise((resolve, reject) => {
       server.close((err) => {
         if (err) reject(err)
