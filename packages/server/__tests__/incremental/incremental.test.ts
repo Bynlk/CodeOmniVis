@@ -99,11 +99,33 @@ describe('IncrementalAnalyzer freshness', () => {
     expect(analyzer.getStatus().state).toBe('fresh')
   })
 
-  it('recovers to fresh when a manual refresh fails with no pending changes', async () => {
+  it('rejects and stays stale when a manual refresh fails (E-07: no false success)', async () => {
     runAnalysisMock.mockRejectedValue(new Error('boom'))
     const analyzer = makeAnalyzer(db)
-    await analyzer.refresh()
-    expect(analyzer.getStatus().state).toBe('fresh') // 手动刷新无残留变更,失败后回到 fresh
+    // 手动刷新失败必须传播错误,而不是 silently resolve(REST /api/analyze 才能返回 500)。
+    await expect(analyzer.refresh()).rejects.toThrow('boom')
+    // 失败后状态不能误报 fresh —— 即便没有残留变更,也应保持 stale 以反映数据未更新。
+    expect(analyzer.getStatus().state).toBe('stale')
     expect(runAnalysisMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not propagate failures from automatic watcher-triggered analysis', async () => {
+    const first = deferred()
+    // 第一次(手动)分析挂起并最终失败;补跑(自动)成功。
+    runAnalysisMock
+      .mockReturnValueOnce(first.promise.then(() => { throw new Error('first-fail') }))
+      .mockResolvedValue({
+        filesScanned: 0, nodesCreated: 0, edgesCreated: 0, crossLayerEdges: 0, errors: 0,
+      })
+
+    const analyzer = makeAnalyzer(db)
+    const running = analyzer.refresh()        // 第一次分析(挂起)
+    const queued = analyzer.refresh()          // 分析中再次刷新 -> 记为补跑
+    await queued
+    first.resolve()
+    // 第一次手动分析失败会传播,但补跑(自动)成功后状态恢复 fresh。
+    await expect(running).rejects.toThrow('first-fail')
+    expect(runAnalysisMock).toHaveBeenCalledTimes(2)
+    expect(analyzer.getStatus().state).toBe('fresh')
   })
 })

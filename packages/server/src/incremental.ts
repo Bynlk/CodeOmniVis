@@ -211,13 +211,14 @@ export class IncrementalAnalyzer {
    * 与文件监听共用串行化逻辑;分析进行中则记为补跑请求。
    */
   async refresh(): Promise<void> {
-    await this.triggerAnalysis(this.lastChangedFile)
+    // manual=true:手动刷新失败必须向调用方传播,避免 REST /api/analyze 误报 success(E-07)。
+    await this.triggerAnalysis(this.lastChangedFile, true)
   }
 
   /**
    * 触发增量分析(串行化,不丢失分析期间到达的变更)
    */
-  private async triggerAnalysis(filePath: string | null): Promise<void> {
+  private async triggerAnalysis(filePath: string | null, manual = false): Promise<void> {
     if (this.isAnalyzing) {
       // 修复丢变更 bug:分析进行中再来变更不直接丢弃,而是标记补跑。
       console.log('[IncrementalAnalyzer] Analysis in progress, queuing rerun')
@@ -227,7 +228,7 @@ export class IncrementalAnalyzer {
 
     // 绑定本轮分析所属世代;切根会递增 generation,使旧世代结果被丢弃。
     const myGeneration = this.generation
-    const run = this.runAnalysisCycle(filePath, myGeneration)
+    const run = this.runAnalysisCycle(filePath, myGeneration, manual)
     this.analysisInFlight = run
     try {
       await run
@@ -240,13 +241,17 @@ export class IncrementalAnalyzer {
   }
 
   /** 实际执行一轮分析;myGeneration 用于切根后作废过期结果。 */
-  private async runAnalysisCycle(filePath: string | null, myGeneration: number): Promise<void> {
+  private async runAnalysisCycle(filePath: string | null, myGeneration: number, manual: boolean): Promise<void> {
     this.isAnalyzing = true
     this.setState('analyzing')
     codeomnivisEvents.emit(EVENTS.ANALYSIS_STARTED)
     // 进入分析的瞬间,已知变更视为"被本轮消费",清零计数。
     const consumed = this.pendingChanges
     this.pendingChanges = 0
+
+    // 本轮分析的失败原因;非空表示分析失败,用于:1) 收尾时置 stale 而非 fresh;
+    // 2) 手动刷新(manual)向调用方传播,避免 REST /api/analyze 误报 success(E-07)。
+    let failure: unknown = null
 
     try {
       console.log('[IncrementalAnalyzer] Running re-analysis...')
@@ -267,6 +272,7 @@ export class IncrementalAnalyzer {
       codeomnivisEvents.emit(EVENTS.ANALYSIS_COMPLETED)
     } catch (err) {
       console.error('[IncrementalAnalyzer] Analysis failed:', err)
+      failure = err
       // 失败:把消费掉的变更归还,保持 stale 以便重试。
       this.pendingChanges += consumed
     } finally {
@@ -278,10 +284,18 @@ export class IncrementalAnalyzer {
         // 分析期间有新变更到达,立即补跑一次。
         this.rerunRequested = false
         const next = this.lastChangedFile
+        // 补跑属自动重试,失败不向手动调用方传播,故 manual=false。
         await this.triggerAnalysis(next)
       } else {
-        this.setState(this.pendingChanges > 0 ? 'stale' : 'fresh')
+        // 失败时强制 stale(即便无残留变更也不能误报 fresh);成功才按残留变更决定。
+        this.setState(failure !== null || this.pendingChanges > 0 ? 'stale' : 'fresh')
       }
+    }
+
+    // 手动刷新失败:向调用方传播错误,使 REST /api/analyze 返回 500 而非 success。
+    // 自动(watcher)触发的失败保持吞掉,仅靠 stale 状态 + 下次变更重试。
+    if (manual && failure !== null) {
+      throw failure instanceof Error ? failure : new Error(String(failure))
     }
   }
 
