@@ -173,7 +173,7 @@
       "stage": "Stage A",
       "name": "type-aware ESLint",
       "status": "done",
-      "commit": "PENDING",
+      "commit": "e0b1e86",
       "gates": {
         "eslintTypeAware": "pass (0 errors, 39 pre-existing unused-var warnings)",
         "turboTypecheck": "pass (10/10)",

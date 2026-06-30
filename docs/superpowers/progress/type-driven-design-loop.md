@@ -150,7 +150,7 @@
 
 ## Task 9 - Enforce type-aware ESLint
 
-- Commit: (this commit)
+- Commit: e0b1e86
 - Gates:
   - eslint packages/*/src (type-aware): pass (0 errors; 39 pre-existing no-unused-vars warnings, non-blocking)
   - pnpm turbo typecheck: pass (10/10)
