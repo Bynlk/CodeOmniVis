@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-06-30T20:03:59",
+  "updatedAt": "2026-06-30T20:15:40",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F4",
+  "currentTask": "F5",
   "baseline": {
     "any": 0,
     "unknown": 83,
@@ -68,6 +68,26 @@
         "typecheck": "pass",
         "test": "server58 pass; cli typecheck pass",
         "lint": "0 err",
+        "build": "pass",
+        "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F4",
+      "audit": "S-08",
+      "severity": "Med",
+      "packages": [
+        "cli",
+        "analyzer"
+      ],
+      "status": "done",
+      "commit": "8edc180",
+      "summary": "collectScanDirs default scans only within projectRoot via isWithinRoot guard; CLI sibling dirs only via explicit config; analyzer sibling ../frontend only when monorepoType!='none'; exported analyzer collectScanDirs",
+      "gates": {
+        "diffcheck": "pass",
+        "typecheck": "pass",
+        "test": "cli15(+2)+analyzer191(+2) pass",
+        "lint": "0 err 0 warn",
         "build": "pass",
         "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
       }
