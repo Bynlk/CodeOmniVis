@@ -684,7 +684,7 @@
       "code": "MAGIC-02",
       "title": "replace readyState magic number with WebSocket.OPEN",
       "status": "done",
-      "commit": "PENDING",
+      "commit": "80e2443",
       "gates": {
         "diffCheck": "clean",
         "typecheck": "0 error",
