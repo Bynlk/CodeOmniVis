@@ -91,7 +91,7 @@ export class PathAliasResolver {
    * @param fromFile - 导入文件的路径
    * @returns 解析后的绝对路径，如果无法解析返回 null
    */
-  resolve(importPath: string, fromFile: string): string | null {
+  resolve(importPath: string, _fromFile: string): string | null {
     if (!this.config) {
       this.loadConfig()
     }

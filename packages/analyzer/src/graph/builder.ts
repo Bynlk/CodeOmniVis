@@ -15,7 +15,6 @@ import type {
   Parser,
   ParseContext,
 } from '@codeomnivis/shared'
-import { createEdgeId } from '@codeomnivis/shared'
 import { OmniDatabase } from '../storage/db'
 
 // ============================================================
@@ -99,8 +98,8 @@ export class GraphBuilder {
     const { validEdges, skippedEdges } = this.validateAndDeduplicateEdges(allEdges, uniqueNodes)
 
     // 写入数据库
-    const nodesSaved = this.db.upsertNodes(uniqueNodes)
-    const edgesSaved = this.db.upsertEdges(validEdges)
+    this.db.upsertNodes(uniqueNodes)
+    this.db.upsertEdges(validEdges)
     // 转换 ParseError 为 DbError 格式
     const dbErrors = allErrors.map(e => ({
       file: e.file,
@@ -207,9 +206,6 @@ export class GraphBuilder {
 
     // 构建已有的 renders 边集合（避免重复）
     const existingRenders = new Set<string>()
-    for (const node of nodes) {
-      // 这里只能从 nodes 推断，实际 edges 在后续步骤
-    }
 
     // 需要扫描的节点类型
     const scanTypes = new Set(['page', 'component', 'handler'])

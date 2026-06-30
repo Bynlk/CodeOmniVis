@@ -13,8 +13,6 @@ import type { OmniNode, OmniEdge } from '@codeomnivis/shared'
 import { parseKotlinSource } from './treeSitterInit'
 import { walkKotlinTree } from './kotlinWalker'
 
-const KTOR_HTTP_METHODS = new Set(['get', 'post', 'put', 'delete', 'patch', 'head', 'options'])
-
 type KotlinHttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS'
 
 function toKotlinHttpMethod(value: string): KotlinHttpMethod | null {

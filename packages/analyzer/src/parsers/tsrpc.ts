@@ -13,7 +13,7 @@
  * - 自动生成：serviceProto.ts（跳过）
  */
 
-import { Project, SyntaxKind, CallExpression, Node, SourceFile } from 'ts-morph'
+import { Project, SyntaxKind, Node, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import * as fs from 'fs'
 import type {

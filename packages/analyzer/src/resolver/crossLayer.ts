@@ -840,7 +840,7 @@ export class CrossLayerLinker {
    * - kotlin_function → kotlin_class @Service (calls_service)
    * - kotlin_class @Service → db_model (queries_db)
    */
-  private linkKotlinCrossLayer(graph: OmniGraph, nodeMap: Map<string, OmniNode>): OmniEdge[] {
+  private linkKotlinCrossLayer(graph: OmniGraph, _nodeMap: Map<string, OmniNode>): OmniEdge[] {
     const edges: OmniEdge[] = []
 
     const kotlinRoutes = graph.nodes.filter(n => isNodeOfType(n, 'kotlin_route'))

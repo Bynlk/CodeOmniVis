@@ -233,8 +233,6 @@ export class PrismaParser implements Parser {
       // 确定关系类型
       const relationType = this.getRelationType(field)
 
-      // 获取关系详情
-      const relation = model.relationFrom?.find(r => r.name === field.relationName) || null
 
       const edgeId = createEdgeId(sourceNodeId, 'db_relation', targetNodeId)
 

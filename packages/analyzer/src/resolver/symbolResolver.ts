@@ -18,7 +18,6 @@ import {
   MethodDeclaration,
   FunctionExpression,
 } from 'ts-morph'
-import * as path from 'path'
 import * as fs from 'fs'
 import type { OmniNode } from '@codeomnivis/shared'
 

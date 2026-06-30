@@ -8,7 +8,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, Node, VariableDeclaration, SourceFile, ObjectLiteralExpression } from 'ts-morph'
+import { Project, Node, SourceFile, ObjectLiteralExpression } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,

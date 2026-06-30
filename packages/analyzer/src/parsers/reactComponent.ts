@@ -7,7 +7,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, Node, CallExpression, JsxElement, JsxSelfClosingElement, SourceFile, FunctionDeclaration, ArrowFunction, MethodDeclaration, FunctionExpression, VariableDeclaration } from 'ts-morph'
+import { Project, Node, SourceFile, FunctionDeclaration, ArrowFunction, MethodDeclaration, FunctionExpression, VariableDeclaration } from 'ts-morph'
 import * as path from 'path'
 import * as fs from 'fs'
 import type {

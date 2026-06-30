@@ -8,7 +8,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, Node, Decorator, ClassDeclaration, MethodDeclaration, SourceFile } from 'ts-morph'
+import { Project, Node, Decorator, ClassDeclaration, MethodDeclaration } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -20,7 +20,6 @@ import type {
   ProjectMeta,
   ApiRouteMetadata,
   HandlerMetadata,
-  EdgeType,
 } from '@codeomnivis/shared'
 import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 

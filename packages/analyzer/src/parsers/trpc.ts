@@ -7,7 +7,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, CallExpression, Node, SourceFile } from 'ts-morph'
+import { Project, CallExpression, Node, SourceFile } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -17,7 +17,6 @@ import type {
   OmniNode,
   OmniEdge,
   ProjectMeta,
-  TrpcProcedureMetadata,
 } from '@codeomnivis/shared'
 import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 

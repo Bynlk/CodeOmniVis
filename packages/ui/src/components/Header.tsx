@@ -104,6 +104,11 @@ export default function Header({ query, onQueryChange, onOpenSettings }: HeaderP
               {isRefreshing ? t('header.refreshing') : t('header.refresh')}
             </span>
           </button>
+          {refreshError && (
+            <span role="alert" className="ml-2 text-xs text-red-600">
+              {refreshError}
+            </span>
+          )}
         </div>
       </div>
     </header>

@@ -254,7 +254,7 @@ export class ConsistencyChecker {
       if (!procedureName) continue
 
       // 检查 procedure 是否存在
-      const [router, proc] = procedureName.split('.')
+      const [, proc] = procedureName.split('.')
       const exists = procedureNames.has(proc) || procedureNames.has(procedureName)
 
       if (!exists) {

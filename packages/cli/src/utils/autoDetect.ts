@@ -451,34 +451,6 @@ function findTsrpcPaths(root: string): {
   return { apiDirs: [...new Set(apiDirs)], protocolDirs: [...new Set(protocolDirs)], serviceProto }
 }
 
-// 递归扫描目录，查找包含 createTRPCRouter 的 TS 文件（返回绝对路径）
-function scanForRouters(dir: string, projectRoot: string, results: string[], visited: Set<string>): void {
-  const absDir = path.resolve(dir)
-  if (visited.has(absDir)) return
-  visited.add(absDir)
-
-  try {
-    const entries = fs.readdirSync(absDir, { withFileTypes: true })
-    for (const entry of entries) {
-      const fullPath = path.join(absDir, entry.name)
-      if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== 'dist') {
-        scanForRouters(fullPath, projectRoot, results, visited)
-      } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
-        try {
-          const content = fs.readFileSync(fullPath, 'utf-8')
-          if (content.includes('createTRPCRouter') || content.includes('router(')) {
-            // 返回绝对路径
-            results.push(fullPath)
-          }
-        } catch {
-          // 跳过无法读取的文件
-        }
-      }
-    }
-  } catch {
-    // 忽略读取错误
-  }
-}
 
 /**
  * 查找 TypeORM entity 文件目录

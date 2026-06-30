@@ -99,7 +99,7 @@ export class AuthDetector {
   /**
    * 分析单个文件的鉴权覆盖
    */
-  private analyzeFile(fullPath: string, nodes: OmniNode[], projectRoot: string): Issue[] {
+  private analyzeFile(fullPath: string, nodes: OmniNode[], _projectRoot: string): Issue[] {
     const issues: Issue[] = []
 
     const content = fs.readFileSync(fullPath, 'utf-8')

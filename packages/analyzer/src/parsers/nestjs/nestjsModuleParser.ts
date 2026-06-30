@@ -7,7 +7,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, Node, Decorator, ClassDeclaration } from 'ts-morph'
+import { Project, Node, Decorator, ClassDeclaration } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,

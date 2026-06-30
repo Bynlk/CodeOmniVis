@@ -7,7 +7,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, ClassDeclaration, PropertyDeclaration, Decorator, Node, SourceFile } from 'ts-morph'
+import { Project, ClassDeclaration, PropertyDeclaration, Decorator, Node } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -19,7 +19,6 @@ import type {
   ProjectMeta,
   DbModelMetadata,
   DbFieldInfo,
-  DbRelationMetadata,
 } from '@codeomnivis/shared'
 import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 
@@ -249,7 +248,7 @@ export class TypeormParser implements Parser {
   /**
    * 提取关系装饰器
    */
-  private extractRelations(classDecl: ClassDeclaration, filePath: string): RelationInfo[] {
+  private extractRelations(classDecl: ClassDeclaration, _filePath: string): RelationInfo[] {
     const relations: RelationInfo[] = []
 
     const relationDecorators = ['OneToOne', 'OneToMany', 'ManyToOne', 'ManyToMany']

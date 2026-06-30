@@ -12,7 +12,7 @@
 import { Project, SyntaxKind, Node, type CallExpression, type SourceFile } from 'ts-morph'
 import * as fs from 'fs'
 import * as path from 'path'
-import type { OmniGraph, OmniNode, Issue, IssueLocation } from '@codeomnivis/shared'
+import type { OmniGraph, OmniNode, Issue } from '@codeomnivis/shared'
 
 // DB 调用模式（与 SymbolResolver.extractDbCall 一致）
 const PRISMA_PATTERN = /(?:prisma|ctx\.prisma|db|this\.prisma|this\.db)\.(\w+)\.(findMany|findFirst|findUnique|findUniqueOrThrow|create|createMany|update|updateMany|upsert|delete|deleteMany|count|aggregate|groupBy)/

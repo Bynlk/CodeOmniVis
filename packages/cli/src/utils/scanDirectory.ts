@@ -33,7 +33,7 @@ export function scanDirectory(dir: string, rootDir: string): string[] {
         }
       }
     }
-  } catch (err) {
+  } catch {
     // 忽略无法读取的目录
   }
 

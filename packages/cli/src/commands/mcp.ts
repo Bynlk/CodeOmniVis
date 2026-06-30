@@ -28,7 +28,7 @@ export function mcpCommand(program: Command): void {
         process.env.CODEOMNIVIS_PROJECT = projectRoot
 
         // 动态导入 MCP 包
-        const mcp = await import('@codeomnivis/mcp')
+        await import('@codeomnivis/mcp')
 
         spinner.succeed(chalk.green('MCP Server started'))
         console.log(chalk.gray('\nListening on stdio transport'))

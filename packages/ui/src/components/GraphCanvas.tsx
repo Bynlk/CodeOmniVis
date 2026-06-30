@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect } from 'react'
 import cytoscape from 'cytoscape'
 import { useTranslation } from 'react-i18next'
 import type { OmniGraph } from '@codeomnivis/shared'

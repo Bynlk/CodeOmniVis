@@ -8,7 +8,7 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import { Project, SyntaxKind, Node, Decorator, ClassDeclaration, ParameterDeclaration } from 'ts-morph'
+import { Project, Node, Decorator, ClassDeclaration, ParameterDeclaration } from 'ts-morph'
 import * as path from 'path'
 import type {
   Parser,
@@ -19,7 +19,6 @@ import type {
   OmniEdge,
   ProjectMeta,
   ServiceMetadata,
-  EdgeType,
 } from '@codeomnivis/shared'
 import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 

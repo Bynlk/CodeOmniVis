@@ -11,10 +11,9 @@ import type { Parser, ParseResult, ParseContext, ProjectMeta } from '@codeomnivi
 import { createNodeId, createEdgeId } from '@codeomnivis/shared'
 import type { OmniNode, OmniEdge } from '@codeomnivis/shared'
 import { parseKotlinSource } from './treeSitterInit'
-import { walkKotlinTree, type KotlinClassInfo, type KotlinFunctionInfo } from './kotlinWalker'
+import { walkKotlinTree } from './kotlinWalker'
 
 const SPRING_CONTROLLER_ANNOTATIONS = new Set(['RestController', 'Controller'])
-const SPRING_ROUTE_ANNOTATIONS = new Set(['GetMapping', 'PostMapping', 'PutMapping', 'DeleteMapping', 'PatchMapping', 'RequestMapping'])
 const SPRING_SERVICE_ANNOTATIONS = new Set(['Service'])
 const SPRING_REPOSITORY_ANNOTATIONS = new Set(['Repository'])
 const SPRING_ENTITY_ANNOTATIONS = new Set(['Entity'])
