@@ -155,3 +155,68 @@ export function filterNodesByType(graph: OmniGraph, type: NodeType): OmniNode[] 
 export function filterEdgesByType(graph: OmniGraph, type: EdgeType): OmniEdge[] {
   return graph.edges.filter(e => e.type === type)
 }
+
+// ============================================================
+// 图噪声治理(sanitize)
+// ============================================================
+
+/** sanitizeGraph 移除的噪声统计。 */
+export interface GraphSanitizeStats {
+  /** 自环边(source === target)数量 */
+  selfReferences: number
+  /** 端点缺失边(source/target 不在节点集合中)数量 */
+  danglingEndpoints: number
+  /** 重复边(相同 source--type--target)被合并掉的数量 */
+  duplicateEdges: number
+}
+
+/** sanitizeGraph 的结果:清洗后的图 + 噪声统计。 */
+export interface GraphSanitizeResult {
+  graph: OmniGraph
+  stats: GraphSanitizeStats
+}
+
+/**
+ * 图噪声治理:产出可安全交给 cytoscape 渲染的图。
+ *
+ * 治理项(顺序固定,逐项计数):
+ *  1. 自环边:source === target —— cytoscape 上表现为节点自指,语义噪声,移除。
+ *  2. 端点缺失边:source 或 target 不在节点集合中 —— cytoscape 报 "can not create edge
+ *     with nonexistant source/target",移除。
+ *  3. 重复边:相同 (source, type, target) 只保留首次出现的一条,避免重叠端点连线。
+ *
+ * 纯函数:不修改入参,返回新的 nodes/edges 数组。
+ */
+export function sanitizeGraph(graph: OmniGraph): GraphSanitizeResult {
+  const nodeIds = new Set(graph.nodes.map(n => n.id))
+
+  let selfReferences = 0
+  let danglingEndpoints = 0
+  let duplicateEdges = 0
+
+  const seen = new Set<string>()
+  const edges: OmniEdge[] = []
+
+  for (const edge of graph.edges) {
+    if (edge.source === edge.target) {
+      selfReferences += 1
+      continue
+    }
+    if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
+      danglingEndpoints += 1
+      continue
+    }
+    const key = `${edge.source}\u0000${edge.type}\u0000${edge.target}`
+    if (seen.has(key)) {
+      duplicateEdges += 1
+      continue
+    }
+    seen.add(key)
+    edges.push(edge)
+  }
+
+  return {
+    graph: { nodes: graph.nodes.slice(), edges },
+    stats: { selfReferences, danglingEndpoints, duplicateEdges },
+  }
+}

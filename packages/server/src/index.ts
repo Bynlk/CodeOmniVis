@@ -8,10 +8,12 @@
 import express from 'express'
 import cors from 'cors'
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
 import type { FreshnessStatus } from '@codeomnivis/shared'
+import { isJsonObject } from '@codeomnivis/shared'
 import { OmniDatabase } from '@codeomnivis/analyzer'
 import { createGraphRouter } from './routes/graph'
 import { codeomnivisEvents, EVENTS } from './events'
@@ -101,6 +103,39 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     } catch (err) {
       console.error('Analysis failed:', err)
       res.status(500).json({ error: String(err) })
+    }
+  })
+
+  // POST /api/project — 运行时切换分析的项目根目录
+  // body: { projectRoot: string }。校验目录存在,切换后重建图并重新分析。
+  app.post('/api/project', async (req, res) => {
+    const body: unknown = req.body
+    const projectRootInput = isJsonObject(body) ? body.projectRoot : undefined
+    if (typeof projectRootInput !== 'string' || projectRootInput.trim() === '') {
+      res.status(400).json({
+        error: { code: 'INVALID_INPUT', message: 'projectRoot must be a non-empty string' },
+      })
+      return
+    }
+
+    const resolved = path.resolve(projectRootInput)
+    if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
+      res.status(400).json({
+        error: { code: 'INVALID_PROJECT_ROOT', message: `Not an existing directory: ${resolved}` },
+      })
+      return
+    }
+
+    try {
+      await incrementalAnalyzer.setProjectRoot(resolved)
+      app.locals.projectRoot = resolved
+      res.json({
+        data: { projectRoot: resolved, status: incrementalAnalyzer.getStatus() },
+        meta: {},
+      })
+    } catch (err) {
+      console.error('Failed to switch project root:', err)
+      res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: String(err) } })
     }
   })
 

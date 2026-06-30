@@ -46,6 +46,7 @@ export class IncrementalAnalyzer {
   private watcher: ReturnType<typeof chokidar.watch> | null = null
   private projectRoot: string
   private dbPath: string
+  private readonly db: OmniDatabase
   private debounceMs: number
   private watchDirs: string[] | undefined
   private debounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -62,8 +63,47 @@ export class IncrementalAnalyzer {
   constructor(options: IncrementalAnalyzerOptions) {
     this.projectRoot = options.projectRoot
     this.dbPath = options.dbPath
+    this.db = options.db
     this.debounceMs = options.debounceMs ?? 1000
     this.watchDirs = options.watchDirs
+  }
+
+  /** 当前监听的项目根路径。 */
+  getProjectRoot(): string {
+    return this.projectRoot
+  }
+
+  /**
+   * 运行时切换项目根目录。
+   * 停止旧监听 -> 清空旧图 -> 切换根 -> 重启监听 -> 重新分析。
+   * 调用方需先确保 newRoot 是存在的目录;此处再次防御性校验。
+   */
+  async setProjectRoot(newRoot: string): Promise<void> {
+    const resolved = path.resolve(newRoot)
+    if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
+      throw new Error(`Project root is not an existing directory: ${resolved}`)
+    }
+    if (resolved === this.projectRoot) {
+      // 同一目录:直接重跑一次分析即可。
+      await this.refresh()
+      return
+    }
+
+    // 停止旧监听
+    this.stop()
+
+    // 切换根并重置新鲜度,旧图先清空避免跨项目脏数据。
+    this.projectRoot = resolved
+    this.db.clearGraph()
+    this.pendingChanges = 0
+    this.lastChangedFile = null
+    this.lastAnalyzedAt = null
+    this.rerunRequested = false
+    this.setState('stale')
+
+    // 重启监听并触发首轮分析
+    this.start()
+    await this.refresh()
   }
 
   /** 当前新鲜度快照(供 REST / WS 读取)。 */

@@ -9,7 +9,7 @@ import { Router, Request, Response } from 'express'
 import type { OmniDatabase } from '@codeomnivis/analyzer'
 import { DataFlowTracer } from '@codeomnivis/analyzer'
 import type { NodeType, EdgeType } from '@codeomnivis/shared'
-import { isEdgeType, isNodeType } from '@codeomnivis/shared'
+import { isEdgeType, isNodeType, sanitizeGraph } from '@codeomnivis/shared'
 
 // 合法的节点类型和边类型
 const VALID_NODE_TYPES: ReadonlySet<string> = new Set<NodeType>([
@@ -39,16 +39,18 @@ export function createGraphRouter(db: OmniDatabase): Router {
    */
   router.get('/', (_req: Request, res: Response) => {
     try {
-      const graph = db.loadGraph()
+      const rawGraph = db.loadGraph()
+      const { graph, stats: sanitizeStats } = sanitizeGraph(rawGraph)
       const stats = db.getStats()
 
       res.json({
         data: graph,
         meta: {
-          nodeCount: stats.nodeCount,
-          edgeCount: stats.edgeCount,
+          nodeCount: graph.nodes.length,
+          edgeCount: graph.edges.length,
           nodesByType: stats.nodeTypeCounts,
           edgesByType: stats.edgeTypeCounts,
+          sanitize: sanitizeStats,
         },
       })
     } catch (err) {

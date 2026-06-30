@@ -82,9 +82,12 @@ export type {
   FrameworkType,
   DatabaseType,
   MonorepoType,
+  GraphSanitizeStats,
+  GraphSanitizeResult,
 } from './types/graph'
 
 export {
+  sanitizeGraph,
   mergeParseResults,
   getNode,
   getInEdges,
