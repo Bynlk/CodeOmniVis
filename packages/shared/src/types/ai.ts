@@ -67,6 +67,73 @@ export function parseAiChatRequest(value: unknown): AiChatRequest | null {
   return config === undefined ? { messages: parsed } : { messages: parsed, config }
 }
 
+/**
+ * 校验用户提供的上游 baseUrl 是否可安全请求,防止 SSRF / open-proxy。
+ *
+ * 这是一个本机运行的开发工具,因此:
+ * - 允许回环地址(localhost / 127.0.0.0/8 / ::1),以支持本地模型服务(如 Ollama),
+ *   回环可走 http 或 https;
+ * - 非回环主机必须使用 https;
+ * - 始终拒绝内网 / 链路本地 / 云 metadata / 未指定地址,阻断对内部网络的探测:
+ *   10.0.0.0/8、172.16.0.0/12、192.168.0.0/16、169.254.0.0/16(含 169.254.169.254)、
+ *   0.0.0.0、IPv6 ULA fc00::/7、IPv6 链路本地 fe80::/10。
+ *
+ * 纯函数,仅基于 URL 字面量判断(不做 DNS 解析);便于单测。
+ */
+export interface UpstreamUrlCheck {
+  ok: boolean
+  reason?: string
+}
+
+function isLoopbackHost(host: string): boolean {
+  if (host === 'localhost') return true
+  if (host === '::1' || host === '[::1]') return true
+  return /^127\./.test(host)
+}
+
+/** 判断是否为应拒绝的内网 / 链路本地 / metadata / 未指定地址(字面量)。 */
+function isBlockedHost(host: string): boolean {
+  const h = host.replace(/^\[|\]$/g, '')
+  if (h === '0.0.0.0' || h === '::') return true
+  // IPv4 私网 / 链路本地
+  if (/^10\./.test(h)) return true
+  if (/^192\.168\./.test(h)) return true
+  if (/^169\.254\./.test(h)) return true
+  const m = /^172\.(\d{1,3})\./.exec(h)
+  if (m) {
+    const second = Number(m[1])
+    if (second >= 16 && second <= 31) return true
+  }
+  // IPv6 ULA fc00::/7 (fc.. / fd..) 与链路本地 fe80::/10
+  const lower = h.toLowerCase()
+  if (/^f[cd][0-9a-f]*:/.test(lower)) return true
+  if (/^fe[89ab][0-9a-f]*:/.test(lower)) return true
+  return false
+}
+
+export function validateUpstreamBaseUrl(baseUrl: string): UpstreamUrlCheck {
+  let url: URL
+  try {
+    url = new URL(baseUrl)
+  } catch {
+    return { ok: false, reason: 'baseUrl is not a valid URL' }
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    return { ok: false, reason: `Unsupported protocol: ${url.protocol}` }
+  }
+  const host = url.hostname
+  if (isBlockedHost(host)) {
+    return { ok: false, reason: `Refusing to reach private/link-local/metadata address: ${host}` }
+  }
+  if (isLoopbackHost(host)) {
+    return { ok: true }
+  }
+  if (url.protocol !== 'https:') {
+    return { ok: false, reason: 'Non-loopback upstream must use https' }
+  }
+  return { ok: true }
+}
+
 /** server 端环境变量来源(可选)。 */
 export interface AiEnvConfig {
   baseUrl?: string

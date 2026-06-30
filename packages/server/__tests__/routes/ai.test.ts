@@ -89,6 +89,35 @@ describe('POST /api/ai/chat', () => {
 
     expect(res.status).toBe(502)
   })
+
+  it('returns 400 and never fetches for a blocked private baseUrl (SSRF guard)', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+
+    const res = await request(makeApp())
+      .post('/api/ai/chat')
+      .send({
+        messages: [{ role: 'user', content: 'hi' }],
+        config: { baseUrl: 'https://169.254.169.254/latest', apiKey: 'k', model: 'm' },
+      })
+
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('Invalid AI baseUrl')
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 for non-loopback http baseUrl', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+
+    const res = await request(makeApp())
+      .post('/api/ai/chat')
+      .send({
+        messages: [{ role: 'user', content: 'hi' }],
+        config: { baseUrl: 'http://api.example.com/v1', apiKey: 'k', model: 'm' },
+      })
+
+    expect(res.status).toBe(400)
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
 })
 
 describe('POST /api/ai/explain', () => {

@@ -116,6 +116,7 @@ export type {
   AiChatRequest,
   AiChatResponse,
   AiEnvConfig,
+  UpstreamUrlCheck,
 } from './types/ai'
 
 export {
@@ -123,6 +124,7 @@ export {
   isAiConfig,
   parseAiChatRequest,
   resolveAiConfig,
+  validateUpstreamBaseUrl,
 } from './types/ai'
 
 // 数据新鲜度契约导出

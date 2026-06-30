@@ -11,6 +11,7 @@ import {
   isJsonObject,
   parseAiChatRequest,
   resolveAiConfig,
+  validateUpstreamBaseUrl,
   type AiConfig,
   type AiEnvConfig,
   type ChatMessage,
@@ -80,6 +81,14 @@ async function handleChat(req: Request, res: Response): Promise<void> {
     res.status(501).json({
       error: 'AI not configured',
       message: 'Connect your API key in settings to enable AI features',
+    })
+    return
+  }
+  const urlCheck = validateUpstreamBaseUrl(config.baseUrl)
+  if (!urlCheck.ok) {
+    res.status(400).json({
+      error: 'Invalid AI baseUrl',
+      message: urlCheck.reason ?? 'baseUrl rejected by SSRF guard',
     })
     return
   }
