@@ -11,7 +11,7 @@ import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 import { createServer as createHttpServer } from 'http'
-import { WebSocketServer } from 'ws'
+import { WebSocket, WebSocketServer } from 'ws'
 import type { FreshnessStatus } from '@codeomnivis/shared'
 import { isJsonObject } from '@codeomnivis/shared'
 import { OmniDatabase } from '@codeomnivis/analyzer'
@@ -221,7 +221,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       })
 
       for (const client of clients) {
-        if (client.readyState === 1) { // WebSocket.OPEN
+        if (client.readyState === WebSocket.OPEN) {
           client.send(message)
         }
       }
@@ -243,7 +243,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       timestamp: Date.now(),
     })
     for (const client of clients) {
-      if (client.readyState === 1) {
+      if (client.readyState === WebSocket.OPEN) {
         client.send(message)
       }
     }
