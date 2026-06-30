@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T11:53:01.591947+08:00",
+  "updatedAt": "2026-06-30T12:00:15.799611+08:00",
   "currentStage": "Stage B",
-  "currentTask": "B-MERGE",
+  "currentTask": "DONE",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -334,10 +334,23 @@
       "id": "B-MERGE",
       "stage": "Stage B",
       "name": "回归+合并+报告",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "(reports commit; branch ff-merged to master)",
+      "gates": {
+        "gitDiffCheck": "clean",
+        "turboTypecheck": "pass (11/11)",
+        "turboLint": "pass (6/6, 0 error; pre-existing warnings only)",
+        "turboTest": "pass (12/12 tasks, 321 tests)",
+        "turboBuild": "pass (6/6)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=86(boundary)"
+      },
+      "metrics": {
+        "testBreakdown": "shared 72 / ui 20 / analyzer 177 / cli 13 / mcp 6 / server 33 = 321",
+        "mergeStrategy": "fast-forward only (origin/master ancestor of feat/ui-feature-suite, no divergence, no unrelated work touched)",
+        "reports": "DELIVERY_REPORT.md / CHANGELOG.md / TECHNICAL_DEBT.md",
+        "turboFix": "globalPassThroughEnv:[\"TMPDIR\"] (a4609d2) so vitest under turbo honors sandbox tmpdir",
+        "diffStat": "13 commits, 48 files, +3252 / -448 vs master"
+      }
     }
   ]
 }
