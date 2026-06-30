@@ -479,23 +479,46 @@ export class NextjsAppParser implements Parser {
    * 查找最近的 layout 文件
    */
   private findLayoutFile(filePath: string, projectRoot: string): string | null {
-    const normalizedPath = filePath.replace(/\\/g, '/')
-    const dir = path.dirname(normalizedPath)
+    return findLayoutFileBounded(filePath, projectRoot, (full) => fs.existsSync(full))
+  }
+}
 
-    // 向上查找 layout.tsx
-    let currentDir = dir
-    while (currentDir && currentDir !== 'app') {
-      const layoutPath = path.join(currentDir, 'layout.tsx')
-      const fullPath = path.resolve(projectRoot, layoutPath)
+/** layout 向上查找的层数上限,防止异常路径下无界递归。 */
+const MAX_LAYOUT_LOOKUP_DEPTH = 64
 
-      if (fs.existsSync(fullPath)) {
-        return layoutPath
-      }
+/**
+ * 从页面文件向上逐级查找最近的 `layout.tsx`(H5 · BOUND-02)。
+ *
+ * 终止条件:命中 layout、到达相对路径顶端(`.`)、或超出最大层数上限。
+ * `exists` 谓词以「相对仓库根的 layout 路径解析后的绝对路径」为入参,便于注入测试。
+ *
+ * @param filePath 相对仓库根的页面文件路径。
+ * @param projectRoot 仓库根绝对路径。
+ * @param exists 判断给定绝对路径是否存在的谓词。
+ * @returns 命中的相对 layout 路径;未命中返回 null。
+ */
+export function findLayoutFileBounded(
+  filePath: string,
+  projectRoot: string,
+  exists: (fullPath: string) => boolean,
+): string | null {
+  const normalizedPath = filePath.replace(/\\/g, '/')
+  let currentDir = path.dirname(normalizedPath)
 
-      // 向上一级
-      currentDir = path.dirname(currentDir)
+  for (let depth = 0; depth < MAX_LAYOUT_LOOKUP_DEPTH; depth += 1) {
+    const layoutPath = path.join(currentDir, 'layout.tsx')
+    const fullPath = path.resolve(projectRoot, layoutPath)
+    if (exists(fullPath)) {
+      return layoutPath
     }
 
-    return null
+    const parent = path.dirname(currentDir)
+    // 到达相对路径顶端('.' 或绝对根)即停,避免 dirname 自循环导致无界递归。
+    if (parent === currentDir || currentDir === '.' || currentDir === '') {
+      break
+    }
+    currentDir = parent
   }
+
+  return null
 }
