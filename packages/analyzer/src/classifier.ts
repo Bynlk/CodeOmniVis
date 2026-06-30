@@ -5,7 +5,7 @@
  * 支持：Next.js Pages/App Router、tRPC、Express
  */
 
-import type { ProjectMeta } from '@codeomnivis/shared'
+import type { ProjectMeta, JsonObject } from '@codeomnivis/shared'
 
 // ============================================================
 // 文件类型枚举
@@ -31,7 +31,7 @@ export type FileType =
 export interface ClassificationResult {
   type: FileType
   confidence: 'certain' | 'inferred'
-  metadata?: Record<string, unknown>
+  metadata?: JsonObject
 }
 
 // ============================================================

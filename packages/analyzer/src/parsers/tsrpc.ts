@@ -25,7 +25,7 @@ import type {
   OmniEdge,
   ProjectMeta,
 } from '@codeomnivis/shared'
-import { createNodeId, isJsonObject } from '@codeomnivis/shared'
+import { createNodeId, isJsonObject, type JsonObject } from '@codeomnivis/shared'
 
 interface ServiceProtoEntry {
   id: number
@@ -516,7 +516,7 @@ export class TsRpcParser implements Parser {
    * 识别模式：
    * - export const conf = { needLogin: true }
    */
-  private extractConf(protocolFilePath: string): Record<string, unknown> | undefined {
+  private extractConf(protocolFilePath: string): JsonObject | undefined {
     try {
       const content = fs.readFileSync(protocolFilePath, 'utf-8')
       return this.parseConfFromContent(content)
@@ -528,14 +528,14 @@ export class TsRpcParser implements Parser {
   /**
    * 从 SourceFile 中提取 conf 配置
    */
-  private extractConfFromSource(sourceFile: SourceFile): Record<string, unknown> | undefined {
+  private extractConfFromSource(sourceFile: SourceFile): JsonObject | undefined {
     const confExport = sourceFile.getVariableDeclaration('conf')
     if (!confExport) return undefined
 
     const initializer = confExport.getInitializer()
     if (!initializer || !Node.isObjectLiteralExpression(initializer)) return undefined
 
-    const conf: Record<string, unknown> = {}
+    const conf: JsonObject = {}
     for (const prop of initializer.getProperties()) {
       if (Node.isPropertyAssignment(prop)) {
         const key = prop.getName()
@@ -557,7 +557,7 @@ export class TsRpcParser implements Parser {
   /**
    * 从文件内容中解析 conf（降级方案，不依赖 ts-morph）
    */
-  private parseConfFromContent(content: string): Record<string, unknown> | undefined {
+  private parseConfFromContent(content: string): JsonObject | undefined {
     const confMatch = content.match(/export\s+const\s+conf\s*=\s*(\{[^}]*\})/)
     if (!confMatch) return undefined
 

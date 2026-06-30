@@ -5,6 +5,8 @@
  * 节点 ID 格式：{type}:{filePath}:{name}
  */
 
+import type { JsonObject } from './json'
+
 // ============================================================
 // 节点类型枚举
 // ============================================================
@@ -109,7 +111,7 @@ export interface TsrpcApiMetadata {
   /** 是否有自定义错误处理 */
   hasCustomError: boolean
   /** conf 配置项（如 needLogin） */
-  conf?: Record<string, unknown>
+  conf?: JsonObject
   /** 对应的协议文件路径 */
   protocolFilePath?: string
 }

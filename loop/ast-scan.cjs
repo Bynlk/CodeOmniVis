@@ -7,7 +7,7 @@ const ts = require('typescript');
 const root = process.cwd();
 const ex = new Set(['node_modules', 'dist', 'build', 'coverage', '.git', '.turbo', '.next']);
 const exts = new Set(['.ts', '.tsx', '.mts', '.cts']);
-let any = 0, unknown = 0, assertions = 0, doubleCasts = 0;
+let any = 0, unknown = 0, assertions = 0, doubleCasts = 0, recordUnknown = 0;
 
 function walk(d, o = []) {
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
@@ -28,6 +28,13 @@ for (const f of walk(root)) {
     f.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
   );
   function visit(n) {
+    if (
+      ts.isTypeReferenceNode(n) &&
+      ts.isIdentifier(n.typeName) &&
+      n.typeName.escapedText === 'Record' &&
+      n.typeArguments && n.typeArguments.length === 2 &&
+      n.typeArguments[1].kind === ts.SyntaxKind.UnknownKeyword
+    ) recordUnknown++;
     if (n.kind === ts.SyntaxKind.AnyKeyword) any++;
     else if (n.kind === ts.SyntaxKind.UnknownKeyword) unknown++;
     else if (ts.isAsExpression(n) || ts.isTypeAssertionExpression(n) || ts.isNonNullExpression(n)) assertions++;
@@ -37,4 +44,4 @@ for (const f of walk(root)) {
   }
   visit(sf);
 }
-console.log(JSON.stringify({ any, unknown, assertions, doubleCasts }));
+console.log(JSON.stringify({ any, unknown, assertions, doubleCasts, recordUnknown }));

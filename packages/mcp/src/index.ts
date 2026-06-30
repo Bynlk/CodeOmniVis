@@ -18,7 +18,7 @@ import {
 import { OmniDatabase, runFullAnalysis, DataFlowTracer } from '@codeomnivis/analyzer'
 import { getDbPath, hasDbCache } from '@codeomnivis/shared/node'
 import type { NodeType, EdgeType, OmniNode } from '@codeomnivis/shared'
-import { isNodeOfType } from '@codeomnivis/shared'
+import { isNodeOfType, isJsonObject } from '@codeomnivis/shared'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 
 const API_NODE_TYPES: NodeType[] = ['api_route', 'trpc_procedure', 'express_route', 'tsrpc_api', 'tsrpc_service']
@@ -99,16 +99,17 @@ function log(message: string): void {
 /**
  * 安全提取字符串参数
  */
-function stringArg(args: Record<string, unknown> | undefined, key: string): string | undefined {
-  const val = args?.[key]
+function stringArg(args: unknown, key: string): string | undefined {
+  if (!isJsonObject(args)) return undefined
+  const val = args[key]
   return typeof val === 'string' ? val : undefined
 }
 
 /**
  * 安全提取数字参数
  */
-function numberArg(args: Record<string, unknown> | undefined, key: string, fallback: number): number {
-  const val = args?.[key]
+function numberArg(args: unknown, key: string, fallback: number): number {
+  const val = isJsonObject(args) ? args[key] : undefined
   if (typeof val === 'number' && !isNaN(val)) return val
   if (typeof val === 'string') {
     const parsed = Number(val)
@@ -255,7 +256,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // 工具实现
 // ============================================================
 
-function handleGetApiRoutes(db: OmniDatabase, args: Record<string, unknown> | undefined) {
+function handleGetApiRoutes(db: OmniDatabase, args: unknown) {
   const filter = stringArg(args, 'filter')?.toLowerCase()
   const apiNodes = db.getNodesByTypes(API_NODE_TYPES)
 
@@ -287,7 +288,7 @@ function handleGetApiRoutes(db: OmniDatabase, args: Record<string, unknown> | un
   return success({ routes: result, totalCount: result.length })
 }
 
-function handleGetComponentTree(db: OmniDatabase, args: Record<string, unknown> | undefined) {
+function handleGetComponentTree(db: OmniDatabase, args: unknown) {
   const rootPath = stringArg(args, 'rootPath')
   if (!rootPath) {
     return errorResponse('rootPath is required')
@@ -317,7 +318,7 @@ function handleGetComponentTree(db: OmniDatabase, args: Record<string, unknown> 
   return success(tree)
 }
 
-function handleFindCallers(db: OmniDatabase, args: Record<string, unknown> | undefined) {
+function handleFindCallers(db: OmniDatabase, args: unknown) {
   const target = stringArg(args, 'target')
   if (!target) {
     return errorResponse('target is required')
@@ -366,7 +367,7 @@ function handleListDbModels(db: OmniDatabase) {
   })
 }
 
-function handleGetDataFlow(db: OmniDatabase, args: Record<string, unknown> | undefined) {
+function handleGetDataFlow(db: OmniDatabase, args: unknown) {
   const graph = db.loadGraph()
   const tracer = new DataFlowTracer(graph)
   const modelName = stringArg(args, 'model')
