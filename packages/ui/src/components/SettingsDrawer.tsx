@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import { isAiConfig, isJsonObject, validateUpstreamBaseUrl, type AiConfig } from '@codeomnivis/shared'
-import { setAiConfig, clearAiConfig } from '../lib/aiConfig'
+import { isJsonObject } from '@codeomnivis/shared'
 import { useAiConfig } from '../hooks/useAiConfig'
+import { AiConfigForm } from './AiConfigForm'
 import { PROMOTION_TIERS, LICENSE_INFO } from '../lib/promotion'
 import { STATUS_QUERY_KEY } from '../hooks/useStatus'
 
@@ -28,44 +28,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
 
-  // --- AI 组(单一数据源:全局 store) ---
-  const { config, rememberKey: storedRemember } = useAiConfig()
-  const [baseUrl, setBaseUrl] = useState('')
-  const [apiKey, setApiKey] = useState('')
-  const [model, setModel] = useState('')
-  const [rememberKey, setRememberKey] = useState(false)
-  const [aiError, setAiError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (config) {
-      setBaseUrl(config.baseUrl)
-      setApiKey(config.apiKey)
-      setModel(config.model)
-    }
-    setRememberKey(storedRemember)
-  }, [config, storedRemember])
-
-  const handleSaveAi = useCallback(() => {
-    const next: AiConfig = { baseUrl: baseUrl.trim(), apiKey: apiKey.trim(), model: model.trim() }
-    if (!isAiConfig(next)) return
-    // M4:保存前用共享 SSRF/https 校验器拦截私网/非 https 的非环回地址。
-    const check = validateUpstreamBaseUrl(next.baseUrl)
-    if (!check.ok) {
-      setAiError(check.reason ?? t('settings.ai.invalidUrl'))
-      return
-    }
-    setAiError(null)
-    setAiConfig(next, rememberKey)
-  }, [baseUrl, apiKey, model, rememberKey, t])
-
-  const handleClearAi = useCallback(() => {
-    clearAiConfig()
-    setBaseUrl('')
-    setApiKey('')
-    setModel('')
-    setRememberKey(false)
-    setAiError(null)
-  }, [])
+  // --- AI 组(单一数据源:全局 store,经 AiConfigForm) ---
+  const { config } = useAiConfig()
 
   // --- 项目组 ---
   const [projectRoot, setProjectRoot] = useState('')
@@ -139,55 +103,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
           <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             {t('settings.group.ai')}
           </h3>
-          <input
-            type="text"
-            value={baseUrl}
-            onChange={e => setBaseUrl(e.target.value)}
-            placeholder="Base URL (e.g. https://api.openai.com/v1)"
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
-          />
-          <input
-            type="password"
-            value={apiKey}
-            onChange={e => setApiKey(e.target.value)}
-            placeholder="API Key"
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
-          />
-          <input
-            type="text"
-            value={model}
-            onChange={e => setModel(e.target.value)}
-            placeholder="Model (e.g. gpt-4o-mini)"
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
-          />
-          <label className="flex items-center gap-2 text-[11px] text-slate-300 select-none cursor-pointer">
-            <input
-              type="checkbox"
-              checked={rememberKey}
-              onChange={e => setRememberKey(e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-700 text-primary-600 focus:ring-primary-500"
-            />
-            {t('settings.ai.rememberKey')}
-          </label>
-          {aiError && (
-            <p className="text-[11px] text-red-400 break-all">{aiError}</p>
-          )}
-          <div className="flex gap-2">
-            <button
-              onClick={handleSaveAi}
-              disabled={!baseUrl.trim() || !apiKey.trim() || !model.trim()}
-              className="flex-1 px-2 py-1 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded text-xs"
-            >
-              {t('settings.ai.save')}
-            </button>
-            <button
-              onClick={handleClearAi}
-              disabled={config === null}
-              className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-slate-200 rounded text-xs"
-            >
-              {t('settings.ai.clear')}
-            </button>
-          </div>
+          <AiConfigForm saveLabel={t('settings.ai.save')} showClear />
           <p className="text-[11px] text-slate-500">
             {config ? `${t('settings.ai.current')}: ${config.model}` : t('ai.notConfigured')}
           </p>

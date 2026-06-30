@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { isJsonObject, isAiConfig, validateUpstreamBaseUrl, type AiConfig, type ChatMessage } from '@codeomnivis/shared'
-import { setAiConfig } from '../../lib/aiConfig'
+import { isJsonObject, type ChatMessage } from '@codeomnivis/shared'
 import { useAiConfig } from '../../hooks/useAiConfig'
+import { AiConfigForm } from '../AiConfigForm'
 
 function readString(obj: unknown, key: string): string | undefined {
   if (isJsonObject(obj) && typeof obj[key] === 'string') return obj[key]
@@ -31,37 +31,9 @@ export function AiPanel() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
-  // M3:与 SettingsDrawer 共用同一份全局配置(单一数据源)。
-  const { config, rememberKey: storedRemember } = useAiConfig()
-  const [draftBaseUrl, setDraftBaseUrl] = useState('')
-  const [draftApiKey, setDraftApiKey] = useState('')
-  const [draftModel, setDraftModel] = useState('')
-  const [rememberKey, setRememberKey] = useState(false)
-  const [configError, setConfigError] = useState<string | null>(null)
+  // M3:与 SettingsDrawer 共用同一份全局配置(单一数据源,经 AiConfigForm)。
+  const { config } = useAiConfig()
   const abortControllerRef = useRef<AbortController | null>(null)
-
-  useEffect(() => {
-    if (config) {
-      setDraftBaseUrl(config.baseUrl)
-      setDraftApiKey(config.apiKey)
-      setDraftModel(config.model)
-    }
-    setRememberKey(storedRemember)
-  }, [config, storedRemember])
-
-  const handleSaveConfig = useCallback(() => {
-    const next: AiConfig = { baseUrl: draftBaseUrl.trim(), apiKey: draftApiKey.trim(), model: draftModel.trim() }
-    if (!isAiConfig(next)) return
-    // M4:保存前用共享 SSRF/https 校验器拦截私网/非 https 的非环回地址。
-    const check = validateUpstreamBaseUrl(next.baseUrl)
-    if (!check.ok) {
-      setConfigError(check.reason ?? t('settings.ai.invalidUrl'))
-      return
-    }
-    setConfigError(null)
-    setAiConfig(next, rememberKey)
-    setShowConfig(false)
-  }, [draftBaseUrl, draftApiKey, draftModel, rememberKey, t])
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || isLoading) return
@@ -143,47 +115,8 @@ export function AiPanel() {
       </div>
 
       {showConfig && (
-        <div className="p-3 space-y-2 border-b border-slate-700 bg-slate-800/50">
-          <input
-            type="text"
-            value={draftBaseUrl}
-            onChange={e => setDraftBaseUrl(e.target.value)}
-            placeholder="Base URL (e.g. https://api.openai.com/v1)"
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
-          />
-          <input
-            type="password"
-            value={draftApiKey}
-            onChange={e => setDraftApiKey(e.target.value)}
-            placeholder="API Key"
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
-          />
-          <input
-            type="text"
-            value={draftModel}
-            onChange={e => setDraftModel(e.target.value)}
-            placeholder="Model (e.g. gpt-4o-mini)"
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
-          />
-          <label className="flex items-center gap-2 text-[11px] text-slate-300 select-none cursor-pointer">
-            <input
-              type="checkbox"
-              checked={rememberKey}
-              onChange={e => setRememberKey(e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-700 text-primary-600 focus:ring-primary-500"
-            />
-            {t('settings.ai.rememberKey')}
-          </label>
-          {configError && (
-            <p className="text-[11px] text-red-400 break-all">{configError}</p>
-          )}
-          <button
-            onClick={handleSaveConfig}
-            disabled={!draftBaseUrl.trim() || !draftApiKey.trim() || !draftModel.trim()}
-            className="w-full px-2 py-1 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded text-xs"
-          >
-            {t('ai.saveConfig')}
-          </button>
+        <div className="p-3 border-b border-slate-700 bg-slate-800/50">
+          <AiConfigForm saveLabel={t('ai.saveConfig')} onSaved={() => setShowConfig(false)} />
         </div>
       )}
 
