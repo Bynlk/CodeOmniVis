@@ -1,6 +1,8 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { isJsonObject } from '@codeomnivis/shared'
+import { isJsonObject, isAiConfig, type AiConfig, type ChatMessage } from '@codeomnivis/shared'
+
+const AI_CONFIG_STORAGE_KEY = 'codeomnivis.ai.config'
 
 function readString(obj: unknown, key: string): string | undefined {
   if (isJsonObject(obj) && typeof obj[key] === 'string') return obj[key]
@@ -10,6 +12,22 @@ function readString(obj: unknown, key: string): string | undefined {
 function readNumber(obj: unknown, key: string): number | undefined {
   if (isJsonObject(obj) && typeof obj[key] === 'number') return obj[key]
   return undefined
+}
+
+/** 从 localStorage 读取 AI 配置(unknown → AiConfig | null,非法返回 null)。 */
+function loadAiConfig(): AiConfig | null {
+  try {
+    const raw = localStorage.getItem(AI_CONFIG_STORAGE_KEY)
+    if (raw === null) return null
+    const parsed: unknown = JSON.parse(raw)
+    return isAiConfig(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function saveAiConfig(config: AiConfig): void {
+  localStorage.setItem(AI_CONFIG_STORAGE_KEY, JSON.stringify(config))
 }
 
 interface AiMessage {
@@ -28,7 +46,28 @@ export function AiPanel() {
   const [messages, setMessages] = useState<AiMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [showConfig, setShowConfig] = useState(false)
+  const [config, setConfig] = useState<AiConfig | null>(() => loadAiConfig())
+  const [draftBaseUrl, setDraftBaseUrl] = useState('')
+  const [draftApiKey, setDraftApiKey] = useState('')
+  const [draftModel, setDraftModel] = useState('')
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    if (config) {
+      setDraftBaseUrl(config.baseUrl)
+      setDraftApiKey(config.apiKey)
+      setDraftModel(config.model)
+    }
+  }, [config])
+
+  const handleSaveConfig = useCallback(() => {
+    const next: AiConfig = { baseUrl: draftBaseUrl.trim(), apiKey: draftApiKey.trim(), model: draftModel.trim() }
+    if (!isAiConfig(next)) return
+    saveAiConfig(next)
+    setConfig(next)
+    setShowConfig(false)
+  }, [draftBaseUrl, draftApiKey, draftModel])
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || isLoading) return
@@ -42,7 +81,7 @@ export function AiPanel() {
     abortControllerRef.current = controller
 
     try {
-      // 获取当前图数据作为上下文
+      // 获取当前图数据作为系统上下文
       const graphRes = await fetch('/api/graph', { signal: controller.signal })
       if (!graphRes.ok) throw new Error(`Failed to fetch graph: ${graphRes.status}`)
       const graphData: unknown = await graphRes.json()
@@ -51,29 +90,35 @@ export function AiPanel() {
       const edgeCount = readNumber(meta, 'edgeCount') ?? 0
       const nodesByType = isJsonObject(meta) && isJsonObject(meta.nodesByType) ? meta.nodesByType : {}
 
-      const context = `Project has ${nodeCount} nodes and ${edgeCount} edges. Node types: ${JSON.stringify(nodesByType)}`
+      const systemContext = `Project has ${nodeCount} nodes and ${edgeCount} edges. Node types: ${JSON.stringify(nodesByType)}`
+
+      const chatMessages: ChatMessage[] = [
+        { role: 'system', content: systemContext },
+        { role: 'user', content: userMessage },
+      ]
+      const body = config === null ? { messages: chatMessages } : { messages: chatMessages, config }
 
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage, context }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       })
 
       if (res.ok) {
-        const data: unknown = await res.json()
-        setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: readString(data, 'response') ?? t('ai.noResponse') }])
+        const payload: unknown = await res.json()
+        const data = isJsonObject(payload) ? payload.data : undefined
+        const content = readString(data, 'content') ?? t('ai.noResponse')
+        setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content }])
       } else if (res.status === 429) {
         setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: 'Rate limit exceeded. Please try again later.' }])
       } else {
-        // 尝试解析错误响应，显示后端返回的具体信息
+        // 解析错误响应,显示后端返回的具体信息
         let errorMsg = t('ai.serviceUnavailable')
         try {
           const errData: unknown = await res.json()
           const detail = readString(errData, 'message') ?? readString(errData, 'error')
-          if (detail) {
-            errorMsg = detail
-          }
+          if (detail) errorMsg = detail
         } catch { /* 忽略解析错误 */ }
         setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: errorMsg }])
       }
@@ -86,10 +131,56 @@ export function AiPanel() {
         setIsLoading(false)
       }
     }
-  }, [input, isLoading])
+  }, [input, isLoading, config, t])
 
   return (
     <div className="flex flex-col h-56">
+      {/* 头部:配置入口 */}
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-700">
+        <span className="text-xs text-slate-400">
+          {config ? `${config.model}` : t('ai.notConfigured')}
+        </span>
+        <button
+          onClick={() => setShowConfig(v => !v)}
+          className="text-xs text-slate-400 hover:text-slate-200"
+        >
+          ⚙ {t('ai.configure')}
+        </button>
+      </div>
+
+      {showConfig && (
+        <div className="p-3 space-y-2 border-b border-slate-700 bg-slate-800/50">
+          <input
+            type="text"
+            value={draftBaseUrl}
+            onChange={e => setDraftBaseUrl(e.target.value)}
+            placeholder="Base URL (e.g. https://api.openai.com/v1)"
+            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
+          />
+          <input
+            type="password"
+            value={draftApiKey}
+            onChange={e => setDraftApiKey(e.target.value)}
+            placeholder="API Key"
+            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
+          />
+          <input
+            type="text"
+            value={draftModel}
+            onChange={e => setDraftModel(e.target.value)}
+            placeholder="Model (e.g. gpt-4o-mini)"
+            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
+          />
+          <button
+            onClick={handleSaveConfig}
+            disabled={!draftBaseUrl.trim() || !draftApiKey.trim() || !draftModel.trim()}
+            className="w-full px-2 py-1 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded text-xs"
+          >
+            {t('ai.saveConfig')}
+          </button>
+        </div>
+      )}
+
       {/* 消息区域 */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {messages.length === 0 && (

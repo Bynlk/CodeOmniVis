@@ -63,3 +63,4 @@ byresume-graph.json
 cal-com-analysis.json
 cal-com-full-graph.json
 self-analysis.json
+.loop_tmp/

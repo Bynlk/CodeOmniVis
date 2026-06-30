@@ -9,6 +9,7 @@ import type { NodeType, EdgeType } from '@codeomnivis/shared'
 
 const ALL_NODE_TYPES: NodeType[] = [
   'page', 'component', 'api_route', 'trpc_procedure',
+  'tsrpc_service', 'tsrpc_api', 'tsrpc_msg',
   'express_route', 'handler', 'service', 'db_model', 'module',
   'kotlin_class', 'kotlin_interface', 'kotlin_object', 'kotlin_function', 'kotlin_route',
 ]
@@ -17,6 +18,7 @@ const ALL_EDGE_TYPES: EdgeType[] = [
   'renders', 'navigates_to', 'calls_api', 'handles',
   'calls_service', 'queries_db', 'db_relation', 'imports', 'contains',
   'kotlin_inherits', 'kotlin_implements', 'kotlin_uses', 'data_flows_to',
+  'sends_msg', 'listens_msg',
 ]
 
 describe('NODE_EMOJI', () => {

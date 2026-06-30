@@ -17,6 +17,7 @@ import { OmniDatabase } from '@codeomnivis/analyzer'
 import { createGraphRouter } from './routes/graph'
 import { codeomnivisEvents, EVENTS } from './events'
 import { IncrementalAnalyzer } from './incremental'
+import { registerAiRoutes } from './ai'
 
 // ESM 兼容的 __dirname
 const __filename = fileURLToPath(import.meta.url)
@@ -209,13 +210,9 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     }
   })
 
-  // POST /api/ai/chat — AI 聊天（未实现）
-  app.post('/api/ai/chat', (_req, res) => {
-    res.status(501).json({
-      error: 'AI chat not yet implemented',
-      message: 'Connect your API key in settings to enable AI features',
-    })
-  })
+  // POST /api/ai/chat、/api/ai/explain — AI 聊天/节点说明
+  // 配置优先级:请求体 config > 环境变量 > 501。上游为用户自备 OpenAI 兼容 endpoint。
+  registerAiRoutes(app)
 
   // 静态文件服务（UI 产物）
   app.use(express.static(uiDistPath))

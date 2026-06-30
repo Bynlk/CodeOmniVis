@@ -105,6 +105,23 @@ export type {
   CodeOmniVisConfig,
 } from './types/config'
 
+// AI 请求/响应契约导出
+export type {
+  ChatRole,
+  ChatMessage,
+  AiConfig,
+  AiChatRequest,
+  AiChatResponse,
+  AiEnvConfig,
+} from './types/ai'
+
+export {
+  isChatMessage,
+  isAiConfig,
+  parseAiChatRequest,
+  resolveAiConfig,
+} from './types/ai'
+
 // 常量导出
 export { NODE_COLORS, NODE_COLORS_ALPHA, NODE_ICONS } from './constants/nodeColors'
 
