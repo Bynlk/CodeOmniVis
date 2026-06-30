@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T16:33:32+08:00",
+  "updatedAt": "2026-06-30T16:39:06+08:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H2",
+  "currentTask": "H3",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -510,6 +510,27 @@
         "typecheck": "0 error",
         "test": "analyzer 181 (+3), cli 13",
         "lint": "0 error (analyzer 33 warn, cli 3 warn, no increase)",
+        "build": "success",
+        "ast": {
+          "any": 0,
+          "unknown": 81,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      }
+    },
+    {
+      "id": "H3",
+      "code": "S-01",
+      "title": "path traversal boundary guard for /api/project",
+      "status": "done",
+      "commit": "bf74d54",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "server 44 (+5)",
+        "lint": "0 error",
         "build": "success",
         "ast": {
           "any": 0,
