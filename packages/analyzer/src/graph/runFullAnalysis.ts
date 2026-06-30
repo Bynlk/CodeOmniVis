@@ -241,6 +241,7 @@ export async function runFullAnalysis(options: FullAnalysisOptions): Promise<Ful
 
   let nodesCreated = 0
   let edgesCreated = 0
+  let crossLayerEdges = 0
   let errors = 0
 
   // 执行解析
@@ -269,6 +270,7 @@ export async function runFullAnalysis(options: FullAnalysisOptions): Promise<Ful
     if (crossLayerResult.edges.length > 0) {
       db.upsertEdges(crossLayerResult.edges)
       edgesCreated += crossLayerResult.edges.length
+      crossLayerEdges = crossLayerResult.edges.length
     }
   }
 
@@ -278,7 +280,7 @@ export async function runFullAnalysis(options: FullAnalysisOptions): Promise<Ful
     filesScanned: files.length,
     nodesCreated,
     edgesCreated,
-    crossLayerEdges: 0,
+    crossLayerEdges,
     errors,
     projectMeta,
   }
