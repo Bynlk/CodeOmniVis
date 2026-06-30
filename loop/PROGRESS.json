@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T12:00:15.799611+08:00",
-  "currentStage": "Stage B",
-  "currentTask": "DONE",
+  "updatedAt": "2026-06-30T13:40:00+08:00",
+  "currentStage": "Review remediation",
+  "currentTask": "R5",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -14,7 +14,7 @@
       "stage": "Stage A",
       "name": "Bootstrap loop",
       "status": "done",
-      "commit": null,
+      "commit": "3f369a9",
       "gates": {
         "git diff --check": "pass"
       },
@@ -30,7 +30,7 @@
       "stage": "Stage A",
       "name": "typecheck 门禁",
       "status": "done",
-      "commit": null,
+      "commit": "cdb3e3f",
       "gates": {
         "pnpm turbo typecheck": "pass",
         "git diff --check": "pass"
@@ -47,7 +47,7 @@
       "stage": "Stage A",
       "name": "JSON 边界类型",
       "status": "done",
-      "commit": null,
+      "commit": "844de7b",
       "gates": {
         "vitest json": "pass",
         "turbo typecheck shared": "pass",
@@ -65,7 +65,7 @@
       "stage": "Stage A",
       "name": "封闭 Node metadata",
       "status": "done",
-      "commit": null,
+      "commit": "791111c",
       "gates": {
         "turbo typecheck shared": "pass",
         "vitest shared": "pass",
@@ -84,7 +84,7 @@
       "stage": "Stage A",
       "name": "封闭 Edge metadata",
       "status": "done",
-      "commit": null,
+      "commit": "90036c7",
       "gates": {
         "turbo typecheck shared": "pass",
         "vitest shared": "pass",
@@ -335,7 +335,7 @@
       "stage": "Stage B",
       "name": "回归+合并+报告",
       "status": "done",
-      "commit": "(reports commit; branch ff-merged to master)",
+      "commit": "e3f8dc9",
       "gates": {
         "gitDiffCheck": "clean",
         "turboTypecheck": "pass (11/11)",
@@ -350,6 +350,100 @@
         "reports": "DELIVERY_REPORT.md / CHANGELOG.md / TECHNICAL_DEBT.md",
         "turboFix": "globalPassThroughEnv:[\"TMPDIR\"] (a4609d2) so vitest under turbo honors sandbox tmpdir",
         "diffStat": "13 commits, 48 files, +3252 / -448 vs master"
+      }
+    },
+    {
+      "id": "R1",
+      "stage": "Review remediation",
+      "name": "tsrpc conf → JsonObject + AST 计数 Record<string,unknown>",
+      "status": "done",
+      "commit": "c2abd9b",
+      "gates": {
+        "gitDiffCheck": "pass",
+        "sharedTypecheck": "pass",
+        "analyzerTypecheck": "pass",
+        "mcpTypecheck": "pass",
+        "tests": "pass (analyzer/mcp/shared)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=8->1",
+        "lint": "0 errors"
+      },
+      "metrics": {
+        "finding": "B1 — tsrpc_api.conf 用 Record<string,unknown> 宽回退;AST 扫描器从不统计 Record<string,unknown>(盲区)",
+        "fix": "node.ts TsrpcApiMetadata.conf 改 JsonObject;tsrpc.ts 三处提取方法返回 JsonObject|undefined + isJsonObject 收敛;classifier metadata 改 JsonObject;mcp stringArg/numberArg 与 4 个 handler 参数改 unknown + isJsonObject 收敛",
+        "astBlindSpotClosed": "ast-scan.cjs 新增 recordUnknown 计数;recordUnknown 8->1(余 1 为 prisma 模块命名空间 isRecord 守卫,语义合法,非 JSON 边界)"
+      }
+    },
+    {
+      "id": "R2",
+      "stage": "Review remediation",
+      "name": "AI 上游 baseUrl SSRF 加固",
+      "status": "done",
+      "commit": "456e8f1",
+      "gates": {
+        "gitDiffCheck": "pass",
+        "sharedTypecheck": "pass",
+        "serverTypecheck": "pass",
+        "tests": "pass (shared +8 / server +2)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1",
+        "lint": "0 errors"
+      },
+      "metrics": {
+        "finding": "B2 — /api/ai/chat 与 /api/ai/explain 把 Bearer apiKey 转发到任意 baseUrl(开放代理/SSRF)",
+        "fix": "shared/types/ai.ts 新增 validateUpstreamBaseUrl(baseUrl):UpstreamUrlCheck —— 拦截私网/链路本地/元数据(10./192.168./169.254./172.16-31/0.0.0.0/::/fc-fd ULA/fe8-feb),非环回地址强制 https;server/ai.ts handleChat 在 config 解析后校验,失败返回 400",
+        "default": "按本地开发工具假设默认放行 localhost;若部署到共享/暴露主机需改为服务端 provider allowlist(已在 TECHNICAL_DEBT 记录)"
+      }
+    },
+    {
+      "id": "R3",
+      "stage": "Review remediation",
+      "name": "setProjectRoot 串行化 + trace 共享步数预算",
+      "status": "done",
+      "commit": "6e9cc2e",
+      "gates": {
+        "gitDiffCheck": "pass",
+        "analyzerTypecheck": "pass",
+        "serverTypecheck": "pass",
+        "tests": "pass (analyzer 178 / server 37)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1",
+        "lint": "0 errors"
+      },
+      "metrics": {
+        "finding": "M1 — setProjectRoot 未与在途分析串行化且未 await watcher.close(),切根后旧分析可能把旧项目节点 upsert 回已清空的 DB;M2 — trace 上/下游各 64 步,总步数可达 129",
+        "fixM1": "incremental.ts 新增 generation 计数与 analysisInFlight;setProjectRoot 先 ++generation、await stop()、await 在途分析后再 clearGraph();runAnalysisCycle 校验 generation 不符即丢弃结果;stop() 改 async 并 await watcher.close();finally 用 if/else 无 return(满足 no-unsafe-finally)",
+        "fixM2": "dataFlowTracer.ts 引入 MAX_TRACE_STEPS=64,上下游共享单一 budget(while budget>0),totalSteps<=64"
+      }
+    },
+    {
+      "id": "R4",
+      "stage": "Review remediation",
+      "name": "UI AI 配置单一数据源 + apiKey 会话级默认",
+      "status": "done",
+      "commit": "aa972ef",
+      "gates": {
+        "gitDiffCheck": "pass",
+        "uiTypecheck": "pass",
+        "tests": "pass (ui 29, aiConfig 13)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1",
+        "lint": "0 errors (2 pre-existing warnings)",
+        "build": "ui build success"
+      },
+      "metrics": {
+        "finding": "M3 — SettingsDrawer 与 AiPanel 各自 useState(loadAiConfig()) 复制配置,易漂移;M4 — apiKey 明文常驻 localStorage",
+        "fixM3": "lib/aiConfig.ts 改为 reactive external store + useSyncExternalStore;新增 hooks/useAiConfig.ts;两个组件共用同一状态,保存/清除即时互通并跨标签同步(storage 事件)",
+        "fixM4": "apiKey 默认仅入 sessionStorage(随标签生命周期),仅当用户勾选「记住密钥」才落 localStorage;baseUrl/model/记住标记常驻 localStorage;保存前两处均跑 validateUpstreamBaseUrl;纯函数 parsePersisted/buildConfig/splitForStorage 单测覆盖",
+        "i18n": "settings.ai.invalidUrl / settings.ai.rememberKey(zh/en)"
+      }
+    },
+    {
+      "id": "R5",
+      "stage": "Review remediation",
+      "name": "台账/技术债文档校准 + 终态回归 + 合并",
+      "status": "in_progress",
+      "commit": null,
+      "gates": {},
+      "metrics": {
+        "finding": "m1 — PROGRESS.json A0-A4/B-MERGE commit 为 null/占位;m2 — TECHNICAL_DEBT.md 缺 6 条 MODULE_TYPELESS 警告且「全部非阻塞」措辞不准",
+        "plan": "回填真实 hash(A0-A4, B-MERGE=e3f8dc9)并补 R1-R5 条目;修订 TECHNICAL_DEBT(拆分已知债务 vs 评审发现并已修复缺陷,删除「全部非阻塞」,补 6 条 MODULE_TYPELESS 警告,记录已闭合的 AST 盲区);全量回归后 ff 合并 fix/review-remediation 到 master"
       }
     }
   ]
