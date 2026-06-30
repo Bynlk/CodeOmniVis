@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-06-30T20:34:37.879856",
+  "updatedAt": "2026-06-30T20:39:25.877473",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F7",
+  "currentTask": "F8",
   "baseline": {
     "any": 0,
     "unknown": 83,
@@ -126,6 +126,25 @@
         "diffcheck": "clean",
         "typecheck": "0 error",
         "test": "193 pass (analyzer)",
+        "lint": "0 error",
+        "build": "success",
+        "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F7",
+      "audit": "E-07",
+      "severity": "Med",
+      "packages": [
+        "server"
+      ],
+      "status": "done",
+      "commit": "b2bca77",
+      "summary": "区分手动刷新与 watcher 自动重试:refresh() 标记 manual=true,runAnalysisCycle 失败时保持 stale(不再误报 fresh)并向手动调用方 rethrow,使 POST /api/analyze 返回 500 而非 success:true;自动触发仍吞错重试。翻转原误报 success 测试 + 新增 watcher 失败用例。",
+      "gates": {
+        "diffcheck": "clean",
+        "typecheck": "0 error",
+        "test": "61 pass (server)",
         "lint": "0 error",
         "build": "success",
         "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
