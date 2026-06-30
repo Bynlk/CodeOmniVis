@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import type { OmniGraph, OmniNode } from '@codeomnivis/shared'
+import { filterNodesByQuery } from '../lib/searchNodes'
 
 interface UseSearchOptions {
   graph?: OmniGraph
@@ -14,16 +15,10 @@ interface UseSearchResult {
 export function useSearch({ graph }: UseSearchOptions): UseSearchResult {
   const [query, setQuery] = useState('')
 
-  // 按搜索词过滤节点
+  // 按搜索词过滤节点(复用纯函数 filterNodesByQuery)
   const searchFilteredNodes = useMemo(() => {
     if (!graph) return []
-    if (!query.trim()) return graph.nodes
-
-    const lowerQuery = query.toLowerCase()
-    return graph.nodes.filter(n =>
-      n.name.toLowerCase().includes(lowerQuery) ||
-      n.filePath.toLowerCase().includes(lowerQuery)
-    )
+    return filterNodesByQuery(graph.nodes, query)
   }, [graph, query])
 
   return {

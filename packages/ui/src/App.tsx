@@ -41,7 +41,13 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const cyRef = useRef<cytoscape.Core | null>(null)
   const { data: graph, isLoading, error } = useGraph()
-  const { query, setQuery } = useSearch({ graph })
+  const { query, setQuery, searchFilteredNodes } = useSearch({ graph })
+
+  // 搜索结果 → 可见节点 id 集合(E-12/F16)。无搜索词时为 undefined,Sidebar 显示全部。
+  const visibleNodeIds = useMemo<Set<string> | undefined>(() => {
+    if (!query.trim()) return undefined
+    return new Set(searchFilteredNodes.map(n => n.id))
+  }, [query, searchFilteredNodes])
 
   // WebSocket 实时更新
   useWebSocket({ enabled: true })
@@ -126,6 +132,7 @@ function App() {
             graph={graph}
             selectedNode={selectedNode}
             onNodeSelect={setSelectedNode}
+            visibleNodeIds={visibleNodeIds}
           />
 
           {/* 图可视化区域 + Tab 面板叠加 */}

@@ -7,6 +7,8 @@ interface SidebarProps {
   graph?: OmniGraph
   selectedNode: string | null
   onNodeSelect: (nodeId: string | null) => void
+  /** 搜索过滤后可见的节点 id 集合;未提供则显示全部(E-12/F16)。 */
+  visibleNodeIds?: Set<string>
 }
 
 type NodesByType = Partial<Record<NodeType, OmniNode[]>>
@@ -15,19 +17,26 @@ function isNodeType(value: string): value is NodeType {
   return value in NODE_COLORS
 }
 
-export default function Sidebar({ graph, selectedNode, onNodeSelect }: SidebarProps) {
+export default function Sidebar({ graph, selectedNode, onNodeSelect, visibleNodeIds }: SidebarProps) {
   const { t } = useTranslation()
   const [collapsed, setCollapsed] = useState(false)
 
+  // 搜索过滤:仅保留 visibleNodeIds 中的节点(未提供则全部)
+  const visibleNodes = useMemo<OmniNode[]>(() => {
+    const all = graph?.nodes ?? []
+    if (!visibleNodeIds) return all
+    return all.filter((n) => visibleNodeIds.has(n.id))
+  }, [graph?.nodes, visibleNodeIds])
+
   // 按类型分组节点
   const nodesByType = useMemo<NodesByType>(() => {
-    return graph?.nodes.reduce<NodesByType>((acc, node) => {
+    return visibleNodes.reduce<NodesByType>((acc, node) => {
       const nodes = acc[node.type] ?? []
       nodes.push(node)
       acc[node.type] = nodes
       return acc
-    }, {}) ?? {}
-  }, [graph?.nodes])
+    }, {})
+  }, [visibleNodes])
 
   const nodeTypes = useMemo(() => Object.keys(nodesByType).filter(isNodeType), [nodesByType])
 
@@ -66,7 +75,7 @@ export default function Sidebar({ graph, selectedNode, onNodeSelect }: SidebarPr
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
-            {t('sidebar.nodes')} ({graph?.nodes.length || 0})
+            {t('sidebar.nodes')} ({visibleNodes.length})
           </h2>
           <button
             onClick={() => setCollapsed(true)}
