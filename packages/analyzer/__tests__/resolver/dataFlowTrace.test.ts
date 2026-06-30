@@ -114,4 +114,42 @@ describe('DataFlowTracer.traceFromNode', () => {
     expect(result.totalSteps).toBeLessThanOrEqual(64)
     expect(result.steps.length).toBe(result.totalSteps)
   })
+  it('terminates on a calls_service cycle when tracing parent API routes (BOUND-05 regression)', () => {
+    // 构造一个 calls_service 环且无任何 api_route:
+    //   db_model M  <-queries_db-  service A
+    //   A <-calls_service- C <-calls_service- B <-calls_service- A  (环)
+    // 修复前 findParentApiRoutes 无 visited,会沿 calls_service 入边无限递归 → 栈溢出。
+    const mId = createNodeId('db_model', 'prisma/schema.prisma', 'M')
+    const aId = createNodeId('service', 'src/a.ts', 'A')
+    const bId = createNodeId('service', 'src/b.ts', 'B')
+    const cId = createNodeId('service', 'src/c.ts', 'C')
+
+    const cycleNodes: OmniNode[] = [
+      { id: mId, type: 'db_model', name: 'M', filePath: 'prisma/schema.prisma', line: 1, column: 0,
+        metadata: { tableName: 'M', fieldCount: 0, fields: [] } },
+      { id: aId, type: 'service', name: 'A', filePath: 'src/a.ts', line: 1, column: 0,
+        metadata: { className: null, methodName: 'A' } },
+      { id: bId, type: 'service', name: 'B', filePath: 'src/b.ts', line: 1, column: 0,
+        metadata: { className: null, methodName: 'B' } },
+      { id: cId, type: 'service', name: 'C', filePath: 'src/c.ts', line: 1, column: 0,
+        metadata: { className: null, methodName: 'C' } },
+    ]
+    const cycleEdges: OmniEdge[] = [
+      { id: createEdgeId(aId, 'queries_db', mId), source: aId, target: mId,
+        type: 'queries_db', confidence: 'certain', metadata: { operation: 'findMany' } },
+      // calls_service 环:A->B->C->A(source 调用 target)
+      { id: createEdgeId(aId, 'calls_service', bId), source: aId, target: bId,
+        type: 'calls_service', confidence: 'certain', metadata: { serviceName: 'B' } },
+      { id: createEdgeId(bId, 'calls_service', cId), source: bId, target: cId,
+        type: 'calls_service', confidence: 'certain', metadata: { serviceName: 'C' } },
+      { id: createEdgeId(cId, 'calls_service', aId), source: cId, target: aId,
+        type: 'calls_service', confidence: 'certain', metadata: { serviceName: 'A' } },
+    ]
+    const cycleGraph: OmniGraph = { nodes: cycleNodes, edges: cycleEdges }
+    const tracer = new DataFlowTracer(cycleGraph)
+    const model = cycleNodes[0]
+    // 不应抛 RangeError(Maximum call stack size exceeded);环上无 api_route,故 apiNodes 为空。
+    const path = tracer.traceModelFlow(model)
+    expect(path.apiNodes).toEqual([])
+  })
 })

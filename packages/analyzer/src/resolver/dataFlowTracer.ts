@@ -53,6 +53,12 @@ export interface DataFlowResult {
  */
 const MAX_TRACE_STEPS = 64
 
+/**
+ * findParentApiRoutes 沿 calls_service 入边回溯的最大深度。
+ * 配合 visited 集合阻断 calls_service 环导致的无限递归(BOUND-05)。
+ */
+const MAX_PARENT_ROUTE_DEPTH = 64
+
 // ============================================================
 // DataFlowTracer
 // ============================================================
@@ -86,7 +92,7 @@ export class DataFlowTracer {
     // Step 2: 从 caller 向上找 API 路由
     const apiNodes: OmniNode[] = []
     for (const caller of queryCallers) {
-      const routes = this.findParentApiRoutes(caller)
+      const routes = this.findParentApiRoutes(caller, new Set<string>(), 0)
       apiNodes.push(...routes)
     }
 
@@ -218,8 +224,15 @@ export class DataFlowTracer {
   /**
    * 从 service/handler 向上找 API 路由（通过 handles 边）
    */
-  private findParentApiRoutes(node: OmniNode): OmniNode[] {
+  private findParentApiRoutes(node: OmniNode, visited: Set<string>, depth: number): OmniNode[] {
     const routes: OmniNode[] = []
+
+    // 环防护(BOUND-05):已访问节点直接返回,避免 calls_service 环无限递归。
+    if (visited.has(node.id)) return routes
+    visited.add(node.id)
+
+    // 深度硬上限:即使图无环,也阻断超长 calls_service 链的栈增长。
+    if (depth >= MAX_PARENT_ROUTE_DEPTH) return routes
 
     // 如果自己就是 API 路由
     if (node.type === 'api_route' || node.type === 'trpc_procedure' || node.type === 'express_route') {
@@ -244,7 +257,7 @@ export class DataFlowTracer {
         if (edge.type === 'calls_service') {
           const source = this.nodeMap.get(edge.source)
           if (source) {
-            routes.push(...this.findParentApiRoutes(source))
+            routes.push(...this.findParentApiRoutes(source, visited, depth + 1))
           }
         }
       }
