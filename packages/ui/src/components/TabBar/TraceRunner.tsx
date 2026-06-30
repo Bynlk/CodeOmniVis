@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import type { TraceStep } from '@codeomnivis/shared'
 import { useCytoscapeInstance } from '../../lib/cytoscapeContext'
+import { buildEdgeIndex, findConnectingEdges, type EdgeRef } from '../../lib/traceIndex'
 
 interface TraceRunnerProps {
   steps: TraceStep[]
@@ -28,6 +29,13 @@ export function TraceRunner({ steps, activeIndex }: TraceRunnerProps) {
       if (activeIndex < 0 || steps.length === 0) return
 
       const upto = Math.min(activeIndex, steps.length - 1)
+      // M2:预建一次入射索引,每步 O(degree) 查找,替代每步全边扫描。
+      const edgeRefs: EdgeRef[] = cy.edges().map(edge => ({
+        id: edge.id(),
+        source: edge.source().id(),
+        target: edge.target().id(),
+      }))
+      const edgeIndex = buildEdgeIndex(edgeRefs)
       let prevId: string | null = null
 
       for (let i = 0; i <= upto; i++) {
@@ -37,15 +45,9 @@ export function TraceRunner({ steps, activeIndex }: TraceRunnerProps) {
 
         if (prevId !== null) {
           // 点亮 prev↔cur 之间的边(无向匹配,容忍方向)
-          const a = prevId
-          const b = step.nodeId
-          cy.edges().forEach(edge => {
-            const s = edge.source().id()
-            const tg = edge.target().id()
-            if ((s === a && tg === b) || (s === b && tg === a)) {
-              edge.addClass('trace-path')
-            }
-          })
+          for (const hit of findConnectingEdges(edgeIndex, prevId, step.nodeId)) {
+            cy.getElementById(hit.id).addClass('trace-path')
+          }
         }
         prevId = step.nodeId
       }
