@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-06-30T20:23:30",
+  "updatedAt": "2026-06-30T20:34:37.879856",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F6",
+  "currentTask": "F7",
   "baseline": {
     "any": 0,
     "unknown": 83,
@@ -109,6 +109,25 @@
         "test": "shared83(+5)+server60(+2) pass",
         "lint": "0 err 0 warn",
         "build": "pass",
+        "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F6",
+      "audit": "E-08",
+      "severity": "Med",
+      "packages": [
+        "analyzer"
+      ],
+      "status": "done",
+      "commit": "0ad80fe",
+      "summary": "CrossLayerResult 新增 nodes 字段返回连线过程动态创建的 synthetic handler/service 节点;runAnalysis/runFullAnalysis 先 upsert 这些节点再写跨层边,消除 dangling edge。RED 测试断言 link() 在 api_route 缺 handler 时返回 synthetic handler 节点。",
+      "gates": {
+        "diffcheck": "clean",
+        "typecheck": "0 error",
+        "test": "193 pass (analyzer)",
+        "lint": "0 error",
+        "build": "success",
         "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
       }
     }
