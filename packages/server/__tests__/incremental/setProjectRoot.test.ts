@@ -60,7 +60,7 @@ describe('IncrementalAnalyzer.setProjectRoot', () => {
     await analyzer.setProjectRoot(dirB)
     expect(analyzer.getProjectRoot()).toBe(path.resolve(dirB))
     expect(runAnalysisMock).toHaveBeenCalled()
-    analyzer.stop()
+    await analyzer.stop()
   })
 
   it('clears existing graph data when switching roots', async () => {
@@ -68,6 +68,77 @@ describe('IncrementalAnalyzer.setProjectRoot', () => {
     const analyzer = new IncrementalAnalyzer({ projectRoot: dirA, dbPath: ':memory:', db })
     await analyzer.setProjectRoot(dirB)
     expect(clearSpy).toHaveBeenCalled()
-    analyzer.stop()
+    await analyzer.stop()
+  })
+
+  it('awaits watcher close and in-flight analysis before clearing graph on root switch', async () => {
+    // 受控的在途分析:首轮(旧 root)阻塞,直到我们放行。
+    let releaseFirst: (() => void) | null = null
+    const firstDone = new Promise<void>((resolve) => {
+      releaseFirst = () => resolve()
+    })
+    const result = { filesScanned: 0, nodesCreated: 0, edgesCreated: 0, crossLayerEdges: 0, errors: 0 }
+    runAnalysisMock.mockImplementationOnce(async () => {
+      await firstDone
+      return result
+    })
+
+    const analyzer = new IncrementalAnalyzer({ projectRoot: dirA, dbPath: ':memory:', db })
+    // 启动针对旧 root 的在途分析(不 await)。
+    const inFlight = analyzer.refresh()
+
+    const clearSpy = vi.spyOn(db, 'clearGraph')
+    let clearedBeforeFirstDone = false
+    clearSpy.mockImplementation(() => {
+      // clearGraph 必须发生在在途分析落库之后(串行化保证)。
+      // 此处若 releaseFirst 仍未触发,则说明未等待在途分析。
+    })
+
+    // 触发切根;它应:bump generation → stop(await watcher) → await 在途分析 → clearGraph。
+    const switching = analyzer.setProjectRoot(dirB)
+
+    // 在途分析此刻仍阻塞,clearGraph 不应被调用(被串行化阻塞)。
+    await Promise.resolve()
+    clearedBeforeFirstDone = clearSpy.mock.calls.length > 0
+    expect(clearedBeforeFirstDone).toBe(false)
+
+    // 放行旧分析 → setProjectRoot 得以继续。
+    releaseFirst?.()
+    await inFlight
+    await switching
+
+    expect(clearSpy).toHaveBeenCalled()
+    expect(analyzer.getProjectRoot()).toBe(path.resolve(dirB))
+    await analyzer.stop()
+  })
+
+  it('discards a stale analysis result started before the root switch', async () => {
+    let releaseFirst: (() => void) | null = null
+    const firstDone = new Promise<void>((resolve) => {
+      releaseFirst = () => resolve()
+    })
+    const result = { filesScanned: 0, nodesCreated: 0, edgesCreated: 0, crossLayerEdges: 0, errors: 0 }
+    // 首轮(旧 root)阻塞;后续轮(新 root)立即完成。
+    runAnalysisMock.mockImplementationOnce(async () => {
+      await firstDone
+      return result
+    })
+    runAnalysisMock.mockResolvedValue(result)
+
+    const completedEvents: number[] = []
+    codeomnivisEvents.on('analysis:completed', () => completedEvents.push(Date.now()))
+
+    const analyzer = new IncrementalAnalyzer({ projectRoot: dirA, dbPath: ':memory:', db })
+    const inFlight = analyzer.refresh()
+
+    // 切根:作废旧世代;它会 await 旧在途分析,但旧分析仍阻塞。
+    const switching = analyzer.setProjectRoot(dirB)
+    releaseFirst?.()
+    await inFlight
+    await switching
+
+    // 旧世代分析结果被丢弃:不应保留指向旧 root 的状态。
+    expect(analyzer.getProjectRoot()).toBe(path.resolve(dirB))
+    await analyzer.stop()
   })
 })

@@ -47,6 +47,12 @@ export interface DataFlowResult {
   totalComponents: number
 }
 
+/**
+ * 单次 traceFromNode 的最大站点数(含 root)。
+ * 上游与下游共享该预算,确保 totalSteps 不超过此上限,并阻断环导致的无限遍历。
+ */
+const MAX_TRACE_STEPS = 64
+
 // ============================================================
 // DataFlowTracer
 // ============================================================
@@ -295,31 +301,36 @@ export class DataFlowTracer {
 
     const visited = new Set<string>([rootId])
 
+    // 整条链路(上游 + 下游)共享一个步数预算,避免环导致死循环,
+    // 也保证 totalSteps 不超过 MAX_TRACE_STEPS(含 root)。
+    let budget = MAX_TRACE_STEPS - 1
+
     // 上游链(入边方向),收集后反转 → 从最上游到 root 的前一站
     const upstream: Array<{ node: OmniNode; edge: OmniEdge }> = []
     {
       let current = root
-      // 防御:链路有上限,避免环导致死循环
-      for (let i = 0; i < 64; i++) {
+      while (budget > 0) {
         const next = this.pickLinkEdge(this.incomingEdges.get(current.id), visited, 'source')
         if (!next) break
         upstream.push({ node: next.node, edge: next.edge })
         visited.add(next.node.id)
         current = next.node
+        budget--
       }
     }
     upstream.reverse()
 
-    // 下游链(出边方向)
+    // 下游链(出边方向),消耗同一预算
     const downstream: Array<{ node: OmniNode; edge: OmniEdge }> = []
     {
       let current = root
-      for (let i = 0; i < 64; i++) {
+      while (budget > 0) {
         const next = this.pickLinkEdge(this.outgoingEdges.get(current.id), visited, 'target')
         if (!next) break
         downstream.push({ node: next.node, edge: next.edge })
         visited.add(next.node.id)
         current = next.node
+        budget--
       }
     }
 

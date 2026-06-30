@@ -85,4 +85,33 @@ describe('DataFlowTracer.traceFromNode', () => {
       expect(step.explanation.length).toBeGreaterThan(0)
     }
   })
+
+  it('bounds total steps to the shared budget on a long chain (M2 regression)', () => {
+    // 构造一条 130 段的 data_flows_to 链:root 在中部,
+    // 上游 + 下游共享 64 步预算,total 必须 <= 64(含 root),而非 129。
+    const N = 130
+    const chainNodes: OmniNode[] = []
+    const chainEdges: OmniEdge[] = []
+    for (let i = 0; i < N; i++) {
+      const id = createNodeId('service', `src/s${i}.ts`, `fn${i}`)
+      chainNodes.push({
+        id, type: 'service', name: `fn${i}`, filePath: `src/s${i}.ts`, line: 1, column: 0,
+        metadata: { className: null, methodName: `fn${i}` },
+      })
+    }
+    for (let i = 0; i < N - 1; i++) {
+      const a = chainNodes[i].id
+      const b = chainNodes[i + 1].id
+      chainEdges.push({
+        id: createEdgeId(a, 'data_flows_to', b), source: a, target: b,
+        type: 'data_flows_to', confidence: 'certain', metadata: {},
+      })
+    }
+    const longGraph: OmniGraph = { nodes: chainNodes, edges: chainEdges }
+    // 从中部出发,既有上游又有下游。
+    const mid = chainNodes[Math.floor(N / 2)].id
+    const result = new DataFlowTracer(longGraph).traceFromNode(mid)
+    expect(result.totalSteps).toBeLessThanOrEqual(64)
+    expect(result.steps.length).toBe(result.totalSteps)
+  })
 })

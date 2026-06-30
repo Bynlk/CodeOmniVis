@@ -236,8 +236,8 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
   // 停止服务器
   async function stop(): Promise<void> {
-    // 停止文件监听
-    incrementalAnalyzer.stop()
+    // 停止文件监听(等待 watcher 关闭)
+    await incrementalAnalyzer.stop()
 
     // 关闭所有 WebSocket 连接
     for (const client of clients) {

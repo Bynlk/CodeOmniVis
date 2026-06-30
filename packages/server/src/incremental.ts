@@ -59,6 +59,13 @@ export class IncrementalAnalyzer {
   /** 分析进行中又来了新变更时置位,分析结束后补跑一次,避免丢失变更。 */
   private rerunRequested = false
   private lastChangedFile: string | null = null
+  /**
+   * 分析世代。每次切根 +1,用于作废切根前启动的在途/排队分析:
+   * 旧世代分析完成后不再广播结果、不再触发补跑。
+   */
+  private generation = 0
+  /** 当前在途分析的 promise(无在途时为 null),供切根时串行等待其落库完成。 */
+  private analysisInFlight: Promise<void> | null = null
 
   constructor(options: IncrementalAnalyzerOptions) {
     this.projectRoot = options.projectRoot
@@ -89,8 +96,21 @@ export class IncrementalAnalyzer {
       return
     }
 
-    // 停止旧监听
-    this.stop()
+    // 作废切根前启动的所有排队/在途分析:旧世代分析完成后不会再写状态或补跑。
+    this.generation += 1
+
+    // 停止旧监听(等待 watcher 真正关闭,避免关闭竞态)。
+    await this.stop()
+
+    // 串行化:等待在途分析(针对旧 root)落库完成,
+    // 再 clearGraph,确保旧项目数据不会在清图之后被写回 DB。
+    if (this.analysisInFlight) {
+      try {
+        await this.analysisInFlight
+      } catch {
+        // 在途分析的错误已在 triggerAnalysis 内处理,这里仅用于等待其结束。
+      }
+    }
 
     // 切换根并重置新鲜度,旧图先清空避免跨项目脏数据。
     this.projectRoot = resolved
@@ -205,6 +225,22 @@ export class IncrementalAnalyzer {
       return
     }
 
+    // 绑定本轮分析所属世代;切根会递增 generation,使旧世代结果被丢弃。
+    const myGeneration = this.generation
+    const run = this.runAnalysisCycle(filePath, myGeneration)
+    this.analysisInFlight = run
+    try {
+      await run
+    } finally {
+      // 仅当没有更新的在途分析覆盖时,才清空句柄。
+      if (this.analysisInFlight === run) {
+        this.analysisInFlight = null
+      }
+    }
+  }
+
+  /** 实际执行一轮分析;myGeneration 用于切根后作废过期结果。 */
+  private async runAnalysisCycle(filePath: string | null, myGeneration: number): Promise<void> {
     this.isAnalyzing = true
     this.setState('analyzing')
     codeomnivisEvents.emit(EVENTS.ANALYSIS_STARTED)
@@ -218,6 +254,11 @@ export class IncrementalAnalyzer {
         projectRoot: this.projectRoot,
         dbPath: this.dbPath,
       })
+      // 切根作废:本轮针对的是旧 root,结果不再广播,也不更新新鲜度。
+      if (myGeneration !== this.generation) {
+        console.log('[IncrementalAnalyzer] Stale analysis (root switched), discarding result')
+        return
+      }
       console.log('[IncrementalAnalyzer] Re-analysis complete')
       this.lastAnalyzedAt = Date.now()
       codeomnivisEvents.emit(EVENTS.GRAPH_UPDATED, filePath)
@@ -228,7 +269,10 @@ export class IncrementalAnalyzer {
       this.pendingChanges += consumed
     } finally {
       this.isAnalyzing = false
-      if (this.rerunRequested) {
+      if (myGeneration !== this.generation) {
+        // 世代已过期(切根):不补跑、不改新鲜度,交由新世代流程接管。
+        this.rerunRequested = false
+      } else if (this.rerunRequested) {
         // 分析期间有新变更到达,立即补跑一次。
         this.rerunRequested = false
         const next = this.lastChangedFile
@@ -242,14 +286,16 @@ export class IncrementalAnalyzer {
   /**
    * 停止文件监听
    */
-  stop(): void {
+  async stop(): Promise<void> {
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer)
       this.debounceTimer = null
     }
     if (this.watcher) {
-      this.watcher.close()
+      const watcher = this.watcher
       this.watcher = null
+      // 等待 chokidar 真正释放 fs 句柄,避免关闭竞态。
+      await watcher.close()
     }
     console.log('[IncrementalAnalyzer] Stopped')
   }
