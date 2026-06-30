@@ -38,5 +38,35 @@
     "invariants": "any=0 assertions=0 doubleCasts=0 must hold for all subsequent stages; unknown only at typed boundaries (HTTP/JSON/cytoscape/package.json) immediately narrowed by guards",
     "lint": "type-aware @typescript-eslint no-unsafe-* + no-explicit-any enforced as errors over packages/*/src",
     "regression": "typecheck 10/10, eslint 0 errors, build 6/6, tests 229 (shared36/analyzer172/server15/mcp6)"
+  },
+  "healthFixBaseline": {
+    "capturedAt": "2026-06-30T16:16:00+08:00",
+    "branch": "fix/health-check",
+    "fromBranch": "master",
+    "astMetrics": {
+      "any": 0,
+      "unknown": 81,
+      "assertions": 0,
+      "doubleCasts": 0,
+      "recordUnknown": 1
+    },
+    "tests": {
+      "total": 341,
+      "byPackage": {
+        "shared": 78,
+        "analyzer": 178,
+        "server": 37,
+        "mcp": 6,
+        "cli": 13,
+        "ui": 29
+      }
+    },
+    "gates": {
+      "typecheck": "10/10 pass",
+      "lint": "0 error (warnings present)",
+      "build": "success",
+      "test": "341 pass"
+    },
+    "lintWarningsNote": "~53 unused-vars + 6 MODULE_TYPELESS warnings to clean in H14"
   }
 }

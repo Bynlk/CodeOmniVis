@@ -21,3 +21,22 @@
 - [ ] B19 图谱噪声治理 + POST /api/project 运行时选目录
 - [ ] B20 设置抽屉(AI/项目/显示/关于) + 三层推广位 + 非商业 License 措辞
 - [ ] B-MERGE 全量回归 + 合并回 master + 收尾报告
+
+## Stage HEALTH-FIX: fix/health-check （前置：master 基线，341 测试全过）
+- [ ] H0  Bootstrap（建分支 + 基线快照）
+- [ ] H1  RACE-01 分析结果共享 DB 句柄（server）
+- [ ] H2  DUP-01 createDefaultParsers 工厂（analyzer/cli）
+- [ ] H3  S-01 路径穿越守卫（server）
+- [ ] H4  S-04 WebSocket Origin 校验（server）
+- [ ] H5  BOUND-02 findLayoutFile 终止性（analyzer）
+- [ ] H6  BOUND-03 箭头函数组件导出识别（analyzer）
+- [ ] H7  TEST-BUG-01/02/03 伪测试重写
+- [ ] H8  S-03 安全响应头（server）
+- [ ] H9  LEAK-01 优雅关闭 wss（server）
+- [ ] H10 MAGIC-02 readyState 用 WebSocket.OPEN（server）
+- [ ] H11 DUP-03 AiConfigForm 公共组件（ui）
+- [ ] H12 M2  TraceRunner 邻接索引（ui）
+- [ ] H13 E-03 测试纳入 typecheck（全仓）
+- [ ] H14 E-06 lint 警告清零
+- [ ] H15 P-01 UI chunk 拆分
+- [ ] H-MERGE 终态回归 + ff 合并 master + 收尾报告

@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T13:50:00+08:00",
-  "currentStage": "Review remediation",
-  "currentTask": "DONE",
+  "updatedAt": "2026-06-30T16:17:56+08:00",
+  "currentStage": "HEALTH-FIX",
+  "currentTask": "H0",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -451,6 +451,26 @@
       "metrics": {
         "finding": "m1 — PROGRESS.json A0-A4/B-MERGE commit 为 null/占位;m2 — TECHNICAL_DEBT.md 缺 6 条 MODULE_TYPELESS 警告且「全部非阻塞」措辞不准",
         "plan": "回填真实 hash(A0-A4, B-MERGE=e3f8dc9)并补 R1-R5 条目;修订 TECHNICAL_DEBT(拆分已知债务 vs 评审发现并已修复缺陷,删除「全部非阻塞」,补 6 条 MODULE_TYPELESS 警告,记录已闭合的 AST 盲区);全量回归后 ff 合并 fix/review-remediation 到 master"
+      }
+    },
+    {
+      "id": "H0",
+      "stage": "HEALTH-FIX",
+      "name": "Bootstrap（建分支 + 基线快照）",
+      "status": "done",
+      "commit": null,
+      "gates": {
+        "git diff --check": "pass"
+      },
+      "metrics": {
+        "any": 0,
+        "unknown": 81,
+        "assertions": 0,
+        "doubleCasts": 0,
+        "recordUnknown": 1
+      },
+      "tests": {
+        "total": 341
       }
     }
   ]
