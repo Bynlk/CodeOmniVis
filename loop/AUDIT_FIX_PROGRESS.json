@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-07-01T00:46:00+08:00",
+  "updatedAt": "2026-07-01T00:49:00+08:00",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F12",
+  "currentTask": "F13",
   "baseline": {
     "any": 0,
     "unknown": 83,
@@ -223,6 +223,25 @@
         "diffCheck": "clean",
         "typecheck": "0 error",
         "test": "63 passed (+2 RED)",
+        "lint": "0 error",
+        "build": "success",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F12",
+      "audit": "LEAK-03",
+      "severity": "high",
+      "packages": [
+        "@codeomnivis/server"
+      ],
+      "status": "fixed",
+      "commit": "008ecde",
+      "summary": "stop() 不再 removeAllListeners() 清空共享单例 codeomnivisEvents;改为保存本实例的 onGraphUpdated/onStatusChanged 引用并仅 off() 这些,避免误删其它实例/外部订阅。",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "64 passed (+1 RED)",
         "lint": "0 error",
         "build": "success",
         "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
