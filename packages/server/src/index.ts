@@ -253,12 +253,30 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     broadcastStatus(status)
   })
 
+  // H9 · LEAK-01:进程退出钩子(start 注册 / stop 注销),保证 wss + DB + watcher 释放。
+  let tearingDown = false
+  const handleExit = (signal: NodeJS.Signals): void => {
+    if (tearingDown) return
+    tearingDown = true
+    console.log(`Received ${signal}, releasing resources...`)
+    void stop()
+      .then(() => process.exit(0))
+      .catch((err: unknown) => {
+        console.error('Teardown failed:', err)
+        process.exit(1)
+      })
+  }
+
   // 启动服务器
   async function start(): Promise<void> {
     await db.ready()
 
     // 启动文件监听
     incrementalAnalyzer.start()
+
+    // H9 · LEAK-01:注册进程退出钩子,优雅释放 wss + DB + watcher。
+    process.on('SIGINT', handleExit)
+    process.on('SIGTERM', handleExit)
 
     return new Promise((resolve) => {
       server.listen(port, host, () => {
@@ -271,6 +289,10 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
   // 停止服务器
   async function stop(): Promise<void> {
+    // H9:注销退出钩子,避免重复 stop 时累积监听器。
+    process.removeListener('SIGINT', handleExit)
+    process.removeListener('SIGTERM', handleExit)
+
     // 停止文件监听(等待 watcher 关闭)
     await incrementalAnalyzer.stop()
 
@@ -279,6 +301,11 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       client.close()
     }
     clients.clear()
+
+    // H9 · LEAK-01:关闭 WebSocketServer,释放底层监听器与升级钩子。
+    await new Promise<void>((resolve) => {
+      wss.close(() => resolve())
+    })
 
     // 移除事件监听
     codeomnivisEvents.removeAllListeners()

@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T17:05:00+08:00",
+  "updatedAt": "2026-06-30T17:08:00+08:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H8",
+  "currentTask": "H9",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -652,6 +652,31 @@
       },
       "metrics": {
         "middleware": "index.ts: app.disable('x-powered-by') + hand-written header middleware (X-Content-Type-Options nosniff / X-Frame-Options DENY / Referrer-Policy no-referrer / X-DNS-Prefetch-Control off); no new dependency to keep self-contained bundle"
+      }
+    },
+    {
+      "id": "H9",
+      "code": "LEAK-01",
+      "title": "graceful teardown: close wss + DB + exit hooks",
+      "status": "done",
+      "commit": "PENDING",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "server 52 (+2)",
+        "lint": "0 error (src)",
+        "build": "success",
+        "ast": {
+          "any": 0,
+          "unknown": 82,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      },
+      "metrics": {
+        "stop": "stop() now await wss.close() (release upgrade listeners) before db.close()/server.close()",
+        "exitHooks": "start() registers SIGINT/SIGTERM -> shared handleExit -> stop()+process.exit; stop() deregisters listeners (idempotent, no listener accumulation across restarts); tearingDown guard prevents double-teardown"
       }
     }
   ]
