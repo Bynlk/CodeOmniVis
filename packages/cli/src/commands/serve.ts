@@ -13,7 +13,7 @@ import * as path from 'path'
 import { fileURLToPath } from 'url'
 import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
-import { createOmniServer } from '@codeomnivis/server'
+import { createOmniServer, isLoopbackHost } from '@codeomnivis/server'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
 import type { OmniNode } from '@codeomnivis/shared'
 import { GraphBuilder, createDefaultParsers, CrossLayerLinker } from '@codeomnivis/analyzer'
@@ -35,6 +35,7 @@ interface ServeOptions {
   host: string
   project?: string
   open: boolean
+  token?: string
 }
 
 function isSyntheticNode(node: OmniNode): boolean {
@@ -49,6 +50,7 @@ export function serveCommand(program: Command): void {
     .option('-h, --host <host>', 'Server host', 'localhost')
     .option('--project <path>', 'Project root path', '.')
     .option('--no-open', 'Do not open browser automatically')
+    .option('--token <token>', 'Access token required for mutating endpoints when binding to a non-loopback host')
     .action(async (options: ServeOptions) => {
       const spinner = ora('Starting CodeOmniVis server...').start()
 
@@ -65,6 +67,20 @@ export function serveCommand(program: Command): void {
           console.log(chalk.gray('Configuration loaded from .codeomnivis.json'))
         }
 
+        // S-07:绑定到非 loopback 地址时,必须显式提供访问 token,
+        // 否则 mutating endpoints 在公网/局域网将无鉴权暴露。
+        const accessToken = options.token ?? process.env.CODEOMNIVIS_TOKEN
+        if (!isLoopbackHost(options.host) && (accessToken === undefined || accessToken === '')) {
+          spinner.fail(chalk.red('Refusing to bind to a non-loopback host without an access token'))
+          console.error(
+            chalk.yellow(
+              `Host "${options.host}" is not loopback. Provide --token <token> or set CODEOMNIVIS_TOKEN ` +
+                'to protect mutating endpoints (/api/analyze, /api/project, DELETE /api/graph).'
+            )
+          )
+          process.exit(1)
+        }
+
         // 创建服务器
         spinner.text = 'Starting server...'
         const dbPath = getDbPath(projectRoot)
@@ -74,6 +90,7 @@ export function serveCommand(program: Command): void {
           dbPath,
           projectRoot,
           uiDistPath: resolveUiDistPath(),
+          accessToken,
         })
 
         // 启动服务器

@@ -20,6 +20,8 @@ import { codeomnivisEvents, EVENTS } from './events'
 import { IncrementalAnalyzer } from './incremental'
 import { registerAiRoutes } from './ai'
 import { resolveWithinBoundary } from './pathGuard'
+import { createMutatingGuard } from './authGuard'
+export { isLoopbackHost, createMutatingGuard } from './authGuard'
 import { isOriginAllowed, toOriginAllowlist } from './originGuard'
 
 // ESM 兼容的 __dirname
@@ -37,6 +39,8 @@ export interface ServerOptions {
   projectRoot?: string
   uiDistPath?: string
   corsOrigin?: string | string[]
+  /** S-07:非 loopback 绑定时,mutating endpoints 要求的访问 token。 */
+  accessToken?: string
 }
 
 export interface ServerInstance {
@@ -59,6 +63,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     projectRoot = process.cwd(),
     uiDistPath = path.resolve(__dirname, '../../ui/dist'),
     corsOrigin = `http://localhost:${port}`,
+    accessToken,
   } = options
 
   // 初始化 Express
@@ -93,8 +98,11 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     db,
   })
 
+  // S-07:mutating endpoints 鉴权守卫(非 loopback 绑定必须携带 token)。
+  const mutatingGuard = createMutatingGuard({ host, token: accessToken })
+
   // API 路由
-  const graphRouter = createGraphRouter(db)
+  const graphRouter = createGraphRouter(db, mutatingGuard)
   app.use('/api/graph', graphRouter)
 
   // 健康检查
@@ -109,7 +117,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
   // POST /api/analyze — 手动触发重新分析(兜底)
   // 与文件监听共用串行化逻辑,分析期间到达的变更不会丢失。
-  app.post('/api/analyze', async (_req, res) => {
+  app.post('/api/analyze', mutatingGuard, async (_req, res) => {
     try {
       await incrementalAnalyzer.refresh()
       res.json({ data: { success: true, status: incrementalAnalyzer.getStatus() }, meta: {} })
@@ -121,7 +129,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
   // POST /api/project — 运行时切换分析的项目根目录
   // body: { projectRoot: string }。校验目录存在,切换后重建图并重新分析。
-  app.post('/api/project', async (req, res) => {
+  app.post('/api/project', mutatingGuard, async (req, res) => {
     const body: unknown = req.body
     const projectRootInput = isJsonObject(body) ? body.projectRoot : undefined
     if (typeof projectRootInput !== 'string' || projectRootInput.trim() === '') {

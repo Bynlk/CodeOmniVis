@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-06-30T19:34:31",
+  "updatedAt": "2026-06-30T19:51:00",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F1",
+  "currentTask": "F3",
   "baseline": {
     "any": 0,
     "unknown": 83,
@@ -12,5 +12,45 @@
     "recordUnknown": 1,
     "testCount": 378
   },
-  "tasks": []
+  "tasks": [
+    {
+      "id": "F1",
+      "audit": "S-05",
+      "severity": "High",
+      "packages": [
+        "server"
+      ],
+      "status": "done",
+      "commit": "49f831c",
+      "summary": "realpath second-pass boundary check rejects boundary-internal symlinks escaping root",
+      "gates": {
+        "diffcheck": "pass",
+        "typecheck": "pass",
+        "test": "54 pass",
+        "lint": "0 err",
+        "build": "pass",
+        "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F2",
+      "audit": "BOUND-04",
+      "severity": "High",
+      "packages": [
+        "mcp",
+        "analyzer"
+      ],
+      "status": "done",
+      "commit": "e6b6870",
+      "summary": "validateDepth rejects illegal MCP depth; getSubtree clamps depth + visited dedupe; exported real handlers (also helps F19)",
+      "gates": {
+        "diffcheck": "pass",
+        "typecheck": "pass",
+        "test": "analyzer189+mcp13 pass",
+        "lint": "0 warn",
+        "build": "pass",
+        "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    }
+  ]
 }

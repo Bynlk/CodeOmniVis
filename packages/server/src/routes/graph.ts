@@ -5,7 +5,7 @@
  * 遵循 REST API 格式规范。
  */
 
-import { Router, Request, Response } from 'express'
+import { Router, Request, Response, RequestHandler } from 'express'
 import type { OmniDatabase } from '@codeomnivis/analyzer'
 import { DataFlowTracer } from '@codeomnivis/analyzer'
 import type { NodeType, EdgeType } from '@codeomnivis/shared'
@@ -30,8 +30,10 @@ const VALID_EDGE_TYPES: ReadonlySet<string> = new Set<EdgeType>([
 // 路由创建
 // ============================================================
 
-export function createGraphRouter(db: OmniDatabase): Router {
+export function createGraphRouter(db: OmniDatabase, mutatingGuard?: RequestHandler): Router {
   const router = Router()
+  // S-07:非 loopback 绑定时,DELETE 等 mutating 操作需通过鉴权守卫。
+  const guard: RequestHandler = mutatingGuard ?? ((_req, _res, next) => next())
 
   /**
    * GET /api/graph
@@ -226,7 +228,7 @@ export function createGraphRouter(db: OmniDatabase): Router {
    * DELETE /api/graph
    * 清空图数据（需要 X-Confirm: true header）
    */
-  router.delete('/', (req: Request, res: Response) => {
+  router.delete('/', guard, (req: Request, res: Response) => {
     try {
       // 要求确认 header，防止误操作
       if (req.headers['x-confirm'] !== 'true') {
