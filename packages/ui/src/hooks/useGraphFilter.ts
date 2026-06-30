@@ -1,82 +1,37 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useCytoscapeRef } from '../lib/cytoscapeContext'
-import { NODE_TYPE_LIST } from '../lib/nodeConfig'
-import { EDGE_TYPE_LIST } from '../lib/edgeConfig'
-import { isEdgeType, isNodeType } from '@codeomnivis/shared'
+import {
+  GraphFilterController,
+  createDefaultState,
+  type GraphFilterState,
+} from '../lib/graphFilterController'
 import type { EdgeConfidence, EdgeType, NodeType } from '@codeomnivis/shared'
-
-interface GraphFilterState {
-  nodeTypeFilter: Set<NodeType>
-  edgeTypeFilter: Set<EdgeType>
-  confidenceFilter: Set<EdgeConfidence>
-  showIsolated: boolean
-}
-
-function isEdgeConfidence(value: unknown): value is EdgeConfidence {
-  return value === 'certain' || value === 'inferred'
-}
-
-// 创建默认状态的工厂函数（避免共享可变对象）
-function createDefaultState(): GraphFilterState {
-  return {
-    nodeTypeFilter: new Set(NODE_TYPE_LIST),
-    edgeTypeFilter: new Set(EDGE_TYPE_LIST),
-    confidenceFilter: new Set(['certain', 'inferred']),
-    showIsolated: true,
-  }
-}
 
 export function useGraphFilter() {
   const [state, setState] = useState<GraphFilterState>(createDefaultState)
   const cyRef = useCytoscapeRef()
+  const controllerRef = useRef<GraphFilterController | null>(null)
 
-  // 保存 viewport 的 ref
-  const savedViewport = useRef<{ pan: { x: number; y: number }; zoom: number } | null>(null)
-
-  // 使用 useEffect 监听 state 变化并应用过滤
+  // 绑定/重建控制器:cy 实例变化时重新挂载,并在卸载时注销 'add' 监听。
+  // 控制器内部监听 cy 'add' 事件,GraphCanvas 刷新 remove/add 后会自动重放过滤,
+  // 修复 E-13:图刷新后过滤状态丢失、新元素恢复默认可见的问题。
   useEffect(() => {
     const cy = cyRef?.current
     if (!cy) return
 
-    // 保存当前视口（首次筛选时保存）
-    if (!savedViewport.current) {
-      savedViewport.current = { pan: cy.pan(), zoom: cy.zoom() }
+    const controller = new GraphFilterController(cy, state)
+    controllerRef.current = controller
+    return () => {
+      controller.dispose()
+      controllerRef.current = null
     }
+    // 仅在 cy 实例变化时重建;state 变化通过下方 effect 推送,避免反复挂卸监听。
+  }, [cyRef])
 
-    const currentPan = cy.pan()
-    const currentZoom = cy.zoom()
-
-    cy.batch(() => {
-      // 节点类型过滤
-      cy.nodes().forEach(node => {
-          const rawType: unknown = node.data('type')
-          const type = typeof rawType === 'string' && isNodeType(rawType) ? rawType : undefined
-        const hasEdges = node.degree() > 0
-        const isIsolated = !hasEdges
-
-          const typeVisible = type ? state.nodeTypeFilter.has(type) : false
-        const isolatedVisible = state.showIsolated || !isIsolated
-
-        node.style('display', typeVisible && isolatedVisible ? 'element' : 'none')
-      })
-
-      // 边类型 + 置信度过滤
-      cy.edges().forEach(edge => {
-          const rawEdgeType: unknown = edge.data('type')
-          const edgeType = typeof rawEdgeType === 'string' && isEdgeType(rawEdgeType) ? rawEdgeType : undefined
-          const rawConfidence: unknown = edge.data('confidence')
-          const confidence = isEdgeConfidence(rawConfidence) ? rawConfidence : undefined
-
-          const typeVisible = edgeType ? state.edgeTypeFilter.has(edgeType) : false
-          const confVisible = confidence ? state.confidenceFilter.has(confidence) : false
-
-        edge.style('display', typeVisible && confVisible ? 'element' : 'none')
-      })
-    })
-
-    // 恢复视口（不 fit！）
-    cy.viewport({ zoom: currentZoom, pan: currentPan })
-  }, [state, cyRef])
+  // state 变化时推送到控制器立即重放(控制器已挂载时)。
+  useEffect(() => {
+    controllerRef.current?.setState(state)
+  }, [state])
 
   const toggleNodeType = useCallback((type: NodeType) => {
     setState(prev => {
@@ -120,13 +75,7 @@ export function useGraphFilter() {
 
   const resetFilters = useCallback(() => {
     setState(createDefaultState())
-    // 重置后恢复 fit
-    const cy = cyRef?.current
-    if (cy) {
-      cy.fit(undefined, 40)
-      savedViewport.current = null
-    }
-  }, [cyRef])
+  }, [])
 
   return {
     nodeTypeFilter: state.nodeTypeFilter,
