@@ -8,6 +8,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import type { ProjectMeta, FrameworkType, DatabaseType, MonorepoType, CodeOmniVisConfig } from '@codeomnivis/shared'
+import { readDependencies } from '@codeomnivis/shared'
 import { detectGradleFrameworks } from './gradleDetect'
 
 const FRAMEWORK_TYPES = new Set<string>([
@@ -67,15 +68,12 @@ export async function autoDetectProject(root: string, config?: CodeOmniVisConfig
  */
 async function doAutoDetect(root: string): Promise<ProjectMeta> {
   const packageJsonPath = path.join(root, 'package.json')
-  const packageJson = fs.existsSync(packageJsonPath)
+  const packageJson: unknown = fs.existsSync(packageJsonPath)
     ? JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
     : {}
 
   // 收集依赖：根目录 + 主应用（monorepo 场景）
-  const dependencies = {
-    ...packageJson.dependencies,
-    ...packageJson.devDependencies,
-  }
+  const dependencies: Record<string, string> = { ...readDependencies(packageJson) }
 
   // monorepo：合并 apps/web/package.json 的依赖
   const monorepoType = detectMonorepoType(root)
@@ -86,8 +84,8 @@ async function doAutoDetect(root: string): Promise<ProjectMeta> {
     ]
     for (const p of mainAppPkgPaths) {
       if (fs.existsSync(p)) {
-        const pkg = JSON.parse(fs.readFileSync(p, 'utf-8'))
-        Object.assign(dependencies, pkg.dependencies, pkg.devDependencies)
+        const pkg: unknown = JSON.parse(fs.readFileSync(p, 'utf-8'))
+        Object.assign(dependencies, readDependencies(pkg))
         break
       }
     }

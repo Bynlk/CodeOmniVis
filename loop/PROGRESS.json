@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T09:52:00+08:00",
+  "updatedAt": "2026-06-30T10:20:00+08:00",
   "currentStage": "Stage A",
-  "currentTask": "A9",
+  "currentTask": "A-MERGE",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -155,7 +155,7 @@
       "stage": "Stage A",
       "name": "UI 边界 typed",
       "status": "done",
-      "commit": "PENDING",
+      "commit": "5924d93",
       "gates": {
         "uiTypecheck": "pass",
         "uiTests": "pass (6/6)",
@@ -172,10 +172,20 @@
       "id": "A9",
       "stage": "Stage A",
       "name": "type-aware ESLint",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "PENDING",
+      "gates": {
+        "eslintTypeAware": "pass (0 errors, 39 pre-existing unused-var warnings)",
+        "turboTypecheck": "pass (10/10)",
+        "tests": "pass (shared 36 / analyzer 172 / server 15 / mcp 6 = 229)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=68(boundary)",
+        "gitDiffCheck": "pass"
+      },
+      "metrics": {
+        "eslintConfig": "eslint.config.js adds @typescript-eslint type-aware rules (no-unsafe-* + no-unnecessary-type-assertion + no-explicit-any error) over packages/*/src with projectService",
+        "boundaryFixes": "139 no-unsafe-* errors resolved via unknown-annotation + guards; shared readDependencies() reader for package.json deps trio (runFullAnalysis/server/autoDetect); commander option interfaces; cytoscape EventObjectNode + unknown-narrowed data() reads; UI fetch json typed unknown + isJsonObject guards",
+        "noCast": "all fixes via type guards / unknown annotation, zero as-casts, zero wide fallback"
+      }
     },
     {
       "id": "A-MERGE",

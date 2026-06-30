@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
 import type { OmniGraph, ProjectMeta } from '@codeomnivis/shared'
+import { readDependencies } from '@codeomnivis/shared'
 import { OmniDatabase } from '@codeomnivis/analyzer'
 import { createGraphRouter } from './routes/graph'
 import { codeomnivisEvents, EVENTS } from './events'
@@ -147,8 +148,8 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
         try {
           const pkgPath = path.join(projectRoot, 'package.json')
           if (fs.existsSync(pkgPath)) {
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-            const deps = { ...pkg.dependencies, ...pkg.devDependencies }
+            const pkg: unknown = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+            const deps = readDependencies(pkg)
 
             // 前端框架
             if (deps['next']) detectedFrontend = 'next'

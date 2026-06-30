@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { isJsonObject } from '@codeomnivis/shared'
 
 interface WebSocketOptions {
   url?: string
@@ -37,8 +38,9 @@ export function useWebSocket(options: WebSocketOptions = {}) {
 
       ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data)
-          if (data.type === 'graph_updated') {
+          const raw: string = typeof event.data === 'string' ? event.data : ''
+          const data: unknown = JSON.parse(raw)
+          if (isJsonObject(data) && data.type === 'graph_updated') {
             // 自动刷新图数据
             queryClient.invalidateQueries({ queryKey: ['graph'] })
             queryClient.invalidateQueries({ queryKey: ['graph-stats'] })

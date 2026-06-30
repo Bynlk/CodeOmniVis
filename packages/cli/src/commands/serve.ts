@@ -17,6 +17,13 @@ import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
 import type { OmniNode } from '@codeomnivis/shared'
 import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, TsRpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@codeomnivis/analyzer'
 
+interface ServeOptions {
+  port: string
+  host: string
+  project?: string
+  open: boolean
+}
+
 function isSyntheticNode(node: OmniNode): boolean {
   return 'isSynthetic' in node.metadata && node.metadata.isSynthetic === true
 }
@@ -29,7 +36,7 @@ export function serveCommand(program: Command): void {
     .option('-h, --host <host>', 'Server host', 'localhost')
     .option('--project <path>', 'Project root path', '.')
     .option('--no-open', 'Do not open browser automatically')
-    .action(async (options) => {
+    .action(async (options: ServeOptions) => {
       const spinner = ora('Starting CodeOmniVis server...').start()
 
       try {

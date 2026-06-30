@@ -132,12 +132,9 @@ export class DrizzleParser implements Parser {
 
       // 提取表名（第一个参数）
       const tableNameArg = args[0]
-      let tableName = ''
-      if (Node.isStringLiteral(tableNameArg)) {
-        tableName = tableNameArg.getLiteralValue()
-      } else {
-        tableName = tableNameArg.getText()
-      }
+      const tableName = Node.isStringLiteral(tableNameArg)
+        ? tableNameArg.getLiteralValue()
+        : tableNameArg.getText()
 
       // 提取列定义（第二个参数）
       const columnsArg = args[1]

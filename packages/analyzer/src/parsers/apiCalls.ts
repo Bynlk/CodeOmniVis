@@ -523,7 +523,7 @@ export class ApiCallsParser implements Parser {
    */
   private toPascalCase(str: string): string {
     return str
-      .replace(/[-_](\w)/g, (_, c) => c.toUpperCase())
-      .replace(/^(\w)/, (_, c) => c.toUpperCase())
+      .replace(/[-_](\w)/g, (_: string, c: string) => c.toUpperCase())
+      .replace(/^(\w)/, (_: string, c: string) => c.toUpperCase())
   }
 }

@@ -8,6 +8,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import type { DatabaseType, FrameworkType, OmniNode, ProjectMeta } from '@codeomnivis/shared'
+import { readDependencies } from '@codeomnivis/shared'
 import { OmniDatabase } from '../storage/db'
 import { GraphBuilder } from './builder'
 import { CrossLayerLinker } from '../resolver/crossLayer'
@@ -54,8 +55,8 @@ function detectProjectMeta(projectRoot: string): ProjectMeta {
   try {
     const pkgPath = path.join(projectRoot, 'package.json')
     if (fs.existsSync(pkgPath)) {
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-      const deps = { ...pkg.dependencies, ...pkg.devDependencies }
+      const pkg: unknown = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+      const deps = readDependencies(pkg)
 
       // 前端框架
       if (deps['next']) frontendFramework = 'next'

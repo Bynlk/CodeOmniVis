@@ -1,5 +1,16 @@
 import { useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { isJsonObject } from '@codeomnivis/shared'
+
+function readString(obj: unknown, key: string): string | undefined {
+  if (isJsonObject(obj) && typeof obj[key] === 'string') return obj[key]
+  return undefined
+}
+
+function readNumber(obj: unknown, key: string): number | undefined {
+  if (isJsonObject(obj) && typeof obj[key] === 'number') return obj[key]
+  return undefined
+}
 
 interface AiMessage {
   id: string
@@ -34,9 +45,13 @@ export function AiPanel() {
       // 获取当前图数据作为上下文
       const graphRes = await fetch('/api/graph', { signal: controller.signal })
       if (!graphRes.ok) throw new Error(`Failed to fetch graph: ${graphRes.status}`)
-      const graphData = await graphRes.json()
+      const graphData: unknown = await graphRes.json()
+      const meta = isJsonObject(graphData) ? graphData.meta : undefined
+      const nodeCount = readNumber(meta, 'nodeCount') ?? 0
+      const edgeCount = readNumber(meta, 'edgeCount') ?? 0
+      const nodesByType = isJsonObject(meta) && isJsonObject(meta.nodesByType) ? meta.nodesByType : {}
 
-      const context = `Project has ${graphData.meta?.nodeCount ?? 0} nodes and ${graphData.meta?.edgeCount ?? 0} edges. Node types: ${JSON.stringify(graphData.meta?.nodesByType ?? {})}`
+      const context = `Project has ${nodeCount} nodes and ${edgeCount} edges. Node types: ${JSON.stringify(nodesByType)}`
 
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -46,17 +61,18 @@ export function AiPanel() {
       })
 
       if (res.ok) {
-        const data = await res.json()
-        setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: data.response ?? t('ai.noResponse') }])
+        const data: unknown = await res.json()
+        setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: readString(data, 'response') ?? t('ai.noResponse') }])
       } else if (res.status === 429) {
         setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: 'Rate limit exceeded. Please try again later.' }])
       } else {
         // 尝试解析错误响应，显示后端返回的具体信息
         let errorMsg = t('ai.serviceUnavailable')
         try {
-          const errData = await res.json()
-          if (errData.message || errData.error) {
-            errorMsg = errData.message || errData.error
+          const errData: unknown = await res.json()
+          const detail = readString(errData, 'message') ?? readString(errData, 'error')
+          if (detail) {
+            errorMsg = detail
           }
         } catch { /* 忽略解析错误 */ }
         setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: errorMsg }])

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { isJsonObject } from '@codeomnivis/shared'
 
 interface DataFlowPath {
   modelNode: { id: string; name: string; type: string }
@@ -16,23 +17,44 @@ interface DataFlowResult {
   totalComponents: number
 }
 
+interface ModelOption {
+  id: string
+  name: string
+}
+
+function unwrapData(value: unknown): unknown {
+  if (isJsonObject(value) && 'data' in value) return value.data
+  return undefined
+}
+
+function isDataFlowResult(value: unknown): value is DataFlowResult {
+  return isJsonObject(value) && typeof value.modelId === 'string' && Array.isArray(value.paths)
+}
+
+function isModelOption(value: unknown): value is ModelOption {
+  return isJsonObject(value) && typeof value.id === 'string' && typeof value.name === 'string'
+}
+
 async function fetchDataFlow(model?: string): Promise<DataFlowResult[]> {
   const url = model
     ? `/api/graph/dataflow?model=${encodeURIComponent(model)}`
     : '/api/graph/dataflow'
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Failed to fetch dataflow: ${res.statusText}`)
-  const json = await res.json()
+  const json: unknown = await res.json()
   // 处理 null/undefined 的情况
-  if (!json.data) return []
-  return Array.isArray(json.data) ? json.data : [json.data]
+  const data = unwrapData(json)
+  if (data === undefined || data === null) return []
+  if (Array.isArray(data)) return data.filter(isDataFlowResult)
+  return isDataFlowResult(data) ? [data] : []
 }
 
 async function fetchAllModels(): Promise<{ id: string; name: string }[]> {
   const res = await fetch('/api/graph/nodes?type=db_model')
   if (!res.ok) return []
-  const json = await res.json()
-  return (json.data ?? []).map((n: { id: string; name: string }) => ({ id: n.id, name: n.name }))
+  const json: unknown = await res.json()
+  const data = unwrapData(json)
+  return Array.isArray(data) ? data.filter(isModelOption).map(n => ({ id: n.id, name: n.name })) : []
 }
 
 export function DataFlowPanel() {

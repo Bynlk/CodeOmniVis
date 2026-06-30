@@ -39,9 +39,7 @@ declare module 'web-tree-sitter' {
       delete(): void
     }
 
-    interface Language {
-      // 内部类型
-    }
+    type Language = object
 
     function init(): Promise<void>
   }

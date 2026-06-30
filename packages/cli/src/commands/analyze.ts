@@ -16,6 +16,11 @@ import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
 import type { OmniNode } from '@codeomnivis/shared'
 import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker, NPlusOneDetector, AuthDetector, RSCBoundaryDetector } from '@codeomnivis/analyzer'
 
+interface AnalyzeOptions {
+  project?: string
+  output: string
+}
+
 function isSyntheticNode(node: OmniNode): boolean {
   return 'isSynthetic' in node.metadata && node.metadata.isSynthetic === true
 }
@@ -25,7 +30,7 @@ export function analyzeCommand(program: Command): void {
     .command('analyze')
     .description('Analyze project and output graph as JSON')
     .option('-o, --output <file>', 'Output file path', 'codeomnivis-graph.json')
-    .action(async (options) => {
+    .action(async (options: AnalyzeOptions) => {
       const spinner = ora('Analyzing project...').start()
 
       try {

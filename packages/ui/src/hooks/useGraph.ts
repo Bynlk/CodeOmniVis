@@ -6,6 +6,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import type { OmniGraph } from '@codeomnivis/shared'
+import { isJsonObject } from '@codeomnivis/shared'
 
 // ============================================================
 // API 函数
@@ -21,6 +22,10 @@ interface GraphResponse {
   }
 }
 
+function isGraphResponse(value: unknown): value is GraphResponse {
+  return isJsonObject(value) && isJsonObject(value.data) && isJsonObject(value.meta)
+}
+
 async function fetchGraph(): Promise<GraphResponse> {
   const response = await fetch('/api/graph')
 
@@ -28,7 +33,11 @@ async function fetchGraph(): Promise<GraphResponse> {
     throw new Error(`Failed to fetch graph: ${response.statusText}`)
   }
 
-  return response.json()
+  const json: unknown = await response.json()
+  if (!isGraphResponse(json)) {
+    throw new Error('Invalid graph response')
+  }
+  return json
 }
 
 // ============================================================

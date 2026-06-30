@@ -20,17 +20,17 @@ interface TooltipData {
 const HOVER_DELAY_MS = 600
 
 function getStringData(node: cytoscape.NodeSingular, key: string, fallback: string): string {
-  const value = node.data(key)
+  const value: unknown = node.data(key)
   return typeof value === 'string' ? value : fallback
 }
 
 function getNumberData(node: cytoscape.NodeSingular, key: string, fallback: number): number {
-  const value = node.data(key)
+  const value: unknown = node.data(key)
   return typeof value === 'number' ? value : fallback
 }
 
 function getNodeType(node: cytoscape.NodeSingular): NodeType {
-  const value = node.data('type')
+  const value: unknown = node.data('type')
   return typeof value === 'string' && isNodeType(value) ? value : 'module'
 }
 
@@ -44,11 +44,8 @@ export function NodeTooltip() {
     const cy = cyRef?.current
     if (!cy) return
 
-      const onMouseOver = (evt: cytoscape.EventObject) => {
-        const target = evt.target
-        if (!target.isNode()) return
-
-        const node = target
+      const onMouseOver = (evt: cytoscape.EventObjectNode) => {
+        const node = evt.target
       const renderedPos = node.renderedPosition()
       const container = cy.container()
       const rect = container?.getBoundingClientRect()
@@ -90,7 +87,7 @@ export function NodeTooltip() {
       cy.off('tap', 'node', onMouseOut)
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [cyRef]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cyRef])
 
   if (!tooltip) return null
 

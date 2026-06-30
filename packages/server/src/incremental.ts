@@ -65,7 +65,7 @@ export class IncrementalAnalyzer {
 
     this.watcher = chokidar.watch(dirsToWatch, {
       ignored: [
-        /(^|[\/\\])\../, // 忽略 dotfiles
+        /(^|[/\\])\../, // 忽略 dotfiles
         /node_modules/,
         /\.next/,
         /dist/,

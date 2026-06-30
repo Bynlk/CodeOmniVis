@@ -147,3 +147,25 @@
   - StatsPanel/IssuesPanel: await res.json() typed as unknown, added unwrapData() (in-narrowing, no cast) feeding isStatsResponse()/isParseError() guards.
   - useGraphFilter: cytoscape node.data()/edge.data() reads annotated unknown, then narrowed by isNodeType/isEdgeType/isEdgeConfidence.
   - cytoscapeConfig satisfies expressions left intact.
+
+## Task 9 - Enforce type-aware ESLint
+
+- Commit: (this commit)
+- Gates:
+  - eslint packages/*/src (type-aware): pass (0 errors; 39 pre-existing no-unused-vars warnings, non-blocking)
+  - pnpm turbo typecheck: pass (10/10)
+  - tests: pass (shared 36 / analyzer 172 / server 15 / mcp 6 = 229)
+  - AST scan: any=0 assertions=0 doubleCasts=0 unknown=68 (boundary)
+  - git diff --check: pass
+- Metrics:
+  - any: 0
+  - unknown: 68
+  - assertions: 0
+  - doubleCasts: 0
+- Notes:
+  - eslint.config.js: enabled @typescript-eslint type-aware rules over packages/*/src via projectService — no-unsafe-assignment/member-access/call/return/argument + no-unnecessary-type-assertion (error), no-explicit-any (error).
+  - Resolved 139 no-unsafe-* errors entirely through type guards / unknown-annotation; zero as-casts, zero wide fallback.
+  - shared: added readDependencies(value: unknown): Record<string,string> boundary reader; replaced the duplicated package.json deps-merge `any` pattern in runFullAnalysis.ts, server/index.ts, autoDetect.ts.
+  - shared configLoader/tsrpc parse results annotated unknown; tsrpc conf narrowed via isJsonObject.
+  - cli: typed commander action options (AnalyzeOptions/McpOptions/ServeOptions) to remove opts() any.
+  - ui: NodeTooltip/GraphCanvas use cytoscape EventObjectNode + unknown-narrowed node.data(); AiPanel/DataFlowPanel/useGraph/useWebSocket fetch+JSON.parse results typed unknown then narrowed via isJsonObject guards.

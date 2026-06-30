@@ -15,12 +15,12 @@ function isNodeType(value: string): value is NodeType {
 }
 
 function getNodeType(node: cytoscape.NodeSingular): NodeType | undefined {
-  const type = node.data('type')
+  const type: unknown = node.data('type')
   return typeof type === 'string' && isNodeType(type) ? type : undefined
 }
 
 function getNodeLabel(node: cytoscape.NodeSingular): string | undefined {
-  const label = node.data('label')
+  const label: unknown = node.data('label')
   return typeof label === 'string' ? label : undefined
 }
 

@@ -18,3 +18,18 @@ export function isJsonObject(value: unknown): value is JsonObject {
 export function jsonObjectOrEmpty(value: unknown): JsonObject {
   return isJsonObject(value) ? value : {}
 }
+
+/**
+ * 从 package.json 解析结果(unknown)中提取并合并 dependencies / devDependencies。
+ * 在边界处把 `any`/`unknown` 收敛为字符串依赖映射,调用方按 key 查询恒为 `string | undefined`。
+ */
+export function readDependencies(value: unknown): Record<string, string> {
+  const root = jsonObjectOrEmpty(value)
+  const deps = jsonObjectOrEmpty(root.dependencies)
+  const devDeps = jsonObjectOrEmpty(root.devDependencies)
+  const result: Record<string, string> = {}
+  for (const [name, version] of Object.entries({ ...deps, ...devDeps })) {
+    if (typeof version === 'string') result[name] = version
+  }
+  return result
+}

@@ -49,7 +49,8 @@ function layoutByTypeNetwork(cy: cytoscape.Core): void {
   // ── 第一步：按类型分组，放到同心圆环 ──
   const groups = new Map<string, cytoscape.NodeSingular[]>()
   nodes.forEach(node => {
-    const type = node.data('type') || 'unknown'
+    const rawType: unknown = node.data('type')
+    const type = typeof rawType === 'string' ? rawType : 'unknown'
       const group = groups.get(type) ?? []
       group.push(node)
       groups.set(type, group)
@@ -136,7 +137,7 @@ export default function GraphCanvas({ graph, selectedNode, onNodeSelect, onCyIni
       }
     })
 
-    cy.on('tap', 'node', (event) => {
+    cy.on('tap', 'node', (event: cytoscape.EventObjectNode) => {
       onNodeSelectRef.current(event.target.id())
     })
 

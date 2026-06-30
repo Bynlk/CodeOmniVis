@@ -25,7 +25,7 @@ import type {
   OmniEdge,
   ProjectMeta,
 } from '@codeomnivis/shared'
-import { createNodeId } from '@codeomnivis/shared'
+import { createNodeId, isJsonObject } from '@codeomnivis/shared'
 
 interface ServiceProtoEntry {
   id: number
@@ -45,7 +45,7 @@ function isServiceProtoEntry(value: unknown): value is ServiceProtoEntry {
 }
 
 function parseServiceProtoEntries(json: string): ServiceProtoEntry[] {
-  const parsed = JSON.parse(json)
+  const parsed: unknown = JSON.parse(json)
   return Array.isArray(parsed) ? parsed.filter(isServiceProtoEntry) : []
 }
 
@@ -566,7 +566,8 @@ export class TsRpcParser implements Parser {
       const confStr = confMatch[1]
         .replace(/(\w+)\s*:/g, '"$1":')  // key: → "key":
         .replace(/'/g, '"')                // 单引号 → 双引号
-      return JSON.parse(confStr)
+      const conf: unknown = JSON.parse(confStr)
+      return isJsonObject(conf) ? conf : undefined
     } catch {
       return undefined
     }

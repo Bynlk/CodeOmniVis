@@ -76,7 +76,7 @@ export function useGraphFilter() {
 
     // 恢复视口（不 fit！）
     cy.viewport({ zoom: currentZoom, pan: currentPan })
-  }, [state, cyRef]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state, cyRef])
 
   const toggleNodeType = useCallback((type: NodeType) => {
     setState(prev => {

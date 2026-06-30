@@ -28,7 +28,7 @@ export function loadConfig(projectRoot: string): CodeOmniVisConfig {
 
   try {
     const raw = fs.readFileSync(configPath, 'utf-8')
-      const parsed = JSON.parse(raw)
+      const parsed: unknown = JSON.parse(raw)
       if (!isPartialConfig(parsed)) {
         return getDefaultConfig(projectRoot)
       }

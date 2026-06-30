@@ -291,7 +291,7 @@ export class NextjsAppParser implements Parser {
   private resolveRelativeImport(fromFile: string, importPath: string, projectRoot: string): string | null {
     try {
       const fromDir = path.dirname(fromFile)
-      let resolved = path.join(fromDir, importPath).replace(/\\/g, '/')
+      const resolved = path.join(fromDir, importPath).replace(/\\/g, '/')
 
       const exts = ['.tsx', '.ts', '.jsx', '.js']
       for (const ext of exts) {

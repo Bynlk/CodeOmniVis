@@ -7,7 +7,7 @@
 
 // JSON 边界类型导出
 export type { JsonPrimitive, JsonValue, JsonObject } from './types/json'
-export { isJsonObject, jsonObjectOrEmpty } from './types/json'
+export { isJsonObject, jsonObjectOrEmpty, readDependencies } from './types/json'
 
 // 类型导出
 export type {

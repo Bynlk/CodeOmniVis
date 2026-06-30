@@ -10,12 +10,16 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as path from 'path'
 
+interface McpOptions {
+  project: string
+}
+
 export function mcpCommand(program: Command): void {
   program
     .command('mcp')
     .description('Start MCP Server for AI assistant integration')
     .option('--project <path>', 'Project root path', '.')
-    .action(async (options) => {
+    .action(async (options: McpOptions) => {
       const spinner = ora('Starting MCP Server...').start()
 
       try {
