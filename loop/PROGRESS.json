@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T17:27:37",
+  "updatedAt": "2026-06-30T18:05:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H13",
+  "currentTask": "H14",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -752,6 +752,34 @@
       "metrics": {
         "change": "new lib/traceIndex.ts (buildEdgeIndex + findConnectingEdges); TraceRunner builds incident Map once per run, per-step lookup O(degree) instead of full cy.edges().forEach scan; undirected semantics preserved",
         "test": "traceRunner.test.ts: index hits == naive scan, bidirectional edges, large-graph candidate-only lookup"
+      }
+    },
+    {
+      "id": "H13",
+      "code": "E-03",
+      "title": "include __tests__ in typecheck (tsconfig.test.json)",
+      "status": "done",
+      "commit": "24eedd6",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error (11/11, __tests__ now covered)",
+        "test": "12/12 tasks all pass (analyzer 190 / shared / server 53 / cli / mcp / ui 39)",
+        "lint": "0 error (33 warn baseline, unchanged)",
+        "build": "success (6/6)",
+        "ast": {
+          "any": 0,
+          "unknown": 83,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      },
+      "metrics": {
+        "change": "per-package tsconfig.test.json extends tsconfig.json and includes src+__tests__; typecheck script -> tsc -p tsconfig.test.json across shared/analyzer/server/cli/mcp/ui",
+        "testFixes": "discriminated-union metadata filled in builder/consistency/reactComponent/crossLayer/dataFlowTrace/graph/graph-extended/graphSanitize/graphTransform tests; logger+close tests use vitest MockInstance type; setProjectRoot releaseFirst default no-op + clearSpy returns true; tsrpc expectNodeOfType predicate -> Extract<OmniNode,{type:T}>, removed dead __proto__ access, parseServiceProto rewritten as real temp-file behavioral test",
+        "selfCheck": "injected `const x: number = 'str'` into a test -> tsc -p tsconfig.test.json reported TS2322, reverted",
+        "graphExport": "shared/types/graph.ts re-exports OmniNode/NodeType/OmniEdge/EdgeType for convenience",
+        "noCast": "zero as-casts / non-null assertions / wide fallback"
       }
     }
   ]
