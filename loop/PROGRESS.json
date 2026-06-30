@@ -659,7 +659,7 @@
       "code": "LEAK-01",
       "title": "graceful teardown: close wss + DB + exit hooks",
       "status": "done",
-      "commit": "PENDING",
+      "commit": "e1552d3",
       "gates": {
         "diffCheck": "clean",
         "typecheck": "0 error",
