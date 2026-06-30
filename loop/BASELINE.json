@@ -1,14 +1,42 @@
 {
   "repo": "/Users/new/CodeOmniVis",
   "capturedAt": "2026-06-30T02:15:00+08:00",
-  "git": { "branch": "master", "remote": "origin/master" },
-  "env": { "pnpm": "9.0.0", "node": "26.3.1", "typescript": "^5.5.0", "turbo": "^2.0.0", "eslint": "^10.4.1" },
-  "astMetrics": { "any": 0, "unknown": 38, "assertions": 0, "doubleCasts": 0, "satisfies": 22 },
+  "git": {
+    "branch": "master",
+    "remote": "origin/master"
+  },
+  "env": {
+    "pnpm": "9.0.0",
+    "node": "26.3.1",
+    "typescript": "^5.5.0",
+    "turbo": "^2.0.0",
+    "eslint": "^10.4.1"
+  },
+  "astMetrics": {
+    "any": 0,
+    "unknown": 38,
+    "assertions": 0,
+    "doubleCasts": 0,
+    "satisfies": 22
+  },
   "gates": {
     "typecheck": "pnpm turbo typecheck",
     "lint": "pnpm turbo lint",
     "test": "pnpm turbo test",
     "build": "pnpm turbo build"
   },
-  "notes": "pnpm 已就绪，turbo 门禁有效；类型计划中的“找不到包管理器”为过时环境注记。AI 路由已合并进 server/src/index.ts，无独立 routes/ai.ts。"
+  "notes": "pnpm 已就绪，turbo 门禁有效；类型计划中的“找不到包管理器”为过时环境注记。AI 路由已合并进 server/src/index.ts，无独立 routes/ai.ts。",
+  "frozenTypeBaseline": {
+    "frozenAt": "2026-06-30T10:25:00+08:00",
+    "afterStage": "A (feat/type-driven-design merged to master, ff-only)",
+    "astMetrics": {
+      "any": 0,
+      "unknown": 68,
+      "assertions": 0,
+      "doubleCasts": 0
+    },
+    "invariants": "any=0 assertions=0 doubleCasts=0 must hold for all subsequent stages; unknown only at typed boundaries (HTTP/JSON/cytoscape/package.json) immediately narrowed by guards",
+    "lint": "type-aware @typescript-eslint no-unsafe-* + no-explicit-any enforced as errors over packages/*/src",
+    "regression": "typecheck 10/10, eslint 0 errors, build 6/6, tests 229 (shared36/analyzer172/server15/mcp6)"
+  }
 }

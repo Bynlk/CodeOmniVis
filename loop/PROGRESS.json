@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T10:20:00+08:00",
-  "currentStage": "Stage A",
-  "currentTask": "A-MERGE",
+  "updatedAt": "2026-06-30T10:25:00+08:00",
+  "currentStage": "Stage B",
+  "currentTask": "B15",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -191,10 +191,19 @@
       "id": "A-MERGE",
       "stage": "Stage A",
       "name": "合并 master",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "0346f40 (ff-only, no merge commit)",
+      "gates": {
+        "mergeStrategy": "fast-forward only (origin/master ancestor of feat/type-driven-design, no divergence, no unrelated work touched)",
+        "turboTypecheck": "pass (10/10)",
+        "eslint": "pass (0 errors, 39 pre-existing warnings)",
+        "turboBuild": "pass (6/6)",
+        "tests": "pass (229: shared 36 / analyzer 172 / server 15 / mcp 6)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=68(boundary)"
+      },
+      "metrics": {
+        "typeBaselineFrozen": "BASELINE.json.frozenTypeBaseline records any=0 assertions=0 doubleCasts=0 invariant for Stage B"
+      }
     },
     {
       "id": "B15",
