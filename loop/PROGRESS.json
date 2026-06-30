@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-06-30T18:05:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H-MERGE",
+  "currentTask": "DONE",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -835,6 +835,32 @@
         "chunks": "index 73.70KB (gzip 21.73) / vendor-cytoscape 443.74KB (142.39) / vendor-react 146.86KB (47.75) / vendor-i18n 44.33KB (14.18) / vendor-query 38.70KB (11.73) / vendor 1.13KB",
         "result": "no chunk >500KB warning threshold (was single 749KB chunk + warning); largest vendor-cytoscape 443KB is 3rd-party graph engine, lazy-loadable later",
         "noCast": "config-only change, no source type changes"
+      }
+    },
+    {
+      "id": "H-MERGE",
+      "code": "",
+      "title": "final regression + ff-only merge to master + closeout",
+      "status": "done",
+      "commit": "(pending ff)",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "6/6 (--force)",
+        "test": "12/12 tasks, 378 cases (shared 78/ui 39/analyzer 189/cli 13/mcp 6/server 53)",
+        "lint": "6/6, 0 error 0 warning (--force)",
+        "build": "6/6 (--force)",
+        "ast": {
+          "any": 0,
+          "unknown": 83,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      },
+      "metrics": {
+        "merge": "ff-only fix/health-check -> master, no merge commit",
+        "closeout": "TECHNICAL_DEBT.md B-1(H14)/B-3(H15) closed; DELIVERY_REPORT.md Stage C appended; ERROR_LOG empty (0 circuit-breaker)",
+        "testGrowth": "321 -> 378 (+57)"
       }
     }
   ]

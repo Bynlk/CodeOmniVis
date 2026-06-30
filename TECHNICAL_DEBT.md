@@ -23,17 +23,18 @@
 
 ## B. 仍存续的已知债务(未修复)
 
-### B-1. ESLint 历史警告(unused-vars,0 error)
+### B-1. ESLint 历史警告(unused-vars,0 error)— ✅ 已闭合(H14 / E-06,commit 012dbe9)
 
-类型感知 lint 在 A9 落地时仅将 `no-unsafe-*` / `no-explicit-any` / `no-unsafe-finally` 设为 error,未清理存量未使用变量警告,以免扩大单次改动面。
+类型感知 lint 在 A9 落地时仅将 `no-unsafe-*` / `no-explicit-any` / `no-unsafe-finally` 设为 error,遗留 38 条未使用变量警告(analyzer 33 / cli 3 / ui 2)。H14 已全部清零:
 
-| 包 | 警告数 | 说明 |
-|---|---|---|
-| analyzer | ~33 | 多为解析器中预留但未消费的中间变量 |
-| cli | 3 | 命令注册处预留参数 |
-| ui | 2 | `GraphCanvas.tsx` 未使用的 `useCallback` 导入;`Header.tsx` 未使用的 `refreshError` |
+- 删除未使用导入(ts-morph `SyntaxKind`/`CallExpression`/`SourceFile` 等、shared 侧 `EdgeType`/`DbRelationMetadata`/`TrpcProcedureMetadata`/`IssueLocation`、node `path`)。
+- 删除未使用局部(`createEdgeId`、prisma `relation`、builder 中仅取返回值的 `nodesSaved`/`edgesSaved` 改为保留副作用调用)。
+- 删除死代码(builder 空的 renders 循环、cli `scanForRouters` 无调用方函数)。
+- 未使用形参以 `_` 前缀匹配 `/^_/u`(`_filePath`/`_projectRoot`/`_nodeMap`/`_fromFile`)。
+- `consistency.ts` 改用 `const [, proc]`;`scanDirectory.ts` 改用可选 catch。
+- UI:移除 `GraphCanvas` 未使用的 `useCallback`;`Header.tsx` 将此前被捕获但从未渲染的 `refreshError` 通过 `role="alert"` 渲染(顺带修复刷新失败无提示的隐性 UX 缺陷)。
 
-**建议**: 单独开一个 chore 任务批量清理,或逐包将 `no-unused-vars` 升级为 error 后修复。
+**当前**: `pnpm turbo lint` → 0 error / 0 warning。
 
 ### B-2. `MODULE_TYPELESS_PACKAGE_JSON` 警告(6 条)
 
@@ -51,11 +52,20 @@ packages/ui       1
 **根因**: 根 `package.json` 未声明 `"type": "module"`,而 `eslint.config.js` 使用 ESM 语法。
 **建议**: 在根 `package.json` 加 `"type": "module"`(需同步核对各包 CJS 脚本/配置是否受影响),或将 `eslint.config.js` 改名为 `eslint.config.mjs`。属纯告警,不影响 lint 结果。
 
-### B-3. UI 产物体积告警
+### B-3. UI 产物体积告警 — ✅ 已闭合(H15 / P-01,commit 1ae40b5)
 
-UI 构建产物单 chunk **约 750KB**,超过 Vite 默认 500KB 警告阈值。主要来自 cytoscape 及其布局插件。
+此前 UI 构建产物为单 chunk **749.10KB**,超过 Vite 默认 500KB 警告阈值。H15 在 `vite.config.ts` 增加 `build.rollupOptions.output.manualChunks(id)`,按 `node_modules` 来源拆分:
 
-**建议**: 引入 `manualChunks` 拆分 cytoscape / react-query / i18next,或对图谱视图做动态 `import()` 懒加载。
+| chunk | 体积 | gzip |
+|---|---|---|
+| index(应用代码) | 73.70KB | 21.73KB |
+| vendor-cytoscape | 443.74KB | 142.39KB |
+| vendor-react | 146.86KB | 47.75KB |
+| vendor-i18n | 44.33KB | 14.18KB |
+| vendor-query | 38.70KB | 11.73KB |
+| vendor | 1.13KB | 0.64KB |
+
+**结果**: 主应用 chunk 由 749KB 降至 73.7KB,无 chunk 触发 500KB 告警。`vendor-cytoscape`(图谱引擎)为最大第三方块,后续可进一步对图谱视图做动态 `import()` 懒加载。
 
 ### B-4. AST `unknown` 计数(运行时边界,非债务但需守护)
 
