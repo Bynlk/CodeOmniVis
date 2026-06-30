@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-06-30T20:15:40",
+  "updatedAt": "2026-06-30T20:23:30",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F5",
+  "currentTask": "F6",
   "baseline": {
     "any": 0,
     "unknown": 83,
@@ -87,6 +87,26 @@
         "diffcheck": "pass",
         "typecheck": "pass",
         "test": "cli15(+2)+analyzer191(+2) pass",
+        "lint": "0 err 0 warn",
+        "build": "pass",
+        "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F5",
+      "audit": "S-06",
+      "severity": "Med",
+      "packages": [
+        "shared",
+        "server"
+      ],
+      "status": "done",
+      "commit": "a3e3e2d",
+      "summary": "DNS rebinding guard: shared validateResolvedAddresses/isIpLiteral; server checkUpstreamDnsSafety resolves hostname (injectable resolver) before fetch, rejects private/link-local/metadata/loopback; handler 400 no-fetch",
+      "gates": {
+        "diffcheck": "pass",
+        "typecheck": "pass",
+        "test": "shared83(+5)+server60(+2) pass",
         "lint": "0 err 0 warn",
         "build": "pass",
         "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
