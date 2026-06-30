@@ -1,12 +1,12 @@
 {
-  "updatedAt": "2026-07-01T00:55:00+08:00",
+  "updatedAt": "2026-07-01T00:58:00+08:00",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F14",
+  "currentTask": "F15",
   "baseline": {
     "any": 0,
-    "unknown": 83,
+    "unknown": 88,
     "assertions": 0,
     "doubleCasts": 0,
     "recordUnknown": 1,
@@ -264,6 +264,26 @@
         "lint": "0 error",
         "build": "success",
         "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F14",
+      "audit": "E-11",
+      "severity": "medium",
+      "packages": [
+        "@codeomnivis/shared",
+        "@bynlk/CodeOmniVis"
+      ],
+      "status": "fixed",
+      "commit": "78d7488",
+      "summary": "loadConfig 的 mergeWithDefaults 改为逐字段运行时校验:标量/数组非法值回退默认,parser/ui/database 可选字段非法时丢弃,确保返回结构始终合法,非法 .codeomnivis.json 不再污染下游。",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "shared 88 passed (+5 RED); cli 17 unaffected",
+        "lint": "0 error",
+        "build": "success",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1 (unknown 89->88)"
       }
     }
   ]
