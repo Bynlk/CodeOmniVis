@@ -2,10 +2,10 @@
  * logger 测试
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest'
 
 describe('logger', () => {
-  let consoleSpy: ReturnType<typeof vi.spyOn>
+  let consoleSpy: MockInstance
 
   beforeEach(() => {
     consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})

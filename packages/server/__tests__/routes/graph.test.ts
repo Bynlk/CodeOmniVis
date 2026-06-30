@@ -17,7 +17,7 @@ const testNode: OmniNode = {
   filePath: 'app/page.tsx',
   line: 1,
   column: 1,
-  metadata: {},
+  metadata: { route: '/', isDynamic: false, params: [], isGroupLayout: false, layoutFile: null },
 }
 
 const testNode2: OmniNode = {
@@ -27,7 +27,7 @@ const testNode2: OmniNode = {
   filePath: 'app/Button.tsx',
   line: 5,
   column: 1,
-  metadata: {},
+  metadata: { props: [], hasState: false, isPage: false, jsxChildCount: 0 },
 }
 
 const testEdge: OmniEdge = {

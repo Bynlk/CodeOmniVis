@@ -9,11 +9,19 @@
     "directory": "packages/ui"
   },
   "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
-  "keywords": ["codeomnivis", "architecture", "visualization", "react", "cytoscape"],
+  "keywords": [
+    "codeomnivis",
+    "architecture",
+    "visualization",
+    "react",
+    "cytoscape"
+  ],
   "publishConfig": {
     "access": "public"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -22,7 +30,7 @@
     "test": "vitest run",
     "clean": "rimraf dist",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
     "@codeomnivis/shared": "workspace:*",

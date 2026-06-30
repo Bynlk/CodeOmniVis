@@ -8,11 +8,20 @@ import { OmniDatabase } from '../../src/storage/db'
 import type { OmniNode, OmniEdge, Parser, ParseContext, ProjectMeta, ParseResult } from '@codeomnivis/shared'
 
 // 辅助函数
-function makeNode(id: string, type: OmniNode['type'] = 'page'): OmniNode {
-  return { id, type, name: id, filePath: 'test.tsx', line: 1, column: 1, metadata: {} }
+const PAGE_META = { route: '/', isDynamic: false, params: [], isGroupLayout: false, layoutFile: null }
+const COMPONENT_META = { props: [], hasState: false, isPage: false, jsxChildCount: 0 }
+
+function makeNode(id: string, type: 'page' | 'component' = 'page'): OmniNode {
+  if (type === 'component') {
+    return { id, type, name: id, filePath: 'test.tsx', line: 1, column: 1, metadata: COMPONENT_META }
+  }
+  return { id, type, name: id, filePath: 'test.tsx', line: 1, column: 1, metadata: PAGE_META }
 }
 
-function makeEdge(id: string, source: string, target: string, type: OmniEdge['type'] = 'renders'): OmniEdge {
+function makeEdge(id: string, source: string, target: string, type: 'renders' | 'calls_api' = 'renders'): OmniEdge {
+  if (type === 'calls_api') {
+    return { id, source, target, type, confidence: 'certain', metadata: { callType: 'fetch', callLine: 1 } }
+  }
   return { id, source, target, type, confidence: 'certain', metadata: {} }
 }
 
@@ -28,8 +37,11 @@ const projectMeta: ProjectMeta = {
   prismaSchemaPath: null,
   typeormEntityDirs: [],
   tsConfigPath: null,
-    buildFile: null,
+  buildFile: null,
   packages: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
 }
 
 const context: ParseContext = {

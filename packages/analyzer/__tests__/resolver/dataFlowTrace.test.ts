@@ -104,7 +104,7 @@ describe('DataFlowTracer.traceFromNode', () => {
       const b = chainNodes[i + 1].id
       chainEdges.push({
         id: createEdgeId(a, 'data_flows_to', b), source: a, target: b,
-        type: 'data_flows_to', confidence: 'certain', metadata: {},
+        type: 'data_flows_to', confidence: 'certain', metadata: { typeName: 'T', transferMethod: 'return_type' },
       })
     }
     const longGraph: OmniGraph = { nodes: chainNodes, edges: chainEdges }

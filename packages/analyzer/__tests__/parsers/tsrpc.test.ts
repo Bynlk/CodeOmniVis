@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import * as path from 'path'
+import * as fs from 'fs'
+import * as os from 'os'
 import { TsRpcParser } from '../../src/parsers/tsrpc'
 import { ApiCallsParser } from '../../src/parsers/apiCalls'
 import { isEdgeOfType, isNodeOfType } from '@codeomnivis/shared'
-import type { NodeType, OmniEdge, OmniNode, ParseContext, ProjectMeta, TypedOmniNode } from '@codeomnivis/shared'
+import type { NodeType, OmniEdge, OmniNode, ParseContext, ProjectMeta } from '@codeomnivis/shared'
 
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures/tsrpc')
 
@@ -41,7 +43,7 @@ function makeContext(overrides?: Partial<ProjectMeta>): ParseContext {
 function expectNodeOfType<T extends NodeType>(
   node: OmniNode | undefined,
   type: T
-): asserts node is TypedOmniNode<T> {
+): asserts node is Extract<OmniNode, { type: T }> {
   expect(node).toBeDefined()
   if (!node || !isNodeOfType(node, type)) {
     throw new Error(`Expected node type ${type}`)
@@ -178,7 +180,6 @@ describe('TSRPC Parser', () => {
   })
 
   it('parseServiceProto 正确解析 services 数组', () => {
-    // 模拟 serviceProto.ts 内容
     const content = `
       export const serviceProto = {
         "services": [
@@ -188,13 +189,21 @@ describe('TSRPC Parser', () => {
         ]
       }
     `
-    // 直接测试静态方法的逻辑（通过解析实际文件）
-    // 这里用一个简化的方式验证
-    const result = TsRpcParser.parseServiceProto.__proto__ ?
-      { apis: [], msgs: [] } :
-      { apis: [], msgs: [] }
-    // parseServiceProto 是静态方法，但需要实际文件
-    // 这里验证方法存在且可调用
-    expect(typeof TsRpcParser.parseServiceProto).toBe('function')
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tsrpc-proto-'))
+    const protoPath = path.join(dir, 'serviceProto.ts')
+    fs.writeFileSync(protoPath, content, 'utf-8')
+    try {
+      const parsed = TsRpcParser.parseServiceProto(protoPath)
+      // 两个 api 服务（按短名）+ 一个 msg 服务，路径保留完整名用于匹配。
+      expect(parsed.apis.map(a => a.name)).toEqual(['GetTodos', 'CreateTodo'])
+      expect(parsed.apis.map(a => a.path)).toEqual(['todo/GetTodos', 'todo/CreateTodo'])
+      expect(parsed.msgs.map(m => m.name)).toEqual(['TodoUpdate'])
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+    // 缺失文件安全降级为空结果。
+    const missing = TsRpcParser.parseServiceProto(path.join(dir, 'gone.ts'))
+    expect(missing.apis).toHaveLength(0)
+    expect(missing.msgs).toHaveLength(0)
   })
 })

@@ -5,12 +5,12 @@
  * Also verifies registered process exit hooks (SIGINT/SIGTERM) trigger the same cleanup path.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest'
 import { WebSocketServer } from 'ws'
 import { createOmniServer } from '../../src/index'
 
 describe('graceful teardown (LEAK-01)', () => {
-  let wssCloseSpy: ReturnType<typeof vi.spyOn>
+  let wssCloseSpy: MockInstance
 
   beforeEach(() => {
     wssCloseSpy = vi.spyOn(WebSocketServer.prototype, 'close')

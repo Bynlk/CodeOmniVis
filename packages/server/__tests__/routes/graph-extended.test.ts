@@ -26,7 +26,7 @@ describe('Graph Routes — Extended', () => {
       filePath: 'app/page.tsx',
       line: 1,
       column: 1,
-      metadata: {},
+      metadata: { route: '/', isDynamic: false, params: [], isGroupLayout: false, layoutFile: null },
     })
 
     const edge: OmniEdge = {

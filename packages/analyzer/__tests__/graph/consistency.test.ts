@@ -4,27 +4,39 @@
 
 import { describe, it, expect } from 'vitest'
 import { ConsistencyChecker } from '../../src/graph/consistency'
-import type { OmniGraph, OmniNode, OmniEdge } from '@codeomnivis/shared'
+import type { OmniGraph, OmniNode, OmniEdge, NodeType } from '@codeomnivis/shared'
 
 const checker = new ConsistencyChecker()
 
-function makeNode(overrides: Partial<OmniNode> & { id: string }): OmniNode {
-  return {
-    type: 'page',
-    name: 'Test',
-    filePath: 'test.tsx',
-    line: 1,
-    column: 1,
-    metadata: {},
-    ...overrides,
+// 仅测试用到的节点类型，按判别联合各自补齐 metadata，避免 metadata:{} 越过封闭类型。
+function makeNode(args: { id: string; type?: NodeType; name?: string }): OmniNode {
+  const id = args.id
+  const name = args.name ?? 'Test'
+  const filePath = 'test.tsx'
+  const line = 1
+  const column = 1
+  const type: NodeType = args.type ?? 'page'
+  switch (type) {
+    case 'component':
+      return { id, type, name, filePath, line, column, metadata: { props: [], hasState: false, isPage: false, jsxChildCount: 0 } }
+    case 'api_route':
+      return { id, type, name, filePath, line, column, metadata: { method: 'GET', route: '/api', isNextApiRoute: true } }
+    case 'module':
+      return { id, type, name, filePath, line, column, metadata: { childCount: 0, childTypes: [] } }
+    default:
+      return { id, type: 'page', name, filePath, line, column, metadata: { route: '/', isDynamic: false, params: [], isGroupLayout: false, layoutFile: null } }
   }
 }
 
-function makeEdge(overrides: Partial<OmniEdge> & { id: string; source: string; target: string; type: OmniEdge['type'] }): OmniEdge {
+// 仅测试用到的 calls_api 边类型，补齐 CallsApiMetadata。
+function makeEdge(args: { id: string; source: string; target: string; type: 'calls_api' }): OmniEdge {
   return {
+    id: args.id,
+    source: args.source,
+    target: args.target,
+    type: args.type,
     confidence: 'certain',
-    metadata: {},
-    ...overrides,
+    metadata: { callType: 'fetch', callLine: 1 },
   }
 }
 

@@ -9,11 +9,18 @@
     "directory": "packages/shared"
   },
   "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
-  "keywords": ["codeomnivis", "architecture", "visualization", "typescript"],
+  "keywords": [
+    "codeomnivis",
+    "architecture",
+    "visualization",
+    "typescript"
+  ],
   "publishConfig": {
     "access": "public"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -32,7 +39,7 @@
     "lint": "eslint src/",
     "test": "vitest run",
     "clean": "rimraf dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

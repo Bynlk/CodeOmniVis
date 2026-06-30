@@ -73,7 +73,7 @@ describe('IncrementalAnalyzer.setProjectRoot', () => {
 
   it('awaits watcher close and in-flight analysis before clearing graph on root switch', async () => {
     // 受控的在途分析:首轮(旧 root)阻塞,直到我们放行。
-    let releaseFirst: (() => void) | null = null
+    let releaseFirst: () => void = () => {}
     const firstDone = new Promise<void>((resolve) => {
       releaseFirst = () => resolve()
     })
@@ -92,6 +92,7 @@ describe('IncrementalAnalyzer.setProjectRoot', () => {
     clearSpy.mockImplementation(() => {
       // clearGraph 必须发生在在途分析落库之后(串行化保证)。
       // 此处若 releaseFirst 仍未触发,则说明未等待在途分析。
+      return true
     })
 
     // 触发切根;它应:bump generation → stop(await watcher) → await 在途分析 → clearGraph。
@@ -103,7 +104,7 @@ describe('IncrementalAnalyzer.setProjectRoot', () => {
     expect(clearedBeforeFirstDone).toBe(false)
 
     // 放行旧分析 → setProjectRoot 得以继续。
-    releaseFirst?.()
+    releaseFirst()
     await inFlight
     await switching
 
@@ -113,7 +114,7 @@ describe('IncrementalAnalyzer.setProjectRoot', () => {
   })
 
   it('discards a stale analysis result started before the root switch', async () => {
-    let releaseFirst: (() => void) | null = null
+    let releaseFirst: () => void = () => {}
     const firstDone = new Promise<void>((resolve) => {
       releaseFirst = () => resolve()
     })
@@ -133,7 +134,7 @@ describe('IncrementalAnalyzer.setProjectRoot', () => {
 
     // 切根:作废旧世代;它会 await 旧在途分析,但旧分析仍阻塞。
     const switching = analyzer.setProjectRoot(dirB)
-    releaseFirst?.()
+    releaseFirst()
     await inFlight
     await switching
 

@@ -9,11 +9,18 @@
     "directory": "packages/server"
   },
   "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
-  "keywords": ["codeomnivis", "architecture", "visualization", "server"],
+  "keywords": [
+    "codeomnivis",
+    "architecture",
+    "visualization",
+    "server"
+  ],
   "publishConfig": {
     "access": "public"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -29,7 +36,7 @@
     "lint": "eslint src/",
     "test": "vitest run",
     "clean": "rimraf dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
     "@codeomnivis/analyzer": "workspace:*",

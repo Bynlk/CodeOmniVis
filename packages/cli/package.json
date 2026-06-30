@@ -33,7 +33,7 @@
     "lint": "eslint src/",
     "test": "vitest run",
     "clean": "rimraf dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

@@ -23,7 +23,7 @@ const nodeA: OmniNode = {
   filePath: 'app/page.tsx',
   line: 1,
   column: 1,
-  metadata: { route: '/' },
+  metadata: { route: '/', isDynamic: false, params: [], isGroupLayout: false, layoutFile: null },
 }
 
 const nodeB: OmniNode = {
@@ -33,7 +33,7 @@ const nodeB: OmniNode = {
   filePath: 'app/Button.tsx',
   line: 5,
   column: 1,
-  metadata: {},
+  metadata: { props: [], hasState: false, isPage: false, jsxChildCount: 0 },
 }
 
 const edge1: OmniEdge = {
@@ -59,7 +59,7 @@ describe('graphToCytoscapeElements', () => {
         type: 'page',
         filePath: 'app/page.tsx',
         line: 1,
-        metadata: { route: '/' },
+        metadata: { route: '/', isDynamic: false, params: [], isGroupLayout: false, layoutFile: null },
         color: '#6366f1',
       },
     })

@@ -8,6 +8,10 @@
 import type { OmniNode, NodeType } from './node'
 import type { OmniEdge, EdgeType } from './edge'
 
+// 便捷再导出:graph 是图相关类型的聚合入口,允许从此处取 OmniNode/OmniEdge。
+export type { OmniNode, NodeType } from './node'
+export type { OmniEdge, EdgeType } from './edge'
+
 // ============================================================
 // 图数据结构
 // ============================================================

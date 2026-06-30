@@ -57,7 +57,7 @@ describe('sanitizeGraph', () => {
       nodes: [nodeA, nodeB],
       edges: [
         edge('e1', nodeA.id, nodeB.id),
-        { id: 'e2', source: nodeA.id, target: nodeB.id, type: 'imports', confidence: 'certain', metadata: {} },
+        { id: 'e2', source: nodeA.id, target: nodeB.id, type: 'imports', confidence: 'certain', metadata: { importPath: 'app/B.tsx', importedNames: ['B'], isTypeOnly: false } },
       ],
     }
     const { graph: out, stats } = sanitizeGraph(graph)

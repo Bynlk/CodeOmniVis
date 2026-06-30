@@ -33,7 +33,7 @@ describe('CrossLayerLinker', () => {
             filePath: 'src/page.tsx',
             line: 1,
             column: 1,
-            metadata: {},
+            metadata: { props: [], hasState: false, isPage: false, jsxChildCount: 0 },
           },
           {
             id: 'trpc_procedure:server/routers/booking.ts:list',
@@ -46,6 +46,8 @@ describe('CrossLayerLinker', () => {
               procedureType: 'query',
               routerName: 'booking',
               procedureName: 'list',
+              hasInput: false,
+              hasOutput: false,
             },
           },
         ],
