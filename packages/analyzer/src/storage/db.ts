@@ -79,6 +79,8 @@ const EDGE_TYPES = new Set<string>([
 ])
 
 const EDGE_CONFIDENCES = new Set<string>(['certain', 'inferred'])
+/** BOUND-04:getSubtree 递归深度硬上限,防止超大 depth / 环形图导致 DoS。 */
+const GETSUBTREE_MAX_DEPTH = 1000
 const DB_ERROR_SEVERITIES = new Set<string>(['error', 'warning', 'info'])
 
 function isNodeType(value: string): value is NodeType {
@@ -997,15 +999,31 @@ export class OmniDatabase {
     const root = this.getNode(rootId)
     if (!root) return null
 
-    if (maxDepth === 0) {
-      return { id: root.id, name: root.name, type: root.type, children: [] }
-    }
+    // BOUND-04:对深度做硬上限并维护 visited,防止环形 renders 图无限递归 / 栈溢出 DoS。
+    // 非法 maxDepth(NaN/负数/非整数)被收敛到 [0, GETSUBTREE_MAX_DEPTH]。
+    const cap = Number.isFinite(maxDepth)
+      ? Math.min(Math.max(Math.trunc(maxDepth), 0), GETSUBTREE_MAX_DEPTH)
+      : 0
+    const visited = new Set<string>()
+    return this.buildSubtree(root, edgeType, cap, visited)
+  }
 
-    const children = this.getDownstreamNodes(rootId, [edgeType])
+  /** getSubtree 的内部递归实现,带 visited 去环。 */
+  private buildSubtree(
+    root: OmniNode,
+    edgeType: EdgeType,
+    remainingDepth: number,
+    visited: Set<string>
+  ): GraphSubtree {
+    visited.add(root.id)
     const childTrees: GraphSubtree[] = []
-    for (const c of children) {
-      const sub = this.getSubtree(c.id, edgeType, maxDepth - 1)
-      if (sub) childTrees.push(sub)
+    if (remainingDepth > 0) {
+      const children = this.getDownstreamNodes(root.id, [edgeType])
+      for (const c of children) {
+        // 已访问节点(成环或 DAG 汇聚)直接跳过,保证终止性。
+        if (visited.has(c.id)) continue
+        childTrees.push(this.buildSubtree(c, edgeType, remainingDepth - 1, visited))
+      }
     }
     return {
       id: root.id,

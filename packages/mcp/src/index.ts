@@ -11,6 +11,7 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { pathToFileURL } from 'url'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -105,17 +106,39 @@ function stringArg(args: unknown, key: string): string | undefined {
   return typeof val === 'string' ? val : undefined
 }
 
+/** get_component_tree depth 的硬上限,与 analyzer getSubtree 的兜底一致。 */
+const MAX_COMPONENT_TREE_DEPTH = 100
+
+type DepthResult = { ok: true; value: number } | { ok: false; message: string }
+
 /**
- * 安全提取数字参数
+ * BOUND-04:严格校验 depth 参数。
+ * 仅接受省略(用默认)或有限的非负整数(含数字字符串)。
+ * 拒绝 Infinity / NaN / 负数 / 非整数 / 超上限,返回错误信息交由 caller 转 MCP error。
  */
-function numberArg(args: unknown, key: string, fallback: number): number {
-  const val = isJsonObject(args) ? args[key] : undefined
-  if (typeof val === 'number' && !isNaN(val)) return val
-  if (typeof val === 'string') {
-    const parsed = Number(val)
-    if (!isNaN(parsed)) return parsed
+export function validateDepth(args: unknown, fallback: number): DepthResult {
+  const raw = isJsonObject(args) ? args['depth'] : undefined
+  if (raw === undefined || raw === null) return { ok: true, value: fallback }
+
+  let n: number
+  if (typeof raw === 'number') {
+    n = raw
+  } else if (typeof raw === 'string' && raw.trim() !== '') {
+    n = Number(raw)
+  } else {
+    return { ok: false, message: `depth must be a non-negative integer, got: ${JSON.stringify(raw)}` }
   }
-  return fallback
+
+  if (!Number.isFinite(n) || !Number.isInteger(n)) {
+    return { ok: false, message: `depth must be a finite integer, got: ${JSON.stringify(raw)}` }
+  }
+  if (n < 0) {
+    return { ok: false, message: `depth must be >= 0, got: ${n}` }
+  }
+  if (n > MAX_COMPONENT_TREE_DEPTH) {
+    return { ok: false, message: `depth exceeds maximum ${MAX_COMPONENT_TREE_DEPTH}, got: ${n}` }
+  }
+  return { ok: true, value: n }
 }
 
 function getRouteDisplay(node: OmniNode): { method: string; path: string } {
@@ -256,7 +279,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // 工具实现
 // ============================================================
 
-function handleGetApiRoutes(db: OmniDatabase, args: unknown) {
+export function handleGetApiRoutes(db: OmniDatabase, args: unknown) {
   const filter = stringArg(args, 'filter')?.toLowerCase()
   const apiNodes = db.getNodesByTypes(API_NODE_TYPES)
 
@@ -288,13 +311,17 @@ function handleGetApiRoutes(db: OmniDatabase, args: unknown) {
   return success({ routes: result, totalCount: result.length })
 }
 
-function handleGetComponentTree(db: OmniDatabase, args: unknown) {
+export function handleGetComponentTree(db: OmniDatabase, args: unknown) {
   const rootPath = stringArg(args, 'rootPath')
   if (!rootPath) {
     return errorResponse('rootPath is required')
   }
 
-  const depth = numberArg(args, 'depth', 3)
+  const depthResult = validateDepth(args, 3)
+  if (!depthResult.ok) {
+    return errorResponse(depthResult.message)
+  }
+  const depth = depthResult.value
   const rootNode = db.findNodeByRoute(rootPath) ?? db.findNodeByFilePath(rootPath)
 
   if (!rootNode) {
@@ -318,7 +345,7 @@ function handleGetComponentTree(db: OmniDatabase, args: unknown) {
   return success(tree)
 }
 
-function handleFindCallers(db: OmniDatabase, args: unknown) {
+export function handleFindCallers(db: OmniDatabase, args: unknown) {
   const target = stringArg(args, 'target')
   if (!target) {
     return errorResponse('target is required')
@@ -353,7 +380,7 @@ function handleFindCallers(db: OmniDatabase, args: unknown) {
   })
 }
 
-function handleListDbModels(db: OmniDatabase) {
+export function handleListDbModels(db: OmniDatabase) {
   const models = db.getNodesByType(DB_MODEL_NODE_TYPE)
   return success({
     models: models.map(m => ({
@@ -367,7 +394,7 @@ function handleListDbModels(db: OmniDatabase) {
   })
 }
 
-function handleGetDataFlow(db: OmniDatabase, args: unknown) {
+export function handleGetDataFlow(db: OmniDatabase, args: unknown) {
   const graph = db.loadGraph()
   const tracer = new DataFlowTracer(graph)
   const modelName = stringArg(args, 'model')
@@ -431,24 +458,38 @@ async function main() {
   log('MCP Server running on stdio')
 }
 
-main().catch((err) => {
-  log(`Fatal: ${err}`)
-  process.exit(1)
-})
-
-// 优雅关闭：持久化数据库
-process.on('SIGINT', () => {
-  if (cachedDb) {
-    cachedDb.close()
-    cachedDb = null
+// 仅当本模块作为入口直接运行时才启动 stdio server 与注册信号处理器,
+// 以便测试可安全 import 真实 handler 而不触发 transport / 进程退出钩子。
+const isMainModule = (() => {
+  const entry = process.argv[1]
+  if (!entry) return false
+  try {
+    return import.meta.url === pathToFileURL(entry).href
+  } catch {
+    return false
   }
-  process.exit(0)
-})
+})()
 
-process.on('SIGTERM', () => {
-  if (cachedDb) {
-    cachedDb.close()
-    cachedDb = null
-  }
-  process.exit(0)
-})
+if (isMainModule) {
+  main().catch((err) => {
+    log(`Fatal: ${err}`)
+    process.exit(1)
+  })
+
+  // 优雅关闭：持久化数据库
+  process.on('SIGINT', () => {
+    if (cachedDb) {
+      cachedDb.close()
+      cachedDb = null
+    }
+    process.exit(0)
+  })
+
+  process.on('SIGTERM', () => {
+    if (cachedDb) {
+      cachedDb.close()
+      cachedDb = null
+    }
+    process.exit(0)
+  })
+}
