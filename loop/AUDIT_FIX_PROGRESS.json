@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-06-30T20:39:25.877473",
+  "updatedAt": "2026-06-30T21:05:46.696959",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F8",
+  "currentTask": "F9",
   "baseline": {
     "any": 0,
     "unknown": 83,
@@ -146,6 +146,27 @@
         "typecheck": "0 error",
         "test": "61 pass (server)",
         "lint": "0 error",
+        "build": "success",
+        "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F8",
+      "audit": "E-10",
+      "severity": "Med",
+      "packages": [
+        "shared",
+        "analyzer",
+        "cli"
+      ],
+      "status": "done",
+      "commit": "1334aa5",
+      "summary": "默认工厂 createDefaultParsers 纳入 Kotlin/Spring/Ktor/Room/Exposed 解析器;scanDir(runAnalysis+runFullAnalysis)扫描 .kt;detectProjectMeta 通过 Gradle 构建文件探测 spring/ktor/exposed/room;gradleDetect 迁入 @codeomnivis/shared/node 供 CLI 与 runFullAnalysis 复用;runFullAnalysis 改用统一 parser 工厂。RED:kotlinDefaultPath.test.ts 断言默认入口产出已落库 Kotlin 节点。",
+      "gates": {
+        "diffcheck": "clean",
+        "typecheck": "0 error",
+        "test": "analyzer195 cli15 shared pass",
+        "lint": "0 error 0 warn",
         "build": "success",
         "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
       }
