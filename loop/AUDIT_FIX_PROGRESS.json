@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-07-01T00:28:59.277752",
+  "updatedAt": "2026-07-01T00:46:00+08:00",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F11",
+  "currentTask": "F12",
   "baseline": {
     "any": 0,
     "unknown": 83,
@@ -207,6 +207,25 @@
         "lint": "0 error 0 warn",
         "build": "success",
         "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F11",
+      "audit": "LEAK-02",
+      "severity": "high",
+      "packages": [
+        "@codeomnivis/server"
+      ],
+      "status": "fixed",
+      "commit": "acb81e5",
+      "summary": "start() 监听失败(EADDRINUSE)时不再永久挂起:为 wss 挂 error 处理器避免转发的 server error 崩溃进程,start 状态机防重复启动,监听失败同步 reject + 清理退出钩子/watcher,stop() 在未监听时跳过 server.close()。",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "63 passed (+2 RED)",
+        "lint": "0 error",
+        "build": "success",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
       }
     }
   ]
