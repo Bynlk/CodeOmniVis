@@ -1,25 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { isJsonObject, isAiConfig, type AiConfig, type ChatMessage, type TraceResult } from '@codeomnivis/shared'
+import { isJsonObject, type ChatMessage, type TraceResult } from '@codeomnivis/shared'
 import { useSelectedNode } from '../../lib/selectionContext'
 import { useTrace } from '../../hooks/useTrace'
 import { useCytoscapeInstance } from '../../lib/cytoscapeContext'
+import { loadAiConfig } from '../../lib/aiConfig'
 import { TraceStepCard } from './TraceStepCard'
 import { TraceRunner } from './TraceRunner'
 
-const AI_CONFIG_STORAGE_KEY = 'codeomnivis.ai.config'
 const STATION_INTERVAL_MS = 1000
-
-function loadAiConfig(): AiConfig | null {
-  try {
-    const raw = localStorage.getItem(AI_CONFIG_STORAGE_KEY)
-    if (raw === null) return null
-    const parsed: unknown = JSON.parse(raw)
-    return isAiConfig(parsed) ? parsed : null
-  } catch {
-    return null
-  }
-}
 
 function readString(obj: unknown, key: string): string | undefined {
   if (isJsonObject(obj) && typeof obj[key] === 'string') return obj[key]

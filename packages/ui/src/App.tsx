@@ -14,6 +14,7 @@ import { StatsPanel } from './components/TabBar/StatsPanel'
 import { DataFlowPanel } from './components/TabBar/DataFlowPanel'
 import { TracePanel } from './components/TabBar/TracePanel'
 import { CommandPalette } from './components/CommandPalette'
+import { SettingsDrawer } from './components/SettingsDrawer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { CytoscapeContext } from './lib/cytoscapeContext'
 import { SelectionContext } from './lib/selectionContext'
@@ -37,6 +38,7 @@ function App() {
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabId | null>(null)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const cyRef = useRef<cytoscape.Core | null>(null)
   const { data: graph, isLoading, error } = useGraph()
   const { query, setQuery } = useSearch({ graph })
@@ -103,8 +105,11 @@ function App() {
           onNodeSelect={handleCommandSelect}
         />
 
+        {/* 设置抽屉 */}
+        <SettingsDrawer open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
         {/* 顶部导航栏 */}
-        <Header query={query} onQueryChange={setQuery} />
+        <Header query={query} onQueryChange={setQuery} onOpenSettings={() => setIsSettingsOpen(true)} />
 
         {/* Tab 栏 */}
         <TabBar

@@ -1,8 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isJsonObject, isAiConfig, type AiConfig, type ChatMessage } from '@codeomnivis/shared'
-
-const AI_CONFIG_STORAGE_KEY = 'codeomnivis.ai.config'
+import { loadAiConfig, saveAiConfig } from '../../lib/aiConfig'
 
 function readString(obj: unknown, key: string): string | undefined {
   if (isJsonObject(obj) && typeof obj[key] === 'string') return obj[key]
@@ -12,22 +11,6 @@ function readString(obj: unknown, key: string): string | undefined {
 function readNumber(obj: unknown, key: string): number | undefined {
   if (isJsonObject(obj) && typeof obj[key] === 'number') return obj[key]
   return undefined
-}
-
-/** 从 localStorage 读取 AI 配置(unknown → AiConfig | null,非法返回 null)。 */
-function loadAiConfig(): AiConfig | null {
-  try {
-    const raw = localStorage.getItem(AI_CONFIG_STORAGE_KEY)
-    if (raw === null) return null
-    const parsed: unknown = JSON.parse(raw)
-    return isAiConfig(parsed) ? parsed : null
-  } catch {
-    return null
-  }
-}
-
-function saveAiConfig(config: AiConfig): void {
-  localStorage.setItem(AI_CONFIG_STORAGE_KEY, JSON.stringify(config))
 }
 
 interface AiMessage {

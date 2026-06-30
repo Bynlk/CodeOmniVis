@@ -8,9 +8,10 @@ import { useStatus, STATUS_QUERY_KEY } from '../hooks/useStatus'
 interface HeaderProps {
   query?: string
   onQueryChange?: (query: string) => void
+  onOpenSettings?: () => void
 }
 
-export default function Header({ query, onQueryChange }: HeaderProps) {
+export default function Header({ query, onQueryChange, onOpenSettings }: HeaderProps) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
@@ -76,6 +77,18 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
 
           {/* 语言切换 */}
           <LangToggle />
+
+          {/* 设置抽屉入口 */}
+          {onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              className="rounded px-2 py-1 text-lg text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
+              aria-label={t('settings.open')}
+              title={t('settings.title')}
+            >
+              ⚙
+            </button>
+          )}
 
           {/* 刷新按钮 */}
           <button
