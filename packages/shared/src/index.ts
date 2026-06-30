@@ -122,6 +122,17 @@ export {
   resolveAiConfig,
 } from './types/ai'
 
+// 数据新鲜度契约导出
+export type {
+  FreshnessState,
+  FreshnessStatus,
+} from './types/freshness'
+
+export {
+  isFreshnessState,
+  isFreshnessStatus,
+} from './types/freshness'
+
 // 常量导出
 export { NODE_COLORS, NODE_COLORS_ALPHA, NODE_ICONS } from './constants/nodeColors'
 

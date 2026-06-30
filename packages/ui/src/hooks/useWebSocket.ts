@@ -6,7 +6,8 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { isJsonObject } from '@codeomnivis/shared'
+import { isJsonObject, isFreshnessStatus } from '@codeomnivis/shared'
+import { STATUS_QUERY_KEY } from './useStatus'
 
 interface WebSocketOptions {
   url?: string
@@ -45,6 +46,11 @@ export function useWebSocket(options: WebSocketOptions = {}) {
             queryClient.invalidateQueries({ queryKey: ['graph'] })
             queryClient.invalidateQueries({ queryKey: ['graph-stats'] })
             queryClient.invalidateQueries({ queryKey: ['graph-errors'] })
+          } else if (isJsonObject(data) && data.type === 'status_changed') {
+            // 实时更新数据新鲜度状态
+            if (isFreshnessStatus(data.payload)) {
+              queryClient.setQueryData(STATUS_QUERY_KEY, data.payload)
+            }
           }
         } catch {
           // 忽略无法解析的消息

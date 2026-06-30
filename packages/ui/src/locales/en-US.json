@@ -102,5 +102,11 @@
   "commandPalette.esc": "ESC",
   "ai.notConfigured": "AI not configured",
   "ai.configure": "Configure",
-  "ai.saveConfig": "Save"
+  "ai.saveConfig": "Save",
+  "freshness.fresh": "Up to date",
+  "freshness.analyzing": "Analyzing…",
+  "freshness.stale": "Out of date",
+  "freshness.pending": "{{count}} pending change(s)",
+  "freshness.lastAnalyzed": "Last analyzed {{time}}",
+  "freshness.never": "Not analyzed yet"
 }

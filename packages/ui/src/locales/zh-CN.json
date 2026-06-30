@@ -102,5 +102,11 @@
   "commandPalette.esc": "ESC",
   "ai.notConfigured": "未配置 AI",
   "ai.configure": "配置",
-  "ai.saveConfig": "保存配置"
+  "ai.saveConfig": "保存配置",
+  "freshness.fresh": "已是最新",
+  "freshness.analyzing": "分析中…",
+  "freshness.stale": "待刷新",
+  "freshness.pending": "{{count}} 个待处理变更",
+  "freshness.lastAnalyzed": "上次分析 {{time}}",
+  "freshness.never": "尚未分析"
 }

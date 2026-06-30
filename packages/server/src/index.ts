@@ -11,8 +11,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
-import type { OmniGraph, ProjectMeta } from '@codeomnivis/shared'
-import { readDependencies } from '@codeomnivis/shared'
+import type { FreshnessStatus } from '@codeomnivis/shared'
 import { OmniDatabase } from '@codeomnivis/analyzer'
 import { createGraphRouter } from './routes/graph'
 import { codeomnivisEvents, EVENTS } from './events'
@@ -88,122 +87,17 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     res.json({ status: 'ok', timestamp: Date.now() })
   })
 
-  // POST /api/analyze — 触发重新分析
-  app.post('/api/analyze', async (req, res) => {
+  // GET /api/status — 数据新鲜度
+  app.get('/api/status', (_req, res) => {
+    res.json({ data: incrementalAnalyzer.getStatus(), meta: {} })
+  })
+
+  // POST /api/analyze — 手动触发重新分析(兜底)
+  // 与文件监听共用串行化逻辑,分析期间到达的变更不会丢失。
+  app.post('/api/analyze', async (_req, res) => {
     try {
-      codeomnivisEvents.emit(EVENTS.ANALYSIS_STARTED)
-
-      // 动态导入分析器
-      const analyzer = await import('@codeomnivis/analyzer')
-      const fs = await import('fs')
-
-      const builder = new analyzer.GraphBuilder(db)
-      builder.registerParsers([
-        new analyzer.PrismaParser(),
-        new analyzer.NextjsAppParser(),
-        new analyzer.NextjsPagesParser(),
-        new analyzer.TrpcParser(),
-        new analyzer.TsRpcParser(),
-        new analyzer.ExpressParser(),
-        new analyzer.TypeormParser(),
-        new analyzer.ApiCallsParser(),
-        new analyzer.ReactComponentParser(),
-        new analyzer.NestjsControllerParser(),
-        new analyzer.NestjsModuleParser(),
-        new analyzer.NestjsServiceParser(),
-        new analyzer.DrizzleParser(),
-      ])
-
-      // 简单的文件扫描
-      const files: string[] = []
-      const scanDirs = ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'server', 'src/server', 'src/api', 'api', 'src/shared/protocols', 'shared/protocols', 'protocols', 'src/protocols']
-
-      function scanDir(dir: string): void {
-        if (!fs.existsSync(dir)) return
-        const entries = fs.readdirSync(dir, { withFileTypes: true })
-        for (const entry of entries) {
-          const fullPath = path.join(dir, entry.name)
-          if (entry.isDirectory()) {
-            scanDir(fullPath)
-          } else if (/\.(ts|tsx|js|jsx)$/.test(entry.name)) {
-            files.push(fullPath)
-          }
-        }
-      }
-
-      // 添加 Prisma schema
-      const prismaPath = path.join(projectRoot, 'prisma', 'schema.prisma')
-      if (fs.existsSync(prismaPath)) {
-        files.push(prismaPath)
-      }
-
-      for (const dir of scanDirs) {
-        scanDir(path.join(projectRoot, dir))
-      }
-
-      if (files.length > 0) {
-        // 自动检测框架
-          let detectedFrontend: ProjectMeta['frontendFramework'] = 'unknown'
-          let detectedBackend: ProjectMeta['backendFramework'] = 'unknown'
-          let detectedDb: ProjectMeta['databaseType'] = 'unknown'
-        try {
-          const pkgPath = path.join(projectRoot, 'package.json')
-          if (fs.existsSync(pkgPath)) {
-            const pkg: unknown = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-            const deps = readDependencies(pkg)
-
-            // 前端框架
-            if (deps['next']) detectedFrontend = 'next'
-            else if (deps['react']) detectedFrontend = 'unknown'
-
-            // 后端框架
-            if (deps['tsrpc'] || deps['tsrpc-browser'] || deps['tsrpc-base-client']) detectedBackend = 'tsrpc'
-            else if (deps['@nestjs/core'] || deps['@nestjs/common']) detectedBackend = 'nestjs'
-            else if (deps['@trpc/server']) detectedBackend = 'trpc'
-            else if (deps['express']) detectedBackend = 'express'
-
-            // tsrpc.config.ts 也表示 TSRPC 项目
-            if (detectedBackend === 'unknown' && fs.existsSync(path.join(projectRoot, 'tsrpc.config.ts'))) {
-              detectedBackend = 'tsrpc'
-            }
-
-            // 数据库 ORM
-            if (fs.existsSync(path.join(projectRoot, 'prisma', 'schema.prisma'))) detectedDb = 'prisma'
-            else if (deps['prisma'] || deps['@prisma/client']) detectedDb = 'prisma'
-            else if (deps['drizzle-orm']) detectedDb = 'drizzle'
-            else if (deps['typeorm']) detectedDb = 'typeorm'
-          }
-        } catch { /* ignore */ }
-
-          const projectMeta: ProjectMeta = {
-          root: projectRoot,
-            frontendFramework: detectedFrontend,
-            backendFramework: detectedBackend,
-            databaseType: detectedDb,
-            monorepoType: 'none',
-            packages: [],
-            frontendDirs: [],
-            backendDirs: [],
-            trpcRouterPaths: [],
-            tsrpcServicePaths: [],
-            tsrpcApiDirs: [],
-            tsrpcProtocolDirs: [],
-          prismaSchemaPath: path.join(projectRoot, 'prisma', 'schema.prisma'),
-            typeormEntityDirs: [],
-            tsConfigPath: null,
-            buildFile: null,
-        }
-
-        await builder.parseFiles(files, {
-          projectRoot,
-          projectMeta,
-          tsConfig: null,
-          pathAliases: {},
-        })
-      }
-
-      codeomnivisEvents.emit(EVENTS.GRAPH_UPDATED)
-      res.json({ data: { success: true, message: 'Analysis completed', filesScanned: files.length }, meta: {} })
+      await incrementalAnalyzer.refresh()
+      res.json({ data: { success: true, status: incrementalAnalyzer.getStatus() }, meta: {} })
     } catch (err) {
       console.error('Analysis failed:', err)
       res.status(500).json({ error: String(err) })
@@ -269,6 +163,24 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
   // 监听图更新事件，广播给所有 WebSocket 客户端
   codeomnivisEvents.on(EVENTS.GRAPH_UPDATED, () => {
     broadcastGraphUpdate()
+  })
+
+  // 广播新鲜度状态变更
+  function broadcastStatus(status: FreshnessStatus): void {
+    const message = JSON.stringify({
+      type: 'status_changed',
+      payload: status,
+      timestamp: Date.now(),
+    })
+    for (const client of clients) {
+      if (client.readyState === 1) {
+        client.send(message)
+      }
+    }
+  }
+
+  codeomnivisEvents.on(EVENTS.STATUS_CHANGED, (status: FreshnessStatus) => {
+    broadcastStatus(status)
   })
 
   // 启动服务器

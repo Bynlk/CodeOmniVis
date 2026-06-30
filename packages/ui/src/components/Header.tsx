@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { LangToggle } from './Header/LangToggle'
+import { FreshnessBadge } from './Header/FreshnessBadge'
+import { useStatus, STATUS_QUERY_KEY } from '../hooks/useStatus'
 
 interface HeaderProps {
   query?: string
@@ -12,6 +14,7 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
+  const { data: status } = useStatus()
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
 
@@ -26,8 +29,9 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
         setRefreshError(errorMsg)
         return
       }
-      // 让 React Query 重新拉取图数据
+      // 让 React Query 重新拉取图数据与新鲜度状态
       await queryClient.invalidateQueries({ queryKey: ['graph'] })
+      await queryClient.invalidateQueries({ queryKey: STATUS_QUERY_KEY })
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
       setRefreshError(errorMsg)
@@ -66,6 +70,9 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
               </span>
             </div>
           )}
+
+          {/* 数据新鲜度 */}
+          <FreshnessBadge status={status} />
 
           {/* 语言切换 */}
           <LangToggle />
