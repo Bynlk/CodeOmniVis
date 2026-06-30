@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-06-30T19:51:00",
+  "updatedAt": "2026-06-30T20:03:59",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F3",
+  "currentTask": "F4",
   "baseline": {
     "any": 0,
     "unknown": 83,
@@ -48,6 +48,26 @@
         "typecheck": "pass",
         "test": "analyzer189+mcp13 pass",
         "lint": "0 warn",
+        "build": "pass",
+        "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F3",
+      "audit": "S-07",
+      "severity": "Med",
+      "packages": [
+        "cli",
+        "server"
+      ],
+      "status": "done",
+      "commit": "f46abe6",
+      "summary": "authGuard: non-loopback bind requires explicit token; mutating endpoints /api/analyze /api/project DELETE /api/graph enforce Authorization via timingSafeEqual; cli serve refuses non-loopback without --token/CODEOMNIVIS_TOKEN",
+      "gates": {
+        "diffcheck": "pass",
+        "typecheck": "pass",
+        "test": "server58 pass; cli typecheck pass",
+        "lint": "0 err",
         "build": "pass",
         "astscan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
       }
