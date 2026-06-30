@@ -10,7 +10,7 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
-import { autoDetectProject } from '../utils/autoDetect'
+import { autoDetectProject, collectScanDirs } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
 import { OmniDatabase, GraphBuilder, ConsistencyChecker, createDefaultParsers } from '@codeomnivis/analyzer'
@@ -21,6 +21,11 @@ import { OmniDatabase, GraphBuilder, ConsistencyChecker, createDefaultParsers } 
 export interface CheckDeps {
   openDatabase: (dbPath: string) => OmniDatabase
   onProgress?: (message: string) => void
+  /**
+   * DUP-04 · F18:项目根目录注入点(默认当前工作目录)。
+   * 取代此前散落的 process.cwd(),使扫描目录解析可测试且与 analyze 命令一致。
+   */
+  cwd?: string
 }
 
 const defaultCheckDeps: CheckDeps = {
@@ -37,7 +42,7 @@ export async function runCheck(deps: CheckDeps = defaultCheckDeps): Promise<void
   const report = deps.onProgress ?? ((): void => {})
 
   // 加载配置 + 自动检测项目
-  const projectRoot = path.resolve('.')
+  const projectRoot = path.resolve(deps.cwd ?? '.')
   report('Detecting project structure...')
   const config = loadConfig(projectRoot)
   const projectMeta = await autoDetectProject(projectRoot, config)
@@ -62,11 +67,12 @@ export async function runCheck(deps: CheckDeps = defaultCheckDeps): Promise<void
     }
 
     // 扫描项目中的 TypeScript/JavaScript 文件
-    const scanDirs = ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'server', 'src/server']
+    // DUP-04 · F18:复用 collectScanDirs(projectRoot, config),与 analyze 命令一致,
+    // 支持配置目录与 monorepo packages/*/src,不再硬编码且不再依赖 process.cwd()。
+    const scanDirs = collectScanDirs(projectRoot, config)
     for (const dir of scanDirs) {
-      const fullPath = path.join(process.cwd(), dir)
-      if (fs.existsSync(fullPath)) {
-        const scanned = scanDirectory(fullPath, process.cwd())
+      if (fs.existsSync(dir)) {
+        const scanned = scanDirectory(dir, projectRoot)
         files.push(...scanned)
       }
     }
@@ -74,7 +80,7 @@ export async function runCheck(deps: CheckDeps = defaultCheckDeps): Promise<void
     // 执行解析
     report(`Parsing ${files.length} files...`)
     const result = await builder.parseFiles(files, {
-      projectRoot: process.cwd(),
+      projectRoot,
       projectMeta,
       tsConfig: null,
       pathAliases: {},
