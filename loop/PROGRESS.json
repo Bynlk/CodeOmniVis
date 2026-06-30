@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T13:40:00+08:00",
+  "updatedAt": "2026-06-30T13:50:00+08:00",
   "currentStage": "Review remediation",
-  "currentTask": "R5",
+  "currentTask": "DONE",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -438,9 +438,16 @@
       "id": "R5",
       "stage": "Review remediation",
       "name": "台账/技术债文档校准 + 终态回归 + 合并",
-      "status": "in_progress",
-      "commit": null,
-      "gates": {},
+      "status": "done",
+      "commit": "d88939a",
+      "gates": {
+        "gitDiffCheck": "clean",
+        "turboTypecheck": "pass (11/11)",
+        "turboLint": "pass (0 error)",
+        "turboBuild": "pass (6/6)",
+        "turboTest": "pass (341 tests)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      },
       "metrics": {
         "finding": "m1 — PROGRESS.json A0-A4/B-MERGE commit 为 null/占位;m2 — TECHNICAL_DEBT.md 缺 6 条 MODULE_TYPELESS 警告且「全部非阻塞」措辞不准",
         "plan": "回填真实 hash(A0-A4, B-MERGE=e3f8dc9)并补 R1-R5 条目;修订 TECHNICAL_DEBT(拆分已知债务 vs 评审发现并已修复缺陷,删除「全部非阻塞」,补 6 条 MODULE_TYPELESS 警告,记录已闭合的 AST 盲区);全量回归后 ff 合并 fix/review-remediation 到 master"
