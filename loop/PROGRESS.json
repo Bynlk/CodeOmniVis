@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T16:39:06+08:00",
+  "updatedAt": "2026-06-30T16:43:04+08:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H3",
+  "currentTask": "H4",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -530,6 +530,27 @@
         "diffCheck": "clean",
         "typecheck": "0 error",
         "test": "server 44 (+5)",
+        "lint": "0 error",
+        "build": "success",
+        "ast": {
+          "any": 0,
+          "unknown": 81,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      }
+    },
+    {
+      "id": "H4",
+      "code": "S-04",
+      "title": "WebSocket Origin allowlist (CSWSH guard)",
+      "status": "done",
+      "commit": "8feb453",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "server 47 (+3)",
         "lint": "0 error",
         "build": "success",
         "ast": {
