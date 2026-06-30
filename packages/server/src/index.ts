@@ -247,10 +247,13 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     }
   }
 
-  // 监听图更新事件，广播给所有 WebSocket 客户端
-  codeomnivisEvents.on(EVENTS.GRAPH_UPDATED, () => {
+  // 监听图更新事件，广播给所有 WebSocket 客户端。
+  // LEAK-03 · F12:codeomnivisEvents 是模块级单例,多实例共享。必须保留本实例注册的
+  // 监听器引用,stop() 时只 off() 这些引用,绝不能 removeAllListeners() 清空全局。
+  const onGraphUpdated = (): void => {
     broadcastGraphUpdate()
-  })
+  }
+  codeomnivisEvents.on(EVENTS.GRAPH_UPDATED, onGraphUpdated)
 
   // 广播新鲜度状态变更
   function broadcastStatus(status: FreshnessStatus): void {
@@ -266,9 +269,10 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     }
   }
 
-  codeomnivisEvents.on(EVENTS.STATUS_CHANGED, (status: FreshnessStatus) => {
+  const onStatusChanged = (status: FreshnessStatus): void => {
     broadcastStatus(status)
-  })
+  }
+  codeomnivisEvents.on(EVENTS.STATUS_CHANGED, onStatusChanged)
 
   // LEAK-02 · F11:start 状态机,防止重复启动并支撑监听失败时的 reject + cleanup。
   // 'idle' 未启动 → 'starting' 启动中 → 'listening' 已监听 → 'stopped' 已停止。
@@ -352,8 +356,10 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       wss.close(() => resolve())
     })
 
-    // 移除事件监听
-    codeomnivisEvents.removeAllListeners()
+    // 移除事件监听。LEAK-03 · F12:只注销本实例注册的监听器,
+    // 不能 removeAllListeners() —— 那会连带删除其它实例 / 外部模块在同一单例上的订阅。
+    codeomnivisEvents.off(EVENTS.GRAPH_UPDATED, onGraphUpdated)
+    codeomnivisEvents.off(EVENTS.STATUS_CHANGED, onStatusChanged)
 
     // 关闭数据库
     db.close()
