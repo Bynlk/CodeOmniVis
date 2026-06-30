@@ -1,13 +1,35 @@
 /**
  * WebSocket 客户端 Hook
  *
- * 监听服务器 graph_updated 事件，自动刷新图数据。
+ * 监听服务器 graph_updated / status_changed 事件，自动刷新图数据。
+ * 生命周期(连接 / 重连 / 销毁)委托给 WebSocketController,见 LEAK-04/F10:
+ * 卸载后不再重连,也不会在已卸载组件上 setState。
  */
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { isJsonObject, isFreshnessStatus } from '@codeomnivis/shared'
 import { STATUS_QUERY_KEY } from './useStatus'
+import { WebSocketController, type MinimalSocket } from './websocketController'
+
+/**
+ * 把浏览器原生 WebSocket 适配成控制器所需的最小接口。
+ * 原生事件回调签名带 Event 参数,这里收敛为无参回调,避免结构不兼容。
+ */
+function adaptWebSocket(socket: WebSocket): MinimalSocket {
+  const adapter: MinimalSocket = {
+    onopen: null,
+    onmessage: null,
+    onclose: null,
+    onerror: null,
+    close: () => socket.close(),
+  }
+  socket.onopen = () => adapter.onopen?.()
+  socket.onmessage = (event) => adapter.onmessage?.({ data: event.data })
+  socket.onclose = () => adapter.onclose?.()
+  socket.onerror = (event) => adapter.onerror?.(event)
+  return adapter
+}
 
 interface WebSocketOptions {
   url?: string
@@ -20,79 +42,36 @@ export function useWebSocket(options: WebSocketOptions = {}) {
     enabled = true,
   } = options
 
-  const wsRef = useRef<WebSocket | null>(null)
   const queryClient = useQueryClient()
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-
-  const connect = useCallback(() => {
-    if (!enabled) return
-
-    try {
-      const ws = new WebSocket(url)
-      wsRef.current = ws
-
-      ws.onopen = () => {
-        console.log('WebSocket connected')
-        setIsConnected(true)
-      }
-
-      ws.onmessage = (event) => {
-        try {
-          const raw: string = typeof event.data === 'string' ? event.data : ''
-          const data: unknown = JSON.parse(raw)
-          if (isJsonObject(data) && data.type === 'graph_updated') {
-            // 自动刷新图数据
-            queryClient.invalidateQueries({ queryKey: ['graph'] })
-            queryClient.invalidateQueries({ queryKey: ['graph-stats'] })
-            queryClient.invalidateQueries({ queryKey: ['graph-errors'] })
-          } else if (isJsonObject(data) && data.type === 'status_changed') {
-            // 实时更新数据新鲜度状态
-            if (isFreshnessStatus(data.payload)) {
-              queryClient.setQueryData(STATUS_QUERY_KEY, data.payload)
-            }
-          }
-        } catch {
-          // 忽略无法解析的消息
-        }
-      }
-
-      ws.onclose = () => {
-        console.log('WebSocket disconnected')
-        wsRef.current = null
-        setIsConnected(false)
-
-        // 自动重连（3 秒后）
-        if (enabled) {
-          reconnectTimerRef.current = setTimeout(() => {
-            connect()
-          }, 3000)
-        }
-      }
-
-      ws.onerror = (err) => {
-        console.error('WebSocket error:', err)
-        ws.close()
-      }
-    } catch {
-      // WebSocket 连接失败，静默处理
-    }
-  }, [url, enabled, queryClient])
+  const controllerRef = useRef<WebSocketController | null>(null)
 
   useEffect(() => {
-    connect()
+    if (!enabled) return
+
+    const controller = new WebSocketController({
+      createSocket: () => adaptWebSocket(new WebSocket(url)),
+      onConnectedChange: (connected) => setIsConnected(connected),
+      onMessage: (data) => {
+        if (isJsonObject(data) && data.type === 'graph_updated') {
+          queryClient.invalidateQueries({ queryKey: ['graph'] })
+          queryClient.invalidateQueries({ queryKey: ['graph-stats'] })
+          queryClient.invalidateQueries({ queryKey: ['graph-errors'] })
+        } else if (isJsonObject(data) && data.type === 'status_changed') {
+          if (isFreshnessStatus(data.payload)) {
+            queryClient.setQueryData(STATUS_QUERY_KEY, data.payload)
+          }
+        }
+      },
+    })
+    controllerRef.current = controller
+    controller.connect()
 
     return () => {
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current)
-      }
-      if (wsRef.current) {
-        wsRef.current.close()
-        wsRef.current = null
-      }
-      setIsConnected(false)
+      controller.dispose()
+      controllerRef.current = null
     }
-  }, [connect])
+  }, [url, enabled, queryClient])
 
   return {
     isConnected,
