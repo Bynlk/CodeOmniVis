@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-07-01T00:58:00+08:00",
+  "updatedAt": "2026-06-30T17:10:47Z",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F15",
+  "currentTask": "F16",
   "baseline": {
     "any": 0,
     "unknown": 88,
@@ -284,6 +284,25 @@
         "lint": "0 error",
         "build": "success",
         "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1 (unknown 89->88)"
+      }
+    },
+    {
+      "id": "F15",
+      "audit": "E-13",
+      "severity": "Med",
+      "packages": [
+        "ui"
+      ],
+      "status": "fixed",
+      "commit": "141d06d",
+      "summary": "Extract GraphFilterController listening to cytoscape 'add' so the active filter replays after GraphCanvas remove/add refresh; useGraphFilter delegates to it.",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "48 passed",
+        "lint": "0 error (B-2 warn only)",
+        "build": "success",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1 unknown=92"
       }
     }
   ]
