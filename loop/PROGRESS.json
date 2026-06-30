@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-06-30T18:05:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H15",
+  "currentTask": "H-MERGE",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -808,6 +808,33 @@
         "uiBugfix": "Header.tsx now renders refreshError via role=alert span (was captured but never surfaced); GraphCanvas drops unused useCallback; no TailwindCSS introduced (existing className scheme reused)",
         "residual": "MODULE_TYPELESS_PACKAGE_JSON node runtime notice remains (eslint.config.js loaded as ESM without root type:module) — not a lint rule violation, 0 eslint problems; left untouched to avoid altering module resolution across packages",
         "noCast": "zero as-casts / non-null assertions / wide fallback / string-key metadata"
+      }
+    },
+    {
+      "id": "H15",
+      "code": "P-01",
+      "title": "split UI bundle via Vite manualChunks",
+      "status": "done",
+      "commit": "1ae40b5",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "39/39 pass (ui)",
+        "lint": "0 error, 0 warning",
+        "build": "success; main chunk 749.10KB -> 73.70KB",
+        "ast": {
+          "any": 0,
+          "unknown": 83,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      },
+      "metrics": {
+        "change": "vite.config.ts build.rollupOptions.output.manualChunks(id) splits node_modules into vendor-cytoscape/vendor-react/vendor-i18n/vendor-query/vendor",
+        "chunks": "index 73.70KB (gzip 21.73) / vendor-cytoscape 443.74KB (142.39) / vendor-react 146.86KB (47.75) / vendor-i18n 44.33KB (14.18) / vendor-query 38.70KB (11.73) / vendor 1.13KB",
+        "result": "no chunk >500KB warning threshold (was single 749KB chunk + warning); largest vendor-cytoscape 443KB is 3rd-party graph engine, lazy-loadable later",
+        "noCast": "config-only change, no source type changes"
       }
     }
   ]
