@@ -32,14 +32,14 @@ describe('POST /api/project', () => {
       filesScanned: 0, nodesCreated: 0, edgesCreated: 0, crossLayerEdges: 0, errors: 0,
     })
     baseRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'omni-base-'))
-    targetRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'omni-target-'))
+    targetRoot = path.join(baseRoot, 'sub-target')
+    fs.mkdirSync(targetRoot, { recursive: true })
     server = createOmniServer({ projectRoot: baseRoot, dbPath: ':memory:' })
     await server.db.ready()
   })
 
   afterEach(() => {
     fs.rmSync(baseRoot, { recursive: true, force: true })
-    fs.rmSync(targetRoot, { recursive: true, force: true })
   })
 
   it('rejects missing projectRoot with 400', async () => {

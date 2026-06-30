@@ -19,6 +19,7 @@ import { createGraphRouter } from './routes/graph'
 import { codeomnivisEvents, EVENTS } from './events'
 import { IncrementalAnalyzer } from './incremental'
 import { registerAiRoutes } from './ai'
+import { resolveWithinBoundary } from './pathGuard'
 
 // ESM 兼容的 __dirname
 const __filename = fileURLToPath(import.meta.url)
@@ -118,7 +119,15 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       return
     }
 
-    const resolved = path.resolve(projectRootInput)
+    // H3 · S-01:将入参约束在配置边界根内,阻断 ../ 穿越与越界绝对路径。
+    const boundaryRoot = path.resolve(projectRoot)
+    const { ok, resolved } = resolveWithinBoundary(boundaryRoot, projectRootInput)
+    if (!ok) {
+      res.status(400).json({
+        error: { code: 'PATH_TRAVERSAL', message: `projectRoot escapes the allowed boundary: ${boundaryRoot}` },
+      })
+      return
+    }
     if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
       res.status(400).json({
         error: { code: 'INVALID_PROJECT_ROOT', message: `Not an existing directory: ${resolved}` },
