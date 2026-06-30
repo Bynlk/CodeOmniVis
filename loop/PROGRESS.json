@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-06-30T02:38:58.367754Z",
   "currentStage": "Stage B",
-  "currentTask": "B17",
+  "currentTask": "B18",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -250,10 +250,22 @@
       "id": "B17",
       "stage": "Stage B",
       "name": "数据新鲜度方案一",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "1bbedc9",
+      "gates": {
+        "gitDiffCheck": "pass",
+        "turboTypecheck": "pass (shared/server/ui 3/3)",
+        "eslintTypeAware": "pass (0 errors; pre-existing unused-var warnings only)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=77",
+        "tests": "pass (shared 53 / server 25 / ui 12)"
+      },
+      "metrics": {
+        "sharedContract": "src/types/freshness.ts: FreshnessState fresh|analyzing|stale, FreshnessStatus{state,lastAnalyzedAt,pendingChanges} + isFreshnessState/isFreshnessStatus guards (no casts)",
+        "statusViz": "Header FreshnessBadge.tsx: colored dot (emerald/amber-pulse/rose) + label + pending-change count; tooltip shows lastAnalyzed time; i18n freshness.* keys EN/ZH",
+        "smartWatch": "incremental.ts replaces hardcoded DEFAULT_WATCH_DIRS — when watchDirs omitted, watches whole projectRoot filtered by IGNORED_PATHS (node_modules/dist/build/coverage/.next/dotfiles) + source-suffix filter; explicit watchDirs still honored",
+        "droppedChangesFix": "serialized triggerAnalysis: changes arriving mid-analysis set rerunRequested -> one rerun after current completes (was silently skipped); pendingChanges consumed on entry, restored on failure; STATUS_CHANGED event drives state transitions",
+        "manualFallback": "POST /api/analyze now delegates to incrementalAnalyzer.refresh() (shares serialization); GET /api/status returns {data:FreshnessStatus}; WS broadcasts status_changed; UI useStatus hook + useWebSocket setQueryData on push (guarded, no cast)"
+      }
     },
     {
       "id": "B18",
