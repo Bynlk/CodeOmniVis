@@ -10,12 +10,25 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
+import { fileURLToPath } from 'url'
 import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
 import { createOmniServer } from '@codeomnivis/server'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
 import type { OmniNode } from '@codeomnivis/shared'
 import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, TsRpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@codeomnivis/analyzer'
+
+/**
+ * 解析自包含 UI 产物目录。
+ * 打包后 CLI 与 UI 同处 dist/(dist/index.js + dist/ui),故 ui 位于 import.meta.url 同级的 ./ui。
+ * 该目录不存在时(如开发态)回退到 monorepo 内的 packages/ui/dist,由 server 默认值兜底。
+ */
+function resolveUiDistPath(): string | undefined {
+  const here = path.dirname(fileURLToPath(import.meta.url))
+  const bundled = path.join(here, 'ui')
+  if (fs.existsSync(bundled)) return bundled
+  return undefined
+}
 
 interface ServeOptions {
   port: string
@@ -60,6 +73,7 @@ export function serveCommand(program: Command): void {
           host: options.host,
           dbPath,
           projectRoot,
+          uiDistPath: resolveUiDistPath(),
         })
 
         // 启动服务器
