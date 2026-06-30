@@ -842,7 +842,7 @@
       "code": "",
       "title": "final regression + ff-only merge to master + closeout",
       "status": "done",
-      "commit": "(pending ff)",
+      "commit": "aa261e4",
       "gates": {
         "diffCheck": "clean",
         "typecheck": "6/6 (--force)",
