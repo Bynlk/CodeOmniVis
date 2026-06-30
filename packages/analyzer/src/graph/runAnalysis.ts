@@ -11,19 +11,7 @@ import type { ProjectMeta } from '@codeomnivis/shared'
 import { OmniDatabase } from '../storage/db'
 import { GraphBuilder } from './builder'
 import { CrossLayerLinker } from '../resolver/crossLayer'
-import { PrismaParser } from '../parsers/prisma'
-import { NextjsAppParser } from '../parsers/nextjsApp'
-import { NextjsPagesParser } from '../parsers/nextjsPages'
-import { TrpcParser } from '../parsers/trpc'
-import { TsRpcParser } from '../parsers/tsrpc'
-import { ExpressParser } from '../parsers/express'
-import { TypeormParser } from '../parsers/typeorm'
-import { ApiCallsParser } from '../parsers/apiCalls'
-import { ReactComponentParser } from '../parsers/reactComponent'
-import { NestjsControllerParser } from '../parsers/nestjs/nestjsControllerParser'
-import { NestjsModuleParser } from '../parsers/nestjs/nestjsModuleParser'
-import { NestjsServiceParser } from '../parsers/nestjs/nestjsServiceParser'
-import { DrizzleParser } from '../parsers/drizzle'
+import { createDefaultParsers } from './createDefaultParsers'
 
 export interface RunAnalysisOptions {
   projectRoot: string
@@ -105,21 +93,7 @@ export async function runAnalysis(options: RunAnalysisOptions): Promise<RunAnaly
 
   // 创建图构建器
   const builder = new GraphBuilder(db)
-  builder.registerParsers([
-    new PrismaParser(),
-    new NextjsAppParser(),
-    new NextjsPagesParser(),
-    new TrpcParser(),
-    new TsRpcParser(),
-    new ExpressParser(),
-    new TypeormParser(),
-    new ApiCallsParser(),
-    new ReactComponentParser(),
-    new NestjsControllerParser(),
-    new NestjsModuleParser(),
-    new NestjsServiceParser(),
-    new DrizzleParser(),
-  ])
+  builder.registerParsers(createDefaultParsers())
 
   // 扫描文件
   const files: string[] = []

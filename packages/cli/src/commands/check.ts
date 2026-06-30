@@ -13,7 +13,7 @@ import * as path from 'path'
 import { autoDetectProject } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
-import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, ConsistencyChecker } from '@codeomnivis/analyzer'
+import { OmniDatabase, GraphBuilder, ConsistencyChecker, createDefaultParsers } from '@codeomnivis/analyzer'
 
 export function checkCommand(program: Command): void {
   program
@@ -36,20 +36,7 @@ export function checkCommand(program: Command): void {
 
         // 创建图构建器
         const builder = new GraphBuilder(db)
-        builder.registerParsers([
-          new PrismaParser(),
-          new NextjsAppParser(),
-          new NextjsPagesParser(),
-          new TrpcParser(),
-          new ExpressParser(),
-          new TypeormParser(),
-          new ApiCallsParser(),
-          new ReactComponentParser(),
-          new NestjsControllerParser(),
-          new NestjsModuleParser(),
-          new NestjsServiceParser(),
-          new DrizzleParser(),
-        ])
+        builder.registerParsers(createDefaultParsers())
 
         // 获取要解析的文件
         const files: string[] = []

@@ -16,7 +16,7 @@ import { scanDirectory } from '../utils/scanDirectory'
 import { createOmniServer } from '@codeomnivis/server'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
 import type { OmniNode } from '@codeomnivis/shared'
-import { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, TsRpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker } from '@codeomnivis/analyzer'
+import { GraphBuilder, createDefaultParsers, CrossLayerLinker } from '@codeomnivis/analyzer'
 
 /**
  * 解析自包含 UI 产物目录。
@@ -82,21 +82,7 @@ export function serveCommand(program: Command): void {
         // 自动分析项目
         spinner.text = 'Analyzing project...'
         const builder = new GraphBuilder(server.db)
-        builder.registerParsers([
-          new PrismaParser(),
-          new NextjsAppParser(),
-          new NextjsPagesParser(),
-          new TrpcParser(),
-          new TsRpcParser(),
-          new ExpressParser(),
-          new TypeormParser(),
-          new ApiCallsParser(),
-          new ReactComponentParser(),
-          new NestjsControllerParser(),
-          new NestjsModuleParser(),
-          new NestjsServiceParser(),
-          new DrizzleParser(),
-        ])
+        builder.registerParsers(createDefaultParsers())
 
         // 获取要解析的文件
         const files: string[] = []

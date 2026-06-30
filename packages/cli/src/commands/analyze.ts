@@ -14,7 +14,7 @@ import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoD
 import { scanDirectory } from '../utils/scanDirectory'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
 import type { OmniNode } from '@codeomnivis/shared'
-import { OmniDatabase, PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser, GraphBuilder, CrossLayerLinker, NPlusOneDetector, AuthDetector, RSCBoundaryDetector } from '@codeomnivis/analyzer'
+import { OmniDatabase, GraphBuilder, CrossLayerLinker, NPlusOneDetector, AuthDetector, RSCBoundaryDetector, createDefaultParsers } from '@codeomnivis/analyzer'
 
 interface AnalyzeOptions {
   project?: string
@@ -47,20 +47,7 @@ export function analyzeCommand(program: Command): void {
 
         // 创建图构建器
         const builder = new GraphBuilder(db)
-        builder.registerParsers([
-          new PrismaParser(),
-          new NextjsAppParser(),
-          new NextjsPagesParser(),
-          new TrpcParser(),
-          new ExpressParser(),
-          new TypeormParser(),
-          new ApiCallsParser(),
-          new ReactComponentParser(),
-          new NestjsControllerParser(),
-          new NestjsModuleParser(),
-          new NestjsServiceParser(),
-          new DrizzleParser(),
-        ])
+        builder.registerParsers(createDefaultParsers())
 
         // 获取要解析的文件
         const files: string[] = []

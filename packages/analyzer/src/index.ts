@@ -18,6 +18,7 @@ export type { FileType, ClassificationResult } from './classifier'
 
 // 图构建器
 export { GraphBuilder } from './graph/builder'
+export { createDefaultParsers } from './graph/createDefaultParsers'
 export type { BuildResult } from './graph/builder'
 
 // 一键分析
