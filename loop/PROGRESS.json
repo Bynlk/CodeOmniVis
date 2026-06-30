@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T16:45:50+08:00",
+  "updatedAt": "2026-06-30T16:48:40+08:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H5",
+  "currentTask": "H6",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -572,6 +572,27 @@
         "diffCheck": "clean",
         "typecheck": "0 error",
         "test": "analyzer 185 (+4)",
+        "lint": "0 error (33 warn baseline)",
+        "build": "success",
+        "ast": {
+          "any": 0,
+          "unknown": 81,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      }
+    },
+    {
+      "id": "H6",
+      "code": "BOUND-03",
+      "title": "detect exported arrow-function components",
+      "status": "done",
+      "commit": "b546fca",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "analyzer 188 (+3)",
         "lint": "0 error (33 warn baseline)",
         "build": "success",
         "ast": {
