@@ -8,3 +8,5 @@
 
 export { getDbPath, hasDbCache, clearDbCache } from '../utils/dbPath'
 export { loadConfig } from '../utils/configLoader'
+export { detectGradleFrameworks, findBuildFile } from './gradleDetect'
+export type { GradleInfo } from './gradleDetect'

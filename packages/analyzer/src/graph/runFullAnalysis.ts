@@ -9,22 +9,11 @@ import * as fs from 'fs'
 import * as path from 'path'
 import type { DatabaseType, FrameworkType, ProjectMeta } from '@codeomnivis/shared'
 import { readDependencies } from '@codeomnivis/shared'
+import { detectGradleFrameworks } from '@codeomnivis/shared/node'
 import { OmniDatabase } from '../storage/db'
 import { GraphBuilder } from './builder'
 import { CrossLayerLinker } from '../resolver/crossLayer'
-import { PrismaParser } from '../parsers/prisma'
-import { NextjsAppParser } from '../parsers/nextjsApp'
-import { NextjsPagesParser } from '../parsers/nextjsPages'
-import { TrpcParser } from '../parsers/trpc'
-import { TsRpcParser } from '../parsers/tsrpc'
-import { ExpressParser } from '../parsers/express'
-import { TypeormParser } from '../parsers/typeorm'
-import { ApiCallsParser } from '../parsers/apiCalls'
-import { ReactComponentParser } from '../parsers/reactComponent'
-import { NestjsControllerParser } from '../parsers/nestjs/nestjsControllerParser'
-import { NestjsModuleParser } from '../parsers/nestjs/nestjsModuleParser'
-import { NestjsServiceParser } from '../parsers/nestjs/nestjsServiceParser'
-import { DrizzleParser } from '../parsers/drizzle'
+import { createDefaultParsers } from './createDefaultParsers'
 
 export interface FullAnalysisOptions {
   projectRoot: string
@@ -77,6 +66,17 @@ function detectProjectMeta(projectRoot: string): ProjectMeta {
     }
   } catch { /* ignore */ }
 
+  // Kotlin/Gradle 项目探测(E-10/F8):TS 依赖未命中后端框架/数据库时,
+  // 通过 Gradle 构建文件识别 Spring/Ktor/Exposed/Room,使 Kotlin 解析路径可达。
+  const gradleInfo = detectGradleFrameworks(projectRoot)
+  const buildFile = gradleInfo.buildFile
+  if (backendFramework === 'unknown' && gradleInfo.backendFramework !== 'unknown') {
+    backendFramework = gradleInfo.backendFramework
+  }
+  if (databaseType === 'unknown' && gradleInfo.databaseType !== 'unknown') {
+    databaseType = gradleInfo.databaseType
+  }
+
   return {
     root: projectRoot,
     frontendFramework,
@@ -92,7 +92,7 @@ function detectProjectMeta(projectRoot: string): ProjectMeta {
     prismaSchemaPath: findPrismaSchema(projectRoot),
     typeormEntityDirs: [],
     tsConfigPath: findTsConfig(projectRoot) ?? null,
-    buildFile: null,
+    buildFile,
     packages: [],
   }
 }
@@ -127,7 +127,7 @@ function scanDir(dir: string, files: string[]): void {
       // 跳过软链接目录（避免 symlink 重复扫描）
       if (entry.isSymbolicLink()) continue
       scanDir(fullPath, files)
-    } else if (/\.(ts|tsx|js|jsx)$/.test(entry.name)) {
+    } else if (/\.(ts|tsx|js|jsx|kt)$/.test(entry.name)) {
       files.push(fullPath)
     }
   }
@@ -223,21 +223,7 @@ export async function runFullAnalysis(options: FullAnalysisOptions): Promise<Ful
 
   // 创建图构建器
   const builder = new GraphBuilder(db)
-  builder.registerParsers([
-    new PrismaParser(),
-    new NextjsAppParser(),
-    new NextjsPagesParser(),
-    new TrpcParser(),
-    new TsRpcParser(),
-    new ExpressParser(),
-    new TypeormParser(),
-    new ApiCallsParser(),
-    new ReactComponentParser(),
-    new NestjsControllerParser(),
-    new NestjsModuleParser(),
-    new NestjsServiceParser(),
-    new DrizzleParser(),
-  ])
+  builder.registerParsers(createDefaultParsers())
 
   // 扫描文件
   const files: string[] = []

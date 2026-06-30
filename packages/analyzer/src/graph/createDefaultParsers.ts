@@ -20,6 +20,11 @@ import { NestjsControllerParser } from '../parsers/nestjs/nestjsControllerParser
 import { NestjsModuleParser } from '../parsers/nestjs/nestjsModuleParser'
 import { NestjsServiceParser } from '../parsers/nestjs/nestjsServiceParser'
 import { DrizzleParser } from '../parsers/drizzle'
+import { KotlinParser } from '../parsers/kotlin/kotlinParser'
+import { SpringKotlinParser } from '../parsers/kotlin/springKotlinParser'
+import { KtorParser } from '../parsers/kotlin/ktorParser'
+import { RoomParser } from '../parsers/kotlin/roomParser'
+import { ExposedParser } from '../parsers/kotlin/exposedParser'
 
 /**
  * 返回 TS 全栈分析的默认解析器集合。
@@ -40,5 +45,11 @@ export function createDefaultParsers(): Parser[] {
     new NestjsModuleParser(),
     new NestjsServiceParser(),
     new DrizzleParser(),
+    // Kotlin 解析器(E-10/F8):此前从未纳入默认工厂,导致 Kotlin 项目走默认入口时全程不可达。
+    new KotlinParser(),
+    new SpringKotlinParser(),
+    new KtorParser(),
+    new RoomParser(),
+    new ExposedParser(),
   ]
 }

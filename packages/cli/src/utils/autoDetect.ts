@@ -9,7 +9,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import type { ProjectMeta, FrameworkType, DatabaseType, MonorepoType, CodeOmniVisConfig } from '@codeomnivis/shared'
 import { readDependencies } from '@codeomnivis/shared'
-import { detectGradleFrameworks } from './gradleDetect'
+import { detectGradleFrameworks } from '@codeomnivis/shared/node'
 
 const FRAMEWORK_TYPES = new Set<string>([
   'next',

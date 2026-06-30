@@ -44,7 +44,7 @@ function scanDir(dir: string, files: string[]): void {
     const fullPath = path.join(dir, entry.name)
     if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
       scanDir(fullPath, files)
-    } else if (/\.(ts|tsx|js|jsx)$/.test(entry.name)) {
+    } else if (/\.(ts|tsx|js|jsx|kt)$/.test(entry.name)) {
       files.push(fullPath)
     }
   }

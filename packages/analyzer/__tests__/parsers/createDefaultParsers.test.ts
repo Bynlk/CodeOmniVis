@@ -28,6 +28,11 @@ describe('H2 DUP-01: createDefaultParsers factory', () => {
       'nestjs-module',
       'nestjs-service',
       'drizzle',
+      'kotlin',
+      'spring-kotlin',
+      'ktor',
+      'room',
+      'exposed',
     ].sort()
 
     expect(names).toEqual(expected)
