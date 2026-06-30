@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-07-01T00:49:00+08:00",
+  "updatedAt": "2026-07-01T00:55:00+08:00",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F13",
+  "currentTask": "F14",
   "baseline": {
     "any": 0,
     "unknown": 83,
@@ -242,6 +242,25 @@
         "diffCheck": "clean",
         "typecheck": "0 error",
         "test": "64 passed (+1 RED)",
+        "lint": "0 error",
+        "build": "success",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
+      }
+    },
+    {
+      "id": "F13",
+      "audit": "LEAK-05",
+      "severity": "medium",
+      "packages": [
+        "@bynlk/CodeOmniVis"
+      ],
+      "status": "fixed",
+      "commit": "b6b6fe3",
+      "summary": "analyze/check 命令重构出可测核心 runAnalyze/runCheck:db 句柄在 try 之外打开、finally 中 close(),异常路径不再泄漏 sql.js 句柄;注入 openDatabase 依赖供测试。",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "17 passed (+2 RED)",
         "lint": "0 error",
         "build": "success",
         "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1"
