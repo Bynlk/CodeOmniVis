@@ -7,10 +7,13 @@ import express from 'express'
 import request from 'supertest'
 import { registerAiRoutes } from '../../src/ai'
 
-function makeApp() {
+// 默认 mock resolver:把测试主机解析为一个公网 IP,避免真实 DNS 查询。
+const PUBLIC_RESOLVER = async (_hostname: string): Promise<string[]> => ['93.184.216.34']
+
+function makeApp(resolver: (hostname: string) => Promise<string[]> = PUBLIC_RESOLVER) {
   const app = express()
   app.use(express.json())
-  registerAiRoutes(app)
+  registerAiRoutes(app, resolver)
   return app
 }
 
@@ -113,6 +116,38 @@ describe('POST /api/ai/chat', () => {
       .send({
         messages: [{ role: 'user', content: 'hi' }],
         config: { baseUrl: 'http://api.example.com/v1', apiKey: 'k', model: 'm' },
+      })
+
+    expect(res.status).toBe(400)
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 and never fetches when hostname resolves to a private address (DNS rebinding)', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    // 公网外观主机名,但解析到内网地址 -> 必须拦截
+    const rebindResolver = async (_hostname: string): Promise<string[]> => ['169.254.169.254']
+
+    const res = await request(makeApp(rebindResolver))
+      .post('/api/ai/chat')
+      .send({
+        messages: [{ role: 'user', content: 'hi' }],
+        config: { baseUrl: 'https://evil-but-public-looking.example.com/v1', apiKey: 'k', model: 'm' },
+      })
+
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('Invalid AI baseUrl')
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 when hostname resolves to a loopback address (rebinding to localhost)', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    const rebindResolver = async (_hostname: string): Promise<string[]> => ['127.0.0.1']
+
+    const res = await request(makeApp(rebindResolver))
+      .post('/api/ai/chat')
+      .send({
+        messages: [{ role: 'user', content: 'hi' }],
+        config: { baseUrl: 'https://looks-public.example.com/v1', apiKey: 'k', model: 'm' },
       })
 
     expect(res.status).toBe(400)

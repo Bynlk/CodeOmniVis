@@ -7,14 +7,18 @@
  */
 
 import type { Express, Request, Response } from 'express'
+import { promises as dns } from 'dns'
 import {
   isJsonObject,
   parseAiChatRequest,
   resolveAiConfig,
   validateUpstreamBaseUrl,
+  validateResolvedAddresses,
+  isIpLiteral,
   type AiConfig,
   type AiEnvConfig,
   type ChatMessage,
+  type UpstreamUrlCheck,
 } from '@codeomnivis/shared'
 
 /** 从 process.env 读取可选的 AI 兜底配置。 */
@@ -46,6 +50,52 @@ function extractContent(payload: unknown): string | null {
 }
 
 /**
+ * 可注入的 hostname 解析器:返回该主机解析到的 IP 地址列表。
+ * 默认实现使用 Node 的 dns.lookup(all),便于测试时 mock,避免真实网络。
+ */
+export type HostnameResolver = (hostname: string) => Promise<string[]>
+
+const defaultResolver: HostnameResolver = async (hostname) => {
+  const records = await dns.lookup(hostname, { all: true })
+  return records.map((r) => r.address)
+}
+
+/** 字面回环主机(localhost/127.x/::1)无需 DNS 解析即可放行。 */
+function isLiteralLoopback(hostname: string): boolean {
+  const h = hostname.replace(/^\[|\]$/g, '')
+  if (h === 'localhost') return true
+  if (h === '::1') return true
+  return /^127\./.test(h)
+}
+
+/**
+ * 解析上游 hostname 并校验解析结果(防 DNS rebinding)。
+ * - 回环主机直接放行(本地模型服务场景);
+ * - IP 字面量已由 validateUpstreamBaseUrl 校验过,无需再解析;
+ * - 其余主机解析后校验,任一地址命中内网/链路本地/metadata/回环即拒绝。
+ */
+export async function checkUpstreamDnsSafety(
+  baseUrl: string,
+  resolver: HostnameResolver = defaultResolver,
+): Promise<UpstreamUrlCheck> {
+  let hostname: string
+  try {
+    hostname = new URL(baseUrl).hostname
+  } catch {
+    return { ok: false, reason: 'baseUrl is not a valid URL' }
+  }
+  if (isLiteralLoopback(hostname)) return { ok: true }
+  if (isIpLiteral(hostname)) return { ok: true }
+  let addresses: string[]
+  try {
+    addresses = await resolver(hostname)
+  } catch (err) {
+    return { ok: false, reason: `DNS resolution failed for ${hostname}: ${String(err)}` }
+  }
+  return validateResolvedAddresses(addresses)
+}
+
+/**
  * 调用用户自备的 OpenAI 兼容上游,返回助手文本。
  * 失败抛出 Error,由 handler 统一转 5xx。
  */
@@ -69,8 +119,8 @@ export async function callAiChat(config: AiConfig, messages: ChatMessage[]): Pro
   return content
 }
 
-/** 统一的 chat handler:解析契约 → 解析配置 → 调上游 → 包 {data,meta}。 */
-async function handleChat(req: Request, res: Response): Promise<void> {
+/** 统一的 chat handler:解析契约 → 解析配置 → 字面校验 → DNS 解析校验 → 调上游 → 包 {data,meta}。 */
+async function handleChat(req: Request, res: Response, resolver: HostnameResolver): Promise<void> {
   const parsed = parseAiChatRequest(req.body)
   if (parsed === null) {
     res.status(400).json({ error: 'Invalid AI chat request body' })
@@ -92,6 +142,15 @@ async function handleChat(req: Request, res: Response): Promise<void> {
     })
     return
   }
+  // 防 DNS rebinding:fetch 前解析 hostname,拒绝解析到内网/链路本地/metadata 的主机。
+  const dnsCheck = await checkUpstreamDnsSafety(config.baseUrl, resolver)
+  if (!dnsCheck.ok) {
+    res.status(400).json({
+      error: 'Invalid AI baseUrl',
+      message: dnsCheck.reason ?? 'baseUrl rejected by DNS SSRF guard',
+    })
+    return
+  }
   try {
     const content = await callAiChat(config, parsed.messages)
     res.json({ data: { content }, meta: {} })
@@ -100,8 +159,11 @@ async function handleChat(req: Request, res: Response): Promise<void> {
   }
 }
 
-/** 在 app 上注册 /api/ai/chat 与 /api/ai/explain(两者共用 chat 契约)。 */
-export function registerAiRoutes(app: Express): void {
-  app.post('/api/ai/chat', (req, res) => { void handleChat(req, res) })
-  app.post('/api/ai/explain', (req, res) => { void handleChat(req, res) })
+/**
+ * 在 app 上注册 /api/ai/chat 与 /api/ai/explain(两者共用 chat 契约)。
+ * resolver 可注入以便测试(默认使用 dns.lookup)。
+ */
+export function registerAiRoutes(app: Express, resolver: HostnameResolver = defaultResolver): void {
+  app.post('/api/ai/chat', (req, res) => { void handleChat(req, res, resolver) })
+  app.post('/api/ai/explain', (req, res) => { void handleChat(req, res, resolver) })
 }

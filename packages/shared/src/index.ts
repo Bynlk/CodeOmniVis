@@ -125,6 +125,8 @@ export {
   parseAiChatRequest,
   resolveAiConfig,
   validateUpstreamBaseUrl,
+  validateResolvedAddresses,
+  isIpLiteral,
 } from './types/ai'
 
 // 数据新鲜度契约导出

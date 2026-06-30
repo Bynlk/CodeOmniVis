@@ -5,6 +5,8 @@ import {
   parseAiChatRequest,
   resolveAiConfig,
   validateUpstreamBaseUrl,
+  validateResolvedAddresses,
+  isIpLiteral,
 } from '../../src/types/ai'
 
 describe('isChatMessage', () => {
@@ -112,5 +114,38 @@ describe('validateUpstreamBaseUrl', () => {
     expect(validateUpstreamBaseUrl('not a url').ok).toBe(false)
     expect(validateUpstreamBaseUrl('ftp://example.com').ok).toBe(false)
     expect(validateUpstreamBaseUrl('file:///etc/passwd').ok).toBe(false)
+  })
+})
+
+describe('validateResolvedAddresses (S-06/F5 DNS rebinding)', () => {
+  it('accepts only-public resolved addresses', () => {
+    expect(validateResolvedAddresses(['93.184.216.34']).ok).toBe(true)
+  })
+
+  it('rejects when any resolved address is private/link-local/metadata/loopback', () => {
+    expect(validateResolvedAddresses(['169.254.169.254']).ok).toBe(false)
+    expect(validateResolvedAddresses(['10.0.0.1']).ok).toBe(false)
+    expect(validateResolvedAddresses(['127.0.0.1']).ok).toBe(false)
+    expect(validateResolvedAddresses(['::1']).ok).toBe(false)
+    // 混合:一个公网 + 一个内网 -> 仍拒绝
+    expect(validateResolvedAddresses(['93.184.216.34', '192.168.1.1']).ok).toBe(false)
+  })
+
+  it('rejects empty resolution result', () => {
+    expect(validateResolvedAddresses([]).ok).toBe(false)
+  })
+})
+
+describe('isIpLiteral', () => {
+  it('detects IPv4/IPv6 literals', () => {
+    expect(isIpLiteral('127.0.0.1')).toBe(true)
+    expect(isIpLiteral('93.184.216.34')).toBe(true)
+    expect(isIpLiteral('::1')).toBe(true)
+    expect(isIpLiteral('fe80::1')).toBe(true)
+  })
+
+  it('returns false for hostnames', () => {
+    expect(isIpLiteral('api.example.com')).toBe(false)
+    expect(isIpLiteral('localhost')).toBe(false)
   })
 })

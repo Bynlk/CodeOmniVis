@@ -111,6 +111,35 @@ function isBlockedHost(host: string): boolean {
   return false
 }
 
+/** 判断 host 是否为 IP 字面量(IPv4/IPv6),无需 DNS 解析。 */
+export function isIpLiteral(host: string): boolean {
+  const h = host.replace(/^\[|\]$/g, '')
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) return true
+  if (h.includes(':')) return true
+  return false
+}
+
+/**
+ * 校验 DNS 解析得到的地址列表(防 DNS rebinding)。
+ * 任一解析结果为回环/内网/链路本地/metadata,即拒绝。
+ * 对于经字面量校验放行的回环主机(localhost/127.x/::1),调用方应跳过本检查。
+ * 纯函数,便于单测。
+ */
+export function validateResolvedAddresses(addresses: string[]): UpstreamUrlCheck {
+  if (addresses.length === 0) {
+    return { ok: false, reason: 'Hostname did not resolve to any address' }
+  }
+  for (const addr of addresses) {
+    if (isLoopbackHost(addr) || isBlockedHost(addr)) {
+      return {
+        ok: false,
+        reason: `Hostname resolves to loopback/private/link-local/metadata address: ${addr}`,
+      }
+    }
+  }
+  return { ok: true }
+}
+
 export function validateUpstreamBaseUrl(baseUrl: string): UpstreamUrlCheck {
   let url: URL
   try {
