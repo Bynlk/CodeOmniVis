@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-06-30T17:14:40Z",
+  "updatedAt": "2026-06-30T17:18:49Z",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F17",
+  "currentTask": "F18",
   "baseline": {
     "any": 0,
     "unknown": 88,
@@ -319,6 +319,25 @@
         "diffCheck": "clean",
         "typecheck": "0 error",
         "test": "53 passed",
+        "lint": "0 error (B-2 warn only)",
+        "build": "success",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1 unknown=92"
+      }
+    },
+    {
+      "id": "F17",
+      "audit": "E-09",
+      "severity": "Low",
+      "packages": [
+        "analyzer"
+      ],
+      "status": "fixed",
+      "commit": "50aa2f5",
+      "summary": "runFullAnalysis now tracks and returns the real cross-layer edge count instead of hardcoded 0; no-files branch keeps 0.",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "197 passed",
         "lint": "0 error (B-2 warn only)",
         "build": "success",
         "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1 unknown=92"
