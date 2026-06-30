@@ -20,6 +20,7 @@ import { codeomnivisEvents, EVENTS } from './events'
 import { IncrementalAnalyzer } from './incremental'
 import { registerAiRoutes } from './ai'
 import { resolveWithinBoundary } from './pathGuard'
+import { isOriginAllowed, toOriginAllowlist } from './originGuard'
 
 // ESM 兼容的 __dirname
 const __filename = fileURLToPath(import.meta.url)
@@ -164,7 +165,21 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
   const server = createHttpServer(app)
 
   // WebSocket 服务器
-  const wss = new WebSocketServer({ server, path: '/ws' })
+  // H4 · S-04:升级握手阶段校验 Origin,阻断跨站 WebSocket 劫持(CSWSH)。
+  const wsOriginAllowlist = toOriginAllowlist(corsOrigin)
+  const wss = new WebSocketServer({
+    server,
+    path: '/ws',
+    verifyClient: (info, done) => {
+      const origin = info.origin
+      if (isOriginAllowed(origin, wsOriginAllowlist)) {
+        done(true)
+      } else {
+        console.warn(`WebSocket upgrade rejected: disallowed Origin "${origin ?? ''}"`)
+        done(false, 403, 'Forbidden Origin')
+      }
+    },
+  })
 
   // WebSocket 连接管理
   const clients = new Set<import('ws').WebSocket>()
