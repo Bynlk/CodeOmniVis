@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-07-01T01:32:07+08:00",
+  "updatedAt": "2026-07-01T01:47:43+08:00",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F19",
+  "currentTask": "AUDIT-MERGE",
   "baseline": {
     "any": 0,
     "unknown": 88,
@@ -357,6 +357,25 @@
         "diffCheck": "clean",
         "typecheck": "0 error",
         "test": "18 passed",
+        "lint": "0 error (B-2 warn only)",
+        "build": "success",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1 unknown=92"
+      }
+    },
+    {
+      "id": "F19",
+      "audit": "TEST-BUG-04",
+      "severity": "Low",
+      "packages": [
+        "mcp"
+      ],
+      "status": "fixed",
+      "commit": "149b146",
+      "summary": "tools.test.ts no longer re-implements simplified executeXxx logic; now imports and asserts the real exported MCP handlers (getApiRoutes/getComponentTree/findCallers/listDbModels/getDataFlow) including filter, downstream/upstream traversal, and illegal-arg branches (missing rootPath/target -> isError, unknown -> suggestion).",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "19 passed (2 files)",
         "lint": "0 error (B-2 warn only)",
         "build": "success",
         "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1 unknown=92"
