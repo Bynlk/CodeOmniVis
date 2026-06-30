@@ -76,6 +76,23 @@ describe('POST /api/project — path traversal guard', () => {
     expect(runAnalysisMock).not.toHaveBeenCalled()
   })
 
+  it('rejects a boundary-internal symlink that points outside the boundary (S-05)', async () => {
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'omni-symtarget-'))
+    const linkPath = path.join(baseRoot, 'packages', 'evil-link')
+    try {
+      fs.symlinkSync(outside, linkPath, 'dir')
+      const res = await request(server.app)
+        .post('/api/project')
+        .send({ projectRoot: path.join('packages', 'evil-link') })
+      expect(res.status).toBe(400)
+      expect(res.body.error.code).toBe('PATH_TRAVERSAL')
+      expect(runAnalysisMock).not.toHaveBeenCalled()
+    } finally {
+      fs.unlinkSync(linkPath)
+      fs.rmSync(outside, { recursive: true, force: true })
+    }
+  })
+
   it('accepts a legitimate sub-path and triggers analysis', async () => {
     const res = await request(server.app)
       .post('/api/project')
