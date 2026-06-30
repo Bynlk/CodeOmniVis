@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T10:25:00+08:00",
+  "updatedAt": "2026-06-30T02:38:58.367754Z",
   "currentStage": "Stage B",
-  "currentTask": "B15",
+  "currentTask": "B16",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -208,11 +208,23 @@
     {
       "id": "B15",
       "stage": "Stage B",
-      "name": "AI 契约+localStorage",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "name": "AI 请求契约修复 + 前端 localStorage 配置",
+      "status": "done",
+      "commit": "e5e56a4",
+      "gates": {
+        "gitDiffCheck": "pass",
+        "turboTypecheck": "pass (shared/server/ui 3/3)",
+        "eslintTypeAware": "pass (0 errors, 3 pre-existing unused-var warnings)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=75(boundary)",
+        "tests": "pass (shared 46 / server 21 / ui 12)"
+      },
+      "metrics": {
+        "sharedContract": "src/types/ai.ts: ChatMessage/AiConfig/AiChatRequest/AiChatResponse + isChatMessage/isAiConfig/parseAiChatRequest + pure resolveAiConfig (body.config > env > null)",
+        "serverHandlers": "src/ai.ts registerAiRoutes wires POST /api/ai/chat + /api/ai/explain; priority body.config > env(AI_BASE_URL/AI_API_KEY/AI_MODEL) > 501; upstream = user-supplied OpenAI-compatible /chat/completions (no internal gateway); response {data:{content},meta:{}}; 400 invalid body / 502 upstream fail",
+        "uiPanel": "AiPanel.tsx sends {messages:ChatMessage[],config?}, reads data.data.content (was data.response); localStorage config panel (codeomnivis.ai.config) baseUrl/apiKey/model with isAiConfig guard; new i18n keys ai.notConfigured/ai.configure/ai.saveConfig",
+        "sideFix": "fixed pre-existing stale config.test.ts type-count lists (added tsrpc_service/api/msg nodes + sends_msg/listens_msg edges drifted in during Stage A)",
+        "noCast": "zero as-casts; server test uses vi.spyOn(globalThis,\"fetch\").mockResolvedValue (no typeof cast) to keep AST assertions=0"
+      }
     },
     {
       "id": "B16",
