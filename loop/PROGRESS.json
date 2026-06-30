@@ -635,7 +635,7 @@
       "code": "S-03",
       "title": "basic security response headers middleware",
       "status": "done",
-      "commit": "PENDING",
+      "commit": "b979df0",
       "gates": {
         "diffCheck": "clean",
         "typecheck": "0 error",
