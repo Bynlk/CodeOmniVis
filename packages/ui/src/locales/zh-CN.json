@@ -153,5 +153,7 @@
   "promo.tertiary.title": "📖 阅读文档",
   "promo.tertiary.desc": "安装、使用与架构概览。",
   "promo.tertiary.cta": "查看 README",
-  "about.licenseSummary": "采用 PolyForm Noncommercial 1.0.0 许可 —— 仅限非商业用途免费使用,商业使用需另行授权。"
+  "about.licenseSummary": "采用 PolyForm Noncommercial 1.0.0 许可 —— 仅限非商业用途免费使用,商业使用需另行授权。",
+  "settings.ai.invalidUrl": "Base URL 无效或被安全策略拒绝(仅允许 https 公网地址或本地环回地址)",
+  "settings.ai.rememberKey": "在本设备记住密钥(否则仅在本标签页有效)"
 }

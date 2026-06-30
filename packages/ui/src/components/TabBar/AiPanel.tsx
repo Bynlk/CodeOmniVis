@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { isJsonObject, isAiConfig, type AiConfig, type ChatMessage } from '@codeomnivis/shared'
-import { loadAiConfig, saveAiConfig } from '../../lib/aiConfig'
+import { isJsonObject, isAiConfig, validateUpstreamBaseUrl, type AiConfig, type ChatMessage } from '@codeomnivis/shared'
+import { setAiConfig } from '../../lib/aiConfig'
+import { useAiConfig } from '../../hooks/useAiConfig'
 
 function readString(obj: unknown, key: string): string | undefined {
   if (isJsonObject(obj) && typeof obj[key] === 'string') return obj[key]
@@ -30,10 +31,13 @@ export function AiPanel() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
-  const [config, setConfig] = useState<AiConfig | null>(() => loadAiConfig())
+  // M3:与 SettingsDrawer 共用同一份全局配置(单一数据源)。
+  const { config, rememberKey: storedRemember } = useAiConfig()
   const [draftBaseUrl, setDraftBaseUrl] = useState('')
   const [draftApiKey, setDraftApiKey] = useState('')
   const [draftModel, setDraftModel] = useState('')
+  const [rememberKey, setRememberKey] = useState(false)
+  const [configError, setConfigError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -42,15 +46,22 @@ export function AiPanel() {
       setDraftApiKey(config.apiKey)
       setDraftModel(config.model)
     }
-  }, [config])
+    setRememberKey(storedRemember)
+  }, [config, storedRemember])
 
   const handleSaveConfig = useCallback(() => {
     const next: AiConfig = { baseUrl: draftBaseUrl.trim(), apiKey: draftApiKey.trim(), model: draftModel.trim() }
     if (!isAiConfig(next)) return
-    saveAiConfig(next)
-    setConfig(next)
+    // M4:保存前用共享 SSRF/https 校验器拦截私网/非 https 的非环回地址。
+    const check = validateUpstreamBaseUrl(next.baseUrl)
+    if (!check.ok) {
+      setConfigError(check.reason ?? t('settings.ai.invalidUrl'))
+      return
+    }
+    setConfigError(null)
+    setAiConfig(next, rememberKey)
     setShowConfig(false)
-  }, [draftBaseUrl, draftApiKey, draftModel])
+  }, [draftBaseUrl, draftApiKey, draftModel, rememberKey, t])
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || isLoading) return
@@ -154,6 +165,18 @@ export function AiPanel() {
             placeholder="Model (e.g. gpt-4o-mini)"
             className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
           />
+          <label className="flex items-center gap-2 text-[11px] text-slate-300 select-none cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rememberKey}
+              onChange={e => setRememberKey(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-700 text-primary-600 focus:ring-primary-500"
+            />
+            {t('settings.ai.rememberKey')}
+          </label>
+          {configError && (
+            <p className="text-[11px] text-red-400 break-all">{configError}</p>
+          )}
           <button
             onClick={handleSaveConfig}
             disabled={!draftBaseUrl.trim() || !draftApiKey.trim() || !draftModel.trim()}

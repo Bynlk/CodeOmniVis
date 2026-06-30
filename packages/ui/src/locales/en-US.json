@@ -153,5 +153,7 @@
   "promo.tertiary.title": "📖 Read the docs",
   "promo.tertiary.desc": "Setup, usage and architecture overview.",
   "promo.tertiary.cta": "View README",
-  "about.licenseSummary": "Licensed under PolyForm Noncommercial 1.0.0 — free for non-commercial use only. Commercial use requires a separate license."
+  "about.licenseSummary": "Licensed under PolyForm Noncommercial 1.0.0 — free for non-commercial use only. Commercial use requires a separate license.",
+  "settings.ai.invalidUrl": "Base URL is invalid or blocked by the security policy (only https public hosts or local loopback are allowed)",
+  "settings.ai.rememberKey": "Remember key on this device (otherwise kept only for this tab)"
 }

@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import { isAiConfig, isJsonObject, type AiConfig } from '@codeomnivis/shared'
-import { loadAiConfig, saveAiConfig, clearAiConfig } from '../lib/aiConfig'
+import { isAiConfig, isJsonObject, validateUpstreamBaseUrl, type AiConfig } from '@codeomnivis/shared'
+import { setAiConfig, clearAiConfig } from '../lib/aiConfig'
+import { useAiConfig } from '../hooks/useAiConfig'
 import { PROMOTION_TIERS, LICENSE_INFO } from '../lib/promotion'
 import { STATUS_QUERY_KEY } from '../hooks/useStatus'
 
@@ -27,11 +28,13 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
 
-  // --- AI 组 ---
-  const [config, setConfig] = useState<AiConfig | null>(() => loadAiConfig())
+  // --- AI 组(单一数据源:全局 store) ---
+  const { config, rememberKey: storedRemember } = useAiConfig()
   const [baseUrl, setBaseUrl] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [model, setModel] = useState('')
+  const [rememberKey, setRememberKey] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
 
   useEffect(() => {
     if (config) {
@@ -39,21 +42,29 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
       setApiKey(config.apiKey)
       setModel(config.model)
     }
-  }, [config])
+    setRememberKey(storedRemember)
+  }, [config, storedRemember])
 
   const handleSaveAi = useCallback(() => {
     const next: AiConfig = { baseUrl: baseUrl.trim(), apiKey: apiKey.trim(), model: model.trim() }
     if (!isAiConfig(next)) return
-    saveAiConfig(next)
-    setConfig(next)
-  }, [baseUrl, apiKey, model])
+    // M4:保存前用共享 SSRF/https 校验器拦截私网/非 https 的非环回地址。
+    const check = validateUpstreamBaseUrl(next.baseUrl)
+    if (!check.ok) {
+      setAiError(check.reason ?? t('settings.ai.invalidUrl'))
+      return
+    }
+    setAiError(null)
+    setAiConfig(next, rememberKey)
+  }, [baseUrl, apiKey, model, rememberKey, t])
 
   const handleClearAi = useCallback(() => {
     clearAiConfig()
-    setConfig(null)
     setBaseUrl('')
     setApiKey('')
     setModel('')
+    setRememberKey(false)
+    setAiError(null)
   }, [])
 
   // --- 项目组 ---
@@ -149,6 +160,18 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
             placeholder="Model (e.g. gpt-4o-mini)"
             className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
           />
+          <label className="flex items-center gap-2 text-[11px] text-slate-300 select-none cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rememberKey}
+              onChange={e => setRememberKey(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-700 text-primary-600 focus:ring-primary-500"
+            />
+            {t('settings.ai.rememberKey')}
+          </label>
+          {aiError && (
+            <p className="text-[11px] text-red-400 break-all">{aiError}</p>
+          )}
           <div className="flex gap-2">
             <button
               onClick={handleSaveAi}
