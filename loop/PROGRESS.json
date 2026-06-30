@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T02:38:58.367754Z",
+  "updatedAt": "2026-06-30T11:45:37.088362+08:00",
   "currentStage": "Stage B",
-  "currentTask": "B19",
+  "currentTask": "B20",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -292,10 +292,21 @@
       "id": "B19",
       "stage": "Stage B",
       "name": "噪声治理+选目录",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "fa8e256",
+      "gates": {
+        "gitDiffCheck": "clean",
+        "typecheck": "shared/analyzer/server/ui all pass",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=85",
+        "tests": "shared 72 / analyzer 177 / server 33 / ui 12",
+        "lint": "0 errors (pre-existing warnings only)"
+      },
+      "metrics": {
+        "newTests": 14,
+        "sanitizeGraph": "removes self-ref/dangling/duplicate edges, returns stats",
+        "newRoutes": "POST /api/project",
+        "newApi": "IncrementalAnalyzer.setProjectRoot/getProjectRoot"
+      }
     },
     {
       "id": "B20",
