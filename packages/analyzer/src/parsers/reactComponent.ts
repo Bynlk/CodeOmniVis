@@ -191,14 +191,13 @@ export class ReactComponentParser implements Parser {
    * 判断变量是否被导出
    */
   private isVariableExported(node: VariableDeclaration): boolean {
-    const parent = node.getParent()
-    if (!parent) return false
-
-    // 检查 VariableStatement 是否有 export
-    if (Node.isVariableStatement(parent)) {
-      return parent.isExported()
+    // VariableDeclaration 的直接父节点是 VariableDeclarationList,
+    // export 修饰符挂在再上一级的 VariableStatement 上(H6 · BOUND-03)。
+    // 同时支持 `export const`/`export let`(均编译为带 export 的 VariableStatement)。
+    const statement = node.getVariableStatement()
+    if (statement) {
+      return statement.isExported() || statement.isNamedExport() || statement.isDefaultExport()
     }
-
     return false
   }
 

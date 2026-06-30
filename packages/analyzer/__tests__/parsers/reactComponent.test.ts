@@ -79,5 +79,24 @@ describe('ReactComponentParser', () => {
       expect(result.nodes).toHaveLength(0)
       expect(result.errors.length).toBeGreaterThan(0)
     })
+
+    // H6 · BOUND-03: export const X = () => {} 箭头函数组件必须被识别为导出。
+    it('recognizes an exported arrow-function component', async () => {
+      const result = await parser.parse('components/ArrowCard.tsx', context)
+      const names = result.nodes.filter(n => n.type === 'component').map(n => n.name)
+      expect(names).toContain('ArrowCard')
+    })
+
+    it('does not treat a non-exported const component as exported', async () => {
+      const result = await parser.parse('components/ArrowCard.tsx', context)
+      const names = result.nodes.filter(n => n.type === 'component').map(n => n.name)
+      expect(names).not.toContain('InternalWidget')
+    })
+
+    it('does not misclassify a lowercase exported const as a component', async () => {
+      const result = await parser.parse('components/ArrowCard.tsx', context)
+      const names = result.nodes.filter(n => n.type === 'component').map(n => n.name)
+      expect(names).not.toContain('helperValue')
+    })
   })
 })
