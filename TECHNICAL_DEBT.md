@@ -92,3 +92,41 @@ B17 实现的是方案一(状态可视化 + 智能监听 + 手动兜底 + 序列
 ### B-8. 测试环境约束
 
 vitest 依赖 `TMPDIR` 指向可写目录(sql.js / 临时 DB)。CI 或本地若 `/tmp` 不可写,需显式 `export TMPDIR=...`;turbo 下已由 `globalPassThroughEnv` 透传。UI vitest 运行于 node 环境(无 jsdom),React 组件本身不可直接单测,故逻辑须下沉至纯 lib(`lib/aiConfig.ts` 的纯函数即按此约束设计)。
+
+
+---
+
+## C. 第二轮独立审计修复(F1–F19,分支 fix/audit-round2,2026-07-01)
+
+> 在 Stage A+B 与首轮评审(A 部分)之后,对仓库做了第二轮独立深度审计(见 `loop/AUDIT_REPORT.md`),发现 19 项可修复缺陷(安全 / 资源泄漏 / 正确性 / 重复逻辑 / 测试失真)。全部以「RED→GREEN→全门禁→单一绿色提交」流程闭环,逐项推送。详见 `loop/DELIVERY_REPORT.md`。
+
+| 编号 | 审计项 | 等级 | 包 | 提交 | 修复要点 |
+|---|---|---|---|---|---|
+| F1 | S-05 | High | server | `49f831c` | realpath 二次边界校验,拒绝边界内符号链接逃逸根目录 |
+| F2 | BOUND-04 | High | mcp/analyzer | `e6b6870` | validateDepth 拒绝非法 MCP 深度;getSubtree 限深 + visited 去重 |
+| F3 | S-07 | Med | cli/server | `f46abe6` | 非环回绑定强制 token;变更端点 timingSafeEqual 鉴权 |
+| F4 | S-08 | Med | cli/analyzer | `8edc180` | collectScanDirs 默认只扫 projectRoot 内,跨目录须显式配置 |
+| F5 | S-06 | Med | shared/server | `a3e3e2d` | DNS rebinding 防护:fetch 前解析主机名,拒私网/元数据/环回 |
+| F6 | E-08 | Med | analyzer | `0ad80fe` | 跨层连线返回 synthetic 节点并先 upsert,消除 dangling edge |
+| F7 | E-07 | Med | server | `b2bca77` | 区分手动刷新与自动重试;手动失败保持 stale 并 rethrow(500) |
+| F8 | E-10 | Med | shared/analyzer/cli | `1334aa5` | 默认解析器纳入 Kotlin/Spring/Ktor/Room/Exposed,Gradle 探测 |
+| F9 | BOUND-05 | Med | analyzer | `073a737` | findParentApiRoutes visited 阻断环;MAX_PARENT_ROUTE_DEPTH=64 |
+| F10 | LEAK-04 | Med | ui | `5930b7a` | WebSocketController 状态机:dispose 先禁重连再 close,防卸载后重连 |
+| F11 | LEAK-02 | High | server | `acb81e5` | start() 监听失败不再永久挂起:同步 reject + 清理钩子 |
+| F12 | LEAK-03 | High | server | `008ecde` | stop() 不再 removeAllListeners 清空共享单例事件总线 |
+| F13 | LEAK-05 | Med | cli | `b6b6fe3` | runAnalyze/runCheck:db 句柄 finally close,异常路径不泄漏 |
+| F14 | E-11 | Med | shared/cli | `78d7488` | loadConfig 逐字段运行时校验,非法配置回退默认不污染下游 |
+| F15 | E-13 | Med | ui | `141d06d` | GraphFilterController 监听 cytoscape 'add',刷新后重放过滤 |
+| F16 | E-12 | Low | ui | `8a072b9` | filterNodesByQuery:Header 搜索框实际过滤节点列表/计数 |
+| F17 | E-09 | Low | analyzer | `50aa2f5` | runFullAnalysis 返回真实跨层边数,不再硬编码 0 |
+| F18 | DUP-04 | Low | cli | `b58a16c` | check 命令复用 collectScanDirs,消除硬编码扫描目录与 cwd 漂移 |
+| F19 | TEST-BUG-04 | Low | mcp | `149b146` | tools.test 改为断言真实导出的 MCP handler,而非简化复刻逻辑 |
+
+**最终全量回归(36 commits ahead of master,ff-only 合并)**:
+- 测试:439 passed(shared 88 / ui 53 / analyzer 197 / mcp 19 / cli 18 / server 64)
+- 类型检查 / lint / build:12/12 任务全绿(lint 仅 B-2 的 `MODULE_TYPELESS_PACKAGE_JSON` 告警)
+- AST 门禁:`any=0 unknown=92 assertions=0 doubleCasts=0 recordUnknown=1`(`unknown` 全为运行时边界,见 B-4)
+
+**刻意保留的债务(本轮不修)**:
+- **S-09 → B-6**:apiKey 仍在浏览器侧。属架构级改造(服务端会话托管),超出本轮「单缺陷最小修复」范围,保留为 B-6。
+- **PERF-02 → B-7**:大型仓库全量重分析为粗粒度(方案一)。增量 AST diff / 文件级缓存属后续方案,保留为 B-7。

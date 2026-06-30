@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-07-01T01:47:43+08:00",
-  "stage": "AUDIT-FIX-ROUND2",
+  "updatedAt": "2026-07-01T01:55:00+08:00",
+  "stage": "AUDIT-MERGE-READY",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "AUDIT-MERGE",
+  "currentTask": "DONE",
   "baseline": {
     "any": 0,
     "unknown": 88,
@@ -381,5 +381,37 @@
         "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1 unknown=92"
       }
     }
-  ]
+  ],
+  "finalRegression": {
+    "testCount": 439,
+    "perPackage": {
+      "shared": 88,
+      "ui": 53,
+      "analyzer": 197,
+      "mcp": 19,
+      "cli": 18,
+      "server": 64
+    },
+    "typecheck": "12/12 pass",
+    "lint": "12/12 0err (B-2 warn only)",
+    "build": "12/12 success",
+    "diffcheck": "clean",
+    "astscan": {
+      "any": 0,
+      "unknown": 92,
+      "assertions": 0,
+      "doubleCasts": 0,
+      "recordUnknown": 1
+    }
+  },
+  "retainedDebt": [
+    "S-09 -> B-6 (apiKey browser-side)",
+    "PERF-02 -> B-7 (full re-analysis)"
+  ],
+  "mergePlan": {
+    "into": "master",
+    "mode": "ff-only",
+    "commitsAhead": 36,
+    "ffPossible": true
+  }
 }
