@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-06-30T17:18:49Z",
+  "updatedAt": "2026-07-01T01:32:07+08:00",
   "stage": "AUDIT-FIX-ROUND2",
   "branch": "fix/audit-round2",
   "baseFrom": "578d7fe",
-  "currentTask": "F18",
+  "currentTask": "F19",
   "baseline": {
     "any": 0,
     "unknown": 88,
@@ -338,6 +338,25 @@
         "diffCheck": "clean",
         "typecheck": "0 error",
         "test": "197 passed",
+        "lint": "0 error (B-2 warn only)",
+        "build": "success",
+        "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1 unknown=92"
+      }
+    },
+    {
+      "id": "F18",
+      "audit": "DUP-04",
+      "severity": "Low",
+      "packages": [
+        "cli"
+      ],
+      "status": "fixed",
+      "commit": "b58a16c",
+      "summary": "check command now reuses collectScanDirs(projectRoot, config) like analyze, honoring config dirs and monorepo packages/*/src; removed hardcoded scanDirs and process.cwd() drift via injectable deps.cwd.",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "18 passed",
         "lint": "0 error (B-2 warn only)",
         "build": "success",
         "astScan": "any=0 assertions=0 doubleCasts=0 recordUnknown=1 unknown=92"
