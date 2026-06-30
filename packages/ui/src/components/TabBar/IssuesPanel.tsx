@@ -18,11 +18,19 @@ function isParseError(value: unknown): value is ParseError {
     && (value.severity === 'error' || value.severity === 'warning' || value.severity === 'info')
 }
 
+function unwrapData(value: unknown): unknown {
+  if (typeof value === 'object' && value !== null && 'data' in value) {
+    return value.data
+  }
+  return undefined
+}
+
 async function fetchErrors(): Promise<ParseError[]> {
   const res = await fetch('/api/graph/errors')
   if (!res.ok) throw new Error(`Failed to fetch errors: ${res.statusText}`)
-  const json = await res.json()
-    return Array.isArray(json.data) ? json.data.filter(isParseError) : []
+  const json: unknown = await res.json()
+  const data = unwrapData(json)
+  return Array.isArray(data) ? data.filter(isParseError) : []
 }
 
 const SEVERITY_EMOJI: Record<string, string> = {

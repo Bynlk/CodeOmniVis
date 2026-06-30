@@ -9,7 +9,7 @@
 - [ ] A5 parser 改用 typed factory
 - [ ] A6 storage 序列化/反序列化 typed
 - [x] A7 MCP 去除 metadataValue
-- [ ] A8 UI API 边界 typed parse
+- [x] A8 UI API 边界 typed parse
 - [ ] A9 启用 type-aware ESLint
 - [ ] A-MERGE 合并回 master，冻结类型基线
 

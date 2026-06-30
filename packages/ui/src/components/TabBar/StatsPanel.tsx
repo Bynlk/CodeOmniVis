@@ -33,14 +33,22 @@ function isStatsResponse(value: unknown): value is StatsResponse {
     && isNumberRecord(value.edgeTypeCounts)
 }
 
+function unwrapData(value: unknown): unknown {
+  if (typeof value === 'object' && value !== null && 'data' in value) {
+    return value.data
+  }
+  return undefined
+}
+
 async function fetchStats(): Promise<StatsResponse> {
   const res = await fetch('/api/graph/stats')
   if (!res.ok) throw new Error(`Failed to fetch stats: ${res.statusText}`)
-  const json = await res.json()
-    if (!isStatsResponse(json.data)) {
-      throw new Error('Invalid stats response')
-    }
-    return json.data
+  const json: unknown = await res.json()
+  const data = unwrapData(json)
+  if (!isStatsResponse(data)) {
+    throw new Error('Invalid stats response')
+  }
+  return data
 }
 
 export function StatsPanel() {

@@ -130,3 +130,20 @@
   - Deleted metadataValue(node, key): unknown (Reflect.get string-key access).
   - Added getRouteDisplay()/getNodeRoute() using isNodeOfType narrowing for api_route/express_route/trpc_procedure/tsrpc_api/tsrpc_service/page.
   - list_db_models now reads tableName/fieldCount via db_model narrowing, no string keys.
+
+## Task 8 - Type UI API boundaries
+
+- Commit: (this commit)
+- Gates:
+  - ui tsc -p packages/ui/tsconfig.json --noEmit: pass
+  - vitest __tests__/utils/graphTransform.test.ts: pass (6/6)
+  - git diff --check: pass
+- Metrics:
+  - any: 0
+  - unknown: 40
+  - assertions: 0
+  - doubleCasts: 0
+- Notes:
+  - StatsPanel/IssuesPanel: await res.json() typed as unknown, added unwrapData() (in-narrowing, no cast) feeding isStatsResponse()/isParseError() guards.
+  - useGraphFilter: cytoscape node.data()/edge.data() reads annotated unknown, then narrowed by isNodeType/isEdgeType/isEdgeConfidence.
+  - cytoscapeConfig satisfies expressions left intact.

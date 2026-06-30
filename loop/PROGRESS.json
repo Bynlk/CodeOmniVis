@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T03:24:00+08:00",
+  "updatedAt": "2026-06-30T09:52:00+08:00",
   "currentStage": "Stage A",
-  "currentTask": "A8",
+  "currentTask": "A9",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -138,7 +138,7 @@
       "stage": "Stage A",
       "name": "MCP 去 metadataValue",
       "status": "done",
-      "commit": "PENDING",
+      "commit": "cd380bd",
       "gates": {
         "mcpTypecheck": "pass",
         "mcpTests": "pass (6/6)",
@@ -154,10 +154,19 @@
       "id": "A8",
       "stage": "Stage A",
       "name": "UI 边界 typed",
-      "status": "pending",
-      "commit": null,
-      "gates": {},
-      "metrics": {}
+      "status": "done",
+      "commit": "PENDING",
+      "gates": {
+        "uiTypecheck": "pass",
+        "uiTests": "pass (6/6)",
+        "astScan": "any=0 assertions=0 doubleCasts=0 unknown=40(boundary)",
+        "gitDiffCheck": "pass"
+      },
+      "metrics": {
+        "httpBoundary": "StatsPanel/IssuesPanel fetch json typed as unknown, unwrapData() + isStatsResponse/isParseError guards, no string-key unsafe access",
+        "cytoscapeBoundary": "useGraphFilter node.data()/edge.data() reads annotated unknown then narrowed via isNodeType/isEdgeType/isEdgeConfidence",
+        "satisfies": "cytoscapeConfig satisfies untouched"
+      }
     },
     {
       "id": "A9",

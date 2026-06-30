@@ -49,7 +49,7 @@ export function useGraphFilter() {
     cy.batch(() => {
       // 节点类型过滤
       cy.nodes().forEach(node => {
-          const rawType = node.data('type')
+          const rawType: unknown = node.data('type')
           const type = typeof rawType === 'string' && isNodeType(rawType) ? rawType : undefined
         const hasEdges = node.degree() > 0
         const isIsolated = !hasEdges
@@ -62,9 +62,9 @@ export function useGraphFilter() {
 
       // 边类型 + 置信度过滤
       cy.edges().forEach(edge => {
-          const rawEdgeType = edge.data('type')
+          const rawEdgeType: unknown = edge.data('type')
           const edgeType = typeof rawEdgeType === 'string' && isEdgeType(rawEdgeType) ? rawEdgeType : undefined
-          const rawConfidence = edge.data('confidence')
+          const rawConfidence: unknown = edge.data('confidence')
           const confidence = isEdgeConfidence(rawConfidence) ? rawConfidence : undefined
 
           const typeVisible = edgeType ? state.edgeTypeFilter.has(edgeType) : false
