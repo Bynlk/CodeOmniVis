@@ -137,6 +137,11 @@ export async function runAnalysis(options: RunAnalysisOptions): Promise<RunAnaly
   const graph = builder.loadGraph()
   const crossLayerResult = await linker.link(graph)
 
+  // 先落库 synthetic 节点,再写跨层边,避免 dangling edge(E-08)
+  if (crossLayerResult.nodes.length > 0) {
+    db.upsertNodes(crossLayerResult.nodes)
+    nodesCreated += crossLayerResult.nodes.length
+  }
   if (crossLayerResult.edges.length > 0) {
     db.upsertEdges(crossLayerResult.edges)
     edgesCreated += crossLayerResult.edges.length

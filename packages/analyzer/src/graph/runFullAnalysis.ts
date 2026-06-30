@@ -7,7 +7,7 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import type { DatabaseType, FrameworkType, OmniNode, ProjectMeta } from '@codeomnivis/shared'
+import type { DatabaseType, FrameworkType, ProjectMeta } from '@codeomnivis/shared'
 import { readDependencies } from '@codeomnivis/shared'
 import { OmniDatabase } from '../storage/db'
 import { GraphBuilder } from './builder'
@@ -25,10 +25,6 @@ import { NestjsControllerParser } from '../parsers/nestjs/nestjsControllerParser
 import { NestjsModuleParser } from '../parsers/nestjs/nestjsModuleParser'
 import { NestjsServiceParser } from '../parsers/nestjs/nestjsServiceParser'
 import { DrizzleParser } from '../parsers/drizzle'
-
-function isSyntheticNode(node: OmniNode): boolean {
-  return 'isSynthetic' in node.metadata && node.metadata.isSynthetic === true
-}
 
 export interface FullAnalysisOptions {
   projectRoot: string
@@ -279,15 +275,14 @@ export async function runFullAnalysis(options: FullAnalysisOptions): Promise<Ful
     const graph = builder.loadGraph()
     const crossLayerResult = await linker.link(graph)
 
+    // 先落库 synthetic 节点,再写跨层边,避免 dangling edge(E-08)
+    if (crossLayerResult.nodes.length > 0) {
+      db.upsertNodes(crossLayerResult.nodes)
+      nodesCreated += crossLayerResult.nodes.length
+    }
     if (crossLayerResult.edges.length > 0) {
       db.upsertEdges(crossLayerResult.edges)
       edgesCreated += crossLayerResult.edges.length
-    }
-
-    // 将跨层连线产生的 synthetic 节点写入 DB
-      const syntheticNodes = graph.nodes.filter(isSyntheticNode)
-    if (syntheticNodes.length > 0) {
-      db.upsertNodes(syntheticNodes)
     }
   }
 

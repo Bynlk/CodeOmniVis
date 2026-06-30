@@ -80,6 +80,8 @@ function routeFromMetadata(node: OmniNode): string | undefined {
 
 export interface CrossLayerResult {
   edges: OmniEdge[]
+  /** 跨层连线过程中新建的 synthetic 节点(handler/service),需先于边落库以避免 dangling edge。 */
+  nodes: OmniNode[]
   stats: {
     callsApiEdges: number
     handlesEdges: number
@@ -112,6 +114,8 @@ export class CrossLayerLinker {
   async link(graph: OmniGraph): Promise<CrossLayerResult> {
     // 预构建 Map 索引，避免 O(n) 查找
     const nodeMap = new Map(graph.nodes.map(n => [n.id, n]))
+    // 记录连线前的节点 id 集合,用于在末尾识别本次新建的 synthetic 节点
+    const preExistingNodeIds = new Set(graph.nodes.map(n => n.id))
     const edges: OmniEdge[] = []
 
     // 1. 前端 API 调用 → 后端路由
@@ -134,8 +138,12 @@ export class CrossLayerLinker {
     const kotlinEdges = this.linkKotlinCrossLayer(graph, nodeMap)
     edges.push(...kotlinEdges)
 
+    // 收集本次新建的 synthetic 节点(连线方法将其 push 进 graph.nodes)
+    const newNodes = graph.nodes.filter(n => !preExistingNodeIds.has(n.id))
+
     return {
       edges,
+      nodes: newNodes,
       stats: {
         callsApiEdges: callsApiEdges.length,
         handlesEdges: handlesEdges.length,
