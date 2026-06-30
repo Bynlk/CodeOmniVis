@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T17:11:00+08:00",
+  "updatedAt": "2026-06-30T17:24:53",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H10",
+  "currentTask": "H12",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -702,6 +702,31 @@
       "metrics": {
         "change": "import { WebSocket, WebSocketServer } from 'ws'; both broadcast loops now use client.readyState === WebSocket.OPEN (no bare 1)",
         "test": "new ws/broadcast.test.ts asserts an OPEN client receives the graph_updated payload"
+      }
+    },
+    {
+      "id": "H11",
+      "code": "DUP-03",
+      "title": "extract shared <AiConfigForm/>, dedup AI config form JSX",
+      "status": "done",
+      "commit": "bbd99f6",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "ui 36 (+7)",
+        "lint": "0 error (2 pre-existing warnings unchanged)",
+        "build": "success",
+        "ast": {
+          "any": 0,
+          "unknown": 83,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
+      },
+      "metrics": {
+        "change": "new packages/ui/src/components/AiConfigForm.tsx controlled component consuming useAiConfig+setAiConfig; AiPanel & SettingsDrawer reuse it, duplicate form markup + local draft state removed; no TailwindCSS introduced",
+        "test": "AiConfigForm.test.tsx renders baseUrl/apiKey/model/rememberKey/save (+clear) and pure prepareAiSave validates SSRF/https + silent-on-incomplete"
       }
     }
   ]
