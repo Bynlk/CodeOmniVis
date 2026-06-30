@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-06-30T16:27:10+08:00",
+  "updatedAt": "2026-06-30T16:33:32+08:00",
   "currentStage": "HEALTH-FIX",
-  "currentTask": "H1",
+  "currentTask": "H2",
   "baseline": {
     "any": 0,
     "unknown": 38,
@@ -497,6 +497,27 @@
       "tests": {
         "serverBefore": 37,
         "serverAfter": 39
+      }
+    },
+    {
+      "id": "H2",
+      "code": "DUP-01",
+      "title": "single-source createDefaultParsers factory",
+      "status": "done",
+      "commit": "1a38b37",
+      "gates": {
+        "diffCheck": "clean",
+        "typecheck": "0 error",
+        "test": "analyzer 181 (+3), cli 13",
+        "lint": "0 error (analyzer 33 warn, cli 3 warn, no increase)",
+        "build": "success",
+        "ast": {
+          "any": 0,
+          "unknown": 81,
+          "assertions": 0,
+          "doubleCasts": 0,
+          "recordUnknown": 1
+        }
       }
     }
   ]
