@@ -108,7 +108,7 @@ vitest 依赖 `TMPDIR` 指向可写目录(sql.js / 临时 DB)。CI 或本地若 
 | F4 | S-08 | Med | cli/analyzer | `8edc180` | collectScanDirs 默认只扫 projectRoot 内,跨目录须显式配置 |
 | F5 | S-06 | Med | shared/server | `a3e3e2d` | DNS rebinding 防护:fetch 前解析主机名,拒私网/元数据/环回 |
 | F6 | E-08 | Med | analyzer | `0ad80fe` | 跨层连线返回 synthetic 节点并先 upsert,消除 dangling edge |
-| F7 | E-07 | Med | server | `b2bca77` | 区分手动刷新与自动重试;手动失败保持 stale 并 rethrow(500) |
+| F7 | E-07 | Med | server | `93d1e54` | 区分手动刷新与自动重试;手动失败保持 stale 并 rethrow(500);`b2bca77` 为 ledger-only 推进提交 |
 | F8 | E-10 | Med | shared/analyzer/cli | `1334aa5` | 默认解析器纳入 Kotlin/Spring/Ktor/Room/Exposed,Gradle 探测 |
 | F9 | BOUND-05 | Med | analyzer | `073a737` | findParentApiRoutes visited 阻断环;MAX_PARENT_ROUTE_DEPTH=64 |
 | F10 | LEAK-04 | Med | ui | `5930b7a` | WebSocketController 状态机:dispose 先禁重连再 close,防卸载后重连 |
@@ -122,9 +122,12 @@ vitest 依赖 `TMPDIR` 指向可写目录(sql.js / 临时 DB)。CI 或本地若 
 | F18 | DUP-04 | Low | cli | `b58a16c` | check 命令复用 collectScanDirs,消除硬编码扫描目录与 cwd 漂移 |
 | F19 | TEST-BUG-04 | Low | mcp | `149b146` | tools.test 改为断言真实导出的 MCP handler,而非简化复刻逻辑 |
 
-**最终全量回归(36 commits ahead of master,ff-only 合并)**:
+**最终全量回归(37 commits ahead of `578d7fe`,ff-only 合并;实测命令:`git rev-list --count 578d7fe..HEAD`,base..HEAD=`578d7fe..ea25945`)**:
 - 测试:439 passed(shared 88 / ui 53 / analyzer 197 / mcp 19 / cli 18 / server 64)
-- 类型检查 / lint / build:12/12 任务全绿(lint 仅 B-2 的 `MODULE_TYPELESS_PACKAGE_JSON` 告警)
+- 类型检查:`pnpm turbo typecheck --force` → `Tasks: 11 successful, 11 total`
+- lint:`pnpm turbo lint --force` → `Tasks: 6 successful, 6 total`;6 条均为允许的 B-2 `MODULE_TYPELESS_PACKAGE_JSON` 告警,exit 0
+- build:`pnpm turbo build --force` → `Tasks: 6 successful, 6 total`
+- 计数说明:turbo 仅为定义了该 script 的包调度任务,故计数不等于 6 个包全量
 - AST 门禁:`any=0 unknown=92 assertions=0 doubleCasts=0 recordUnknown=1`(`unknown` 全为运行时边界,见 B-4)
 
 **刻意保留的债务(本轮不修)**:

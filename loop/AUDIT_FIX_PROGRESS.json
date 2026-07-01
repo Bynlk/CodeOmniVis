@@ -139,7 +139,8 @@
         "server"
       ],
       "status": "done",
-      "commit": "b2bca77",
+      "commit": "93d1e54",
+      "ledgerCommit": "b2bca77",
       "summary": "区分手动刷新与 watcher 自动重试:refresh() 标记 manual=true,runAnalysisCycle 失败时保持 stale(不再误报 fresh)并向手动调用方 rethrow,使 POST /api/analyze 返回 500 而非 success:true;自动触发仍吞错重试。翻转原误报 success 测试 + 新增 watcher 失败用例。",
       "gates": {
         "diffcheck": "clean",
@@ -392,9 +393,10 @@
       "cli": 18,
       "server": 64
     },
-    "typecheck": "12/12 pass",
-    "lint": "12/12 0err (B-2 warn only)",
-    "build": "12/12 success",
+    "typecheck": "11/11 pass (pnpm turbo typecheck --force: Tasks: 11 successful, 11 total)",
+    "lint": "6/6 0err; 6 allowed MODULE_TYPELESS_PACKAGE_JSON warnings, exit 0 (pnpm turbo lint --force: Tasks: 6 successful, 6 total)",
+    "build": "6/6 success (pnpm turbo build --force: Tasks: 6 successful, 6 total)",
+    "turboTaskCountNote": "turbo only schedules packages defining the script, so typecheck/lint/build task counts are not equal to the six-package total",
     "diffcheck": "clean",
     "astscan": {
       "any": 0,
@@ -411,7 +413,10 @@
   "mergePlan": {
     "into": "master",
     "mode": "ff-only",
-    "commitsAhead": 36,
+    "commitsAhead": 37,
+    "commitsAheadMeasuredBy": "git rev-list --count 578d7fe..HEAD",
+    "baseShort": "578d7fe",
+    "headShort": "ea25945",
     "ffPossible": true
   }
 }
