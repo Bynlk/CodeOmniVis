@@ -1,13 +1,9 @@
 import { useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isJsonObject, type ChatMessage } from '@codeomnivis/shared'
+import { readString } from '../../utils/readString'
 import { useAiConfig } from '../../hooks/useAiConfig'
 import { AiConfigForm } from '../AiConfigForm'
-
-function readString(obj: unknown, key: string): string | undefined {
-  if (isJsonObject(obj) && typeof obj[key] === 'string') return obj[key]
-  return undefined
-}
 
 function readNumber(obj: unknown, key: string): number | undefined {
   if (isJsonObject(obj) && typeof obj[key] === 'number') return obj[key]

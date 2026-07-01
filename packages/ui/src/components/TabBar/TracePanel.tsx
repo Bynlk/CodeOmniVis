@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isJsonObject, type ChatMessage, type TraceResult } from '@codeomnivis/shared'
+import { readString } from '../../utils/readString'
 import { useSelectedNode } from '../../lib/selectionContext'
 import { useTrace } from '../../hooks/useTrace'
 import { useCytoscapeInstance } from '../../lib/cytoscapeContext'
@@ -9,11 +10,6 @@ import { TraceStepCard } from './TraceStepCard'
 import { TraceRunner } from './TraceRunner'
 
 const STATION_INTERVAL_MS = 1000
-
-function readString(obj: unknown, key: string): string | undefined {
-  if (isJsonObject(obj) && typeof obj[key] === 'string') return obj[key]
-  return undefined
-}
 
 /** 把链路结果拼成可读的链路说明请求(供 AI 富化)。 */
 function buildLinkPrompt(trace: TraceResult): string {

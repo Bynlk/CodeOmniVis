@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { isJsonObject } from '@codeomnivis/shared'
+import { readString } from '../utils/readString'
 import { useAiConfig } from '../hooks/useAiConfig'
 import { AiConfigForm } from './AiConfigForm'
 import { PROMOTION_TIERS, LICENSE_INFO } from '../lib/promotion'
@@ -16,11 +17,6 @@ const TIER_ACCENT: Record<string, string> = {
   primary: 'border-l-4 border-primary-500 bg-primary-600/10',
   secondary: 'border-l-4 border-slate-500 bg-slate-700/30',
   tertiary: 'border-l-4 border-slate-600 bg-slate-800/40',
-}
-
-function readString(obj: unknown, key: string): string | undefined {
-  if (isJsonObject(obj) && typeof obj[key] === 'string') return obj[key]
-  return undefined
 }
 
 /** 设置抽屉:从右侧滑出,四组(AI / 项目 / 显示 / 关于)。 */
