@@ -12,8 +12,8 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
+import { isSyntheticNode } from '../utils/isSyntheticNode'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
-import type { OmniNode } from '@codeomnivis/shared'
 import { OmniDatabase, GraphBuilder, CrossLayerLinker, NPlusOneDetector, AuthDetector, RSCBoundaryDetector, createDefaultParsers } from '@codeomnivis/analyzer'
 
 interface AnalyzeOptions {
@@ -32,10 +32,6 @@ export interface AnalyzeDeps {
 
 const defaultAnalyzeDeps: AnalyzeDeps = {
   openDatabase: (dbPath: string): OmniDatabase => new OmniDatabase(dbPath),
-}
-
-function isSyntheticNode(node: OmniNode): boolean {
-  return 'isSynthetic' in node.metadata && node.metadata.isSynthetic === true
 }
 
 /**

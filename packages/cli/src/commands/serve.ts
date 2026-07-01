@@ -13,9 +13,9 @@ import * as path from 'path'
 import { fileURLToPath } from 'url'
 import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoDetect'
 import { scanDirectory } from '../utils/scanDirectory'
+import { isSyntheticNode } from '../utils/isSyntheticNode'
 import { createOmniServer, isLoopbackHost } from '@codeomnivis/server'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
-import type { OmniNode } from '@codeomnivis/shared'
 import { GraphBuilder, createDefaultParsers, CrossLayerLinker } from '@codeomnivis/analyzer'
 
 /**
@@ -36,10 +36,6 @@ interface ServeOptions {
   project?: string
   open: boolean
   token?: string
-}
-
-function isSyntheticNode(node: OmniNode): boolean {
-  return 'isSynthetic' in node.metadata && node.metadata.isSynthetic === true
 }
 
 export function serveCommand(program: Command): void {
