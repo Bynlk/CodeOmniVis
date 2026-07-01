@@ -36,8 +36,6 @@
     "@codeomnivis/shared": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
     "cytoscape": "^3.28.0",
-    "cytoscape-dagre": "^2.5.0",
-    "cytoscape-fcose": "^2.2.0",
     "i18next": "^26.3.1",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
