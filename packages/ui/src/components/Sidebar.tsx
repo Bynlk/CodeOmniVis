@@ -13,6 +13,9 @@ interface SidebarProps {
 
 type NodesByType = Partial<Record<NodeType, OmniNode[]>>
 
+/** DUP-03: 此处使用 value in NODE_COLORS 而非 shared 的 isNodeType()。
+ *  NODE_COLORS 已导入用于节点着色，直接复用其键集避免了额外的 Set 构造开销。
+ *  两者语义等价（NODE_COLORS 的键即为所有合法 NodeType）。 */
 function isNodeType(value: string): value is NodeType {
   return value in NODE_COLORS
 }

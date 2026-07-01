@@ -18,7 +18,7 @@ import type {
   OmniEdge,
   EdgeConfidence,
 } from '@codeomnivis/shared'
-import { isJsonObject, createTypedNode, createTypedEdge } from '@codeomnivis/shared'
+import { isJsonObject, createTypedNode, createTypedEdge, isNodeType } from '@codeomnivis/shared'
 
 /** 节点公共字段（除 type/metadata 外）。 */
 export interface NodeBase {
@@ -237,16 +237,6 @@ const nodeParsers: { [T in NodeType]: (o: JsonObject) => NodeTypeMetadataMap[T] 
     framework: literal(o, 'framework', 'spring', 'ktor'),
     annotations: strArr(o, 'annotations'),
   }),
-}
-
-const NODE_TYPES: readonly NodeType[] = [
-  'page', 'component', 'api_route', 'trpc_procedure', 'tsrpc_service', 'tsrpc_api',
-  'tsrpc_msg', 'express_route', 'handler', 'service', 'db_model', 'module',
-  'kotlin_class', 'kotlin_interface', 'kotlin_object', 'kotlin_function', 'kotlin_route',
-]
-const NODE_TYPE_SET = new Set<string>(NODE_TYPES)
-function isNodeType(v: string): v is NodeType {
-  return NODE_TYPE_SET.has(v)
 }
 
 function parseDbFields(v: JsonValue | undefined): NodeTypeMetadataMap['db_model']['fields'] {

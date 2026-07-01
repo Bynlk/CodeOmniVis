@@ -9,7 +9,7 @@
 import initSqlJs, { type Database as SqlJsDatabase, type SqlValue } from 'sql.js'
 import * as fs from 'fs'
 import type { OmniNode, OmniEdge, OmniGraph, NodeType, EdgeType, JsonObject } from '@codeomnivis/shared'
-import { jsonObjectOrEmpty } from '@codeomnivis/shared'
+import { jsonObjectOrEmpty, isNodeType } from '@codeomnivis/shared'
 import { parseStoredNode, parseStoredEdge } from './metadataGuards'
 import { CREATE_TABLES_SQL, SQL } from './schema'
 
@@ -40,26 +40,6 @@ export interface GraphSubtree {
   children: GraphSubtree[]
 }
 
-const NODE_TYPES = new Set<string>([
-  'page',
-  'component',
-  'api_route',
-  'trpc_procedure',
-  'tsrpc_service',
-  'tsrpc_api',
-  'tsrpc_msg',
-  'express_route',
-  'handler',
-  'service',
-  'db_model',
-  'module',
-  'kotlin_class',
-  'kotlin_interface',
-  'kotlin_object',
-  'kotlin_function',
-  'kotlin_route',
-])
-
 const EDGE_TYPES = new Set<string>([
   'renders',
   'navigates_to',
@@ -82,10 +62,6 @@ const EDGE_CONFIDENCES = new Set<string>(['certain', 'inferred'])
 /** BOUND-04:getSubtree 递归深度硬上限,防止超大 depth / 环形图导致 DoS。 */
 const GETSUBTREE_MAX_DEPTH = 1000
 const DB_ERROR_SEVERITIES = new Set<string>(['error', 'warning', 'info'])
-
-function isNodeType(value: string): value is NodeType {
-  return NODE_TYPES.has(value)
-}
 
 function isEdgeType(value: string): value is EdgeType {
   return EDGE_TYPES.has(value)

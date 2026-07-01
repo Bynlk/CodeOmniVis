@@ -6,13 +6,8 @@
  */
 
 import type { NodeType } from '@codeomnivis/shared'
-import { NODE_EMOJI, NODE_COLORS, NODE_TYPE_LIST } from '../lib/nodeConfig'
-
-const NODE_TYPES = new Set<string>(NODE_TYPE_LIST)
-
-function isNodeType(value: string): value is NodeType {
-  return NODE_TYPES.has(value)
-}
+import { isNodeType } from '@codeomnivis/shared'
+import { NODE_EMOJI, NODE_COLORS } from '../lib/nodeConfig'
 
 function getNodeType(node: cytoscape.NodeSingular): NodeType | undefined {
   const type: unknown = node.data('type')
