@@ -1,6 +1,6 @@
 # Skill: SQLite Storage
 
-> CodeOmniVis 数据存储层开发指南。基于 better-sqlite3。
+> CodeOmniVis 数据存储层开发指南。基于 sql.js（WASM）。
 
 ## 适用场景
 
@@ -12,24 +12,26 @@
 
 ## 技术栈
 
-- **better-sqlite3** — 同步 SQLite 绑定，零依赖
-- **WAL 模式** — 提高并发读性能
+- **sql.js** — SQLite 的 WASM 编译版本，零原生依赖
+- 同步 API（WASM 在内存中运行）
 
 ## 数据库初始化
 
 ```typescript
-import Database from 'better-sqlite3'
-import { SCHEMA_SQL } from './schema'
+import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js'
 
-export function createDatabase(dbPath: string): Database.Database {
-  const db = new Database(dbPath)
+export async function createDatabase(dbPath: string): Promise<SqlJsDatabase> {
+  const SQL = await initSqlJs()
+  const db = new SQL.Database()
 
-  // WAL 模式（提高并发性能）
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
+  // 如果指定了文件路径，从磁盘加载已有数据
+  if (fs.existsSync(dbPath)) {
+    const buffer = fs.readFileSync(dbPath)
+    db = new SQL.Database(buffer)
+  }
 
   // 建表
-  db.exec(SCHEMA_SQL)
+  db.run(CREATE_TABLES_SQL)
 
   return db
 }
@@ -37,138 +39,54 @@ export function createDatabase(dbPath: string): Database.Database {
 
 ## Schema 定义
 
-```typescript
-// storage/schema.ts
-export const SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS nodes (
-  id          TEXT PRIMARY KEY,
-  type        TEXT NOT NULL,
-  name        TEXT NOT NULL,
-  file_path   TEXT NOT NULL,
-  line        INTEGER NOT NULL,
-  col         INTEGER NOT NULL,
-  metadata    TEXT NOT NULL DEFAULT '{}',
-  updated_at  INTEGER NOT NULL
-);
+参考 `packages/analyzer/src/storage/schema.ts` 中的 `CREATE_TABLES_SQL`，包含：
+- `nodes` 表（id, type, name, file_path, line, col, metadata, updated_at）
+- `edges` 表（id, source, target, type, confidence, metadata, updated_at）
+- `analysis_meta` 表（key, value）
+- 索引：nodes(type), nodes(file_path), edges(source), edges(target), edges(type)
 
-CREATE TABLE IF NOT EXISTS edges (
-  id          TEXT PRIMARY KEY,
-  source      TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-  target      TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-  type        TEXT NOT NULL,
-  confidence  TEXT NOT NULL DEFAULT 'certain',
-  metadata    TEXT NOT NULL DEFAULT '{}',
-  updated_at  INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS analysis_meta (
-  key         TEXT PRIMARY KEY,
-  value       TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_nodes_type     ON nodes(type);
-CREATE INDEX IF NOT EXISTS idx_nodes_file     ON nodes(file_path);
-CREATE INDEX IF NOT EXISTS idx_edges_source   ON edges(source);
-CREATE INDEX IF NOT EXISTS idx_edges_target   ON edges(target);
-CREATE INDEX IF NOT EXISTS idx_edges_type     ON edges(type);
-`
-```
-
-## 批量插入（必须用事务）
+## 批量插入
 
 ```typescript
-export function insertGraph(db: Database.Database, nodes: OmniNode[], edges: OmniEdge[]) {
-  const insertNode = db.prepare(`
-    INSERT OR REPLACE INTO nodes (id, type, name, file_path, line, col, metadata, updated_at)
-    VALUES (@id, @type, @name, @filePath, @line, @column, @metadata, @updatedAt)
-  `)
-
-  const insertEdge = db.prepare(`
-    INSERT OR REPLACE INTO edges (id, source, target, type, confidence, metadata, updated_at)
-    VALUES (@id, @source, @target, @type, @confidence, @metadata, @updatedAt)
-  `)
-
+function insertGraph(db: SqlJsDatabase, nodes: OmniNode[], edges: OmniEdge[]) {
   const now = Date.now()
-
-  // ✅ 正确：事务批量插入
-  const insertAll = db.transaction(() => {
+  db.run('BEGIN TRANSACTION')
+  try {
     for (const node of nodes) {
-      insertNode.run({
-        ...node,
-        metadata: JSON.stringify(node.metadata),
-        updatedAt: now,
-      })
+      db.run(
+        'INSERT OR REPLACE INTO nodes (id, type, name, file_path, line, col, metadata, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [node.id, node.type, node.name, node.filePath, node.line, node.column, JSON.stringify(node.metadata), now]
+      )
     }
     for (const edge of edges) {
-      insertEdge.run({
-        ...edge,
-        metadata: JSON.stringify(edge.metadata),
-        updatedAt: now,
-      })
+      db.run(
+        'INSERT OR REPLACE INTO edges (id, source, target, type, confidence, metadata, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [edge.id, edge.source, edge.target, edge.type, edge.confidence, JSON.stringify(edge.metadata), now]
+      )
     }
-  })
-
-  insertAll()  // 执行事务
+    db.run('COMMIT')
+  } catch (e) {
+    db.run('ROLLBACK')
+    throw e
+  }
 }
 ```
 
-## 常用查询
+## 持久化
+
+sql.js 在内存中运行，需要显式写入磁盘：
 
 ```typescript
-// 获取所有节点
-function getAllNodes(db: Database.Database): OmniNode[] {
-  return db.prepare('SELECT * FROM nodes').all().map(rowToNode)
-}
-
-// 按类型过滤
-function getNodesByType(db: Database.Database, type: NodeType): OmniNode[] {
-  return db.prepare('SELECT * FROM nodes WHERE type = ?').all(type).map(rowToNode)
-}
-
-// 获取节点的出边
-function getOutEdges(db: Database.Database, nodeId: string): OmniEdge[] {
-  return db.prepare('SELECT * FROM edges WHERE source = ?').all(nodeId).map(rowToEdge)
-}
-
-// 获取节点的入边
-function getInEdges(db: Database.Database, nodeId: string): OmniEdge[] {
-  return db.prepare('SELECT * FROM edges WHERE target = ?').all(nodeId).map(rowToEdge)
-}
-
-// 按文件路径删除（增量更新时用）
-function deleteByFile(db: Database.Database, filePath: string) {
-  db.prepare('DELETE FROM nodes WHERE file_path = ?').run(filePath)
-  // 外键 CASCADE 会自动删除相关边
-}
-
-// 行转换
-function rowToNode(row: any): OmniNode {
-  return {
-    id: row.id,
-    type: row.type,
-    name: row.name,
-    filePath: row.file_path,
-    line: row.line,
-    column: row.col,
-    metadata: JSON.parse(row.metadata),
-  }
-}
-
-function rowToEdge(row: any): OmniEdge {
-  return {
-    id: row.id,
-    source: row.source,
-    target: row.target,
-    type: row.type,
-    confidence: row.confidence,
-    metadata: JSON.parse(row.metadata),
-  }
+function saveToDisk(db: SqlJsDatabase, dbPath: string) {
+  const data = db.export()
+  const buffer = Buffer.from(data)
+  fs.writeFileSync(dbPath, buffer)
 }
 ```
 
 ## 性能要点
 
-- **必须用事务**批量插入/更新，不要逐条 INSERT
-- **WAL 模式**允许并发读，适合 server 场景
-- **索引**已建在 type、file_path、source、target 上
-- **JSON 字段**用 `json_extract()` 查询：`WHERE json_extract(metadata, '$.route') = '/api/booking'`
+- sql.js 是 WASM，初始化有一次性开销（~200ms），应复用实例
+- 必须用事务批量插入/更新，不要逐条 INSERT
+- 索引已建在 type、file_path、source、target 上
+- 数据库句柄使用后必须 close()，避免内存泄漏

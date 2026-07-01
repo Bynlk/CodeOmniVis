@@ -20,8 +20,9 @@ metadata:
 3. **MVP 范围**：全部解析器（含 Express/TypeORM）
    - 用户选择保留，确保覆盖面
 
-4. **存储**：better-sqlite3
-   - 零配置、零依赖、支持增量更新
+4. **存储**：sql.js（WASM）
+   - 零配置、零原生依赖、浏览器兼容
+   - 2026-06-30 从 better-sqlite3 迁移至 sql.js
 
 5. **可视化**：Cytoscape.js + dagre 布局
    - 专为大图设计，支持层次聚合、高性能渲染
