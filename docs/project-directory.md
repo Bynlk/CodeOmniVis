@@ -11,16 +11,18 @@
 codeomnivis/
 ├── .github/
 │   ├── workflows/
-│   │   ├── ci.yml                    # GitHub Actions CI
-│   │   └── release.yml               # npm 发布流程
+│   │   └── ci.yml                    # GitHub Actions CI
 │   ├── ISSUE_TEMPLATE/
 │   │   ├── bug_report.md
 │   │   └── feature_request.md
 │   └── PULL_REQUEST_TEMPLATE.md
 │
 ├── docs/
-│   ├── specs/                        # 设计文档
-│   │   └── 2026-06-06-codeomnivis-design.md
+│   ├── superpowers/                  # AI 辅助文档
+│   │   ├── specs/
+│   │   │   └── 2026-06-06-codeomnivis-design.md
+│   │   ├── plans/
+│   │   └── progress/
 │   ├── plans/                        # 开发计划
 │   │   └── development-plan.md
 │   ├── rules/                        # AI 约束规则
@@ -56,7 +58,6 @@ codeomnivis/
 │   ├── analyzer/                     # 解析引擎
 │   │   ├── src/
 │   │   │   ├── index.ts              # 主入口，编排流水线 # MVP
-│   │   │   ├── pipeline.ts           # 解析流水线编排 # MVP
 │   │   │   │
 │   │   │   ├── parsers/              # 各框架解析器
 │   │   │   │   ├── prisma.ts         # Prisma schema 解析 # MVP
@@ -65,25 +66,35 @@ codeomnivis/
 │   │   │   │   ├── nextjsPages.ts    # Next.js Pages Router
 │   │   │   │   ├── express.ts        # Express 路由解析
 │   │   │   │   ├── trpc.ts           # tRPC router 解析 # MVP
+│   │   │   │   ├── tsrpc.ts          # TSRPC 协议解析
+│   │   │   │   ├── drizzle.ts        # Drizzle ORM 解析
 │   │   │   │   ├── reactComponent.ts # React 组件解析 # MVP
 │   │   │   │   ├── apiCalls.ts       # 前端 API 调用识别 # MVP
+│   │   │   │   ├── nestjs/           # NestJS 解析器
+│   │   │   │   ├── kotlin/           # Kotlin 解析器(Spring/Ktor/Room/Exposed)
 │   │   │   │   └── index.ts          # 解析器注册表
 │   │   │   │
 │   │   │   ├── resolver/             # 跨文件符号追踪
 │   │   │   │   ├── symbolResolver.ts # ts-morph 跨文件追踪 # MVP
 │   │   │   │   ├── pathAlias.ts      # tsconfig paths 解析 # MVP
-│   │   │   │   ├── monorepo.ts       # Turborepo/pnpm 边界
+│   │   │   │   ├── crossLayer.ts     # 跨层连线
+│   │   │   │   ├── dataFlowTracer.ts # 数据流追踪
+│   │   │   │   ├── authDetector.ts   # 认证检测
+│   │   │   │   ├── rscBoundaryDetector.ts
+│   │   │   │   ├── nPlusOneDetector.ts
 │   │   │   │   └── index.ts
 │   │   │   │
 │   │   │   ├── graph/                # 图构建
 │   │   │   │   ├── builder.ts        # 节点/边构建 + 去重 # MVP
-│   │   │   │   ├── aggregator.ts     # 模块聚合
+│   │   │   │   ├── runFullAnalysis.ts # 全量分析入口
+│   │   │   │   ├── runAnalysis.ts    # 增量分析入口
 │   │   │   │   ├── consistency.ts    # 一致性检测
 │   │   │   │   └── index.ts
 │   │   │   │
 │   │   │   ├── storage/              # 数据存储
-│   │   │   │   ├── db.ts             # better-sqlite3 封装 # MVP
+│   │   │   │   ├── db.ts             # sql.js 封装 # MVP
 │   │   │   │   ├── schema.ts         # SQL 建表语句 # MVP
+│   │   │   │   ├── metadataGuards.ts # 存储边界元数据解析
 │   │   │   │   └── index.ts
 │   │   │   │
 │   │   │   ├── classifier.ts         # 文件分类器 # MVP
@@ -108,13 +119,8 @@ codeomnivis/
 │   │   │   ├── index.ts              # Express 服务入口 # MVP
 │   │   │   ├── routes/
 │   │   │   │   ├── graph.ts          # GET /api/graph # MVP
-│   │   │   │   ├── nodes.ts          # GET /api/graph/nodes
-│   │   │   │   ├── edges.ts          # GET /api/graph/edges
-│   │   │   │   ├── nodeDetail.ts     # GET /api/graph/node/:id
-│   │   │   │   ├── issues.ts         # GET /api/issues
-│   │   │   │   ├── stats.ts          # GET /api/stats
-│   │   │   │   └── analyze.ts        # POST /api/analyze
-│   │   │   ├── ws.ts                 # WebSocket 推送
+│   │   │   │   └── index.ts
+│   │   │   ├── pathGuard.ts          # 路径安全校验
 │   │   │   ├── middleware/
 │   │   │   │   ├── cors.ts
 │   │   │   │   └── errorHandler.ts
@@ -176,13 +182,7 @@ codeomnivis/
 │   │
 │   ├── mcp/                          # MCP Server
 │   │   ├── src/
-│   │   │   ├── index.ts              # MCP Server 入口
-│   │   │   ├── tools/
-│   │   │   │   ├── getApiRoutes.ts    # 工具 1
-│   │   │   │   ├── getComponentTree.ts # 工具 2
-│   │   │   │   └── findCallers.ts     # 工具 3
-│   │   │   └── utils/
-│   │   │       └── queryBuilder.ts    # SQLite 查询构建
+│   │   │   ├── index.ts              # MCP Server 入口（含全部工具实现）
 │   │   │
 │   │   ├── package.json
 │   │   └── tsconfig.json
@@ -269,7 +269,6 @@ codeomnivis/
 ### analyzer 包
 | 文件 | 职责 |
 |------|------|
-| `pipeline.ts` | 编排整个分析流程：扫描 → 分类 → 解析 → 追踪 → 构建 → 存储 |
 | `classifier.ts` | 根据文件路径和内容判断文件类型（前端/后端/schema） |
 | `parsers/prisma.ts` | 使用 `@prisma/internals` 解析 schema → `OmniNode[]` + `OmniEdge[]` |
 | `parsers/trpc.ts` | 使用 ts-morph 解析 tRPC router → `OmniNode[]` |
@@ -279,16 +278,14 @@ codeomnivis/
 | `resolver/symbolResolver.ts` | ts-morph 跨文件符号追踪：handler → service → DB |
 | `resolver/pathAlias.ts` | 解析 tsconfig.json 中的 paths 配置 |
 | `graph/builder.ts` | 合并所有 parser 输出，去重，生成最终图 |
-| `graph/aggregator.ts` | 按目录/路由前缀聚合节点为 module |
 | `graph/consistency.ts` | 检测死链 API、未使用路由、method 不匹配 |
-| `storage/db.ts` | better-sqlite3 CRUD 操作封装 |
+| `storage/db.ts` | sql.js CRUD 操作封装 |
 
 ### server 包
 | 文件 | 职责 |
 |------|------|
 | `routes/graph.ts` | 返回完整图数据（nodes + edges） |
-| `routes/issues.ts` | 返回一致性检测结果 |
-| `ws.ts` | WebSocket 连接管理 + 增量更新推送 |
+| `pathGuard.ts` | 路径遍历攻击防护 |
 
 ### ui 包
 | 文件 | 职责 |
@@ -302,9 +299,7 @@ codeomnivis/
 ### mcp 包
 | 文件 | 职责 |
 |------|------|
-| `tools/getApiRoutes.ts` | 查询所有 API 路由及调用链 |
-| `tools/getComponentTree.ts` | 查询指定页面的组件树 |
-| `tools/findCallers.ts` | 查询指定节点的所有调用者 |
+| `index.ts` | MCP Server 入口，包含全部工具实现（getApiRoutes/getComponentTree/findCallers/listDbModels/getDataFlow） |
 
 ---
 
