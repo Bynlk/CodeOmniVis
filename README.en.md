@@ -14,7 +14,7 @@ English | **[中文](README.md)**
 
 Turn your repo into an AI-queryable architecture graph across pages, components, APIs / RPC, and databases.
 
-![CodeOmniVis - Stop Letting AI Guess Your Architecture](docs/assets/readme/og-cover.jpeg)
+![CodeOmniVis - Stop Letting AI Guess Your Architecture](docs/assets/readme/og-cover.png)
 
 </div>
 
@@ -31,7 +31,7 @@ Claude, Cline, Cursor, and similar tools are already good at editing files, runn
 
 CodeOmniVis exists to answer those questions from the codebase itself.
 
-![From repo to graph: one scan, many surfaces](docs/assets/readme/repo-to-graph.jpeg)
+![From repo to graph: one scan, many surfaces](docs/assets/readme/repo-to-graph.png)
 
 ## Get Running In 5 Minutes
 
@@ -64,16 +64,12 @@ Because those tools are optimized to **act**. CodeOmniVis is optimized to **prov
 
 If you already work through MCP, this becomes even more direct: let the AI query the graph before it edits the repo.
 
-![Agents act, CodeOmniVis proves structure](docs/assets/readme/agent-vs-context-layer.jpeg)
-
 ## What You Can Do With It
 
 - Understand an unfamiliar repository before changing it
 - Check callers, impacted pages, and data paths before refactors or migrations
 - Give Claude, Cline, Cursor, or any MCP-aware client real architecture context
 - Keep a searchable, filterable, auto-refreshing project map alongside daily development
-
-![CodeOmniVis capability overview](docs/assets/readme/readme-feature-banner.jpeg)
 
 ## What Is Available Today
 
@@ -167,7 +163,7 @@ See [docs/api/rest-api.md](docs/api/rest-api.md) for the full contract.
 
 CodeOmniVis includes a stdio MCP server so Cursor, Claude Desktop, and other MCP-capable clients can query your repository structure directly.
 
-![Query architecture context directly from AI via MCP](docs/assets/readme/mcp-query-card.jpeg)
+![Query architecture context directly from AI via MCP](docs/assets/readme/mcp-query-card.png)
 
 ### Available tools
 
