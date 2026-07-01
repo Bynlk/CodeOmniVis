@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
 import { isNodeType } from '@codeomnivis/shared'
 import type { NodeType } from '@codeomnivis/shared'
+import { unwrapData } from '../../utils/unwrapData'
 
 interface StatsResponse {
   nodeCount: number
@@ -31,13 +32,6 @@ function isStatsResponse(value: unknown): value is StatsResponse {
     && isNumberRecord(value.nodeTypeCounts)
     && 'edgeTypeCounts' in value
     && isNumberRecord(value.edgeTypeCounts)
-}
-
-function unwrapData(value: unknown): unknown {
-  if (typeof value === 'object' && value !== null && 'data' in value) {
-    return value.data
-  }
-  return undefined
 }
 
 async function fetchStats(): Promise<StatsResponse> {

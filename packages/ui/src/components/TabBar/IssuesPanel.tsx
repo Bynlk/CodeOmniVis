@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { unwrapData } from '../../utils/unwrapData'
 
 interface ParseError {
   file: string
@@ -16,13 +17,6 @@ function isParseError(value: unknown): value is ParseError {
     && typeof value.message === 'string'
     && 'severity' in value
     && (value.severity === 'error' || value.severity === 'warning' || value.severity === 'info')
-}
-
-function unwrapData(value: unknown): unknown {
-  if (typeof value === 'object' && value !== null && 'data' in value) {
-    return value.data
-  }
-  return undefined
 }
 
 async function fetchErrors(): Promise<ParseError[]> {

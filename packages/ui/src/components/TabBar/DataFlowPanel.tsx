@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { isJsonObject } from '@codeomnivis/shared'
+import { unwrapData } from '../../utils/unwrapData'
 
 interface DataFlowPath {
   modelNode: { id: string; name: string; type: string }
@@ -20,11 +21,6 @@ interface DataFlowResult {
 interface ModelOption {
   id: string
   name: string
-}
-
-function unwrapData(value: unknown): unknown {
-  if (isJsonObject(value) && 'data' in value) return value.data
-  return undefined
 }
 
 function isDataFlowResult(value: unknown): value is DataFlowResult {
