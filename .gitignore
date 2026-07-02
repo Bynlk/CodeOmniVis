@@ -64,3 +64,9 @@ cal-com-analysis.json
 cal-com-full-graph.json
 self-analysis.json
 .loop_tmp/
+
+# Private local reports / loop specs
+SCAN_REPORT.md
+docs/TEAM_LOOP.md
+docs/UNIVERSAL_LOOP.md
+loop/CLEANUP_REPORT.md
