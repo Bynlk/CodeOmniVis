@@ -119,13 +119,14 @@
     {
       "id": "feature-009-performance",
       "title": "性能预算",
-      "spec_path": "docs/pev/specs/feature-009-performance/spec.md",
-      "design_path": "docs/pev/specs/feature-009-performance/design.md",
-      "status": "doing",
+      "spec_path": "docs/pev/specs/done/feature-009-performance/spec.md",
+      "design_path": "docs/pev/specs/done/feature-009-performance/design.md",
+      "status": "done",
       "version": 1,
-      "verified": false,
-      "commit": "",
-      "note": "lazy 拆分分析/AI 面板;进行中"
+      "verified": true,
+      "commit": "ed483fb",
+      "note": "AC1 入口主 chunk 66.00KB/gzip 20.81KB(≤80KB),无 vendor-react 循环警告;AC2 manualChunks 分包 react/cytoscape/i18n/query + 6 面板 React.lazy+Suspense 懒加载,拆为独立 chunk;AC3 typecheck+106 测试通过(FCP 因禁止起服务改由构建体积报告替代,spec 认可)。独立核验 PASS。",
+      "done_at": "2026-07-07"
     }
   ],
   "decisions": [

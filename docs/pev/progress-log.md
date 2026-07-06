@@ -58,3 +58,7 @@
   - 构建无 vendor-react 循环警告。
 - typecheck + 106 测试通过。
 - FCP:因禁止在沙箱内起本地服务(no-server 约束),无法用 Lighthouse/preview 实测;按 spec「以构建体积报告为准」的口径,以主 chunk gzip 体积报告 + 分包结构替代 FCP 数值结论。
+
+## 2026-07-07 feature-009-performance 独立验证通过并归档
+- 独立子代理对照 spec 判卷:AC1/AC2/AC3 全 PASS。主 chunk gzip 20.81KB(≤80KB)、无 vendor-react 循环、React.lazy+Suspense 分包、typecheck+106 测试全绿。
+- spec 移入 specs/done/;pev.json 置 status=done/verified=true/commit=ed483fb。
