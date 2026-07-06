@@ -24,7 +24,7 @@ export default function NodeDetailPanel({
   const color = NODE_COLORS[node.type] || '#94a3b8'
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-80 bg-slate-800 border-l border-slate-700 overflow-y-auto shadow-xl">
+    <div className="absolute right-0 top-0 bottom-0 w-full max-w-sm sm:w-80 bg-slate-800 border-l border-slate-700 overflow-y-auto shadow-xl z-20" role="complementary">
       {/* 头部 */}
       <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-4">
         <div className="flex items-center justify-between">

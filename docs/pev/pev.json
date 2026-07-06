@@ -95,13 +95,14 @@
     {
       "id": "feature-007-responsive",
       "title": "响应式布局",
-      "spec_path": "docs/pev/specs/feature-007-responsive/spec.md",
-      "design_path": "docs/pev/specs/feature-007-responsive/design.md",
-      "status": "doing",
+      "spec_path": "docs/pev/specs/done/feature-007-responsive/spec.md",
+      "design_path": "docs/pev/specs/done/feature-007-responsive/design.md",
+      "status": "done",
       "version": 1,
-      "verified": false,
+      "verified": true,
       "commit": "5f535d8",
-      "note": "Header 移动端☰菜单按钮唤出 Sidebar 抽屉;Sidebar 桌面≥md常驻(可折叠)+ <md off-canvas 抽屉(role=dialog,遮罩,translate-x 由 isMobileDrawerOpen 控制,选中即关);TabPanel <md fixed 全屏覆盖+遮罩,≥md 回落 dock(md:static/md:w-96)不挤画布;Header 搜索框断点宽度 w-36/48/64;menu/drawer/sidebar i18n。3 项 responsive SSR 测试;typecheck+101 测试+build 通过。待 /pev-verify。"
+      "note": "AC1 移动抽屉化+画布主视口+NodeDetailPanel w-full/max-w-sm 防溢出;AC2 sm/md/lg 三档关键操作可达;AC3 typecheck+101测试+build 通过(视觉档因禁止起本地服务改由 SSR 断点测试+构建覆盖)。独立核验通过。",
+      "done_at": "2026-07-07"
     },
     {
       "id": "feature-008-a11y",
