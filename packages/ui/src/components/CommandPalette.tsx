@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI } from '../lib/nodeConfig'
+import { filterNodesByQuery } from '../lib/searchNodes'
 import type { OmniGraph } from '@codeomnivis/shared'
 
 interface CommandPaletteProps {
@@ -23,17 +24,11 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  // 搜索结果
+  // 搜索结果 —— 复用唯一索引函数 filterNodesByQuery(与 Header 过滤同源,AC1)。
+  // 空 query 时 filterNodesByQuery 返回全部,这里仅在有输入时展示,避免刷屏。
   const results = useMemo(() => {
     if (!graph || !query.trim()) return []
-
-    const lowerQuery = query.toLowerCase()
-    return graph.nodes
-      .filter(n =>
-        n.name.toLowerCase().includes(lowerQuery) ||
-        n.filePath.toLowerCase().includes(lowerQuery)
-      )
-      .slice(0, 20) // 最多 20 条
+    return filterNodesByQuery(graph.nodes, query).slice(0, 20) // 最多 20 条
   }, [graph, query])
 
   // 打开时聚焦输入框

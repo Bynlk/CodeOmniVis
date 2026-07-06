@@ -22,3 +22,17 @@ export function filterNodesByQuery(nodes: OmniNode[], query: string): OmniNode[]
       n.filePath.toLowerCase().includes(lower),
   )
 }
+
+/**
+ * 由搜索词派生「可见节点 id 集合」(单一真源的可见性 selector,feature-005)。
+ * - 空/纯空白 query → 返回 undefined,表示不过滤(全部可见)。
+ * - 否则返回匹配节点 id 的 Set。
+ * 供 App/Sidebar 统一消费,避免可见性派生逻辑分散。
+ */
+export function selectVisibleNodeIds(
+  nodes: OmniNode[] | undefined,
+  query: string,
+): Set<string> | undefined {
+  if (!query.trim() || !nodes) return undefined
+  return new Set(filterNodesByQuery(nodes, query).map((n) => n.id))
+}

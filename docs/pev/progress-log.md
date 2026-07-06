@@ -27,3 +27,10 @@
 - 补 group.* / panel.close i18n(zh/en)。
 - 新增 `__tests__/components/layout.test.tsx`(7 项:分组≤4 / label / badge / 叶子归组 / dock 非 absolute / 关闭 / 子导航)。
 - typecheck 通过;vitest 86 passed(含新增 7);生产构建通过(主 chunk 80.39KB,略超 80KB 目标,留待 feature-009 懒加载优化)。
+
+## 2026-07-07 feature-005-unified-search(开发完成,待验证)
+- CommandPalette 移除内联重复过滤逻辑,改用唯一索引函数 `filterNodesByQuery`(与 Header 过滤同源,AC1)。
+- searchQuery 单一真源已在 feature-002 收敛到 uiStore;Header 输入 → setSearchQuery 驱动侧栏/画布可见节点;Cmd+K 面板用瞬态输入做快速跳转,选中即 selectNode+聚焦,二者职责分离不互相清空(AC2)。
+- 新增 `selectVisibleNodeIds` selector(searchNodes.ts),App 的 visibleNodeIds 派生迁移至该 selector(可见性单一真源、可单测)。
+- 新增 4 项 selectVisibleNodeIds 单测;既有 filterNodesByQuery 测试无回归。
+- typecheck 通过;vitest 90 passed。

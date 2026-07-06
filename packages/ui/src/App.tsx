@@ -16,7 +16,7 @@ import { SelectionContext } from './lib/selectionContext'
 import { useGraph } from './hooks/useGraph'
 import { useWebSocket } from './hooks/useWebSocket'
 import { useUiStore } from './store/uiStore'
-import { filterNodesByQuery } from './lib/searchNodes'
+import { selectVisibleNodeIds } from './lib/searchNodes'
 
 function App() {
   const { t } = useTranslation()
@@ -36,11 +36,12 @@ function App() {
   const cyRef = useRef<cytoscape.Core | null>(null)
   const { data: graph, isLoading, error } = useGraph()
 
-  // 搜索结果 → 可见节点 id 集合(E-12/F16)。无搜索词时为 undefined,Sidebar 显示全部。
-  const visibleNodeIds = useMemo<Set<string> | undefined>(() => {
-    if (!searchQuery.trim() || !graph) return undefined
-    return new Set(filterNodesByQuery(graph.nodes, searchQuery).map(n => n.id))
-  }, [searchQuery, graph])
+  // 搜索结果 → 可见节点 id 集合(feature-005 可见性 selector,单一真源)。
+  // 无搜索词时为 undefined,Sidebar 显示全部。
+  const visibleNodeIds = useMemo<Set<string> | undefined>(
+    () => selectVisibleNodeIds(graph?.nodes, searchQuery),
+    [searchQuery, graph],
+  )
 
   // WebSocket 实时更新
   useWebSocket({ enabled: true })

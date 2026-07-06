@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { filterNodesByQuery } from '../../src/lib/searchNodes'
+import { filterNodesByQuery, selectVisibleNodeIds } from '../../src/lib/searchNodes'
 import type { OmniNode } from '@codeomnivis/shared'
 
 const nodeA: OmniNode = {
@@ -58,5 +58,27 @@ describe('filterNodesByQuery (E-12/F16)', () => {
 
   it('无匹配返回空数组', () => {
     expect(filterNodesByQuery(nodes, 'zzz-nomatch')).toEqual([])
+  })
+})
+
+describe('selectVisibleNodeIds (feature-005 统一搜索可见性 selector)', () => {
+  it('空/空白 query 返回 undefined(不过滤)', () => {
+    expect(selectVisibleNodeIds(nodes, '')).toBeUndefined()
+    expect(selectVisibleNodeIds(nodes, '  ')).toBeUndefined()
+  })
+
+  it('nodes 未就绪返回 undefined', () => {
+    expect(selectVisibleNodeIds(undefined, 'button')).toBeUndefined()
+  })
+
+  it('有匹配返回对应 id 的 Set(与 filterNodesByQuery 同源)', () => {
+    const ids = selectVisibleNodeIds(nodes, 'button')
+    expect(ids).toEqual(new Set([nodeB.id]))
+    // 与索引函数同源:Set 内容 == filterNodesByQuery 的 id
+    expect(ids).toEqual(new Set(filterNodesByQuery(nodes, 'button').map(n => n.id)))
+  })
+
+  it('无匹配返回空 Set', () => {
+    expect(selectVisibleNodeIds(nodes, 'zzz-nomatch')).toEqual(new Set())
   })
 })
