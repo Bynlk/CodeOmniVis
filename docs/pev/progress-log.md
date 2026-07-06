@@ -48,3 +48,13 @@
 
 - 2026-07-07 feature-008(a11y):补齐全局 focus-visible 焦点环 + prefers-reduced-motion + .sr-only/skip-link(index.css);CommandPalette 增 role=dialog/aria-modal + combobox/listbox/option + aria-activedescendant + 关闭归还焦点;SettingsDrawer 增 Esc 关闭 + 焦点归还 + dialog aria-label;LangToggle 图标按钮补 aria-label;App 增 skip-to-main 跳转链接与 main#main-content landmark;新增 a11y.test.tsx(5 项 aria/role 存在性)。typecheck + 106 tests + build 全绿。
 - 2026-07-07 feature-008 独立核验通过(AC1/AC2/AC3 全 PASS),spec 归档至 specs/done/,状态 done。
+
+## 2026-07-07 feature-009-performance 实现
+- tabGroups.ts:6 个功能面板(Filter/Issues/Ai/Stats/DataFlow/Trace)由 eager import 改为 React.lazy 按需加载;TabPanel.tsx 以 Suspense 包裹 <PanelComponent /> 并给出加载占位,避免切 tab 白屏且不进入入口主 chunk。
+- 构建体积报告(pnpm -C packages/ui build):
+  - 入口主 chunk index-*.js 66.00KB / gzip 20.81KB(≤80KB 预算,达标;较改造前 84.81→66.00KB)。
+  - 手动分包:vendor-react 147.88KB(react/react-dom/scheduler/use-sync-external-store 同块,规避 CJS shim 循环依赖)、vendor-cytoscape 443.74KB、vendor-query 38.70KB、vendor-i18n 44.33KB。
+  - 懒加载面板拆成 7 个独立 chunk(ai/IssuesPanel/StatsPanel/DataFlowPanel/AiPanel/FilterPanel/TracePanel),首屏不加载。
+  - 构建无 vendor-react 循环警告。
+- typecheck + 106 测试通过。
+- FCP:因禁止在沙箱内起本地服务(no-server 约束),无法用 Lighthouse/preview 实测;按 spec「以构建体积报告为准」的口径,以主 chunk gzip 体积报告 + 分包结构替代 FCP 数值结论。

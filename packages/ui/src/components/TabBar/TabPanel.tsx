@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TabId } from '../../types/tabs'
 import { findGroupOfTab } from './tabGroups'
@@ -14,6 +15,9 @@ interface TabPanelProps {
  * 存在于 flex 布局中——面板打开时画布收窄而非被盖(AC1)。
  * 面板顶部提供同组子 tab 的子导航(如 分析组: 筛选/数据流/追踪)。
  * 无 activeTab(图谱视图)时不渲染,画布占满。
+ *
+ * feature-009 性能:面板组件为 React.lazy(见 tabGroups),此处以 Suspense 包裹并给出
+ * 加载占位,避免切 tab 白屏,同时把非首屏面板代码移出入口主 chunk。
  */
 export function TabPanel({ activeTab, onTabChange }: TabPanelProps) {
   const { t } = useTranslation()
@@ -87,7 +91,9 @@ export function TabPanel({ activeTab, onTabChange }: TabPanelProps) {
 
       {/* 面板内容 */}
       <div className="flex-1 overflow-y-auto">
-        <PanelComponent />
+        <Suspense fallback={<div className="p-ds-4 text-ds-sm text-slate-400">{t('app.loadingGraph')}</div>}>
+          <PanelComponent />
+        </Suspense>
         </div>
       </aside>
     </>

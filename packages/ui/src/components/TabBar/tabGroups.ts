@@ -1,10 +1,14 @@
+import { lazy } from 'react'
 import type { TabGroup } from '../../types/tabs'
-import { FilterPanel } from '../Filter/FilterPanel'
-import { IssuesPanel } from './IssuesPanel'
-import { AiPanel } from './AiPanel'
-import { StatsPanel } from './StatsPanel'
-import { DataFlowPanel } from './DataFlowPanel'
-import { TracePanel } from './TracePanel'
+
+// feature-009 性能:分析/问题/智能类面板均非首屏,改为 React.lazy 按需加载,
+// 不进入入口主 chunk(TabPanel 内以 Suspense 包裹 + 骨架占位)。命名导出经 .then 适配 default。
+const FilterPanel = lazy(() => import('../Filter/FilterPanel').then((m) => ({ default: m.FilterPanel })))
+const IssuesPanel = lazy(() => import('./IssuesPanel').then((m) => ({ default: m.IssuesPanel })))
+const AiPanel = lazy(() => import('./AiPanel').then((m) => ({ default: m.AiPanel })))
+const StatsPanel = lazy(() => import('./StatsPanel').then((m) => ({ default: m.StatsPanel })))
+const DataFlowPanel = lazy(() => import('./DataFlowPanel').then((m) => ({ default: m.DataFlowPanel })))
+const TracePanel = lazy(() => import('./TracePanel').then((m) => ({ default: m.TracePanel })))
 
 /**
  * 顶层 tab 分组(feature-004,4 组,满足 ≤4)。

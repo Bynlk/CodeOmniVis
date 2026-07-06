@@ -121,11 +121,11 @@
       "title": "性能预算",
       "spec_path": "docs/pev/specs/feature-009-performance/spec.md",
       "design_path": "docs/pev/specs/feature-009-performance/design.md",
-      "status": "todo",
+      "status": "doing",
       "version": 1,
       "verified": false,
       "commit": "",
-      "note": ""
+      "note": "lazy 拆分分析/AI 面板;进行中"
     }
   ],
   "decisions": [
