@@ -33,7 +33,7 @@
       "status": "doing",
       "version": 1,
       "verified": false,
-      "commit": "",
+      "commit": "84a26a6f10efaa6216c628f69100e2a8df40eb2c",
       "note": "服务层就位；12 端点封装完成；typecheck+68 测试通过；待独立验证"
     },
     {
