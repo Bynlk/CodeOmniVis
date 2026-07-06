@@ -174,5 +174,10 @@
     "connected": "Connected",
     "connecting": "Connecting",
     "reconnecting": "Reconnecting"
-  }
+  },
+  "menu.open": "Open menu",
+  "menu.close": "Close menu",
+  "drawer.close": "Close drawer",
+  "sidebar.expand": "Expand sidebar",
+  "sidebar.collapse": "Collapse sidebar"
 }

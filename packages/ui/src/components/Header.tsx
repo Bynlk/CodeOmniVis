@@ -6,6 +6,7 @@ import { FreshnessBadge } from './Header/FreshnessBadge'
 import { WsStatusIndicator } from './Header/WsStatusIndicator'
 import { useStatus, STATUS_QUERY_KEY } from '../hooks/useStatus'
 import { postAnalyze, ApiError } from '../services'
+import { useUiStore } from '../store/uiStore'
 
 interface HeaderProps {
   query?: string
@@ -20,6 +21,8 @@ export default function Header({ query, onQueryChange, onOpenSettings }: HeaderP
   const { data: status } = useStatus()
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
+  // feature-007:移动端菜单按钮唤出 Sidebar 抽屉。
+  const toggleMobileDrawer = useUiStore((s) => s.toggleMobileDrawer)
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -44,6 +47,15 @@ export default function Header({ query, onQueryChange, onOpenSettings }: HeaderP
     <header className="bg-slate-800 border-b border-slate-700 px-6 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
+          {/* 移动端菜单按钮(<md 显示)—— 唤出节点侧栏抽屉 */}
+          <button
+            onClick={() => toggleMobileDrawer(true)}
+            className="md:hidden rounded p-1.5 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+            aria-label={t('menu.open')}
+            title={t('menu.open')}
+          >
+            <span aria-hidden="true" className="text-lg">☰</span>
+          </button>
           <h1 className="text-xl font-bold text-white">
             <span className="text-primary-400">Code</span>Omni<span className="text-primary-400">Vis</span>
           </h1>
@@ -52,7 +64,7 @@ export default function Header({ query, onQueryChange, onOpenSettings }: HeaderP
           </span>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-2 sm:space-x-4 sm:gap-0">
           {/* 搜索框 */}
           {onQueryChange && (
             <div className="relative">
@@ -62,7 +74,7 @@ export default function Header({ query, onQueryChange, onOpenSettings }: HeaderP
                 value={query || ''}
                 onChange={(e) => onQueryChange(e.target.value)}
                 placeholder={t('header.searchPlaceholder', { shortcut: '⌘K' })}
-                className="w-64 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-primary-500 transition-colors"
+                className="w-36 sm:w-48 md:w-64 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-primary-500 transition-colors"
                 aria-label={t('header.searchNodes')}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">

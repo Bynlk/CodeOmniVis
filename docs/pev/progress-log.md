@@ -36,3 +36,11 @@
 - typecheck 通过;vitest 90 passed。
 - 2026-07-07 feature-006-issue-badge 实现完成（commit b0d8a57）：问题 tab 徽标接入 /api/graph/errors 真实数量（替换硬编码 0，为 0 时隐藏）；uiStore 新增 wsStatus 并由 useWebSocket 消费 isConnected（600ms 防抖）；Header 新增 WsStatusIndicator 连接状态灯（绿/灰/黄 + i18n）。typecheck ✅ / 98 tests ✅ / build ✅（主 chunk 81.35KB，≤80KB 目标留待 feature-009 懒加载）。待 /pev-verify。
 - 2026-07-07 feature-006-issue-badge 通过独立子代理验证(AC1/AC2/AC3 全 ✅,无越界),已归档至 specs/done/,状态置 done。
+
+## 2026-07-07 feature-007-responsive(开发完成,待验证)
+- Header 增移动端 ☰ 菜单按钮(md:hidden)唤出 Sidebar 抽屉;搜索框断点宽度 w-36/sm:48/md:64。
+- Sidebar 拆桌面/移动两态:桌面(≥md)常驻可折叠;移动(<md)为 off-canvas 抽屉(fixed,role=dialog,遮罩,translate-x-0/-translate-x-full 由 uiStore.isMobileDrawerOpen 控制;点节点即 onNodeSelect + 关抽屉)。renderNodeList 抽公用避免重复。
+- TabPanel 移动态改 fixed inset-y-0 right-0 全屏覆盖+遮罩,桌面态 md:static/md:w-96/md:max-w-[40%] 回落 dock,画布不被挤压。
+- 补 menu.open/close、drawer.close、sidebar.expand/collapse i18n(zh/en)。
+- 新增 __tests__/components/responsive.test.tsx(3 项:桌面/移动两套渲染 / 抽屉开合 store 联动 / TabPanel fixed↔md:static)。
+- typecheck 通过;vitest 101 passed(含新增 3);vite build 通过,主 chunk 83.37KB(gzip 24.65KB,略超 80KB 目标,留待 feature-009 懒加载)。待 /pev-verify。

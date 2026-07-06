@@ -27,12 +27,20 @@ export function TabPanel({ activeTab, onTabChange }: TabPanelProps) {
   const showSubNav = group.children.length > 1
 
   return (
-    <aside
-      className="flex h-full w-96 max-w-[40%] shrink-0 flex-col border-l border-slate-700
-                 bg-slate-800 shadow-ds-panel"
-      role="tabpanel"
-      aria-label={t(group.labelKey)}
-    >
+    <>
+      {/* 移动端遮罩(<md):点击关闭,面板此时全屏覆盖不挤压画布 */}
+      <div
+        className="fixed inset-0 z-30 bg-black/50 md:hidden"
+        onClick={() => onTabChange(null)}
+        aria-hidden="true"
+      />
+      <aside
+        className="fixed inset-y-0 right-0 z-40 flex w-full max-w-full flex-col border-l border-slate-700
+                   bg-slate-800 shadow-ds-panel
+                   md:static md:z-auto md:h-full md:w-96 md:max-w-[40%] md:shrink-0"
+        role="tabpanel"
+        aria-label={t(group.labelKey)}
+      >
       {/* 面板头:分组标题 + 关闭 */}
       <div className="flex items-center justify-between border-b border-slate-700 px-ds-4 py-ds-2">
         <span className="flex items-center gap-1.5 text-ds-sm font-medium text-slate-100">
@@ -80,7 +88,8 @@ export function TabPanel({ activeTab, onTabChange }: TabPanelProps) {
       {/* 面板内容 */}
       <div className="flex-1 overflow-y-auto">
         <PanelComponent />
-      </div>
-    </aside>
+        </div>
+      </aside>
+    </>
   )
 }
