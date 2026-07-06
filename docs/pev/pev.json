@@ -44,7 +44,7 @@
       "status": "doing",
       "version": 1,
       "verified": false,
-      "commit": "",
+      "commit": "04091f3",
       "note": "UI store(useSyncExternalStore 复刻 zustand 接口,未新增依赖);App.tsx 接入 store 移除本地 UI useState;删除 orphaned useSearch;8 项 store 单测;typecheck+76 测试通过。待 /pev-verify。"
     },
     {
