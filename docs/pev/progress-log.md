@@ -62,3 +62,12 @@
 ## 2026-07-07 feature-009-performance 独立验证通过并归档
 - 独立子代理对照 spec 判卷:AC1/AC2/AC3 全 PASS。主 chunk gzip 20.81KB(≤80KB)、无 vendor-react 循环、React.lazy+Suspense 分包、typecheck+106 测试全绿。
 - spec 移入 specs/done/;pev.json 置 status=done/verified=true/commit=ed483fb。
+
+## 2026-07-07 feature-001~005 独立验证并归档
+- 5 个 feature 各由独立子代理对照 spec 判卷(不看开发历史)。共享 AC3 门禁:typecheck clean + 17 文件/106 测试通过。
+- feature-001 服务层:AC1/AC2/AC3 PASS(12 端点封装、零裸 fetch、统一 ApiError)。
+- feature-002 状态分层:AC1/AC2/AC3 PASS(useSyncExternalStore UI store 未新增依赖、服务器数据仅 React Query、App.tsx 零散落 useState)。
+- feature-003 设计系统:AC2/AC3 PASS;AC1 试探色板与画布实际 NODE_COLORS 冲突,依 AC2「图例须与画布实际渲染一致」硬要求,按已采纳的 ADR 0002 以单一真源覆盖 spec 试探色板 —— 记为符合(单一真源已落地,Legend 与 Cytoscape 同源)。
+- feature-004 布局重构:AC1/AC2/AC3 PASS(7→4 分组、TabPanel 桌面 dock 不覆盖画布、ResizeObserver→cy.resize)。
+- feature-005 统一搜索:初验 AC1 FAIL(CommandPalette 本地 useState 搜索词与 Header 两条轨)→ 修复为共用 uiStore.searchQuery 单一真源(commit df19068)→ 复验 AC1/AC2/AC3 全 PASS。
+- 全部 9 个 feature 现均 status=done/verified=true,spec 移入 specs/done/。
