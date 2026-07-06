@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { LangToggle } from './Header/LangToggle'
 import { FreshnessBadge } from './Header/FreshnessBadge'
 import { useStatus, STATUS_QUERY_KEY } from '../hooks/useStatus'
+import { postAnalyze, ApiError } from '../services'
 
 interface HeaderProps {
   query?: string
@@ -23,18 +24,15 @@ export default function Header({ query, onQueryChange, onOpenSettings }: HeaderP
     setIsRefreshing(true)
     setRefreshError(null)
     try {
-      // 调用 /api/analyze 触发重新分析
-      const res = await fetch('/api/analyze', { method: 'POST' })
-      if (!res.ok) {
-        const errorMsg = `Refresh failed: ${res.status} ${res.statusText}`
-        setRefreshError(errorMsg)
-        return
-      }
+      // 调用 /api/analyze 触发重新分析（经服务层）
+      await postAnalyze()
       // 让 React Query 重新拉取图数据与新鲜度状态
       await queryClient.invalidateQueries({ queryKey: ['graph'] })
       await queryClient.invalidateQueries({ queryKey: STATUS_QUERY_KEY })
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+      const errorMsg = err instanceof ApiError
+        ? `Refresh failed: ${err.status} ${err.statusText}`
+        : err instanceof Error ? err.message : 'Unknown error'
       setRefreshError(errorMsg)
     } finally {
       setIsRefreshing(false)

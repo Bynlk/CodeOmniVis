@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { isJsonObject, type ChatMessage, type TraceResult } from '@codeomnivis/shared'
-import { readString } from '../../utils/readString'
+import { type ChatMessage, type TraceResult } from '@codeomnivis/shared'
+import { postAiExplain } from '../../services'
 import { useSelectedNode } from '../../lib/selectionContext'
 import { useTrace } from '../../hooks/useTrace'
 import { useCytoscapeInstance } from '../../lib/cytoscapeContext'
@@ -91,15 +91,9 @@ export function TracePanel() {
         { role: 'user', content: buildLinkPrompt(trace) },
       ]
       const body = config === null ? { messages } : { messages, config }
-      const res = await fetch('/api/ai/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (res.ok) {
-        const payload: unknown = await res.json()
-        const data = isJsonObject(payload) ? payload.data : undefined
-        setAiSummary(readString(data, 'content') ?? t('ai.noResponse'))
+      const result = await postAiExplain(body)
+      if (result.ok) {
+        setAiSummary(result.content ?? t('ai.noResponse'))
       } else {
         setAiSummary(t('ai.serviceUnavailable'))
       }

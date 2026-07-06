@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isJsonObject, type ChatMessage } from '@codeomnivis/shared'
-import { readString } from '../../utils/readString'
+import { getGraph, postAiChat } from '../../services'
 import { useAiConfig } from '../../hooks/useAiConfig'
 import { AiConfigForm } from '../AiConfigForm'
 
@@ -43,11 +43,9 @@ export function AiPanel() {
     abortControllerRef.current = controller
 
     try {
-      // 获取当前图数据作为系统上下文
-      const graphRes = await fetch('/api/graph', { signal: controller.signal })
-      if (!graphRes.ok) throw new Error(`Failed to fetch graph: ${graphRes.status}`)
-      const graphData: unknown = await graphRes.json()
-      const meta = isJsonObject(graphData) ? graphData.meta : undefined
+      // 获取当前图数据作为系统上下文（经服务层）
+      const graphResponse = await getGraph(controller.signal)
+      const meta: unknown = graphResponse.meta
       const nodeCount = readNumber(meta, 'nodeCount') ?? 0
       const edgeCount = readNumber(meta, 'edgeCount') ?? 0
       const nodesByType = isJsonObject(meta) && isJsonObject(meta.nodesByType) ? meta.nodesByType : {}
@@ -60,28 +58,15 @@ export function AiPanel() {
       ]
       const body = config === null ? { messages: chatMessages } : { messages: chatMessages, config }
 
-      const res = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      })
+      const result = await postAiChat(body, controller.signal)
 
-      if (res.ok) {
-        const payload: unknown = await res.json()
-        const data = isJsonObject(payload) ? payload.data : undefined
-        const content = readString(data, 'content') ?? t('ai.noResponse')
+      if (result.ok) {
+        const content = result.content ?? t('ai.noResponse')
         setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content }])
-      } else if (res.status === 429) {
+      } else if (result.status === 429) {
         setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: 'Rate limit exceeded. Please try again later.' }])
       } else {
-        // 解析错误响应,显示后端返回的具体信息
-        let errorMsg = t('ai.serviceUnavailable')
-        try {
-          const errData: unknown = await res.json()
-          const detail = readString(errData, 'message') ?? readString(errData, 'error')
-          if (detail) errorMsg = detail
-        } catch { /* 忽略解析错误 */ }
+        const errorMsg = result.errorMessage ?? t('ai.serviceUnavailable')
         setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: errorMsg }])
       }
     } catch (err) {

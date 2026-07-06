@@ -1,31 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { unwrapData } from '../../utils/unwrapData'
-
-interface ParseError {
-  file: string
-  message: string
-  severity: 'error' | 'warning' | 'info'
-}
-
-function isParseError(value: unknown): value is ParseError {
-  return typeof value === 'object'
-    && value !== null
-    && 'file' in value
-    && typeof value.file === 'string'
-    && 'message' in value
-    && typeof value.message === 'string'
-    && 'severity' in value
-    && (value.severity === 'error' || value.severity === 'warning' || value.severity === 'info')
-}
-
-async function fetchErrors(): Promise<ParseError[]> {
-  const res = await fetch('/api/graph/errors')
-  if (!res.ok) throw new Error(`Failed to fetch errors: ${res.statusText}`)
-  const json: unknown = await res.json()
-  const data = unwrapData(json)
-  return Array.isArray(data) ? data.filter(isParseError) : []
-}
+import { useGraphErrors } from '../../hooks/useGraphErrors'
 
 const SEVERITY_EMOJI: Record<string, string> = {
   error: '❌',
@@ -35,11 +9,7 @@ const SEVERITY_EMOJI: Record<string, string> = {
 
 export function IssuesPanel() {
   const { t } = useTranslation()
-  const { data: errors, isLoading, error } = useQuery({
-    queryKey: ['graph-errors'],
-    queryFn: fetchErrors,
-    refetchInterval: 30000,
-  })
+  const { data: errors, isLoading, error } = useGraphErrors()
 
   if (isLoading) {
     return <div className="p-4 text-slate-400 text-sm">{t('issues.loading')}</div>

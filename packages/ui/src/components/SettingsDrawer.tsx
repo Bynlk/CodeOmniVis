@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import { isJsonObject } from '@codeomnivis/shared'
-import { readString } from '../utils/readString'
+import { postProject } from '../services'
 import { useAiConfig } from '../hooks/useAiConfig'
 import { AiConfigForm } from './AiConfigForm'
 import { PROMOTION_TIERS, LICENSE_INFO } from '../lib/promotion'
@@ -40,21 +39,13 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     setProjectMsg(null)
     setProjectErr(null)
     try {
-      const res = await fetch('/api/project', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectRoot: trimmed }),
-      })
-      const payload: unknown = await res.json()
-      if (res.ok) {
-        const data = isJsonObject(payload) ? payload.data : undefined
-        const resolved = readString(data, 'projectRoot') ?? trimmed
-        setProjectMsg(resolved)
+      const result = await postProject(trimmed)
+      if (result.ok) {
+        setProjectMsg(result.projectRoot ?? trimmed)
         await queryClient.invalidateQueries({ queryKey: ['graph'] })
         await queryClient.invalidateQueries({ queryKey: STATUS_QUERY_KEY })
       } else {
-        const err = isJsonObject(payload) ? payload.error : undefined
-        setProjectErr(readString(err, 'message') ?? t('settings.project.failed'))
+        setProjectErr(result.errorMessage ?? t('settings.project.failed'))
       }
     } catch (err) {
       setProjectErr(err instanceof Error ? err.message : t('settings.project.failed'))

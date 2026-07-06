@@ -3,53 +3,13 @@ import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
 import { isNodeType } from '@codeomnivis/shared'
 import type { NodeType } from '@codeomnivis/shared'
-import { unwrapData } from '../../utils/unwrapData'
-
-interface StatsResponse {
-  nodeCount: number
-  edgeCount: number
-  errorCount: number
-  nodeTypeCounts: Record<string, number>
-  edgeTypeCounts: Record<string, number>
-}
-
-function isNumberRecord(value: unknown): value is Record<string, number> {
-  return typeof value === 'object'
-    && value !== null
-    && Object.values(value).every(item => typeof item === 'number')
-}
-
-function isStatsResponse(value: unknown): value is StatsResponse {
-  return typeof value === 'object'
-    && value !== null
-    && 'nodeCount' in value
-    && typeof value.nodeCount === 'number'
-    && 'edgeCount' in value
-    && typeof value.edgeCount === 'number'
-    && 'errorCount' in value
-    && typeof value.errorCount === 'number'
-    && 'nodeTypeCounts' in value
-    && isNumberRecord(value.nodeTypeCounts)
-    && 'edgeTypeCounts' in value
-    && isNumberRecord(value.edgeTypeCounts)
-}
-
-async function fetchStats(): Promise<StatsResponse> {
-  const res = await fetch('/api/graph/stats')
-  if (!res.ok) throw new Error(`Failed to fetch stats: ${res.statusText}`)
-  const json: unknown = await res.json()
-  const data = unwrapData(json)
-  if (!isStatsResponse(data)) {
-    throw new Error('Invalid stats response')
-  }
-  return data
-}
+import { getGraphStats } from '../../services'
 
 export function StatsPanel() {
   const { t } = useTranslation()
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ['graph-stats'],
-    queryFn: fetchStats,
+    queryFn: getGraphStats,
     refetchInterval: 30000, // 主要依赖 WebSocket 推送
   })
 
