@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { isJsonObject, isFreshnessStatus } from '@codeomnivis/shared'
 import { STATUS_QUERY_KEY } from './useStatus'
 import { WebSocketController, type MinimalSocket } from './websocketController'
+import { getUiState } from '../store/uiStore'
 
 /**
  * 把浏览器原生 WebSocket 适配成控制器所需的最小接口。
@@ -45,13 +46,36 @@ export function useWebSocket(options: WebSocketOptions = {}) {
   const queryClient = useQueryClient()
   const [isConnected, setIsConnected] = useState(false)
   const controllerRef = useRef<WebSocketController | null>(null)
+  // 断开→重连状态的防抖句柄:短暂抖动不立刻翻红,避免闪烁(design 风险项)。
+  const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!enabled) return
 
+    const clearDisconnectTimer = () => {
+      if (disconnectTimerRef.current !== null) {
+        clearTimeout(disconnectTimerRef.current)
+        disconnectTimerRef.current = null
+      }
+    }
+
     const controller = new WebSocketController({
       createSocket: () => adaptWebSocket(new WebSocket(url)),
-      onConnectedChange: (connected) => setIsConnected(connected),
+      onConnectedChange: (connected) => {
+        setIsConnected(connected)
+        const { setWsStatus } = getUiState()
+        if (connected) {
+          clearDisconnectTimer()
+          setWsStatus('connected')
+        } else {
+          // 防抖:600ms 内若未恢复才标记为重连中。
+          clearDisconnectTimer()
+          disconnectTimerRef.current = setTimeout(() => {
+            disconnectTimerRef.current = null
+            getUiState().setWsStatus('reconnecting')
+          }, 600)
+        }
+      },
       onMessage: (data) => {
         if (isJsonObject(data) && data.type === 'graph_updated') {
           queryClient.invalidateQueries({ queryKey: ['graph'] })
@@ -68,6 +92,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
     controller.connect()
 
     return () => {
+      clearDisconnectTimer()
       controller.dispose()
       controllerRef.current = null
     }

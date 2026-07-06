@@ -169,5 +169,10 @@
   "group.analysis": "分析",
   "group.issues": "问题",
   "group.intelligence": "智能",
-  "panel.close": "关闭面板"
+  "panel.close": "关闭面板",
+  "ws": {
+    "connected": "已连接",
+    "connecting": "连接中",
+    "reconnecting": "重连中"
+  }
 }

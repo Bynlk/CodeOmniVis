@@ -169,5 +169,10 @@
   "group.analysis": "Analysis",
   "group.issues": "Issues",
   "group.intelligence": "Insights",
-  "panel.close": "Close panel"
+  "panel.close": "Close panel",
+  "ws": {
+    "connected": "Connected",
+    "connecting": "Connecting",
+    "reconnecting": "Reconnecting"
+  }
 }

@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { LangToggle } from './Header/LangToggle'
 import { FreshnessBadge } from './Header/FreshnessBadge'
+import { WsStatusIndicator } from './Header/WsStatusIndicator'
 import { useStatus, STATUS_QUERY_KEY } from '../hooks/useStatus'
 import { postAnalyze, ApiError } from '../services'
 
@@ -69,6 +70,9 @@ export default function Header({ query, onQueryChange, onOpenSettings }: HeaderP
               </span>
             </div>
           )}
+
+          {/* WebSocket 连接状态（feature-006） */}
+          <WsStatusIndicator />
 
           {/* 数据新鲜度 */}
           <FreshnessBadge status={status} />

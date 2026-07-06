@@ -14,6 +14,7 @@ import { Legend } from './components/Legend'
 import { CytoscapeContext } from './lib/cytoscapeContext'
 import { SelectionContext } from './lib/selectionContext'
 import { useGraph } from './hooks/useGraph'
+import { useGraphErrors } from './hooks/useGraphErrors'
 import { useWebSocket } from './hooks/useWebSocket'
 import { useUiStore } from './store/uiStore'
 import { selectVisibleNodeIds } from './lib/searchNodes'
@@ -35,6 +36,9 @@ function App() {
 
   const cyRef = useRef<cytoscape.Core | null>(null)
   const { data: graph, isLoading, error } = useGraph()
+  // 问题 tab 徽标数量 = 真实解析错误数(feature-006 AC1),替换硬编码 0。
+  const { data: graphErrors } = useGraphErrors()
+  const issueBadgeCount = graphErrors?.length ?? 0
 
   // 搜索结果 → 可见节点 id 集合(feature-005 可见性 selector,单一真源)。
   // 无搜索词时为 undefined,Sidebar 显示全部。
@@ -115,7 +119,7 @@ function App() {
         <TabBar
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          issueBadgeCount={0}
+          issueBadgeCount={issueBadgeCount}
         />
 
         {/* 主内容区域 */}

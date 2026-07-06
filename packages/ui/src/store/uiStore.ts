@@ -14,6 +14,9 @@ import type { TabId } from '../types/tabs'
  * 若后续引入 zustand,可原样替换而不改调用方。
  */
 
+/** WebSocket 连接状态(feature-006):connected=绿 / reconnecting=黄 / connecting=灰。 */
+export type WsStatus = 'connecting' | 'connected' | 'reconnecting'
+
 export interface UiState {
   selectedNodeId: string | null
   activeTab: TabId | null
@@ -22,6 +25,7 @@ export interface UiState {
   isSettingsOpen: boolean
   isMobileDrawerOpen: boolean
   isLegendCollapsed: boolean
+  wsStatus: WsStatus
 }
 
 export interface UiActions {
@@ -32,6 +36,7 @@ export interface UiActions {
   toggleSettings: (open?: boolean) => void
   toggleMobileDrawer: (open?: boolean) => void
   toggleLegend: (collapsed?: boolean) => void
+  setWsStatus: (status: WsStatus) => void
 }
 
 export type UiStore = UiState & UiActions
@@ -54,6 +59,7 @@ const initialState: UiState = {
   isSettingsOpen: false,
   isMobileDrawerOpen: false,
   isLegendCollapsed: readLegendCollapsed(),
+  wsStatus: 'connecting',
 }
 
 let state: UiStore
@@ -83,6 +89,7 @@ state = {
   toggleSettings: (open) => setState({ isSettingsOpen: open ?? !state.isSettingsOpen }),
   toggleMobileDrawer: (open) =>
     setState({ isMobileDrawerOpen: open ?? !state.isMobileDrawerOpen }),
+  setWsStatus: (status) => setState({ wsStatus: status }),
   toggleLegend: (collapsed) => {
     const next = collapsed ?? !state.isLegendCollapsed
     try {
@@ -125,5 +132,5 @@ export function getUiState(): UiStore {
 
 /** 测试辅助:重置到初始状态。 */
 export function __resetUiStore(): void {
-  setState({ ...initialState, isLegendCollapsed: false })
+  setState({ ...initialState, isLegendCollapsed: false, wsStatus: 'connecting' })
 }
