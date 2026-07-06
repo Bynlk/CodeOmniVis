@@ -66,7 +66,7 @@
       "status": "doing",
       "version": 1,
       "verified": false,
-      "commit": "",
+      "commit": "e31486a",
       "note": "7 tab→4 分组(tabGroups);TabPanel absolute→aside dock 不覆盖画布;TabBar 分组导航+子导航;GraphCanvas ResizeObserver 联动 cy.resize;四区 flex 布局;7 项布局测试;typecheck+86 测试+build 通过。主 chunk 80.39KB 留待 f-009。待 /pev-verify。"
     },
     {
