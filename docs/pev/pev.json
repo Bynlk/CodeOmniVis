@@ -2,7 +2,7 @@
   "version": 1,
   "project": "CodeOmniVis",
   "created_at": "2026-07-07T02:04:24+08:00",
-  "head_commit": "a8fb707eedc1ca9c6390ae3e1ce76c78422af892",
+  "head_commit": "5f535d859b39b1f53750f4d564e70c202c8ed6ca",
   "constitution": {
     "asked": true,
     "source": "docs/pev/constitution.md; docs/pev/decisions/0001-初始技术栈约定.md",
@@ -100,7 +100,7 @@
       "status": "doing",
       "version": 1,
       "verified": false,
-      "commit": "a8fb707",
+      "commit": "5f535d8",
       "note": "Header 移动端☰菜单按钮唤出 Sidebar 抽屉;Sidebar 桌面≥md常驻(可折叠)+ <md off-canvas 抽屉(role=dialog,遮罩,translate-x 由 isMobileDrawerOpen 控制,选中即关);TabPanel <md fixed 全屏覆盖+遮罩,≥md 回落 dock(md:static/md:w-96)不挤画布;Header 搜索框断点宽度 w-36/48/64;menu/drawer/sidebar i18n。3 项 responsive SSR 测试;typecheck+101 测试+build 通过。待 /pev-verify。"
     },
     {
