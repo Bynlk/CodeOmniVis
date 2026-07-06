@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { useMemo, useRef, useCallback, useEffect } from 'react'
 import type cytoscape from 'cytoscape'
 import { useTranslation } from 'react-i18next'
 import GraphCanvas from './components/GraphCanvas'
@@ -19,9 +19,10 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { CytoscapeContext } from './lib/cytoscapeContext'
 import { SelectionContext } from './lib/selectionContext'
 import { useGraph } from './hooks/useGraph'
-import { useSearch } from './hooks/useSearch'
 import { useWebSocket } from './hooks/useWebSocket'
-import type { TabId, TabConfig } from './types/tabs'
+import { useUiStore } from './store/uiStore'
+import { filterNodesByQuery } from './lib/searchNodes'
+import type { TabConfig } from './types/tabs'
 
 const TABS: TabConfig[] = [
   { id: 'graph',    labelKey: 'tab.graph',    emoji: '🗺️', panelComponent: null },
@@ -35,19 +36,27 @@ const TABS: TabConfig[] = [
 
 function App() {
   const { t } = useTranslation()
-  const [selectedNode, setSelectedNode] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<TabId | null>(null)
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
+  // UI 状态统一来自 store(feature-002 状态分层),不再散落 useState。
+  const selectedNode = useUiStore((s) => s.selectedNodeId)
+  const activeTab = useUiStore((s) => s.activeTab)
+  const searchQuery = useUiStore((s) => s.searchQuery)
+  const isCommandPaletteOpen = useUiStore((s) => s.isCommandPaletteOpen)
+  const isSettingsOpen = useUiStore((s) => s.isSettingsOpen)
+  const selectNode = useUiStore((s) => s.selectNode)
+  const setActiveTab = useUiStore((s) => s.setActiveTab)
+  const setSearchQuery = useUiStore((s) => s.setSearchQuery)
+  const toggleCommandPalette = useUiStore((s) => s.toggleCommandPalette)
+  const toggleSettings = useUiStore((s) => s.toggleSettings)
+
   const cyRef = useRef<cytoscape.Core | null>(null)
   const { data: graph, isLoading, error } = useGraph()
-  const { query, setQuery, searchFilteredNodes } = useSearch({ graph })
 
   // 搜索结果 → 可见节点 id 集合(E-12/F16)。无搜索词时为 undefined,Sidebar 显示全部。
   const visibleNodeIds = useMemo<Set<string> | undefined>(() => {
-    if (!query.trim()) return undefined
-    return new Set(searchFilteredNodes.map(n => n.id))
-  }, [query, searchFilteredNodes])
+    if (!searchQuery.trim() || !graph) return undefined
+    return new Set(filterNodesByQuery(graph.nodes, searchQuery).map(n => n.id))
+  }, [searchQuery, graph])
 
   // WebSocket 实时更新
   useWebSocket({ enabled: true })
@@ -57,12 +66,12 @@ function App() {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
-        setIsCommandPaletteOpen(prev => !prev)
+        toggleCommandPalette()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [])
+  }, [toggleCommandPalette])
 
   const handleCyInit = useCallback((cy: cytoscape.Core) => {
     cyRef.current = cy
@@ -70,7 +79,7 @@ function App() {
 
   // 命令面板选择节点
   const handleCommandSelect = useCallback((nodeId: string) => {
-    setSelectedNode(nodeId)
+    selectNode(nodeId)
     // 聚焦到选中节点
     const cy = cyRef.current
     if (cy) {
@@ -79,7 +88,7 @@ function App() {
         cy.animate({ center: { eles: node }, zoom: 1.5, duration: 300 })
       }
     }
-  }, [])
+  }, [selectNode])
 
   // 获取选中节点的详细信息
   const selectedNodeData = useMemo(() => {
@@ -107,15 +116,15 @@ function App() {
         <CommandPalette
           graph={graph}
           isOpen={isCommandPaletteOpen}
-          onClose={() => setIsCommandPaletteOpen(false)}
+          onClose={() => toggleCommandPalette(false)}
           onNodeSelect={handleCommandSelect}
         />
 
         {/* 设置抽屉 */}
-        <SettingsDrawer open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+        <SettingsDrawer open={isSettingsOpen} onClose={() => toggleSettings(false)} />
 
         {/* 顶部导航栏 */}
-        <Header query={query} onQueryChange={setQuery} onOpenSettings={() => setIsSettingsOpen(true)} />
+        <Header query={searchQuery} onQueryChange={setSearchQuery} onOpenSettings={() => toggleSettings(true)} />
 
         {/* Tab 栏 */}
         <TabBar
@@ -131,7 +140,7 @@ function App() {
           <Sidebar
             graph={graph}
             selectedNode={selectedNode}
-            onNodeSelect={setSelectedNode}
+            onNodeSelect={selectNode}
             visibleNodeIds={visibleNodeIds}
           />
 
@@ -152,7 +161,7 @@ function App() {
               <GraphCanvas
                 graph={graph}
                 selectedNode={selectedNode}
-                onNodeSelect={setSelectedNode}
+                onNodeSelect={selectNode}
                 onCyInit={handleCyInit}
               />
             )}
@@ -164,8 +173,8 @@ function App() {
               node={selectedNodeData}
               inEdges={inEdges}
               outEdges={outEdges}
-              onClose={() => setSelectedNode(null)}
-              onNodeSelect={setSelectedNode}
+              onClose={() => selectNode(null)}
+              onNodeSelect={selectNode}
             />
           )}
         </div>

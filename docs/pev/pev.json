@@ -41,11 +41,11 @@
       "title": "状态分层",
       "spec_path": "docs/pev/specs/feature-002-state-layering/spec.md",
       "design_path": "docs/pev/specs/feature-002-state-layering/design.md",
-      "status": "todo",
+      "status": "doing",
       "version": 1,
       "verified": false,
       "commit": "",
-      "note": ""
+      "note": "UI store(useSyncExternalStore 复刻 zustand 接口,未新增依赖);App.tsx 接入 store 移除本地 UI useState;删除 orphaned useSearch;8 项 store 单测;typecheck+76 测试通过。待 /pev-verify。"
     },
     {
       "id": "feature-003-design-system",
