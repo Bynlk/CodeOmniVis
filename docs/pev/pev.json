@@ -2,7 +2,7 @@
   "version": 1,
   "project": "CodeOmniVis",
   "created_at": "2026-07-07T02:04:24+08:00",
-  "head_commit": "5065169506e46fe0a6f8ef6fd6702f45a6a6729f",
+  "head_commit": "371fe20b62ea9aaec22f27223d4b85c309c65332",
   "constitution": {
     "asked": true,
     "source": "docs/pev/constitution.md; docs/pev/decisions/0001-初始技术栈约定.md",
@@ -107,13 +107,14 @@
     {
       "id": "feature-008-a11y",
       "title": "可访问性 ≥90",
-      "spec_path": "docs/pev/specs/feature-008-a11y/spec.md",
-      "design_path": "docs/pev/specs/feature-008-a11y/design.md",
-      "status": "doing",
+      "spec_path": "docs/pev/specs/done/feature-008-a11y/spec.md",
+      "design_path": "docs/pev/specs/done/feature-008-a11y/design.md",
+      "status": "done",
       "version": 1,
-      "verified": false,
-      "commit": "",
-      "note": ""
+      "verified": true,
+      "commit": "371fe20",
+      "note": "AC1 CommandPalette/SettingsDrawer 焦点管理(dialog/aria-modal/combobox/listbox/option + Esc + 焦点归还);AC2 index.css focus-visible 焦点环 + prefers-reduced-motion + sr-only/skip-link,图标按钮 aria-label,main#main-content landmark;AC3 typecheck+106测试(含 a11y.test.tsx 5项)+build 通过(Lighthouse 因禁止起服务改由 axe 规则存在性测试替代)。独立核验通过。",
+      "done_at": "2026-07-07"
     },
     {
       "id": "feature-009-performance",
