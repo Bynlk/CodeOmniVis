@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "project": "CodeOmniVis",
+  "created_at": "2026-07-07T02:04:24+08:00",
+  "head_commit": "daee6d7a27843d9e8a30a0186e6e316115e74ae4",
+  "constitution": {
+    "asked": true,
+    "source": "docs/pev/constitution.md; docs/pev/decisions/0001-初始技术栈约定.md",
+    "extra_rules": [
+      "后端框架必须含 TSRPC（项目硬约束，本期前端重构不触碰后端）",
+      "数据库必须含 MongoDB（项目硬约束，本期不触碰）",
+      "前端固定 React18+TS / Cytoscape3+dagre / Tailwind3 / 原生WS / Vite5 / i18next / React Query",
+      "12 个服务器 API 端点与 OmniGraph 数据契约 100% 兼容，禁止破坏",
+      "所有网络请求收敛到 services/ 服务层；禁止外部 CDN；禁止炫技动画"
+    ]
+  },
+  "managed_docs": [
+    {
+      "type": "requirements",
+      "managed_path": "docs/pev/managed/requirements/frontend-redesign-brief_v1.md",
+      "origin": "docs/design/frontend-redesign-brief.md",
+      "kind": "local",
+      "version": 1,
+      "commit": "daee6d7a27843d9e8a30a0186e6e316115e74ae4"
+    }
+  ],
+  "features": [
+    {
+      "id": "feature-001-service-layer",
+      "title": "统一 API 服务层",
+      "spec_path": "docs/pev/specs/feature-001-service-layer/spec.md",
+      "design_path": "docs/pev/specs/feature-001-service-layer/design.md",
+      "status": "todo",
+      "version": 1,
+      "verified": false,
+      "commit": "",
+      "note": ""
+    },
+    {
+      "id": "feature-002-state-layering",
+      "title": "状态分层",
+      "spec_path": "docs/pev/specs/feature-002-state-layering/spec.md",
+      "design_path": "docs/pev/specs/feature-002-state-layering/design.md",
+      "status": "todo",
+      "version": 1,
+      "verified": false,
+      "commit": "",
+      "note": ""
+    },
+    {
+      "id": "feature-003-design-system",
+      "title": "设计系统 + 强制图例",
+      "spec_path": "docs/pev/specs/feature-003-design-system/spec.md",
+      "design_path": "docs/pev/specs/feature-003-design-system/design.md",
+      "status": "todo",
+      "version": 1,
+      "verified": false,
+      "commit": "",
+      "note": ""
+    },
+    {
+      "id": "feature-004-layout-refactor",
+      "title": "布局层级与信息架构重构",
+      "spec_path": "docs/pev/specs/feature-004-layout-refactor/spec.md",
+      "design_path": "docs/pev/specs/feature-004-layout-refactor/design.md",
+      "status": "todo",
+      "version": 1,
+      "verified": false,
+      "commit": "",
+      "note": ""
+    },
+    {
+      "id": "feature-005-unified-search",
+      "title": "统一搜索",
+      "spec_path": "docs/pev/specs/feature-005-unified-search/spec.md",
+      "design_path": "docs/pev/specs/feature-005-unified-search/design.md",
+      "status": "todo",
+      "version": 1,
+      "verified": false,
+      "commit": "",
+      "note": ""
+    },
+    {
+      "id": "feature-006-issue-badge",
+      "title": "问题徽标 + WebSocket 状态可见",
+      "spec_path": "docs/pev/specs/feature-006-issue-badge/spec.md",
+      "design_path": "docs/pev/specs/feature-006-issue-badge/design.md",
+      "status": "todo",
+      "version": 1,
+      "verified": false,
+      "commit": "",
+      "note": ""
+    },
+    {
+      "id": "feature-007-responsive",
+      "title": "响应式布局",
+      "spec_path": "docs/pev/specs/feature-007-responsive/spec.md",
+      "design_path": "docs/pev/specs/feature-007-responsive/design.md",
+      "status": "todo",
+      "version": 1,
+      "verified": false,
+      "commit": "",
+      "note": ""
+    },
+    {
+      "id": "feature-008-a11y",
+      "title": "可访问性 ≥90",
+      "spec_path": "docs/pev/specs/feature-008-a11y/spec.md",
+      "design_path": "docs/pev/specs/feature-008-a11y/design.md",
+      "status": "todo",
+      "version": 1,
+      "verified": false,
+      "commit": "",
+      "note": ""
+    },
+    {
+      "id": "feature-009-performance",
+      "title": "性能预算",
+      "spec_path": "docs/pev/specs/feature-009-performance/spec.md",
+      "design_path": "docs/pev/specs/feature-009-performance/design.md",
+      "status": "todo",
+      "version": 1,
+      "verified": false,
+      "commit": "",
+      "note": ""
+    }
+  ],
+  "decisions": [
+    {
+      "id": "0001",
+      "path": "docs/pev/decisions/0001-初始技术栈约定.md",
+      "title": "初始技术栈约定"
+    }
+  ],
+  "pitfalls_count": 0
+}
