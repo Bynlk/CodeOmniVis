@@ -8,6 +8,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI } from '../lib/nodeConfig'
 import { filterNodesByQuery } from '../lib/searchNodes'
+import { useUiStore } from '../store/uiStore'
 import type { OmniGraph } from '@codeomnivis/shared'
 
 interface CommandPaletteProps {
@@ -19,7 +20,9 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: CommandPaletteProps) {
   const { t } = useTranslation()
-  const [query, setQuery] = useState('')
+  // feature-005: search term single source = uiStore.searchQuery (shared with Header)
+  const query = useUiStore((s) => s.searchQuery)
+  const setQuery = useUiStore((s) => s.setSearchQuery)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -37,7 +40,6 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
   useEffect(() => {
     if (isOpen) {
       triggerRef.current = (document.activeElement as HTMLElement) ?? null
-      setQuery('')
       setSelectedIndex(0)
       setTimeout(() => inputRef.current?.focus(), 50)
     } else if (triggerRef.current) {
