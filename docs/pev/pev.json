@@ -83,13 +83,14 @@
     {
       "id": "feature-006-issue-badge",
       "title": "问题徽标 + WebSocket 状态可见",
-      "spec_path": "docs/pev/specs/feature-006-issue-badge/spec.md",
+      "spec_path": "docs/pev/specs/done/feature-006-issue-badge/spec.md",
       "design_path": "docs/pev/specs/feature-006-issue-badge/design.md",
-      "status": "doing",
+      "status": "done",
       "version": 1,
-      "verified": false,
+      "verified": true,
       "commit": "b0d8a5726a60cc254f4ad342f4a8a0547d47834c",
-      "note": ""
+      "note": "",
+      "done_at": "2026-07-07"
     },
     {
       "id": "feature-007-responsive",

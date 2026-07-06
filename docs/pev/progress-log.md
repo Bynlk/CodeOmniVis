@@ -35,3 +35,4 @@
 - 新增 4 项 selectVisibleNodeIds 单测;既有 filterNodesByQuery 测试无回归。
 - typecheck 通过;vitest 90 passed。
 - 2026-07-07 feature-006-issue-badge 实现完成（commit b0d8a57）：问题 tab 徽标接入 /api/graph/errors 真实数量（替换硬编码 0，为 0 时隐藏）；uiStore 新增 wsStatus 并由 useWebSocket 消费 isConnected（600ms 防抖）；Header 新增 WsStatusIndicator 连接状态灯（绿/灰/黄 + i18n）。typecheck ✅ / 98 tests ✅ / build ✅（主 chunk 81.35KB，≤80KB 目标留待 feature-009 懒加载）。待 /pev-verify。
+- 2026-07-07 feature-006-issue-badge 通过独立子代理验证(AC1/AC2/AC3 全 ✅,无越界),已归档至 specs/done/,状态置 done。
