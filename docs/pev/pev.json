@@ -77,7 +77,7 @@
       "status": "doing",
       "version": 1,
       "verified": false,
-      "commit": "",
+      "commit": "47404ed",
       "note": "CommandPalette 改用 filterNodesByQuery 唯一索引(与 Header 同源);searchQuery 单一真源=uiStore;新增 selectVisibleNodeIds selector,App 可见性派生迁入;Cmd+K 跳转 vs Header 过滤职责分离;4 项 selector 测试;typecheck+90 测试通过。待 /pev-verify。"
     },
     {
