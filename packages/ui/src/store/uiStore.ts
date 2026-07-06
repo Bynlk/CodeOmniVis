@@ -21,6 +21,7 @@ export interface UiState {
   isCommandPaletteOpen: boolean
   isSettingsOpen: boolean
   isMobileDrawerOpen: boolean
+  isLegendCollapsed: boolean
 }
 
 export interface UiActions {
@@ -30,9 +31,20 @@ export interface UiActions {
   toggleCommandPalette: (open?: boolean) => void
   toggleSettings: (open?: boolean) => void
   toggleMobileDrawer: (open?: boolean) => void
+  toggleLegend: (collapsed?: boolean) => void
 }
 
 export type UiStore = UiState & UiActions
+
+const LEGEND_STORAGE_KEY = 'codeomnivis-legend-collapsed'
+
+function readLegendCollapsed(): boolean {
+  try {
+    return localStorage.getItem(LEGEND_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
 
 const initialState: UiState = {
   selectedNodeId: null,
@@ -41,6 +53,7 @@ const initialState: UiState = {
   isCommandPaletteOpen: false,
   isSettingsOpen: false,
   isMobileDrawerOpen: false,
+  isLegendCollapsed: readLegendCollapsed(),
 }
 
 let state: UiStore
@@ -70,6 +83,15 @@ state = {
   toggleSettings: (open) => setState({ isSettingsOpen: open ?? !state.isSettingsOpen }),
   toggleMobileDrawer: (open) =>
     setState({ isMobileDrawerOpen: open ?? !state.isMobileDrawerOpen }),
+  toggleLegend: (collapsed) => {
+    const next = collapsed ?? !state.isLegendCollapsed
+    try {
+      localStorage.setItem(LEGEND_STORAGE_KEY, next ? '1' : '0')
+    } catch {
+      /* ignore persistence failure */
+    }
+    setState({ isLegendCollapsed: next })
+  },
 }
 
 function subscribe(listener: () => void): () => void {
@@ -103,5 +125,5 @@ export function getUiState(): UiStore {
 
 /** 测试辅助:重置到初始状态。 */
 export function __resetUiStore(): void {
-  setState({ ...initialState })
+  setState({ ...initialState, isLegendCollapsed: false })
 }

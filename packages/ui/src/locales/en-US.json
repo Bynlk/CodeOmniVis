@@ -155,5 +155,14 @@
   "promo.tertiary.cta": "View README",
   "about.licenseSummary": "Licensed under PolyForm Noncommercial 1.0.0 — free for non-commercial use only. Commercial use requires a separate license.",
   "settings.ai.invalidUrl": "Base URL is invalid or blocked by the security policy (only https public hosts or local loopback are allowed)",
-  "settings.ai.rememberKey": "Remember key on this device (otherwise kept only for this tab)"
+  "settings.ai.rememberKey": "Remember key on this device (otherwise kept only for this tab)",
+  "nodeType.kotlin_class": "Kotlin Class",
+  "nodeType.kotlin_interface": "Kotlin Interface",
+  "nodeType.kotlin_object": "Kotlin Object",
+  "nodeType.kotlin_function": "Kotlin Function",
+  "nodeType.kotlin_route": "Kotlin Route",
+  "legend.title": "Legend",
+  "legend.expand": "Expand legend",
+  "legend.collapse": "Collapse legend",
+  "legend.empty": "No node types to show"
 }

@@ -9,3 +9,12 @@
 - 服务器状态仍归 React Query(useGraph),Cytoscape 仍走 cyRef + CytoscapeContext,未动。
 - 新增 `__tests__/store/uiStore.test.ts`(8 项:初始态/各 action/引用不变性)。
 - typecheck 通过;vitest 76 passed(含新增 8)。
+
+## 2026-07-07 feature-003-design-system(开发完成,待验证)
+- 扩展 `tailwind.config.js`:node 语义色 token(17 种,镜像 shared 的 NODE_COLORS 同值)+ 统一 spacing/borderRadius/fontSize/boxShadow scale。
+- 新建 `components/Legend.tsx`:常驻画布左下角,颜色 + emoji 直接读 `nodeConfig`(与 Cytoscape 同源),默认展开、可折叠;折叠态入 uiStore 并持久化 localStorage(key codeomnivis-legend-collapsed);仅显示图谱实际出现的节点类型。
+- uiStore 增 `isLegendCollapsed` 字段 + `toggleLegend` action(带 localStorage 读写)。
+- 补齐 5 个 kotlin nodeType i18n 与 legend.* 文案(zh-CN / en-US)。
+- 新增 ADR `decisions/0002-节点配色单一真源.md`:brief 试探色板与画布实际 NODE_COLORS 冲突,裁定以 NODE_COLORS 为唯一真源(图例=画布 100% 一致),覆盖全部 17 种。
+- 新增 `__tests__/components/Legend.test.tsx`(3 项:存在性 / swatch 颜色单一真源一致 / 折叠态隐藏列表)。
+- typecheck 通过;vitest 79 passed(含新增 3);vite 生产构建通过,主 chunk 78.14KB(gzip 23.34KB)。

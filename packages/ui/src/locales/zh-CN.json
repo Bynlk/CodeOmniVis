@@ -155,5 +155,14 @@
   "promo.tertiary.cta": "查看 README",
   "about.licenseSummary": "采用 PolyForm Noncommercial 1.0.0 许可 —— 仅限非商业用途免费使用,商业使用需另行授权。",
   "settings.ai.invalidUrl": "Base URL 无效或被安全策略拒绝(仅允许 https 公网地址或本地环回地址)",
-  "settings.ai.rememberKey": "在本设备记住密钥(否则仅在本标签页有效)"
+  "settings.ai.rememberKey": "在本设备记住密钥(否则仅在本标签页有效)",
+  "nodeType.kotlin_class": "Kotlin 类",
+  "nodeType.kotlin_interface": "Kotlin 接口",
+  "nodeType.kotlin_object": "Kotlin 对象",
+  "nodeType.kotlin_function": "Kotlin 函数",
+  "nodeType.kotlin_route": "Kotlin 路由",
+  "legend.title": "图例",
+  "legend.expand": "展开图例",
+  "legend.collapse": "折叠图例",
+  "legend.empty": "暂无节点类型"
 }

@@ -16,6 +16,7 @@ import { TracePanel } from './components/TabBar/TracePanel'
 import { CommandPalette } from './components/CommandPalette'
 import { SettingsDrawer } from './components/SettingsDrawer'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { Legend } from './components/Legend'
 import { CytoscapeContext } from './lib/cytoscapeContext'
 import { SelectionContext } from './lib/selectionContext'
 import { useGraph } from './hooks/useGraph'
@@ -148,6 +149,9 @@ function App() {
           <main className="flex-1 relative">
             {/* Tab 面板（覆盖在图谱上方） */}
             <TabPanel activeTab={activeTab} tabs={TABS} />
+
+            {/* 常驻图例（feature-003）—— 画布左下角,配色与画布单一真源一致 */}
+            {!isLoading && !error && <Legend graph={graph} />}
 
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
