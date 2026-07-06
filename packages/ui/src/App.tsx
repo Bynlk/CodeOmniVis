@@ -101,6 +101,14 @@ function App() {
     <CytoscapeContext.Provider value={cyRef}>
       <SelectionContext.Provider value={selectedNode}>
       <div className="flex flex-col h-screen bg-slate-900">
+        {/* feature-008 a11y: 跳转到主内容链接(键盘 Tab 首个可达元素,聚焦时可见) */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:top-2 focus:left-2 focus:px-3 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
+        >
+          {t('a11y.skipToMain')}
+        </a>
+
         {/* 命令面板 */}
         <CommandPalette
           graph={graph}
@@ -133,7 +141,7 @@ function App() {
           />
 
           {/* 中央画布区(常驻,面板打开时收窄而非被盖) */}
-          <main className="flex-1 relative min-w-0">
+          <main id="main-content" tabIndex={-1} className="flex-1 relative min-w-0">
             {/* 常驻图例（feature-003）—— 画布左下角,配色与画布单一真源一致 */}
             {!isLoading && !error && <Legend graph={graph} />}
 

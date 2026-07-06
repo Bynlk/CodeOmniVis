@@ -179,5 +179,8 @@
   "menu.close": "Close menu",
   "drawer.close": "Close drawer",
   "sidebar.expand": "Expand sidebar",
-  "sidebar.collapse": "Collapse sidebar"
+  "sidebar.collapse": "Collapse sidebar",
+  "a11y": {
+    "skipToMain": "Skip to main content"
+  }
 }

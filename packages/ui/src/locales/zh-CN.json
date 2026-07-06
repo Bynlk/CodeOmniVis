@@ -179,5 +179,8 @@
   "menu.close": "关闭菜单",
   "drawer.close": "关闭抽屉",
   "sidebar.expand": "展开侧边栏",
-  "sidebar.collapse": "收起侧边栏"
+  "sidebar.collapse": "收起侧边栏",
+  "a11y": {
+    "skipToMain": "跳转到主内容"
+  }
 }

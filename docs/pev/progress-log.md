@@ -45,3 +45,5 @@
 - 新增 __tests__/components/responsive.test.tsx(3 项:桌面/移动两套渲染 / 抽屉开合 store 联动 / TabPanel fixed↔md:static)。
 - typecheck 通过;vitest 101 passed(含新增 3);vite build 通过,主 chunk 83.37KB(gzip 24.65KB,略超 80KB 目标,留待 feature-009 懒加载)。待 /pev-verify。
 - 2026-07-07 feature-007-responsive 独立核验通过(AC1/AC2/AC3):补 NodeDetailPanel w-full/max-w-sm sm:w-80 防移动端溢出+role=complementary;三档关键操作(搜索/tab/图例/节点选择/抽屉)可达;101 测试+typecheck+build 通过。视觉档因 <network_security> 禁止起本地服务,改由 SSR 断点标记测试+生产构建覆盖,已记录。归档至 specs/done,状态置 done。
+
+- 2026-07-07 feature-008(a11y):补齐全局 focus-visible 焦点环 + prefers-reduced-motion + .sr-only/skip-link(index.css);CommandPalette 增 role=dialog/aria-modal + combobox/listbox/option + aria-activedescendant + 关闭归还焦点;SettingsDrawer 增 Esc 关闭 + 焦点归还 + dialog aria-label;LangToggle 图标按钮补 aria-label;App 增 skip-to-main 跳转链接与 main#main-content landmark;新增 a11y.test.tsx(5 项 aria/role 存在性)。typecheck + 106 tests + build 全绿。

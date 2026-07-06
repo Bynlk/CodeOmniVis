@@ -13,10 +13,11 @@ export function LangToggle() {
   return (
     <button
       onClick={toggle}
+      aria-label={isZh ? 'Switch to English' : '切换为中文'}
       className="rounded px-2 py-1 text-xs text-slate-400
                  hover:bg-slate-700 hover:text-white transition-colors"
     >
-      {isZh ? '🌐 EN' : '🌐 中'}
+      <span aria-hidden="true">{isZh ? '🌐 EN' : '🌐 中'}</span>
     </button>
   )
 }

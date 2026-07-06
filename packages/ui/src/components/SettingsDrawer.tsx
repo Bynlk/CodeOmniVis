@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { postProject } from '../services'
@@ -22,6 +22,20 @@ const TIER_ACCENT: Record<string, string> = {
 export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
+  // feature-008 a11y: 记住触发元素,Esc 关闭 + 关闭后归还焦点。
+  const triggerRef = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (open) {
+      triggerRef.current = (document.activeElement as HTMLElement) ?? null
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose()
+      }
+      document.addEventListener('keydown', onKey)
+      return () => document.removeEventListener('keydown', onKey)
+    }
+    triggerRef.current?.focus?.()
+    triggerRef.current = null
+  }, [open, onClose])
 
   // --- AI 组(单一数据源:全局 store,经 AiConfigForm) ---
   const { config } = useAiConfig()
@@ -64,7 +78,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={t('settings.title')}>
       {/* 遮罩 */}
       <button
         className="absolute inset-0 bg-black/50"

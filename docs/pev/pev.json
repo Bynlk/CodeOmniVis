@@ -109,7 +109,7 @@
       "title": "可访问性 ≥90",
       "spec_path": "docs/pev/specs/feature-008-a11y/spec.md",
       "design_path": "docs/pev/specs/feature-008-a11y/design.md",
-      "status": "todo",
+      "status": "doing",
       "version": 1,
       "verified": false,
       "commit": "",
