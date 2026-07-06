@@ -135,7 +135,7 @@ async function doAutoDetect(root: string): Promise<ProjectMeta> {
     backendFramework,
     databaseType,
     monorepoType,
-    frontendDirs: ['app', 'src/app', 'pages', 'src/pages'],
+    frontendDirs: ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'hooks', 'src/hooks', 'lib', 'src/lib', 'features', 'src/features', 'services', 'src/services'],
     backendDirs: ['server', 'src/server', 'api', 'src/api'],
     trpcRouterPaths,
     tsrpcServicePaths,
@@ -562,6 +562,24 @@ export function collectScanDirs(root: string, config?: CodeOmniVisConfig): strin
       if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
         autoDirs.push(full)
       }
+    }
+  }
+
+  // 顶层源码目录（与 app/pages 同级，React/Next.js 常见布局）。
+  // 上面的 standardSubDirs 只在选中的主应用目录下探测 app/components 等，
+  // 覆盖不到与 app/ 平级的根级目录（components/、hooks/、lib/、features/、services/），
+  // 导致其内部的 fetch('/api/...') 无法建 calls_api 边（组件/数据请求逻辑漏扫）。
+  const topLevelSrcDirs = [
+    'components', 'src/components',
+    'hooks', 'src/hooks',
+    'lib', 'src/lib',
+    'features', 'src/features',
+    'services', 'src/services',
+  ]
+  for (const c of topLevelSrcDirs) {
+    const full = path.join(root, c)
+    if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
+      autoDirs.push(full)
     }
   }
 

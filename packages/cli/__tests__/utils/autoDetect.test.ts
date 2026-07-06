@@ -126,3 +126,41 @@ describe('collectScanDirs sibling boundary (S-08/F4)', () => {
     expect(dirs.some(d => path.resolve(d) === path.resolve(sibling, 'src'))).toBe(true)
   })
 })
+
+describe('collectScanDirs 覆盖顶层源码目录（回归：根级组件/数据请求逻辑漏扫）', () => {
+  let base: string
+  let root: string
+
+  beforeAll(() => {
+    base = fs.mkdtempSync(path.join(os.tmpdir(), 'codeomnivis-topcomp-'))
+    root = path.join(base, 'project')
+    fs.mkdirSync(path.join(root, 'app'), { recursive: true })
+    fs.writeFileSync(path.join(root, 'app', 'page.tsx'), 'export default function Page(){return null}')
+    // 与 app/ 平级的根级源码目录（旧逻辑扫不到）
+    for (const d of ['components', 'hooks', 'lib', 'features', 'services']) {
+      fs.mkdirSync(path.join(root, d), { recursive: true })
+      fs.writeFileSync(path.join(root, d, 'x.ts'), 'export const x = 1')
+      fs.mkdirSync(path.join(root, 'src', d), { recursive: true })
+      fs.writeFileSync(path.join(root, 'src', d, 'y.ts'), 'export const y = 1')
+    }
+  })
+
+  afterAll(() => {
+    fs.rmSync(base, { recursive: true, force: true })
+  })
+
+  it.each(['components', 'hooks', 'lib', 'features', 'services'])('纳入根级 %s/', (d) => {
+    const dirs = collectScanDirs(root).map(x => path.resolve(x))
+    expect(dirs).toContain(path.resolve(root, d))
+  })
+
+  it.each(['components', 'hooks', 'lib', 'features', 'services'])('纳入 src/%s/', (d) => {
+    const dirs = collectScanDirs(root).map(x => path.resolve(x))
+    expect(dirs).toContain(path.resolve(root, 'src', d))
+  })
+
+  it('结果去重，无重复目录', () => {
+    const dirs = collectScanDirs(root)
+    expect(dirs.length).toBe(new Set(dirs).size)
+  })
+})

@@ -97,9 +97,15 @@ export async function runAnalyze(options: AnalyzeOptions, deps: AnalyzeDeps = de
     const graph = builder.loadGraph()
     const crossLayerResult = await linker.link(graph)
 
-    // 将跨层边加入 graph 并保存到数据库
-    graph.edges.push(...crossLayerResult.edges)
+    // 将跨层边加入 graph 并保存到数据库。
+    // 注意：loadGraph() 会带出上次运行持久化到 DB 的跨层边，而本次 linker.link 会基于
+    // unknown 占位边重新生成同 id 的 resolved 边。若直接 push，会与 DB 中已存在的同 id 边
+    // 在内存 graph.edges 中叠加，导致每跑一次就多一条重复边（缓存累积缺陷）。
+    // 因此这里按 edge.id 去重后再合并到 graph.edges。
     if (crossLayerResult.edges.length > 0) {
+      const existingEdgeIds = new Set(graph.edges.map(e => e.id))
+      const newCrossLayerEdges = crossLayerResult.edges.filter(e => !existingEdgeIds.has(e.id))
+      graph.edges.push(...newCrossLayerEdges)
       db.upsertEdges(crossLayerResult.edges)
     }
     // linker.link 可能向 graph.nodes 中添加了 synthetic 节点
