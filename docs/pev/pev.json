@@ -55,7 +55,7 @@
       "status": "doing",
       "version": 1,
       "verified": false,
-      "commit": "",
+      "commit": "9c11b7c",
       "note": "tailwind token(node 语义色镜像 NODE_COLORS + spacing/radius/fontSize/shadow scale);新建 Legend.tsx 常驻画布左下角,颜色/emoji 单一真源=nodeConfig,可折叠且 localStorage 记忆;补 5 个 kotlin nodeType 与 legend i18n;ADR 0002 固定配色单一真源;3 项 Legend 测试;typecheck+79 测试+prod build 通过。待 /pev-verify。"
     },
     {
