@@ -2,7 +2,7 @@
   "version": 1,
   "project": "CodeOmniVis",
   "created_at": "2026-07-07T02:04:24+08:00",
-  "head_commit": "371fe20b62ea9aaec22f27223d4b85c309c65332",
+  "head_commit": "69f11cbd6c6943ca7789a494161abadfbfd61a64",
   "constitution": {
     "asked": true,
     "source": "docs/pev/constitution.md; docs/pev/decisions/0001-初始技术栈约定.md",
