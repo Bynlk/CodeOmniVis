@@ -7,12 +7,6 @@ import Sidebar from './components/Sidebar'
 import NodeDetailPanel from './components/NodeDetailPanel'
 import { TabBar } from './components/TabBar/TabBar'
 import { TabPanel } from './components/TabBar/TabPanel'
-import { FilterPanel } from './components/Filter/FilterPanel'
-import { IssuesPanel } from './components/TabBar/IssuesPanel'
-import { AiPanel } from './components/TabBar/AiPanel'
-import { StatsPanel } from './components/TabBar/StatsPanel'
-import { DataFlowPanel } from './components/TabBar/DataFlowPanel'
-import { TracePanel } from './components/TabBar/TracePanel'
 import { CommandPalette } from './components/CommandPalette'
 import { SettingsDrawer } from './components/SettingsDrawer'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -23,17 +17,6 @@ import { useGraph } from './hooks/useGraph'
 import { useWebSocket } from './hooks/useWebSocket'
 import { useUiStore } from './store/uiStore'
 import { filterNodesByQuery } from './lib/searchNodes'
-import type { TabConfig } from './types/tabs'
-
-const TABS: TabConfig[] = [
-  { id: 'graph',    labelKey: 'tab.graph',    emoji: '🗺️', panelComponent: null },
-  { id: 'filter',   labelKey: 'tab.filter',   emoji: '🔍', panelComponent: FilterPanel },
-  { id: 'issues',   labelKey: 'tab.issues',   emoji: '⚠️', panelComponent: IssuesPanel },
-  { id: 'dataflow', labelKey: 'tab.dataflow', emoji: '🌊', panelComponent: DataFlowPanel },
-  { id: 'trace',    labelKey: 'tab.trace',    emoji: '🛤️', panelComponent: TracePanel },
-  { id: 'ai',       labelKey: 'tab.ai',       emoji: '🤖', panelComponent: AiPanel },
-  { id: 'stats',    labelKey: 'tab.stats',    emoji: '📊', panelComponent: StatsPanel },
-]
 
 function App() {
   const { t } = useTranslation()
@@ -127,12 +110,11 @@ function App() {
         {/* 顶部导航栏 */}
         <Header query={searchQuery} onQueryChange={setSearchQuery} onOpenSettings={() => toggleSettings(true)} />
 
-        {/* Tab 栏 */}
+        {/* 顶层分组导航(≤4 组) */}
         <TabBar
           activeTab={activeTab}
           onTabChange={setActiveTab}
           issueBadgeCount={0}
-          tabs={TABS}
         />
 
         {/* 主内容区域 */}
@@ -145,11 +127,8 @@ function App() {
             visibleNodeIds={visibleNodeIds}
           />
 
-          {/* 图可视化区域 + Tab 面板叠加 */}
-          <main className="flex-1 relative">
-            {/* Tab 面板（覆盖在图谱上方） */}
-            <TabPanel activeTab={activeTab} tabs={TABS} />
-
+          {/* 中央画布区(常驻,面板打开时收窄而非被盖) */}
+          <main className="flex-1 relative min-w-0">
             {/* 常驻图例（feature-003）—— 画布左下角,配色与画布单一真源一致 */}
             {!isLoading && !error && <Legend graph={graph} />}
 
@@ -170,6 +149,9 @@ function App() {
               />
             )}
           </main>
+
+          {/* 分析/工具 dock 面板(独立栅格轨道,不覆盖画布) */}
+          <TabPanel activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* 右侧详情面板 */}
           {selectedNodeData && (

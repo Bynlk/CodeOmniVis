@@ -164,5 +164,10 @@
   "legend.title": "图例",
   "legend.expand": "展开图例",
   "legend.collapse": "折叠图例",
-  "legend.empty": "暂无节点类型"
+  "legend.empty": "暂无节点类型",
+  "group.graph": "图谱",
+  "group.analysis": "分析",
+  "group.issues": "问题",
+  "group.intelligence": "智能",
+  "panel.close": "关闭面板"
 }

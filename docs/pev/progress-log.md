@@ -18,3 +18,12 @@
 - 新增 ADR `decisions/0002-节点配色单一真源.md`:brief 试探色板与画布实际 NODE_COLORS 冲突,裁定以 NODE_COLORS 为唯一真源(图例=画布 100% 一致),覆盖全部 17 种。
 - 新增 `__tests__/components/Legend.test.tsx`(3 项:存在性 / swatch 颜色单一真源一致 / 折叠态隐藏列表)。
 - typecheck 通过;vitest 79 passed(含新增 3);vite 生产构建通过,主 chunk 78.14KB(gzip 23.34KB)。
+
+## 2026-07-07 feature-004-layout-refactor(开发完成,待验证)
+- 顶层 tab 从 7 个精简为 4 个分组(tabGroups.ts):图谱 / 分析[filter+dataflow+trace] / 问题[issues,带 badge] / 智能[ai+stats];不删功能仅归类。
+- TabPanel 从 `absolute` 覆盖画布改为 `<aside>` dock(右侧独立栅格轨道,w-96 max-40%),面板打开时画布收窄而非被盖(AC1);面板头含分组标题+关闭,多子 tab 时渲染子导航。
+- TabBar 重写为分组导航;App.tsx 主区改为 flex 四区(顶栏/侧栏/画布 min-w-0/详情),TabPanel 移出 main 作为 dock 兄弟节点。
+- GraphCanvas 增 ResizeObserver + rAF 去抖调用 cy.resize(),面板开合时同步视口(AC1 风险项)。
+- 补 group.* / panel.close i18n(zh/en)。
+- 新增 `__tests__/components/layout.test.tsx`(7 项:分组≤4 / label / badge / 叶子归组 / dock 非 absolute / 关闭 / 子导航)。
+- typecheck 通过;vitest 86 passed(含新增 7);生产构建通过(主 chunk 80.39KB,略超 80KB 目标,留待 feature-009 懒加载优化)。

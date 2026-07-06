@@ -164,5 +164,10 @@
   "legend.title": "Legend",
   "legend.expand": "Expand legend",
   "legend.collapse": "Collapse legend",
-  "legend.empty": "No node types to show"
+  "legend.empty": "No node types to show",
+  "group.graph": "Graph",
+  "group.analysis": "Analysis",
+  "group.issues": "Issues",
+  "group.intelligence": "Insights",
+  "panel.close": "Close panel"
 }

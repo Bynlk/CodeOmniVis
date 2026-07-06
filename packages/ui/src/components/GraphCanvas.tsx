@@ -141,7 +141,20 @@ export default function GraphCanvas({ graph, selectedNode, onNodeSelect, onCyIni
       onNodeSelectRef.current(event.target.id())
     })
 
+    // 容器尺寸变化(如分析面板 dock 开合导致画布收窄/展开)时,
+    // 同步 Cytoscape 视口,避免布局错乱(feature-004 AC1 风险项)。
+    let raf = 0
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        cy.resize()
+      })
+    })
+    ro.observe(containerRef.current)
+
     return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
       cy.destroy()
       cyRef.current = null
     }

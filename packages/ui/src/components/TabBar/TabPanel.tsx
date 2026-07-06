@@ -1,22 +1,86 @@
-import type { TabId, TabConfig } from '../../types/tabs'
+import { useTranslation } from 'react-i18next'
+import type { TabId } from '../../types/tabs'
+import { findGroupOfTab } from './tabGroups'
 
 interface TabPanelProps {
   activeTab: TabId | null
-  tabs: TabConfig[]
+  onTabChange: (tab: TabId | null) => void
 }
 
-export function TabPanel({ activeTab, tabs }: TabPanelProps) {
-  const PanelComponent = activeTab
-    ? tabs.find(t => t.id === activeTab)?.panelComponent ?? null
-    : null
+/**
+ * Dock 式分析/工具面板(feature-004)。
+ *
+ * 与旧实现的关键区别:不再 `absolute` 覆盖画布,而是作为一个独立的右侧 dock 列
+ * 存在于 flex 布局中——面板打开时画布收窄而非被盖(AC1)。
+ * 面板顶部提供同组子 tab 的子导航(如 分析组: 筛选/数据流/追踪)。
+ * 无 activeTab(图谱视图)时不渲染,画布占满。
+ */
+export function TabPanel({ activeTab, onTabChange }: TabPanelProps) {
+  const { t } = useTranslation()
+  const group = findGroupOfTab(activeTab)
+  if (!group || !activeTab) return null
 
+  const child = group.children.find((c) => c.id === activeTab)
+  const PanelComponent = child?.panelComponent ?? null
   if (!PanelComponent) return null
 
+  const showSubNav = group.children.length > 1
+
   return (
-    <div className="absolute left-0 right-0 top-0 z-10 max-h-64 overflow-y-auto
-                    border-b border-slate-600 bg-slate-800/95 backdrop-blur-sm
-                    shadow-xl animate-slideDown">
-      <PanelComponent />
-    </div>
+    <aside
+      className="flex h-full w-96 max-w-[40%] shrink-0 flex-col border-l border-slate-700
+                 bg-slate-800 shadow-ds-panel"
+      role="tabpanel"
+      aria-label={t(group.labelKey)}
+    >
+      {/* 面板头:分组标题 + 关闭 */}
+      <div className="flex items-center justify-between border-b border-slate-700 px-ds-4 py-ds-2">
+        <span className="flex items-center gap-1.5 text-ds-sm font-medium text-slate-100">
+          <span aria-hidden="true">{group.emoji}</span>
+          {t(group.labelKey)}
+        </span>
+        <button
+          type="button"
+          onClick={() => onTabChange(null)}
+          aria-label={t('panel.close')}
+          className="rounded-ds-sm px-2 py-1 text-slate-400 hover:bg-slate-700 hover:text-slate-100
+                     focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* 子导航(同组多个子 tab 时才显示) */}
+      {showSubNav && (
+        <div className="flex items-center gap-1 border-b border-slate-700 px-ds-2 py-1.5" role="tablist">
+          {group.children.map((c) => {
+            const active = c.id === activeTab
+            return (
+              <button
+                key={c.id}
+                role="tab"
+                aria-selected={active}
+                onClick={() => onTabChange(c.id)}
+                className={`flex items-center gap-1 rounded-ds-sm px-ds-2 py-1 text-ds-xs
+                            transition-colors focus:outline-none focus-visible:ring-2
+                            focus-visible:ring-primary-400 ${
+                              active
+                                ? 'bg-slate-700 text-white'
+                                : 'text-slate-400 hover:text-slate-200'
+                            }`}
+              >
+                <span aria-hidden="true">{c.emoji}</span>
+                <span>{t(c.labelKey)}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* 面板内容 */}
+      <div className="flex-1 overflow-y-auto">
+        <PanelComponent />
+      </div>
+    </aside>
   )
 }
