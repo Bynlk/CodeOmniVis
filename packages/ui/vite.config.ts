@@ -29,7 +29,17 @@ export default defineConfig({
           if (id.includes('cytoscape')) {
             return 'vendor-cytoscape'
           }
-          if (id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) {
+          // 必须把 use-sync-external-store 与 react/react-dom/scheduler 归入同一块,
+          // 否则其 CJS shim 顶部 `import { r as i } from "vendor-react"; var u = i;`
+          // 会与 vendor-react 形成循环依赖:vendor-react 反过来又 import vendor 模块。
+          // 浏览器按 modulepreload 顺序先求值 vendor,此时 vendor-react 尚未求值,
+          // 其 export 绑定 `r` 拿到空 {exports:{}} 壳 -> shim 内 u.useState 抛 TypeError。
+          if (
+            id.includes('react-dom') ||
+            id.includes('/react/') ||
+            id.includes('scheduler') ||
+            id.includes('use-sync-external-store')
+          ) {
             return 'vendor-react'
           }
           if (id.includes('i18next')) {
