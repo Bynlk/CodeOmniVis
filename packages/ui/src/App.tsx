@@ -96,6 +96,11 @@ function App() {
     return graph.edges.filter(e => e.source === selectedNode)
   }, [graph, selectedNode])
 
+  // feature-010 布局层级:右轨(分析 dock / 详情面板)是否占位。
+  // dock 与详情由 uiStore 保证互斥,故右轨至多一个占用者。
+  // 空 → 两轨栅格;有占用者 → 三轨栅格([侧栏 | 画布 | 右轨])。
+  const isRightTrackOpen = Boolean(activeTab) || Boolean(selectedNodeData)
+
   return (
     <ErrorBoundary>
     <CytoscapeContext.Provider value={cyRef}>
@@ -104,7 +109,7 @@ function App() {
         {/* feature-008 a11y: 跳转到主内容链接(键盘 Tab 首个可达元素,聚焦时可见) */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:top-2 focus:left-2 focus:px-3 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-modal focus:top-2 focus:left-2 focus:px-3 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
         >
           {t('a11y.skipToMain')}
         </a>
@@ -130,8 +135,13 @@ function App() {
           issueBadgeCount={issueBadgeCount}
         />
 
-        {/* 主内容区域 */}
-        <div className="flex flex-1 overflow-hidden">
+        {/* 主内容区域 —— feature-010 CSS Grid 三轨:[侧栏 auto | 画布 1fr | 右轨 auto]。
+            右轨仅在 dock/详情打开时出现(二者互斥),画布随之收窄而非被覆盖。 */}
+        <div
+          className={`grid flex-1 overflow-hidden ${
+            isRightTrackOpen ? 'grid-cols-[auto_1fr_auto]' : 'grid-cols-[auto_1fr]'
+          }`}
+        >
           {/* 左侧边栏 — 始终显示 */}
           <Sidebar
             graph={graph}
@@ -141,7 +151,7 @@ function App() {
           />
 
           {/* 中央画布区(常驻,面板打开时收窄而非被盖) */}
-          <main id="main-content" tabIndex={-1} className="flex-1 relative min-w-0">
+          <main id="main-content" tabIndex={-1} className="relative min-w-0 overflow-hidden">
             {/* 常驻图例（feature-003）—— 画布左下角,配色与画布单一真源一致 */}
             {!isLoading && !error && <Legend graph={graph} />}
 

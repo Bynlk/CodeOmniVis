@@ -141,13 +141,13 @@ export default function Sidebar({ graph, selectedNode, onNodeSelect, visibleNode
       {/* 移动端抽屉(<md):off-canvas,由 isMobileDrawerOpen 控制,画布不被挤压。 */}
       {isMobileDrawerOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          className="fixed inset-0 z-drawer bg-black/50 md:hidden"
           onClick={() => toggleMobileDrawer(false)}
           aria-hidden="true"
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 max-w-[80vw] bg-slate-800 border-r border-slate-700
+        className={`fixed inset-y-0 left-0 z-drawer w-72 max-w-[80vw] bg-slate-800 border-r border-slate-700
                     overflow-y-auto shadow-xl transform transition-transform duration-200 md:hidden ${
                       isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}

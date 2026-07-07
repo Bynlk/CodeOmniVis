@@ -24,7 +24,17 @@ export default function NodeDetailPanel({
   const color = NODE_COLORS[node.type] || '#94a3b8'
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-full max-w-sm sm:w-80 bg-slate-800 border-l border-slate-700 overflow-y-auto shadow-xl z-20" role="complementary">
+    <>
+      {/* 移动端遮罩(<md):点击关闭。桌面进栅格轨道,无遮罩。 */}
+      <div
+        className="fixed inset-0 z-drawer bg-black/50 md:hidden"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      {/* feature-010:详情面板不再相对视口 absolute(旧实现会压住 Header 并与分析 dock 重叠)。
+          移动端 <md 为 fixed 抽屉;桌面 md:static 进入主区 CSS Grid 右轨,与分析 dock 互斥占用同一轨道。
+          保留 feature-007 响应式宽度:窄屏 w-full/max-w-sm,桌面 md:w-80。 */}
+    <div className="fixed inset-y-0 right-0 z-drawer w-full max-w-sm bg-slate-800 border-l border-slate-700 overflow-y-auto shadow-ds-panel md:static md:z-auto md:h-full md:w-80 md:max-w-none md:shrink-0" role="complementary">
       {/* 头部 */}
       <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-4">
         <div className="flex items-center justify-between">
@@ -127,5 +137,6 @@ export default function NodeDetailPanel({
         </button>
       </div>
     </div>
+    </>
   )
 }

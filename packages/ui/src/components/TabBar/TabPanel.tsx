@@ -34,12 +34,12 @@ export function TabPanel({ activeTab, onTabChange }: TabPanelProps) {
     <>
       {/* 移动端遮罩(<md):点击关闭,面板此时全屏覆盖不挤压画布 */}
       <div
-        className="fixed inset-0 z-30 bg-black/50 md:hidden"
+        className="fixed inset-0 z-drawer bg-black/50 md:hidden"
         onClick={() => onTabChange(null)}
         aria-hidden="true"
       />
       <aside
-        className="fixed inset-y-0 right-0 z-40 flex w-full max-w-full flex-col border-l border-slate-700
+        className="fixed inset-y-0 right-0 z-drawer flex w-full max-w-full flex-col border-l border-slate-700
                    bg-slate-800 shadow-ds-panel
                    md:static md:z-auto md:h-full md:w-96 md:max-w-[40%] md:shrink-0"
         role="tabpanel"

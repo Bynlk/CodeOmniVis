@@ -88,7 +88,7 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
   const activeOptionId = results[selectedIndex] ? `cmd-option-${results[selectedIndex].id}` : undefined
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]">
+    <div className="fixed inset-0 z-modal flex items-start justify-center pt-[20vh]">
       {/* 背景遮罩 */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
 

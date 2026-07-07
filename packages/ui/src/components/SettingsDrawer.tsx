@@ -78,7 +78,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={t('settings.title')}>
+    <div className="fixed inset-0 z-modal flex justify-end" role="dialog" aria-modal="true" aria-label={t('settings.title')}>
       {/* 遮罩 */}
       <button
         className="absolute inset-0 bg-black/50"

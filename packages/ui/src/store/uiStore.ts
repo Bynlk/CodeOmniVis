@@ -81,14 +81,31 @@ function setState(patch: Partial<UiState>): void {
 
 state = {
   ...initialState,
-  selectNode: (id) => setState({ selectedNodeId: id }),
-  setActiveTab: (tab) => setState({ activeTab: tab }),
+  // feature-010 布局仲裁:打开详情(id 非 null)时收起分析 dock,右轨互斥。
+  selectNode: (id) => setState(id ? { selectedNodeId: id, activeTab: null } : { selectedNodeId: id }),
+  // feature-010 布局仲裁:打开分析 dock(tab 非 null)时关闭详情,右轨互斥。
+  setActiveTab: (tab) => setState(tab ? { activeTab: tab, selectedNodeId: null } : { activeTab: tab }),
   setSearchQuery: (query) => setState({ searchQuery: query }),
-  toggleCommandPalette: (open) =>
-    setState({ isCommandPaletteOpen: open ?? !state.isCommandPaletteOpen }),
-  toggleSettings: (open) => setState({ isSettingsOpen: open ?? !state.isSettingsOpen }),
-  toggleMobileDrawer: (open) =>
-    setState({ isMobileDrawerOpen: open ?? !state.isMobileDrawerOpen }),
+  // feature-010 布局仲裁:三个模态级浮层(命令面板/设置/移动抽屉)互斥,
+  // 打开任一时自动收起其余,保证同一时刻至多一个模态级浮层持有遮罩+焦点。
+  toggleCommandPalette: (open) => {
+    const next = open ?? !state.isCommandPaletteOpen
+    setState(next
+      ? { isCommandPaletteOpen: true, isSettingsOpen: false, isMobileDrawerOpen: false }
+      : { isCommandPaletteOpen: false })
+  },
+  toggleSettings: (open) => {
+    const next = open ?? !state.isSettingsOpen
+    setState(next
+      ? { isSettingsOpen: true, isCommandPaletteOpen: false, isMobileDrawerOpen: false }
+      : { isSettingsOpen: false })
+  },
+  toggleMobileDrawer: (open) => {
+    const next = open ?? !state.isMobileDrawerOpen
+    setState(next
+      ? { isMobileDrawerOpen: true, isCommandPaletteOpen: false, isSettingsOpen: false }
+      : { isMobileDrawerOpen: false })
+  },
   setWsStatus: (status) => setState({ wsStatus: status }),
   toggleLegend: (collapsed) => {
     const next = collapsed ?? !state.isLegendCollapsed
@@ -123,6 +140,14 @@ export function useUiStore<T>(selector: (store: UiStore) => T): T {
     () => selector(state),
     () => selector(state),
   )
+}
+
+/**
+ * feature-010:是否有模态级浮层(命令面板 / 设置)打开。
+ * NodeTooltip 用它在模态期间抑制自身,避免 tooltip 盖在模态之上(AC4 双保险)。
+ */
+export function selectIsAnyModalOpen(store: UiStore): boolean {
+  return store.isCommandPaletteOpen || store.isSettingsOpen
 }
 
 /** 非 React 上下文读取当前快照(测试 / 命令式代码用)。 */

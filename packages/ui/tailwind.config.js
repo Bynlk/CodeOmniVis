@@ -6,6 +6,16 @@ export default {
   ],
   theme: {
     extend: {
+      // feature-010 布局层级:z-index 语义 token,消灭全站散落魔法值。
+      // 关键约束:tooltip(45) 严格低于 modal(50),模态打开时 tooltip 不会盖在其上。
+      zIndex: {
+        'base': '0',
+        'canvas-ui': '10', // Legend、画布内浮标
+        'panel': '20',     // 右轨面板(桌面栅格内一般无需 z)
+        'drawer': '40',    // 移动端抽屉 + 遮罩
+        'tooltip': '45',   // NodeTooltip —— 高于 drawer 但【低于 modal】
+        'modal': '50',     // CommandPalette / SettingsDrawer
+      },
       colors: {
         // CodeOmniVis 品牌色
         primary: {

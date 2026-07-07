@@ -71,3 +71,5 @@
 - feature-004 布局重构:AC1/AC2/AC3 PASS(7→4 分组、TabPanel 桌面 dock 不覆盖画布、ResizeObserver→cy.resize)。
 - feature-005 统一搜索:初验 AC1 FAIL(CommandPalette 本地 useState 搜索词与 Header 两条轨)→ 修复为共用 uiStore.searchQuery 单一真源(commit df19068)→ 复验 AC1/AC2/AC3 全 PASS。
 - 全部 9 个 feature 现均 status=done/verified=true,spec 移入 specs/done/。
+
+- 2026-07-07 feature-010-layout-hierarchy 完成并独立验证通过(AC1-AC5 全 PASS)。主区改 CSS Grid 三轨,详情面板归位入栅格(移动 fixed 抽屉/桌面 md:static),详情与分析 dock 互斥,z-index 收敛为语义 token(tooltip 45<modal 50),uiStore 单一浮层仲裁+模态期抑制 tooltip。typecheck 0 / 119 测试全绿 / 生产构建成功。归档至 specs/done。

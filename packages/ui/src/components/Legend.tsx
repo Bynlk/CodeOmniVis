@@ -32,7 +32,7 @@ export function Legend({ graph }: LegendProps) {
 
   return (
     <div
-      className="absolute bottom-ds-4 left-ds-4 z-10 rounded-ds-md border border-slate-700
+      className="absolute bottom-ds-4 left-ds-4 z-canvas-ui rounded-ds-md border border-slate-700
                  bg-slate-800/90 shadow-ds-panel backdrop-blur-sm text-ds-xs text-slate-200"
       role="region"
       aria-label={t('legend.title')}

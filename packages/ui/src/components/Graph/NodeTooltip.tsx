@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
 import { useCytoscapeRef } from '../../lib/cytoscapeContext'
+import { useUiStore, selectIsAnyModalOpen } from '../../store/uiStore'
 import { isNodeType } from '@codeomnivis/shared'
 import type { NodeType } from '@codeomnivis/shared'
 import type cytoscape from 'cytoscape'
@@ -37,6 +38,8 @@ function getNodeType(node: cytoscape.NodeSingular): NodeType {
 export function NodeTooltip() {
   const { t } = useTranslation()
   const cyRef = useCytoscapeRef()
+  // feature-010:模态(命令面板/设置)打开时抑制 tooltip,避免盖在模态之上。
+  const isAnyModalOpen = useUiStore(selectIsAnyModalOpen)
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -89,14 +92,14 @@ export function NodeTooltip() {
     }
   }, [cyRef])
 
-  if (!tooltip) return null
+  if (!tooltip || isAnyModalOpen) return null
 
   const emoji = NODE_EMOJI[tooltip.type] ?? '●'
   const color = NODE_COLORS[tooltip.type] ?? '#6b7280'
 
   return (
     <div
-      className="fixed z-50 rounded-lg border border-slate-600 bg-slate-800
+      className="fixed z-tooltip rounded-lg border border-slate-600 bg-slate-800
                  p-3 shadow-xl text-sm pointer-events-none
                  animate-fadeIn"
       style={{ left: tooltip.x + 12, top: tooltip.y - 60 }}
