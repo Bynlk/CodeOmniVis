@@ -2,7 +2,7 @@
   "version": 1,
   "project": "CodeOmniVis",
   "created_at": "2026-07-07T02:04:24+08:00",
-  "head_commit": "c4354aebc16eff351601d5c8117e7509cf88bb82",
+  "head_commit": "f6c90a4a12453a8592a235dd7dc7401c2e78b0e9",
   "constitution": {
     "asked": true,
     "source": "docs/pev/constitution.md; docs/pev/decisions/0001-初始技术栈约定.md",
@@ -141,7 +141,7 @@
       "status": "done",
       "version": 1,
       "verified": true,
-      "commit": "",
+      "commit": "f6c90a4a12453a8592a235dd7dc7401c2e78b0e9",
       "note": "补完 feature-004 未真正入栅格的详情面板;详情与分析 dock 互斥占用主区 CSS Grid 右轨;z-index 收敛为 tailwind 语义 token 且 tooltip<modal;uiStore 单一浮层仲裁+模态期间抑制 tooltip。见 ADR 0003。",
       "done_at": "2026-07-07"
     }
