@@ -1,9 +1,7 @@
 /**
- * 命令面板组件
- *
- * Cmd+K 打开，搜索节点并跳转。
+ * 命令面板(feature-011 重写)。Cmd+K 打开,搜索节点并跳转。
+ * 搜索词单一真源 = uiStore.searchQuery(与 Header 共享)。
  */
-
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NODE_EMOJI } from '../lib/nodeConfig'
@@ -20,23 +18,19 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: CommandPaletteProps) {
   const { t } = useTranslation()
-  // feature-005: search term single source = uiStore.searchQuery (shared with Header)
   const query = useUiStore((s) => s.searchQuery)
   const setQuery = useUiStore((s) => s.setSearchQuery)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
-  // feature-008 a11y: 记住打开前的焦点元素,关闭后归还焦点(AC1 焦点不丢失)。
+  // 记住打开前的焦点元素,关闭后归还焦点(a11y)。
   const triggerRef = useRef<HTMLElement | null>(null)
 
-  // 搜索结果 —— 复用唯一索引函数 filterNodesByQuery(与 Header 过滤同源,AC1)。
-  // 空 query 时 filterNodesByQuery 返回全部,这里仅在有输入时展示,避免刷屏。
   const results = useMemo(() => {
     if (!graph || !query.trim()) return []
-    return filterNodesByQuery(graph.nodes, query).slice(0, 20) // 最多 20 条
+    return filterNodesByQuery(graph.nodes, query).slice(0, 20)
   }, [graph, query])
 
-  // 打开时聚焦输入框,并记住触发元素;关闭时把焦点还给触发元素。
   useEffect(() => {
     if (isOpen) {
       triggerRef.current = (document.activeElement as HTMLElement) ?? null
@@ -48,16 +42,15 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
     }
   }, [isOpen])
 
-  // 键盘导航
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault()
-        setSelectedIndex(prev => Math.min(prev + 1, results.length - 1))
+        setSelectedIndex((prev) => Math.min(prev + 1, results.length - 1))
         break
       case 'ArrowUp':
         e.preventDefault()
-        setSelectedIndex(prev => Math.max(prev - 1, 0))
+        setSelectedIndex((prev) => Math.max(prev - 1, 0))
         break
       case 'Enter':
         e.preventDefault()
@@ -73,7 +66,6 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
     }
   }, [results, selectedIndex, onNodeSelect, onClose])
 
-  // 滚动到选中项
   useEffect(() => {
     if (listRef.current) {
       const selected = listRef.current.children.item(selectedIndex)
@@ -88,20 +80,18 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
   const activeOptionId = results[selectedIndex] ? `cmd-option-${results[selectedIndex].id}` : undefined
 
   return (
-    <div className="fixed inset-0 z-modal flex items-start justify-center pt-[20vh]">
-      {/* 背景遮罩 */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
+    <div className="fixed inset-0 z-modal flex items-start justify-center pt-[18vh]">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 
-      {/* 面板 */}
       <div
-        className="relative w-full max-w-lg bg-slate-800 rounded-lg shadow-2xl border border-slate-600 overflow-hidden"
+        className="relative w-full max-w-xl overflow-hidden rounded-ds-xl border border-border-strong bg-surface-raised shadow-ds-panel"
         role="dialog"
         aria-modal="true"
         aria-label={t('commandPalette.placeholder')}
       >
         {/* 搜索输入 */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700">
-          <span className="text-slate-400" aria-hidden="true">🔍</span>
+        <div className="flex items-center gap-ds-3 border-b border-border-subtle px-ds-4 py-ds-3">
+          <span className="text-content-muted" aria-hidden="true">🔍</span>
           <input
             ref={inputRef}
             type="text"
@@ -112,21 +102,29 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
             aria-autocomplete="list"
             aria-label={t('commandPalette.placeholder')}
             value={query}
-            onChange={e => {
+            onChange={(e) => {
               setQuery(e.target.value)
               setSelectedIndex(0)
             }}
             onKeyDown={handleKeyDown}
             placeholder={t('commandPalette.placeholder')}
-            className="flex-1 bg-transparent text-white placeholder-slate-400 outline-none text-sm"
+            className="flex-1 bg-transparent text-ds-base text-content placeholder-content-muted outline-none"
           />
-          <kbd className="px-1.5 py-0.5 text-xs text-slate-500 bg-slate-700 rounded">{t('commandPalette.esc')}</kbd>
+          <kbd className="rounded-ds-sm border border-border-subtle bg-surface px-1.5 py-0.5 text-ds-xs text-content-muted">
+            {t('commandPalette.esc')}
+          </kbd>
         </div>
 
         {/* 结果列表 */}
-        <div ref={listRef} id="cmd-results" role="listbox" aria-label={t('commandPalette.placeholder')} className="max-h-64 overflow-y-auto">
+        <div
+          ref={listRef}
+          id="cmd-results"
+          role="listbox"
+          aria-label={t('commandPalette.placeholder')}
+          className="max-h-72 overflow-y-auto p-ds-1"
+        >
           {results.length === 0 && query.trim() && (
-            <div className="px-4 py-8 text-center text-slate-500 text-sm">
+            <div className="px-ds-4 py-ds-6 text-center text-ds-sm text-content-muted">
               {t('commandPalette.noResults')}
             </div>
           )}
@@ -137,10 +135,10 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
               id={`cmd-option-${node.id}`}
               role="option"
               aria-selected={idx === selectedIndex}
-              className={`w-full flex items-center gap-3 px-4 py-2 text-left text-sm transition-colors ${
+              className={`flex w-full items-center gap-ds-3 rounded-ds-md px-ds-3 py-ds-2 text-left text-ds-sm transition-colors ${
                 idx === selectedIndex
-                  ? 'bg-primary-600/30 text-white'
-                  : 'text-slate-300 hover:bg-slate-700/50'
+                  ? 'bg-primary-600/30 text-content'
+                  : 'text-content-secondary hover:bg-surface-hover'
               }`}
               onClick={() => {
                 onNodeSelect(node.id)
@@ -149,9 +147,9 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
               onMouseEnter={() => setSelectedIndex(idx)}
             >
               <span className="w-6 text-center" aria-hidden="true">{NODE_EMOJI[node.type] ?? '●'}</span>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="truncate">{node.name}</div>
-                <div className="text-xs text-slate-500 truncate">{node.filePath}</div>
+                <div className="truncate text-ds-xs text-content-muted">{node.filePath}</div>
               </div>
             </button>
           ))}
@@ -159,10 +157,10 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
 
         {/* 底部提示 */}
         {results.length > 0 && (
-          <div className="px-4 py-2 border-t border-slate-700 text-xs text-slate-500 flex items-center gap-4">
-            <span><kbd className="px-1 py-0.5 bg-slate-700 rounded">↑↓</kbd> {t('commandPalette.navigate')}</span>
-            <span><kbd className="px-1 py-0.5 bg-slate-700 rounded">↵</kbd> {t('commandPalette.select')}</span>
-            <span><kbd className="px-1 py-0.5 bg-slate-700 rounded">esc</kbd> {t('commandPalette.close')}</span>
+          <div className="flex items-center gap-ds-4 border-t border-border-subtle px-ds-4 py-ds-2 text-ds-xs text-content-muted">
+            <span><kbd className="rounded-ds-sm bg-surface px-1 py-0.5">↑↓</kbd> {t('commandPalette.navigate')}</span>
+            <span><kbd className="rounded-ds-sm bg-surface px-1 py-0.5">↵</kbd> {t('commandPalette.select')}</span>
+            <span><kbd className="rounded-ds-sm bg-surface px-1 py-0.5">esc</kbd> {t('commandPalette.close')}</span>
           </div>
         )}
       </div>

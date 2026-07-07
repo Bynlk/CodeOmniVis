@@ -182,5 +182,11 @@
   "sidebar.collapse": "Collapse sidebar",
   "a11y": {
     "skipToMain": "Skip to main content"
-  }
+  },
+  "edgeType.kotlin_inherits": "Inherits",
+  "edgeType.kotlin_implements": "Implements",
+  "edgeType.kotlin_uses": "Uses",
+  "edgeType.data_flows_to": "Data Flows To",
+  "legend.nodes": "Nodes",
+  "legend.edges": "Edges"
 }

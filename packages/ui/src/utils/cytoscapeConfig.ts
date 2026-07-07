@@ -5,9 +5,10 @@
  * 节点 label 带 Emoji 前缀，inferred 边用虚线。
  */
 
-import type { NodeType } from '@codeomnivis/shared'
+import type { NodeType, EdgeType } from '@codeomnivis/shared'
 import { isNodeType } from '@codeomnivis/shared'
 import { NODE_EMOJI, NODE_COLORS } from '../lib/nodeConfig'
+import { EDGE_COLORS, EDGE_TYPE_LIST } from '../lib/edgeConfig'
 
 function getNodeType(node: cytoscape.NodeSingular): NodeType | undefined {
   const type: unknown = node.data('type')
@@ -24,6 +25,21 @@ function getNodeLabel(node: cytoscape.NodeSingular): string | undefined {
  *
  * 使用 `satisfies` 保留 Cytoscape 样式检查，同时避免把整个样式块断言掉。
  */
+/** 各边类型在颜色之外的专属视觉(线宽/线型/透明度);颜色统一由 EDGE_COLORS 提供。 */
+const EDGE_TYPE_EXTRAS: Partial<Record<EdgeType, cytoscape.Css.Edge>> = {
+  renders:           { 'width': 1.5 },
+  calls_api:         { 'width': 2 },
+  queries_db:        { 'width': 2 },
+  kotlin_inherits:   { 'line-style': 'dashed' },
+  kotlin_implements: { 'line-style': 'dashed' },
+  kotlin_uses:       { 'opacity': 0.5 },
+  sends_msg:         { 'line-style': 'dashed', 'width': 2 },
+  listens_msg:       { 'line-style': 'dashed', 'width': 2 },
+  contains:          { 'line-style': 'dotted' },
+  data_flows_to:     { 'width': 2 },
+  imports:           { 'opacity': 0.3 },
+}
+
 export function getCytoscapeStyle(): cytoscape.StylesheetJson {
   return [
     // 节点基础样式 — emoji + 文字在节点内
@@ -82,125 +98,18 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
       } satisfies cytoscape.Css.Edge,
     },
 
-    // 边类型样式
-    {
-      selector: 'edge[type="db_relation"]',
-      style: {
-        'line-color': '#ec4899',
-        'target-arrow-color': '#ec4899',
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="renders"]',
-      style: {
-        'line-color': '#06b6d4',
-        'target-arrow-color': '#06b6d4',
-        'width': 1.5,
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="calls_api"]',
-      style: {
-        'line-color': '#10b981',
-        'target-arrow-color': '#10b981',
-        'width': 2,
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="handles"]',
-      style: {
-        'line-color': '#f59e0b',
-        'target-arrow-color': '#f59e0b',
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="calls_service"]',
-      style: {
-        'line-color': '#ef4444',
-        'target-arrow-color': '#ef4444',
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="queries_db"]',
-      style: {
-        'line-color': '#ec4899',
-        'target-arrow-color': '#ec4899',
-        'width': 2,
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="kotlin_inherits"]',
-      style: {
-        'line-color': '#a855f7',
-        'target-arrow-color': '#a855f7',
-        'line-style': 'dashed',
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="kotlin_implements"]',
-      style: {
-        'line-color': '#3b82f6',
-        'target-arrow-color': '#3b82f6',
-        'line-style': 'dashed',
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="kotlin_uses"]',
-      style: {
-        'line-color': '#64748b',
-        'target-arrow-color': '#64748b',
-        'opacity': 0.5,
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="sends_msg"]',
-      style: {
-        'line-color': '#f97316',
-        'target-arrow-color': '#f97316',
-        'line-style': 'dashed',
-        'width': 2,
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="listens_msg"]',
-      style: {
-        'line-color': '#14b8a6',
-        'target-arrow-color': '#14b8a6',
-        'line-style': 'dashed',
-        'width': 2,
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="navigates_to"]',
-      style: {
-        'line-color': '#8b5cf6',
-        'target-arrow-color': '#8b5cf6',
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="contains"]',
-      style: {
-        'line-color': '#64748b',
-        'target-arrow-color': '#64748b',
-        'line-style': 'dotted',
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="data_flows_to"]',
-      style: {
-        'line-color': '#06b6d4',
-        'target-arrow-color': '#06b6d4',
-        'width': 2,
-      } satisfies cytoscape.Css.Edge,
-    },
-    {
-      selector: 'edge[type="imports"]',
-      style: {
-        'line-color': '#475569',
-        'target-arrow-color': '#475569',
-        'opacity': 0.3,
-      } satisfies cytoscape.Css.Edge,
-    },
+    // 边类型样式 — 颜色取自 edgeConfig.EDGE_COLORS(单一真源),此处只叠加各类型专属的线宽/线型/透明度。
+    ...EDGE_TYPE_LIST.map((type) => {
+      const extras = EDGE_TYPE_EXTRAS[type] ?? {}
+      return {
+        selector: `edge[type="${type}"]`,
+        style: {
+          'line-color': EDGE_COLORS[type],
+          'target-arrow-color': EDGE_COLORS[type],
+          ...extras,
+        } satisfies cytoscape.Css.Edge,
+      }
+    }),
 
     // 置信度样式 — inferred 边用虚线
     {

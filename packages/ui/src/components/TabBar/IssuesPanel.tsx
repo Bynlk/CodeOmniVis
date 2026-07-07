@@ -7,23 +7,29 @@ const SEVERITY_EMOJI: Record<string, string> = {
   info: 'ℹ️',
 }
 
+const SEVERITY_ACCENT: Record<string, string> = {
+  error: 'border-l-rose-500',
+  warning: 'border-l-amber-500',
+  info: 'border-l-sky-500',
+}
+
 export function IssuesPanel() {
   const { t } = useTranslation()
   const { data: errors, isLoading, error } = useGraphErrors()
 
   if (isLoading) {
-    return <div className="p-4 text-slate-400 text-sm">{t('issues.loading')}</div>
+    return <div className="p-ds-4 text-ds-sm text-content-muted">{t('issues.loading')}</div>
   }
 
   if (error) {
-    return <div className="p-4 text-red-400 text-sm">{t('issues.failedToLoad')}</div>
+    return <div className="p-ds-4 text-ds-sm text-rose-400">{t('issues.failedToLoad')}</div>
   }
 
   if (!errors || errors.length === 0) {
     return (
-      <div className="p-4 text-center">
-        <span className="text-green-400 text-lg">✅</span>
-        <p className="text-slate-400 text-sm mt-1">{t('issues.noIssuesFound')}</p>
+      <div className="flex flex-col items-center justify-center gap-1 p-ds-6">
+        <span className="text-2xl">✅</span>
+        <p className="text-ds-sm text-content-secondary">{t('issues.noIssuesFound')}</p>
       </div>
     )
   }
@@ -36,32 +42,32 @@ export function IssuesPanel() {
   }
 
   return (
-    <div className="p-4 max-h-56 overflow-y-auto">
+    <div className="max-h-full overflow-y-auto p-ds-4">
       {/* 统计 */}
-      <div className="flex gap-4 mb-3">
+      <div className="mb-ds-3 flex flex-wrap gap-ds-3">
         {grouped.error.length > 0 && (
-          <span className="text-xs text-red-400">❌ {grouped.error.length} {t('issues.errors')}</span>
+          <span className="text-ds-xs text-rose-400">❌ {grouped.error.length} {t('issues.errors')}</span>
         )}
         {grouped.warning.length > 0 && (
-          <span className="text-xs text-yellow-400">⚠️ {grouped.warning.length} {t('issues.warnings')}</span>
+          <span className="text-ds-xs text-amber-400">⚠️ {grouped.warning.length} {t('issues.warnings')}</span>
         )}
         {grouped.info.length > 0 && (
-          <span className="text-xs text-blue-400">ℹ️ {grouped.info.length} {t('issues.info')}</span>
+          <span className="text-ds-xs text-sky-400">ℹ️ {grouped.info.length} {t('issues.info')}</span>
         )}
       </div>
 
       {/* 错误列表 */}
-      <div className="space-y-2">
+      <div className="space-y-ds-2">
         {errors.map((err, i) => (
           <div
             key={`${err.file}-${i}`}
-            className="flex items-start gap-2 text-sm p-2 rounded bg-slate-700/50"
+            className={`flex items-start gap-ds-2 rounded-ds-md border-l-2 ${SEVERITY_ACCENT[err.severity] ?? 'border-l-sky-500'} bg-surface-hover/60 p-ds-2 text-ds-sm`}
           >
-            <span className="mt-0.5">{SEVERITY_EMOJI[err.severity] ?? 'ℹ️'}</span>
-            <div className="flex-1 min-w-0">
-              <div className="text-slate-300 break-words">{err.message}</div>
+            <span className="mt-0.5 shrink-0">{SEVERITY_EMOJI[err.severity] ?? 'ℹ️'}</span>
+            <div className="min-w-0 flex-1">
+              <div className="break-words text-content-secondary">{err.message}</div>
               {err.file && (
-                <div className="text-xs text-slate-500 mt-0.5 truncate">
+                <div className="mt-0.5 truncate text-ds-xs text-content-muted">
                   {err.file}
                 </div>
               )}

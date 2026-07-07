@@ -14,6 +14,11 @@ interface HeaderProps {
   onOpenSettings?: () => void
 }
 
+/**
+ * feature-011 顶部导航栏(从 0 重写)。
+ * 左:菜单(移动) + 品牌。右:统一搜索入口 + WS 状态 + 新鲜度 + 语言 + 设置 + 刷新。
+ * 采用语义表面色 token(surface-raised / border-subtle / content-*)与全站一致。
+ */
 export default function Header({ query, onQueryChange, onOpenSettings }: HeaderProps) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -21,16 +26,13 @@ export default function Header({ query, onQueryChange, onOpenSettings }: HeaderP
   const { data: status } = useStatus()
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
-  // feature-007:移动端菜单按钮唤出 Sidebar 抽屉。
   const toggleMobileDrawer = useUiStore((s) => s.toggleMobileDrawer)
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
     setRefreshError(null)
     try {
-      // 调用 /api/analyze 触发重新分析（经服务层）
       await postAnalyze()
-      // 让 React Query 重新拉取图数据与新鲜度状态
       await queryClient.invalidateQueries({ queryKey: ['graph'] })
       await queryClient.invalidateQueries({ queryKey: STATUS_QUERY_KEY })
     } catch (err) {
@@ -44,86 +46,92 @@ export default function Header({ query, onQueryChange, onOpenSettings }: HeaderP
   }
 
   return (
-    <header className="bg-slate-800 border-b border-slate-700 px-6 py-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          {/* 移动端菜单按钮(<md 显示)—— 唤出节点侧栏抽屉 */}
-          <button
-            onClick={() => toggleMobileDrawer(true)}
-            className="md:hidden rounded p-1.5 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
-            aria-label={t('menu.open')}
-            title={t('menu.open')}
+    <header className="flex h-14 shrink-0 items-center justify-between gap-ds-3 border-b border-border-subtle bg-surface-raised px-ds-4 sm:px-ds-5">
+      {/* 左区:移动菜单 + 品牌 */}
+      <div className="flex min-w-0 items-center gap-ds-3">
+        <button
+          onClick={() => toggleMobileDrawer(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-ds-md text-content-secondary transition-colors hover:bg-surface-hover hover:text-content md:hidden"
+          aria-label={t('menu.open')}
+          title={t('menu.open')}
+        >
+          <span aria-hidden="true" className="text-lg">☰</span>
+        </button>
+
+        <div className="flex min-w-0 items-center gap-ds-2">
+          <span
+            aria-hidden="true"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-ds-md bg-gradient-to-br from-primary-400 to-primary-600 text-ds-sm font-bold text-white shadow-ds-card"
           >
-            <span aria-hidden="true" className="text-lg">☰</span>
-          </button>
-          <h1 className="text-xl font-bold text-white">
+            ⬡
+          </span>
+          <h1 className="truncate text-ds-lg font-bold tracking-tight text-content">
             <span className="text-primary-400">Code</span>Omni<span className="text-primary-400">Vis</span>
           </h1>
-          <span className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">
+          <span className="hidden rounded-ds-sm bg-surface-hover px-ds-2 py-0.5 text-ds-xs text-content-muted sm:inline">
             {t('header.subtitle')}
           </span>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2 sm:space-x-4 sm:gap-0">
-          {/* 搜索框 */}
-          {onQueryChange && (
-            <div className="relative">
-              <input
-                ref={inputRef}
-                type="text"
-                value={query || ''}
-                onChange={(e) => onQueryChange(e.target.value)}
-                placeholder={t('header.searchPlaceholder', { shortcut: '⌘K' })}
-                className="w-36 sm:w-48 md:w-64 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-primary-500 transition-colors"
-                aria-label={t('header.searchNodes')}
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
-                ⌘K
-              </span>
-            </div>
-          )}
+      {/* 右区:搜索 + 状态 + 工具 */}
+      <div className="flex items-center gap-ds-2 sm:gap-ds-3">
+        {onQueryChange && (
+          <div className="relative">
+            <span className="pointer-events-none absolute left-ds-3 top-1/2 -translate-y-1/2 text-content-muted" aria-hidden="true">
+              🔍
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query || ''}
+              onChange={(e) => onQueryChange(e.target.value)}
+              placeholder={t('header.searchPlaceholder', { shortcut: '⌘K' })}
+              className="w-36 rounded-ds-md border border-border-subtle bg-surface py-2 pl-9 pr-12 text-ds-sm text-content placeholder-content-muted transition-colors focus:border-primary-500 focus:outline-none sm:w-52 md:w-72"
+              aria-label={t('header.searchNodes')}
+            />
+            <kbd className="pointer-events-none absolute right-ds-2 top-1/2 hidden -translate-y-1/2 rounded-ds-sm border border-border-subtle bg-surface-hover px-1.5 py-0.5 text-ds-xs text-content-muted sm:inline">
+              ⌘K
+            </kbd>
+          </div>
+        )}
 
-          {/* WebSocket 连接状态（feature-006） */}
+        <div className="hidden items-center gap-ds-3 sm:flex">
           <WsStatusIndicator />
-
-          {/* 数据新鲜度 */}
           <FreshnessBadge status={status} />
-
-          {/* 语言切换 */}
-          <LangToggle />
-
-          {/* 设置抽屉入口 */}
-          {onOpenSettings && (
-            <button
-              onClick={onOpenSettings}
-              className="rounded px-2 py-1 text-lg text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
-              aria-label={t('settings.open')}
-              title={t('settings.title')}
-            >
-              ⚙
-            </button>
-          )}
-
-          {/* 刷新按钮 */}
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-lg text-sm transition-colors"
-            aria-label={t('header.refreshGraph')}
-          >
-            {isRefreshing ? (
-              <span className="animate-spin">⟳</span>
-            ) : '↺'}
-            <span className="ml-1 text-xs">
-              {isRefreshing ? t('header.refreshing') : t('header.refresh')}
-            </span>
-          </button>
-          {refreshError && (
-            <span role="alert" className="ml-2 text-xs text-red-600">
-              {refreshError}
-            </span>
-          )}
         </div>
+
+        <div className="h-6 w-px bg-border-subtle" aria-hidden="true" />
+
+        <LangToggle />
+
+        {onOpenSettings && (
+          <button
+            onClick={onOpenSettings}
+            className="flex h-9 w-9 items-center justify-center rounded-ds-md text-content-secondary transition-colors hover:bg-surface-hover hover:text-content"
+            aria-label={t('settings.open')}
+            title={t('settings.title')}
+          >
+            <span aria-hidden="true" className="text-lg">⚙</span>
+          </button>
+        )}
+
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 rounded-ds-md bg-primary-600 px-ds-3 py-2 text-ds-sm font-medium text-white shadow-ds-card transition-colors hover:bg-primary-500 disabled:opacity-50"
+          aria-label={t('header.refreshGraph')}
+        >
+          <span aria-hidden="true" className={isRefreshing ? 'inline-block animate-spin' : ''}>↺</span>
+          <span className="hidden text-ds-xs sm:inline">
+            {isRefreshing ? t('header.refreshing') : t('header.refresh')}
+          </span>
+        </button>
+        {refreshError && (
+          <span role="alert" className="ml-ds-1 text-ds-xs text-rose-400">
+            {refreshError}
+          </span>
+        )}
       </div>
     </header>
   )

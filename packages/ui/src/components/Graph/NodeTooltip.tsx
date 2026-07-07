@@ -38,7 +38,7 @@ function getNodeType(node: cytoscape.NodeSingular): NodeType {
 export function NodeTooltip() {
   const { t } = useTranslation()
   const cyRef = useCytoscapeRef()
-  // feature-010:模态(命令面板/设置)打开时抑制 tooltip,避免盖在模态之上。
+  // feature-010：模态（命令面板/设置）打开时抑制 tooltip，避免盖在模态之上。
   const isAnyModalOpen = useUiStore(selectIsAnyModalOpen)
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -47,8 +47,8 @@ export function NodeTooltip() {
     const cy = cyRef?.current
     if (!cy) return
 
-      const onMouseOver = (evt: cytoscape.EventObjectNode) => {
-        const node = evt.target
+    const onMouseOver = (evt: cytoscape.EventObjectNode) => {
+      const node = evt.target
       const renderedPos = node.renderedPosition()
       const container = cy.container()
       const rect = container?.getBoundingClientRect()
@@ -60,10 +60,10 @@ export function NodeTooltip() {
           x: rect.left + renderedPos.x,
           y: rect.top + renderedPos.y - 20,
           nodeId: node.id(),
-            type: getNodeType(node),
-            name: getStringData(node, 'label', node.id()),
-            filePath: getStringData(node, 'filePath', ''),
-            line: getNumberData(node, 'line', 0),
+          type: getNodeType(node),
+          name: getStringData(node, 'label', node.id()),
+          filePath: getStringData(node, 'filePath', ''),
+          line: getNumberData(node, 'line', 0),
           edgeCount: {
             in: node.indegree(false),
             out: node.outdegree(false),
@@ -99,34 +99,32 @@ export function NodeTooltip() {
 
   return (
     <div
-      className="fixed z-tooltip rounded-lg border border-slate-600 bg-slate-800
-                 p-3 shadow-xl text-sm pointer-events-none
-                 animate-fadeIn"
+      className="pointer-events-none fixed z-tooltip animate-fadeIn rounded-ds-lg border border-border-strong bg-surface-overlay p-ds-3 text-ds-sm shadow-ds-panel backdrop-blur-md"
       style={{ left: tooltip.x + 12, top: tooltip.y - 60 }}
     >
       {/* 节点类型行 */}
-      <div className="flex items-center gap-1.5 mb-1">
+      <div className="mb-1 flex items-center gap-1.5">
         <span className="text-base">{emoji}</span>
         <span
-          className="rounded px-1.5 py-0.5 text-xs font-medium text-white"
+          className="rounded-ds-sm px-1.5 py-0.5 text-ds-xs font-medium text-white"
           style={{ backgroundColor: color }}
         >
           {t(`nodeType.${tooltip.type}`)}
         </span>
       </div>
       {/* 节点名称 */}
-      <div className="font-medium text-white">{tooltip.name}</div>
+      <div className="font-medium text-content">{tooltip.name}</div>
       {/* 文件路径 */}
       {tooltip.filePath && (
-        <div className="mt-1 text-xs text-slate-400 max-w-xs truncate">
+        <div className="mt-1 max-w-xs truncate text-ds-xs text-content-muted">
           {tooltip.filePath}
           {tooltip.line > 0 && (
-            <span className="ml-1 text-slate-500">:{tooltip.line}</span>
+            <span className="ml-1 text-content-muted">:{tooltip.line}</span>
           )}
         </div>
       )}
       {/* 入度/出度 */}
-      <div className="mt-1.5 flex gap-3 text-xs text-slate-400">
+      <div className="mt-1.5 flex gap-ds-3 text-ds-xs text-content-muted">
         <span>
           ↙ {tooltip.edgeCount.in} {t('tooltip.in')}
         </span>

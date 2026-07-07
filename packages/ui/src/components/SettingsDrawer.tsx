@@ -14,15 +14,14 @@ interface SettingsDrawerProps {
 
 const TIER_ACCENT: Record<string, string> = {
   primary: 'border-l-4 border-primary-500 bg-primary-600/10',
-  secondary: 'border-l-4 border-slate-500 bg-slate-700/30',
-  tertiary: 'border-l-4 border-slate-600 bg-slate-800/40',
+  secondary: 'border-l-4 border-border-strong bg-surface-hover/30',
+  tertiary: 'border-l-4 border-border-subtle bg-surface/40',
 }
 
-/** 设置抽屉:从右侧滑出,四组(AI / 项目 / 显示 / 关于)。 */
+/** 设置抽屉(feature-011 重写):从右侧滑出,四组(AI / 项目 / 显示 / 关于)。 */
 export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
-  // feature-008 a11y: 记住触发元素,Esc 关闭 + 关闭后归还焦点。
   const triggerRef = useRef<HTMLElement | null>(null)
   useEffect(() => {
     if (open) {
@@ -37,10 +36,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     triggerRef.current = null
   }, [open, onClose])
 
-  // --- AI 组(单一数据源:全局 store,经 AiConfigForm) ---
   const { config } = useAiConfig()
 
-  // --- 项目组 ---
   const [projectRoot, setProjectRoot] = useState('')
   const [switching, setSwitching] = useState(false)
   const [projectMsg, setProjectMsg] = useState<string | null>(null)
@@ -68,7 +65,6 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     }
   }, [projectRoot, switching, queryClient, t])
 
-  // --- 显示组 ---
   const isZh = i18n.language === 'zh-CN'
   const setLang = useCallback((lang: 'zh-CN' | 'en-US') => {
     i18n.changeLanguage(lang)
@@ -81,18 +77,20 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     <div className="fixed inset-0 z-modal flex justify-end" role="dialog" aria-modal="true" aria-label={t('settings.title')}>
       {/* 遮罩 */}
       <button
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         aria-label={t('settings.close')}
         onClick={onClose}
       />
 
       {/* 抽屉主体 */}
-      <aside className="relative w-96 max-w-full h-full bg-slate-800 border-l border-slate-700 shadow-2xl overflow-y-auto">
-        <div className="sticky top-0 flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700">
-          <h2 className="text-sm font-semibold text-white">⚙ {t('settings.title')}</h2>
+      <aside className="relative flex h-full w-96 max-w-full flex-col overflow-y-auto border-l border-border-subtle bg-surface-raised shadow-ds-panel">
+        <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border-subtle bg-surface-raised px-ds-4 py-ds-3">
+          <h2 className="flex items-center gap-1.5 text-ds-sm font-semibold text-content">
+            <span aria-hidden="true">⚙</span> {t('settings.title')}
+          </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-lg leading-none"
+            className="flex h-8 w-8 items-center justify-center rounded-ds-md text-content-muted transition-colors hover:bg-surface-hover hover:text-content"
             aria-label={t('settings.close')}
           >
             ×
@@ -100,62 +98,60 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
         </div>
 
         {/* 组 1:AI */}
-        <section className="px-4 py-4 border-b border-slate-700 space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <section className="space-y-ds-2 border-b border-border-subtle px-ds-4 py-ds-4">
+          <h3 className="text-ds-xs font-semibold uppercase tracking-wide text-content-muted">
             {t('settings.group.ai')}
           </h3>
           <AiConfigForm saveLabel={t('settings.ai.save')} showClear />
-          <p className="text-[11px] text-slate-500">
+          <p className="text-ds-xs text-content-muted">
             {config ? `${t('settings.ai.current')}: ${config.model}` : t('ai.notConfigured')}
           </p>
         </section>
 
         {/* 组 2:项目 */}
-        <section className="px-4 py-4 border-b border-slate-700 space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <section className="space-y-ds-2 border-b border-border-subtle px-ds-4 py-ds-4">
+          <h3 className="text-ds-xs font-semibold uppercase tracking-wide text-content-muted">
             {t('settings.group.project')}
           </h3>
           <input
             type="text"
             value={projectRoot}
-            onChange={e => setProjectRoot(e.target.value)}
+            onChange={(e) => setProjectRoot(e.target.value)}
             placeholder={t('settings.project.placeholder')}
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white placeholder-slate-400"
+            className="w-full rounded-ds-md border border-border-subtle bg-surface px-ds-2 py-1.5 text-ds-xs text-content placeholder-content-muted focus:border-primary-500 focus:outline-none"
           />
           <button
             onClick={handleSwitchProject}
             disabled={!projectRoot.trim() || switching}
-            className="w-full px-2 py-1 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded text-xs"
+            className="w-full rounded-ds-md bg-primary-600 px-ds-2 py-1.5 text-ds-xs font-medium text-white transition-colors hover:bg-primary-500 disabled:opacity-50"
           >
             {switching ? t('settings.project.switching') : t('settings.project.switch')}
           </button>
           {projectMsg && (
-            <p className="text-[11px] text-emerald-400 break-all">
+            <p className="break-all text-ds-xs text-emerald-400">
               {t('settings.project.switched')}: {projectMsg}
             </p>
           )}
-          {projectErr && (
-            <p className="text-[11px] text-red-400 break-all">{projectErr}</p>
-          )}
+          {projectErr && <p className="break-all text-ds-xs text-rose-400">{projectErr}</p>}
         </section>
 
         {/* 组 3:显示 */}
-        <section className="px-4 py-4 border-b border-slate-700 space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <section className="space-y-ds-2 border-b border-border-subtle px-ds-4 py-ds-4">
+          <h3 className="text-ds-xs font-semibold uppercase tracking-wide text-content-muted">
             {t('settings.group.display')}
           </h3>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-300">{t('settings.display.language')}</span>
+            <span className="text-ds-xs text-content-secondary">{t('settings.display.language')}</span>
             <div className="flex gap-1">
               <button
                 onClick={() => setLang('zh-CN')}
-                className={`px-2 py-1 rounded text-xs ${isZh ? 'bg-primary-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+                className={`rounded-ds-md px-ds-2 py-1 text-ds-xs transition-colors ${isZh ? 'bg-primary-600 text-white' : 'bg-surface text-content-secondary hover:bg-surface-hover'}`}
               >
                 中文
               </button>
               <button
                 onClick={() => setLang('en-US')}
-                className={`px-2 py-1 rounded text-xs ${!isZh ? 'bg-primary-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+                className={`rounded-ds-md px-ds-2 py-1 text-ds-xs transition-colors ${!isZh ? 'bg-primary-600 text-white' : 'bg-surface text-content-secondary hover:bg-surface-hover'}`}
               >
                 EN
               </button>
@@ -164,32 +160,32 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
         </section>
 
         {/* 组 4:关于(三层推广位 + License) */}
-        <section className="px-4 py-4 space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <section className="space-y-ds-3 px-ds-4 py-ds-4">
+          <h3 className="text-ds-xs font-semibold uppercase tracking-wide text-content-muted">
             {t('settings.group.about')}
           </h3>
 
-          {PROMOTION_TIERS.map(slot => (
+          {PROMOTION_TIERS.map((slot) => (
             <a
               key={slot.tier}
               href={slot.url}
               target="_blank"
               rel="noreferrer"
-              className={`block px-3 py-2 rounded ${TIER_ACCENT[slot.tier]} hover:brightness-110 transition`}
+              className={`block rounded-ds-md px-ds-3 py-ds-2 transition hover:brightness-110 ${TIER_ACCENT[slot.tier]}`}
             >
-              <p className="text-xs font-medium text-white">{t(slot.titleKey)}</p>
-              <p className="text-[11px] text-slate-300 mt-0.5">{t(slot.descKey)}</p>
-              <span className="text-[11px] text-primary-300 mt-1 inline-block">{t(slot.ctaKey)} →</span>
+              <p className="text-ds-xs font-medium text-content">{t(slot.titleKey)}</p>
+              <p className="mt-0.5 text-ds-xs text-content-secondary">{t(slot.descKey)}</p>
+              <span className="mt-1 inline-block text-ds-xs text-primary-300">{t(slot.ctaKey)} →</span>
             </a>
           ))}
 
-          <div className="pt-2 border-t border-slate-700">
-            <p className="text-[11px] text-slate-400">{t(LICENSE_INFO.summaryKey)}</p>
+          <div className="border-t border-border-subtle pt-ds-2">
+            <p className="text-ds-xs text-content-muted">{t(LICENSE_INFO.summaryKey)}</p>
             <a
               href={LICENSE_INFO.url}
               target="_blank"
               rel="noreferrer"
-              className="text-[11px] text-primary-300 hover:underline break-all"
+              className="break-all text-ds-xs text-primary-300 hover:underline"
             >
               {LICENSE_INFO.name}
             </a>

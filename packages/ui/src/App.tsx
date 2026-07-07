@@ -5,12 +5,14 @@ import GraphCanvas from './components/GraphCanvas'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import NodeDetailPanel from './components/NodeDetailPanel'
+import { AppShell } from './components/AppShell'
 import { TabBar } from './components/TabBar/TabBar'
 import { TabPanel } from './components/TabBar/TabPanel'
 import { CommandPalette } from './components/CommandPalette'
 import { SettingsDrawer } from './components/SettingsDrawer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Legend } from './components/Legend'
+import { StatsHud } from './components/StatsHud'
 import { CytoscapeContext } from './lib/cytoscapeContext'
 import { SelectionContext } from './lib/selectionContext'
 import { useGraph } from './hooks/useGraph'
@@ -19,10 +21,15 @@ import { useWebSocket } from './hooks/useWebSocket'
 import { useUiStore } from './store/uiStore'
 import { selectVisibleNodeIds } from './lib/searchNodes'
 
+/**
+ * feature-011:App 降为纯布局编排 + 接线。
+ * - 不持有业务 useState:UI 状态统一来自 uiStore,服务端状态来自 React Query。
+ * - 布局结构下放到 AppShell,本组件只负责订阅状态 + 组装区域。
+ */
 function App() {
   const { t } = useTranslation()
 
-  // UI 状态统一来自 store(feature-002 状态分层),不再散落 useState。
+  // UI 状态统一来自 store(状态分层),不散落 useState。
   const selectedNode = useUiStore((s) => s.selectedNodeId)
   const activeTab = useUiStore((s) => s.activeTab)
   const searchQuery = useUiStore((s) => s.searchQuery)
@@ -36,12 +43,11 @@ function App() {
 
   const cyRef = useRef<cytoscape.Core | null>(null)
   const { data: graph, isLoading, error } = useGraph()
-  // 问题 tab 徽标数量 = 真实解析错误数(feature-006 AC1),替换硬编码 0。
+  // 问题 tab 徽标数量 = 真实解析错误数,替换硬编码 0。
   const { data: graphErrors } = useGraphErrors()
   const issueBadgeCount = graphErrors?.length ?? 0
 
-  // 搜索结果 → 可见节点 id 集合(feature-005 可见性 selector,单一真源)。
-  // 无搜索词时为 undefined,Sidebar 显示全部。
+  // 搜索结果 → 可见节点 id 集合(单一真源 selector)。无搜索词时为 undefined。
   const visibleNodeIds = useMemo<Set<string> | undefined>(
     () => selectVisibleNodeIds(graph?.nodes, searchQuery),
     [searchQuery, graph],
@@ -66,10 +72,9 @@ function App() {
     cyRef.current = cy
   }, [])
 
-  // 命令面板选择节点
+  // 命令面板选择节点 → 选中 + 聚焦定位
   const handleCommandSelect = useCallback((nodeId: string) => {
     selectNode(nodeId)
-    // 聚焦到选中节点
     const cy = cyRef.current
     if (cy) {
       const node = cy.getElementById(nodeId)
@@ -79,117 +84,115 @@ function App() {
     }
   }, [selectNode])
 
-  // 获取选中节点的详细信息
+  // 选中节点的详细信息 + 入/出边
   const selectedNodeData = useMemo(() => {
     if (!graph || !selectedNode) return null
-    return graph.nodes.find(n => n.id === selectedNode) || null
+    return graph.nodes.find((n) => n.id === selectedNode) || null
   }, [graph, selectedNode])
 
-  // 获取入边和出边
   const inEdges = useMemo(() => {
     if (!graph || !selectedNode) return []
-    return graph.edges.filter(e => e.target === selectedNode)
+    return graph.edges.filter((e) => e.target === selectedNode)
   }, [graph, selectedNode])
 
   const outEdges = useMemo(() => {
     if (!graph || !selectedNode) return []
-    return graph.edges.filter(e => e.source === selectedNode)
+    return graph.edges.filter((e) => e.source === selectedNode)
   }, [graph, selectedNode])
 
-  // feature-010 布局层级:右轨(分析 dock / 详情面板)是否占位。
-  // dock 与详情由 uiStore 保证互斥,故右轨至多一个占用者。
-  // 空 → 两轨栅格;有占用者 → 三轨栅格([侧栏 | 画布 | 右轨])。
+  // 右轨(分析 dock / 详情面板)是否占位。二者由 uiStore 保证互斥,至多一个占用。
   const isRightTrackOpen = Boolean(activeTab) || Boolean(selectedNodeData)
 
   return (
     <ErrorBoundary>
-    <CytoscapeContext.Provider value={cyRef}>
-      <SelectionContext.Provider value={selectedNode}>
-      <div className="flex flex-col h-screen bg-slate-900">
-        {/* feature-008 a11y: 跳转到主内容链接(键盘 Tab 首个可达元素,聚焦时可见) */}
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:z-modal focus:top-2 focus:left-2 focus:px-3 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
-        >
-          {t('a11y.skipToMain')}
-        </a>
-
-        {/* 命令面板 */}
-        <CommandPalette
-          graph={graph}
-          isOpen={isCommandPaletteOpen}
-          onClose={() => toggleCommandPalette(false)}
-          onNodeSelect={handleCommandSelect}
-        />
-
-        {/* 设置抽屉 */}
-        <SettingsDrawer open={isSettingsOpen} onClose={() => toggleSettings(false)} />
-
-        {/* 顶部导航栏 */}
-        <Header query={searchQuery} onQueryChange={setSearchQuery} onOpenSettings={() => toggleSettings(true)} />
-
-        {/* 顶层分组导航(≤4 组) */}
-        <TabBar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          issueBadgeCount={issueBadgeCount}
-        />
-
-        {/* 主内容区域 —— feature-010 CSS Grid 三轨:[侧栏 auto | 画布 1fr | 右轨 auto]。
-            右轨仅在 dock/详情打开时出现(二者互斥),画布随之收窄而非被覆盖。 */}
-        <div
-          className={`grid flex-1 overflow-hidden ${
-            isRightTrackOpen ? 'grid-cols-[auto_1fr_auto]' : 'grid-cols-[auto_1fr]'
-          }`}
-        >
-          {/* 左侧边栏 — 始终显示 */}
-          <Sidebar
-            graph={graph}
-            selectedNode={selectedNode}
-            onNodeSelect={selectNode}
-            visibleNodeIds={visibleNodeIds}
-          />
-
-          {/* 中央画布区(常驻,面板打开时收窄而非被盖) */}
-          <main id="main-content" tabIndex={-1} className="relative min-w-0 overflow-hidden">
-            {/* 常驻图例（feature-003）—— 画布左下角,配色与画布单一真源一致 */}
-            {!isLoading && !error && <Legend graph={graph} />}
-
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-slate-400">{t('app.loadingGraph')}</div>
-              </div>
-            ) : error ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-red-400">{t('app.errorLoadingGraph')} {error.message}</div>
-              </div>
-            ) : (
-              <GraphCanvas
+      <CytoscapeContext.Provider value={cyRef}>
+        <SelectionContext.Provider value={selectedNode}>
+          <AppShell
+            skipToMainLabel={t('a11y.skipToMain')}
+            isRightTrackOpen={isRightTrackOpen}
+            overlays={
+              <>
+                <CommandPalette
+                  graph={graph}
+                  isOpen={isCommandPaletteOpen}
+                  onClose={() => toggleCommandPalette(false)}
+                  onNodeSelect={handleCommandSelect}
+                />
+                <SettingsDrawer open={isSettingsOpen} onClose={() => toggleSettings(false)} />
+              </>
+            }
+            header={
+              <Header
+                query={searchQuery}
+                onQueryChange={setSearchQuery}
+                onOpenSettings={() => toggleSettings(true)}
+              />
+            }
+            tabBar={
+              <TabBar
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                issueBadgeCount={issueBadgeCount}
+              />
+            }
+            sidebar={
+              <Sidebar
                 graph={graph}
                 selectedNode={selectedNode}
                 onNodeSelect={selectNode}
-                onCyInit={handleCyInit}
+                visibleNodeIds={visibleNodeIds}
               />
-            )}
-          </main>
+            }
+            main={
+              <main
+                id="main-content"
+                tabIndex={-1}
+                className="relative min-w-0 overflow-hidden bg-surface"
+              >
+                {!isLoading && !error && <Legend graph={graph} />}
+                {!isLoading && !error && <StatsHud />}
 
-          {/* 分析/工具 dock 面板(独立栅格轨道,不覆盖画布) */}
-          <TabPanel activeTab={activeTab} onTabChange={setActiveTab} />
-
-          {/* 右侧详情面板 */}
-          {selectedNodeData && (
-            <NodeDetailPanel
-              node={selectedNodeData}
-              inEdges={inEdges}
-              outEdges={outEdges}
-              onClose={() => selectNode(null)}
-              onNodeSelect={selectNode}
-            />
-          )}
-        </div>
-      </div>
-      </SelectionContext.Provider>
-    </CytoscapeContext.Provider>
+                {isLoading ? (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="flex flex-col items-center gap-ds-3 text-content-muted">
+                      <span className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-primary-400" />
+                      <span className="text-ds-sm">{t('app.loadingGraph')}</span>
+                    </div>
+                  </div>
+                ) : error ? (
+                  <div className="flex h-full items-center justify-center px-ds-6">
+                    <div className="max-w-md rounded-ds-lg border border-rose-500/40 bg-rose-500/10 px-ds-5 py-ds-4 text-center text-rose-200">
+                      <p className="text-ds-sm font-medium">{t('app.errorLoadingGraph')}</p>
+                      <p className="mt-ds-1 text-ds-xs text-rose-300/80">{error.message}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <GraphCanvas
+                    graph={graph}
+                    selectedNode={selectedNode}
+                    onNodeSelect={selectNode}
+                    onCyInit={handleCyInit}
+                  />
+                )}
+              </main>
+            }
+            rightRegion={
+              <>
+                <TabPanel activeTab={activeTab} onTabChange={setActiveTab} />
+                {selectedNodeData && (
+                  <NodeDetailPanel
+                    node={selectedNodeData}
+                    inEdges={inEdges}
+                    outEdges={outEdges}
+                    onClose={() => selectNode(null)}
+                    onNodeSelect={selectNode}
+                  />
+                )}
+              </>
+            }
+          />
+        </SelectionContext.Provider>
+      </CytoscapeContext.Provider>
     </ErrorBoundary>
   )
 }

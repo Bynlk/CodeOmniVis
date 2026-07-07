@@ -27,7 +27,7 @@ export function AiPanel() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
-  // M3:与 SettingsDrawer 共用同一份全局配置(单一数据源,经 AiConfigForm)。
+  // 与 SettingsDrawer 共用同一份全局配置（单一数据源，经 AiConfigForm）。
   const { config } = useAiConfig()
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -81,66 +81,66 @@ export function AiPanel() {
   }, [input, isLoading, config, t])
 
   return (
-    <div className="flex flex-col h-56">
-      {/* 头部:配置入口 */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-700">
-        <span className="text-xs text-slate-400">
+    <div className="flex h-72 flex-col">
+      {/* 头部：配置入口 */}
+      <div className="flex items-center justify-between border-b border-border-subtle px-ds-3 py-ds-2">
+        <span className="text-ds-xs text-content-muted">
           {config ? `${config.model}` : t('ai.notConfigured')}
         </span>
         <button
           onClick={() => setShowConfig(v => !v)}
-          className="text-xs text-slate-400 hover:text-slate-200"
+          className="text-ds-xs text-content-muted transition-colors hover:text-content-secondary"
         >
           ⚙ {t('ai.configure')}
         </button>
       </div>
 
       {showConfig && (
-        <div className="p-3 border-b border-slate-700 bg-slate-800/50">
+        <div className="border-b border-border-subtle bg-surface-hover/40 p-ds-3">
           <AiConfigForm saveLabel={t('ai.saveConfig')} onSaved={() => setShowConfig(false)} />
         </div>
       )}
 
       {/* 消息区域 */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="flex-1 space-y-ds-2 overflow-y-auto p-ds-3">
         {messages.length === 0 && (
-          <div className="text-center text-slate-500 text-sm mt-8">
+          <div className="mt-ds-6 text-center text-ds-sm text-content-muted">
             <p>🤖 {t('ai.assistant')}</p>
-            <p className="text-xs mt-1">{t('ai.askAboutArchitecture')}</p>
+            <p className="mt-1 text-ds-xs">{t('ai.askAboutArchitecture')}</p>
           </div>
         )}
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`text-sm p-2 rounded ${
+            className={`rounded-ds-md p-ds-2 text-ds-sm ${
               msg.role === 'user'
-                ? 'bg-primary-600/20 text-primary-200 ml-8'
-                : 'bg-slate-700/50 text-slate-300 mr-8'
+                ? 'ml-8 bg-primary-600/20 text-primary-200'
+                : 'mr-8 bg-surface-hover/60 text-content-secondary'
             }`}
           >
             {msg.content}
           </div>
         ))}
         {isLoading && (
-          <div className="text-sm text-slate-500 animate-pulse">{t('ai.thinking')}</div>
+          <div className="animate-pulse text-ds-sm text-content-muted">{t('ai.thinking')}</div>
         )}
       </div>
 
       {/* 输入区域 */}
-      <div className="border-t border-slate-700 p-2 flex gap-2">
+      <div className="flex gap-ds-2 border-t border-border-subtle p-ds-2">
         <input
           type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSend()}
           placeholder={t('ai.placeholder')}
-          className="flex-1 px-3 py-1.5 bg-slate-700 border border-slate-600 rounded text-sm text-white placeholder-slate-400 focus:outline-none focus:border-primary-500"
+          className="flex-1 rounded-ds-md border border-border-subtle bg-surface px-ds-3 py-1.5 text-ds-sm text-content placeholder:text-content-muted transition-colors focus:border-primary-500 focus:outline-none"
           disabled={isLoading}
         />
         <button
           onClick={handleSend}
           disabled={isLoading || !input.trim()}
-          className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded text-sm transition-colors"
+          className="rounded-ds-md bg-primary-600 px-ds-4 py-1.5 text-ds-sm font-medium text-white transition-colors hover:bg-primary-500 disabled:opacity-50"
         >
           {t('ai.send')}
         </button>

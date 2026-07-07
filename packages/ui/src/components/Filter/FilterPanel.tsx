@@ -6,6 +6,9 @@ import { useGraph } from '../../hooks/useGraph'
 import { FilterChip } from './FilterChip'
 import type { EdgeConfidence, EdgeType, NodeType } from '@codeomnivis/shared'
 
+const SECTION_TITLE =
+  'mb-ds-2 text-[10px] font-semibold uppercase tracking-wider text-content-muted'
+
 export function FilterPanel() {
   const { t } = useTranslation()
   const { data: graph } = useGraph()
@@ -73,12 +76,10 @@ export function FilterPanel() {
   )
 
   return (
-    <div className="grid grid-cols-4 gap-4 p-4">
+    <div className="grid grid-cols-1 gap-ds-4 p-ds-4 sm:grid-cols-2 lg:grid-cols-4">
       {/* 节点类型 — 只显示图中有的 */}
       <div>
-        <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400">
-          {t('filter.nodeTypes')}
-        </h3>
+        <h3 className={SECTION_TITLE}>{t('filter.nodeTypes')}</h3>
         <div className="flex flex-wrap gap-1.5">
           {presentNodeTypes.map((type) => (
             <FilterChip
@@ -91,16 +92,14 @@ export function FilterPanel() {
             />
           ))}
           {presentNodeTypes.length === 0 && (
-            <span className="text-xs text-slate-500">—</span>
+            <span className="text-ds-xs text-content-muted">—</span>
           )}
         </div>
       </div>
 
       {/* 边类型 — 只显示图中有的 */}
       <div>
-        <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400">
-          {t('filter.edgeTypes')}
-        </h3>
+        <h3 className={SECTION_TITLE}>{t('filter.edgeTypes')}</h3>
         <div className="flex flex-wrap gap-1.5">
           {presentEdgeTypes.map((type) => (
             <FilterChip
@@ -111,17 +110,15 @@ export function FilterPanel() {
             />
           ))}
           {presentEdgeTypes.length === 0 && (
-            <span className="text-xs text-slate-500">—</span>
+            <span className="text-ds-xs text-content-muted">—</span>
           )}
         </div>
       </div>
 
       {/* 置信度 — 只显示图中有的 */}
       <div>
-        <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400">
-          {t('filter.confidence')}
-        </h3>
-        <div className="flex gap-1.5">
+        <h3 className={SECTION_TITLE}>{t('filter.confidence')}</h3>
+        <div className="flex flex-wrap gap-1.5">
           {presentConfidences.map(c => (
             <FilterChip
               key={c}
@@ -131,16 +128,14 @@ export function FilterPanel() {
             />
           ))}
           {presentConfidences.length === 0 && (
-            <span className="text-xs text-slate-500">—</span>
+            <span className="text-ds-xs text-content-muted">—</span>
           )}
         </div>
       </div>
 
       {/* 其他 */}
       <div>
-        <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400">
-          {t('filter.display')}
-        </h3>
+        <h3 className={SECTION_TITLE}>{t('filter.display')}</h3>
         <FilterChip
           active={showIsolated}
           label={t('filter.showIsolated')}
@@ -148,7 +143,7 @@ export function FilterPanel() {
         />
         <button
           onClick={resetFilters}
-          className="mt-2 w-full rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-700"
+          className="mt-ds-2 w-full rounded-ds-md px-ds-2 py-1 text-ds-xs text-content-muted transition-colors hover:bg-surface-hover hover:text-content-secondary"
         >
           {t('filter.reset')}
         </button>

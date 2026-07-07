@@ -10,10 +10,10 @@ export function FilterChip({ active, label, emoji, color, onClick }: FilterChipP
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-all ${
+      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-ds-xs transition-all ${
         active
-          ? 'bg-slate-600 text-white ring-1 ring-slate-500'
-          : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700'
+          ? 'bg-surface-hover text-content ring-1 ring-border-strong'
+          : 'bg-surface text-content-muted hover:bg-surface-hover hover:text-content-secondary'
       }`}
     >
       {color && (

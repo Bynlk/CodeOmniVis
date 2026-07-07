@@ -2,7 +2,7 @@
   "version": 1,
   "project": "CodeOmniVis",
   "created_at": "2026-07-07T02:04:24+08:00",
-  "head_commit": "f6c90a4a12453a8592a235dd7dc7401c2e78b0e9",
+  "head_commit": "1f42664df7b8c0ac1df95466c19895f1d0b8a2f9",
   "constitution": {
     "asked": true,
     "source": "docs/pev/constitution.md; docs/pev/decisions/0001-初始技术栈约定.md",
@@ -144,6 +144,18 @@
       "commit": "f6c90a4a12453a8592a235dd7dc7401c2e78b0e9",
       "note": "补完 feature-004 未真正入栅格的详情面板;详情与分析 dock 互斥占用主区 CSS Grid 右轨;z-index 收敛为 tailwind 语义 token 且 tooltip<modal;uiStore 单一浮层仲裁+模态期间抑制 tooltip。见 ADR 0003。",
       "done_at": "2026-07-07"
+    },
+    {
+      "id": "feature-011-frontend-ground-up-rewrite",
+      "title": "前端表现层从 0 重写(ground-up rewrite)",
+      "spec_path": "docs/pev/specs/done/feature-011-frontend-ground-up-rewrite/spec.md",
+      "design_path": "docs/pev/specs/done/feature-011-frontend-ground-up-rewrite/design.md",
+      "status": "done",
+      "version": 1,
+      "verified": true,
+      "commit": "1f42664df7b8c0ac1df95466c19895f1d0b8a2f9",
+      "note": "用户否定 feature-004/010 增量补丁路线,要求从0重写前端页面。推倒重建整个表现层(App外壳/布局系统/全部可视组件/设计token),保留services/hooks/shared契约/uiStore数据管线。验收对齐 brief §9 七问 + G1-G9。见 ADR 0004。",
+      "done_at": "2026-07-07"
     }
   ],
   "decisions": [
@@ -156,6 +168,16 @@
       "id": "0002",
       "title": "节点配色单一真源",
       "path": "docs/pev/decisions/0002-节点配色单一真源.md"
+    },
+    {
+      "id": "0003",
+      "path": "docs/pev/decisions/0003-布局层级重设计与feature-004的关系.md",
+      "title": "布局层级重设计与feature-004的关系"
+    },
+    {
+      "id": "0004",
+      "path": "docs/pev/decisions/0004-表现层从0重写.md",
+      "title": "表现层从0重写"
     }
   ],
   "pitfalls_count": 0

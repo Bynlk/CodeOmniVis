@@ -17,6 +17,21 @@ export default {
         'modal': '50',     // CommandPalette / SettingsDrawer
       },
       colors: {
+        // feature-011 表面语义色 —— 映射到 index.css 的 :root CSS 变量,
+        // 供全站以 class 引用统一的背景/边框/文本层级(深色主题)。
+        surface: {
+          DEFAULT: 'var(--surface-base)',
+          raised: 'var(--surface-raised)',
+          overlay: 'var(--surface-overlay)',
+          hover: 'var(--surface-hover)',
+        },
+        'border-subtle': 'var(--border-subtle)',
+        'border-strong': 'var(--border-strong)',
+        content: {
+          DEFAULT: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)',
+        },
         // CodeOmniVis 品牌色
         primary: {
           50: '#f0f9ff',

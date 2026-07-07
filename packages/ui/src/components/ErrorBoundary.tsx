@@ -27,16 +27,16 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render() {
     if (this.state.hasError) {
       return this.props.fallback ?? (
-        <div className="flex h-screen items-center justify-center bg-slate-900">
-          <div className="text-center">
-            <div className="text-4xl mb-4">⚠️</div>
-            <div className="text-slate-300 text-lg mb-2">Something went wrong</div>
-            <div className="text-slate-500 text-sm mb-4">
+        <div className="flex h-screen items-center justify-center bg-surface">
+          <div className="max-w-sm rounded-ds-xl border border-border-subtle bg-surface-raised p-ds-6 text-center shadow-ds-panel">
+            <div className="mb-ds-4 text-4xl">⚠️</div>
+            <div className="mb-ds-2 text-ds-lg font-semibold text-content">Something went wrong</div>
+            <div className="mb-ds-4 text-ds-sm text-content-muted">
               {this.state.error?.message}
             </div>
             <button
               onClick={() => this.setState({ hasError: false })}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500"
+              className="rounded-ds-md bg-primary-600 px-ds-4 py-ds-2 text-ds-sm font-medium text-white transition-colors hover:bg-primary-500"
             >
               Try Again
             </button>

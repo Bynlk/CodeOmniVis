@@ -11,7 +11,7 @@ import { TraceRunner } from './TraceRunner'
 
 const STATION_INTERVAL_MS = 1000
 
-/** 把链路结果拼成可读的链路说明请求(供 AI 富化)。 */
+/** 把链路结果拼成可读的链路说明请求（供 AI 富化）。 */
 function buildLinkPrompt(trace: TraceResult): string {
   const lines = trace.steps.map(
     s => `${s.index}. [${s.layer}] ${s.nodeName} (${s.nodeType}) @ ${s.filePath}:${s.line} — ${s.explanation}`,
@@ -105,35 +105,35 @@ export function TracePanel() {
   }, [trace, t])
 
   return (
-    <div className="p-4 space-y-3">
+    <div className="space-y-ds-3 p-ds-4">
       <TraceRunner steps={trace?.steps ?? []} activeIndex={activeIndex} />
 
       <div className="flex items-center justify-between">
-        <p className="text-slate-400 text-xs">{t('trace.title')}</p>
+        <p className="text-ds-xs text-content-muted">{t('trace.title')}</p>
         {totalSteps > 0 && (
-          <span className="text-[10px] text-slate-500">{t('trace.totalStations', { count: totalSteps })}</span>
+          <span className="text-[10px] text-content-muted">{t('trace.totalStations', { count: totalSteps })}</span>
         )}
       </div>
 
       {selectedNode === null && (
-        <div className="text-slate-500 text-xs">{t('trace.selectNode')}</div>
+        <div className="text-ds-xs text-content-muted">{t('trace.selectNode')}</div>
       )}
 
       {selectedNode !== null && isLoading && (
-        <div className="text-slate-400 text-xs">{t('trace.running')}</div>
+        <div className="text-ds-xs text-content-muted">{t('trace.running')}</div>
       )}
 
       {selectedNode !== null && !isLoading && totalSteps === 0 && (
-        <div className="text-slate-500 text-xs">{t('trace.noPath')}</div>
+        <div className="text-ds-xs text-content-muted">{t('trace.noPath')}</div>
       )}
 
       {trace !== undefined && totalSteps > 0 && (
         <>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-ds-2">
             <button
               type="button"
               onClick={running ? stopTrace : runTrace}
-              className="px-3 py-1.5 rounded text-xs font-medium bg-amber-600 text-white hover:bg-amber-500 transition-colors"
+              className="rounded-ds-md bg-amber-600 px-ds-3 py-1.5 text-ds-xs font-medium text-white transition-colors hover:bg-amber-500"
             >
               {running ? t('trace.stop') : activeIndex >= 0 ? t('trace.replay') : t('trace.run')}
             </button>
@@ -141,14 +141,14 @@ export function TracePanel() {
               type="button"
               onClick={() => void explainWithAi()}
               disabled={aiLoading}
-              className="px-3 py-1.5 rounded text-xs font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 transition-colors disabled:opacity-50"
+              className="rounded-ds-md border border-border-subtle bg-surface-hover px-ds-3 py-1.5 text-ds-xs font-medium text-content-secondary transition-colors hover:bg-surface-overlay disabled:opacity-50"
             >
               🤖 {aiLoading ? t('trace.explaining') : t('trace.colExplain')}
             </button>
           </div>
 
           {aiSummary !== null && (
-            <div className="rounded bg-slate-900/60 border border-slate-700 px-3 py-2 text-xs text-slate-300 leading-relaxed">
+            <div className="rounded-ds-md border border-border-subtle bg-surface px-ds-3 py-ds-2 text-ds-xs leading-relaxed text-content-secondary">
               {aiSummary}
             </div>
           )}

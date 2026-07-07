@@ -1,9 +1,7 @@
 /**
- * 数据新鲜度徽标
- *
- * 以颜色 + 文案可视化 fresh / analyzing / stale 三态,并展示待处理变更数。
+ * 数据新鲜度徽标(feature-011 重写)。
+ * 以颜色点 + 文案可视化 fresh / analyzing / stale 三态,并展示待处理变更数。
  */
-
 import { useTranslation } from 'react-i18next'
 import type { FreshnessStatus } from '@codeomnivis/shared'
 
@@ -39,14 +37,14 @@ export function FreshnessBadge({ status }: FreshnessBadgeProps) {
 
   return (
     <div
-      className="flex items-center space-x-2 px-3 py-1.5 bg-slate-700 rounded-lg"
+      className="flex items-center gap-1.5 rounded-ds-md border border-border-subtle bg-surface px-ds-3 py-1.5"
       title={title}
       aria-label={t(style.labelKey)}
     >
-      <span className={`inline-block w-2 h-2 rounded-full ${style.dot}`} />
-      <span className={`text-xs font-medium ${style.text}`}>{t(style.labelKey)}</span>
+      <span className={`inline-block h-2 w-2 rounded-full ${style.dot}`} aria-hidden="true" />
+      <span className={`text-ds-xs font-medium ${style.text}`}>{t(style.labelKey)}</span>
       {status.pendingChanges > 0 && status.state !== 'analyzing' && (
-        <span className="text-xs text-slate-400">
+        <span className="text-ds-xs text-content-muted">
           {t('freshness.pending', { count: status.pendingChanges })}
         </span>
       )}

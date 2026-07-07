@@ -9,10 +9,9 @@ interface TabBarProps {
 }
 
 /**
- * 顶层分组导航(feature-004)。渲染 ≤4 个主分组:
+ * 顶层分组导航(feature-011 重写)。渲染 ≤4 个主分组:
  * - 图谱组:无子面板,点击 → activeTab=null(全屏画布)。
- * - 其它组:点击 → 激活该组第一个子 tab;再次点击已激活组 → 收起(回到画布)。
- * 子 tab 之间的切换由 dock 面板内的子导航负责。
+ * - 其它组:点击 → 激活该组第一个子 tab;再次点击 → 收起。
  */
 export function TabBar({ activeTab, onTabChange, issueBadgeCount }: TabBarProps) {
   const { t } = useTranslation()
@@ -20,7 +19,7 @@ export function TabBar({ activeTab, onTabChange, issueBadgeCount }: TabBarProps)
 
   return (
     <div
-      className="flex items-center border-b border-slate-700 bg-slate-800 px-ds-4"
+      className="flex items-center gap-1 border-b border-border-subtle bg-surface-raised px-ds-3"
       role="tablist"
       aria-label={t('group.graph')}
     >
@@ -38,23 +37,21 @@ export function TabBar({ activeTab, onTabChange, issueBadgeCount }: TabBarProps)
               if (isGraph) {
                 onTabChange(null)
               } else if (isActive) {
-                onTabChange(null) // 再次点击已激活组 → 收起面板
+                onTabChange(null)
               } else {
-                onTabChange(group.children[0].id) // 打开该组首个子 tab
+                onTabChange(group.children[0].id)
               }
             }}
-            className={`relative flex items-center gap-1.5 px-ds-4 py-2.5 text-ds-sm
-                        border-b-2 transition-colors focus:outline-none
-                        focus-visible:ring-2 focus-visible:ring-primary-400 ${
-                          isActive
-                            ? 'border-primary-500 text-white'
-                            : 'border-transparent text-slate-400 hover:text-slate-200'
-                        }`}
+            className={`relative flex items-center gap-1.5 border-b-2 px-ds-3 py-2.5 text-ds-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
+              isActive
+                ? 'border-primary-500 font-medium text-content'
+                : 'border-transparent text-content-muted hover:text-content-secondary'
+            }`}
           >
             <span aria-hidden="true">{group.emoji}</span>
             <span>{t(group.labelKey)}</span>
             {badge !== undefined && badge > 0 && (
-              <span className="ml-1 rounded-full bg-red-500 px-1.5 py-0.5 text-ds-xs text-white">
+              <span className="ml-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-ds-xs font-medium text-white">
                 {badge}
               </span>
             )}
