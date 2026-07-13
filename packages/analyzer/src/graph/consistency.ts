@@ -40,6 +40,10 @@ function mustGetNumber(map: Map<string, number>, key: string): number {
   return value
 }
 
+function isTrpcRouterContainer(node: OmniNode): boolean {
+  return isNodeOfType(node, 'trpc_procedure') && node.metadata.isRouter === true
+}
+
 // ============================================================
 // 一致性检测器
 // ============================================================
@@ -110,6 +114,8 @@ export class ConsistencyChecker {
           type: 'dead_api_call',
           severity: 'warning',
           description: `API call points to non-existent node: ${edge.target}`,
+          messageKey: 'dead_api_call',
+          messageParams: { target: edge.target },
           locations: [{
             file: edge.source.split(':')[1] || 'unknown',
             line: 0,
@@ -131,7 +137,8 @@ export class ConsistencyChecker {
     const issues: Issue[] = []
 
     const routeNodes = graph.nodes.filter(n =>
-      n.type === 'api_route' || n.type === 'trpc_procedure'
+      (n.type === 'api_route' || n.type === 'trpc_procedure')
+      && !isTrpcRouterContainer(n)
     )
 
     for (const route of routeNodes) {
@@ -141,6 +148,8 @@ export class ConsistencyChecker {
           type: 'unused_route',
           severity: 'info',
           description: `Route appears to be unused: ${route.name}`,
+          messageKey: 'unused_route',
+          messageParams: { name: route.name },
           locations: [{
             file: route.filePath,
             line: route.line,
@@ -171,6 +180,8 @@ export class ConsistencyChecker {
           type: 'unused_route',
           severity: 'info',
           description: `Node has no connections: ${node.name}`,
+          messageKey: 'orphan_node',
+          messageParams: { name: node.name },
           locations: [{
             file: node.filePath,
             line: node.line,
@@ -215,6 +226,13 @@ export class ConsistencyChecker {
           type: 'method_mismatch',
           severity: 'warning',
           description: `HTTP method mismatch: ${sourceNode.name} calls ${targetNode.name} with ${callMethod}, but route only supports ${routeMethods.join(',')}`,
+          messageKey: 'method_mismatch',
+          messageParams: {
+            source: sourceNode.name,
+            target: targetNode.name,
+            method: callMethod,
+            supported: routeMethods.join(', '),
+          },
           locations: [{
             file: sourceNode.filePath,
             line: sourceNode.line,
@@ -237,7 +255,7 @@ export class ConsistencyChecker {
 
     const procedureNames = new Set(
       graph.nodes
-        .filter(n => n.type === 'trpc_procedure')
+        .filter(n => n.type === 'trpc_procedure' && !isTrpcRouterContainer(n))
         .map(n => n.name)
     )
 
@@ -264,6 +282,8 @@ export class ConsistencyChecker {
           type: 'missing_procedure',
           severity: 'warning',
           description: `tRPC procedure not found: ${procedureName} (called from ${sourceNode?.name || 'unknown'})`,
+          messageKey: 'missing_procedure',
+          messageParams: { procedure: procedureName, source: sourceNode?.name || 'unknown' },
           locations: [{
             file: sourceNode?.filePath || 'unknown',
             line: sourceNode?.line || 0,
@@ -300,7 +320,10 @@ export class ConsistencyChecker {
 
     for (const node of graph.nodes) {
       // dead_route: 路由没有 calls_api 入边
-      if (node.type === 'api_route' || node.type === 'trpc_procedure' || node.type === 'express_route') {
+      if (
+        (node.type === 'api_route' || node.type === 'trpc_procedure' || node.type === 'express_route')
+        && !isTrpcRouterContainer(node)
+      ) {
         const callers = incomingByType.get('calls_api')?.get(node.id) ?? []
         if (callers.length === 0) {
           issues.push({
@@ -308,6 +331,8 @@ export class ConsistencyChecker {
             type: 'dead_route',
             severity: 'warning',
             description: `Route has no callers: ${node.name}`,
+            messageKey: 'dead_route',
+            messageParams: { name: node.name },
             locations: [{ file: node.filePath, line: node.line }],
             relatedNodeIds: [node.id],
             relatedEdgeIds: [],
@@ -324,6 +349,8 @@ export class ConsistencyChecker {
             type: 'dead_component',
             severity: 'info',
             description: `Component is not rendered by any parent: ${node.name}`,
+            messageKey: 'dead_component',
+            messageParams: { name: node.name },
             locations: [{ file: node.filePath, line: node.line }],
             relatedNodeIds: [node.id],
             relatedEdgeIds: [],
@@ -340,6 +367,8 @@ export class ConsistencyChecker {
             type: 'dead_service',
             severity: 'info',
             description: `Service has no callers: ${node.name}`,
+            messageKey: 'dead_service',
+            messageParams: { name: node.name },
             locations: [{ file: node.filePath, line: node.line }],
             relatedNodeIds: [node.id],
             relatedEdgeIds: [],
@@ -437,6 +466,8 @@ export class ConsistencyChecker {
         type: 'circular_dependency',
         severity: 'warning',
         description: `Circular dependency detected: ${cyclePath}`,
+        messageKey: 'circular_dependency',
+        messageParams: { cycle: cyclePath },
         locations,
         relatedNodeIds: scc,
         relatedEdgeIds: [],

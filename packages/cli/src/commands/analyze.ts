@@ -10,11 +10,9 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
-import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoDetect'
-import { scanDirectory } from '../utils/scanDirectory'
-import { isSyntheticNode } from '../utils/isSyntheticNode'
+import { autoDetectProject } from '../utils/autoDetect'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
-import { OmniDatabase, GraphBuilder, CrossLayerLinker, NPlusOneDetector, AuthDetector, RSCBoundaryDetector, createDefaultParsers } from '@codeomnivis/analyzer'
+import { OmniDatabase, NPlusOneDetector, AuthDetector, RSCBoundaryDetector, runAnalysis } from '@codeomnivis/analyzer'
 
 interface AnalyzeOptions {
   project?: string
@@ -55,64 +53,14 @@ export async function runAnalyze(options: AnalyzeOptions, deps: AnalyzeDeps = de
 
   try {
     await db.ready()
-
-    // 创建图构建器
-    const builder = new GraphBuilder(db)
-    builder.registerParsers(createDefaultParsers())
-
-    // 获取要解析的文件
-    const files: string[] = []
-
-    // 添加 Prisma schema
-    if (projectMeta.prismaSchemaPath) {
-      files.push(projectMeta.prismaSchemaPath)
-    }
-
-    // 添加 tRPC router 文件
-    if (projectMeta.trpcRouterPaths && projectMeta.trpcRouterPaths.length > 0) {
-      files.push(...projectMeta.trpcRouterPaths)
-    }
-
-    // 扫描项目中的 TypeScript/JavaScript 文件
-    const scanDirs = collectScanDirs(projectRoot, config)
-    for (const dir of scanDirs) {
-      if (fs.existsSync(dir)) {
-        const scanned = scanDirectory(dir, projectRoot)
-        files.push(...scanned)
-      }
-    }
-
-    // 执行解析
-    report(`Parsing ${files.length} files...`)
-    const result = await builder.parseFiles(files, {
+    const result = await runAnalysis({
       projectRoot,
+      dbPath,
       projectMeta,
-      tsConfig: null,
-      pathAliases: {},
+      db,
+      onFilesCollected: count => report(`Parsing ${count} files...`),
     })
-
-    // 跨层连线
-    const tsConfigPath = findTsConfig(projectRoot)
-    const linker = new CrossLayerLinker(tsConfigPath)
-    const graph = builder.loadGraph()
-    const crossLayerResult = await linker.link(graph)
-
-    // 将跨层边加入 graph 并保存到数据库。
-    // 注意：loadGraph() 会带出上次运行持久化到 DB 的跨层边，而本次 linker.link 会基于
-    // unknown 占位边重新生成同 id 的 resolved 边。若直接 push，会与 DB 中已存在的同 id 边
-    // 在内存 graph.edges 中叠加，导致每跑一次就多一条重复边（缓存累积缺陷）。
-    // 因此这里按 edge.id 去重后再合并到 graph.edges。
-    if (crossLayerResult.edges.length > 0) {
-      const existingEdgeIds = new Set(graph.edges.map(e => e.id))
-      const newCrossLayerEdges = crossLayerResult.edges.filter(e => !existingEdgeIds.has(e.id))
-      graph.edges.push(...newCrossLayerEdges)
-      db.upsertEdges(crossLayerResult.edges)
-    }
-    // linker.link 可能向 graph.nodes 中添加了 synthetic 节点
-    const syntheticNodes = graph.nodes.filter(isSyntheticNode)
-    if (syntheticNodes.length > 0) {
-      db.upsertNodes(syntheticNodes)
-    }
+    const graph = db.loadGraph()
 
     // 6. 深度分析检测器
     const nPlusOneDetector = new NPlusOneDetector()
@@ -126,21 +74,21 @@ export async function runAnalyze(options: AnalyzeOptions, deps: AnalyzeDeps = de
     ]
 
     // 输出统计信息
-    const totalEdges = result.stats.totalEdges + crossLayerResult.edges.length
     console.log('')
     console.log(chalk.blue('Statistics:'))
     console.log(`  Nodes: ${graph.nodes.length}`)
-    console.log(`  Edges: ${totalEdges}`)
-    console.log(`  Errors: ${result.stats.totalErrors}`)
+    console.log(`  Edges: ${graph.edges.length}`)
+    console.log(`  Errors: ${result.errors}`)
 
     // 跨层连线统计
-    if (crossLayerResult.edges.length > 0) {
+    if (result.crossLayerEdges > 0) {
+      const countEdge = (type: string): number => graph.edges.filter(edge => edge.type === type).length
       console.log('')
       console.log(chalk.blue('Cross-layer links:'))
-      console.log(`  calls_api:      ${crossLayerResult.stats.callsApiEdges}`)
-      console.log(`  handles:        ${crossLayerResult.stats.handlesEdges}`)
-      console.log(`  calls_service:  ${crossLayerResult.stats.callsServiceEdges}`)
-      console.log(`  queries_db:     ${crossLayerResult.stats.queriesDbEdges}`)
+      console.log(`  calls_api:      ${countEdge('calls_api')}`)
+      console.log(`  handles:        ${countEdge('handles')}`)
+      console.log(`  calls_service:  ${countEdge('calls_service')}`)
+      console.log(`  queries_db:     ${countEdge('queries_db')}`)
     }
 
     // 输出 Issues

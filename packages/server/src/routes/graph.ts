@@ -10,6 +10,7 @@ import type { OmniDatabase } from '@codeomnivis/analyzer'
 import { DataFlowTracer } from '@codeomnivis/analyzer'
 import type { NodeType, EdgeType } from '@codeomnivis/shared'
 import { isEdgeType, isNodeType, sanitizeGraph } from '@codeomnivis/shared'
+import { collectGraphIssues } from '../graphIssues'
 
 // 合法的节点类型和边类型
 const VALID_NODE_TYPES: ReadonlySet<string> = new Set<NodeType>([
@@ -30,7 +31,11 @@ const VALID_EDGE_TYPES: ReadonlySet<string> = new Set<EdgeType>([
 // 路由创建
 // ============================================================
 
-export function createGraphRouter(db: OmniDatabase, mutatingGuard?: RequestHandler): Router {
+export function createGraphRouter(
+  db: OmniDatabase,
+  mutatingGuard?: RequestHandler,
+  getProjectRoot: () => string = () => process.cwd(),
+): Router {
   const router = Router()
   // S-07:非 loopback 绑定时,DELETE 等 mutating 操作需通过鉴权守卫。
   const guard: RequestHandler = mutatingGuard ?? ((_req, _res, next) => next())
@@ -270,6 +275,32 @@ export function createGraphRouter(db: OmniDatabase, mutatingGuard?: RequestHandl
         error: {
           code: 'INTERNAL_ERROR',
           message: 'Failed to load errors',
+        },
+      })
+    }
+  })
+
+  /**
+   * GET /api/graph/issues
+   * 获取一致性、安全、性能与框架边界问题。
+   */
+  router.get('/issues', (_req: Request, res: Response) => {
+    try {
+      const report = collectGraphIssues(db.loadGraph(), getProjectRoot())
+      res.json({
+        data: report.issues,
+        meta: {
+          count: report.summary.total,
+          ...report.summary,
+          detectors: report.detectors,
+        },
+      })
+    } catch (err) {
+      console.error('Failed to get graph issues:', err)
+      res.status(500).json({
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to load graph issues',
         },
       })
     }

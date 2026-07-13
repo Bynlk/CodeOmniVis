@@ -148,6 +148,7 @@ const nodeParsers: { [T in NodeType]: (o: JsonObject) => NodeTypeMetadataMap[T] 
     procedureName: str(o, 'procedureName'),
     hasInput: bool(o, 'hasInput'),
     hasOutput: bool(o, 'hasOutput'),
+    ...(optBool(o, 'isRouter') !== undefined ? { isRouter: optBool(o, 'isRouter') } : {}),
   }),
   tsrpc_service: (o) => ({
     servicePath: str(o, 'servicePath'),

@@ -269,6 +269,12 @@ export class NPlusOneDetector {
       type: 'n_plus_one_query',
       severity: 'critical',
       description: `N+1 query: prisma.${dbCall.modelName}.${dbCall.operation}() inside ${loopType} loop`,
+      messageKey: 'n_plus_one_query',
+      messageParams: {
+        model: dbCall.modelName,
+        operation: dbCall.operation,
+        loopType,
+      },
       locations: [
         { file: filePath, line: loopLine, note: `${loopType} loop starts here` },
         { file: filePath, line: dbCall.line, note: `DB call: ${dbCall.exprText}` },

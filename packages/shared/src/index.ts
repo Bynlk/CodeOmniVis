@@ -100,8 +100,14 @@ export type {
   Issue,
   IssueSeverity,
   IssueType,
+  IssueMessageKey,
+  IssueMessageParams,
   IssueLocation,
   ConsistencyReport,
+  IssueSource,
+  IssueDetectorId,
+  IssueDetectorStatus,
+  SourcedIssue,
 } from './types/issue'
 
 export type {

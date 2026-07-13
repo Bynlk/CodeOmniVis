@@ -131,6 +131,16 @@ describe('PrismaParser', () => {
       }
     })
 
+    it('classifies the scalar side of a one-to-many relation as many-to-one', async () => {
+      const result = await parser.parse('schema.prisma', context)
+      const authorRelation = result.edges.find(
+        (edge): edge is Extract<typeof edge, { type: 'db_relation' }> =>
+          edge.type === 'db_relation' && edge.source.endsWith(':Post') && edge.target.endsWith(':User'),
+      )
+
+      expect(authorRelation?.metadata.relationType).toBe('many_to_one')
+    })
+
     it('should have no errors on valid schema', async () => {
       const result = await parser.parse('schema.prisma', context)
       expect(result.errors).toHaveLength(0)

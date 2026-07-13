@@ -212,3 +212,64 @@ describe('Graph Routes', () => {
     })
   })
 })
+
+describe('GET /api/graph/issues', () => {
+  it('returns sourced project issues and detector status metadata', async () => {
+    const issueDb = new OmniDatabase(':memory:')
+    await issueDb.ready()
+
+    const routerNode: OmniNode = {
+      id: 'trpc_procedure:server/router.ts:demoRouter',
+      type: 'trpc_procedure',
+      name: 'demoRouter',
+      filePath: 'server/router.ts',
+      line: 1,
+      column: 1,
+      metadata: {
+        procedureType: 'query',
+        routerName: 'demo',
+        procedureName: 'demoRouter',
+        hasInput: false,
+        hasOutput: false,
+        isRouter: true,
+      },
+    }
+    const procedureNode: OmniNode = {
+      id: 'trpc_procedure:server/router.ts:list',
+      type: 'trpc_procedure',
+      name: 'list',
+      filePath: 'server/router.ts',
+      line: 2,
+      column: 1,
+      metadata: {
+        procedureType: 'query',
+        routerName: 'demo',
+        procedureName: 'list',
+        hasInput: false,
+        hasOutput: false,
+      },
+    }
+    issueDb.upsertNode(routerNode)
+    issueDb.upsertNode(procedureNode)
+    issueDb.upsertEdge({
+      id: 'contains-demo-list',
+      source: routerNode.id,
+      target: procedureNode.id,
+      type: 'contains',
+      confidence: 'certain',
+      metadata: { routerName: 'demo', procedureName: 'list' },
+    })
+
+    const issueApp = express()
+    issueApp.use('/api/graph', createGraphRouter(issueDb, undefined, () => '/project'))
+    const res = await request(issueApp).get('/api/graph/issues')
+    issueDb.close()
+
+    expect(res.status).toBe(200)
+    expect(res.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ source: 'consistency', type: 'dead_route' }),
+    ]))
+    expect(res.body.meta).toMatchObject({ count: 1, warning: 1 })
+    expect(res.body.meta.detectors).toHaveLength(4)
+  })
+})

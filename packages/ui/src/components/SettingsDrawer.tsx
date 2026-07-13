@@ -1,42 +1,24 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { postProject } from '../services'
-import { useAiConfig } from '../hooks/useAiConfig'
-import { AiConfigForm } from './AiConfigForm'
-import { PROMOTION_TIERS, LICENSE_INFO } from '../lib/promotion'
-import { STATUS_QUERY_KEY } from '../hooks/useStatus'
+import { isAbsoluteProjectPath } from '../services/project'
+import { LICENSE_INFO } from '../lib/promotion'
+import { PROJECT_QUERY_KEY } from '../hooks/useProject'
+import { useModalFocusTrap } from '../hooks/useModalFocusTrap'
+import { persistBrowserLanguage } from '../lib/languageStorage'
+import { invalidateAnalysisQueries } from '../hooks/invalidateAnalysisQueries'
 
 interface SettingsDrawerProps {
   open: boolean
   onClose: () => void
 }
 
-const TIER_ACCENT: Record<string, string> = {
-  primary: 'border-l-4 border-primary-500 bg-primary-600/10',
-  secondary: 'border-l-4 border-border-strong bg-surface-hover/30',
-  tertiary: 'border-l-4 border-border-subtle bg-surface/40',
-}
-
-/** 设置抽屉(feature-011 重写):从右侧滑出,四组(AI / 项目 / 显示 / 关于)。 */
+/** 工作台设置仅保留项目、显示和产品信息，AI 能力通过 MCP 暴露。 */
 export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
-  const triggerRef = useRef<HTMLElement | null>(null)
-  useEffect(() => {
-    if (open) {
-      triggerRef.current = (document.activeElement as HTMLElement) ?? null
-      const onKey = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') onClose()
-      }
-      document.addEventListener('keydown', onKey)
-      return () => document.removeEventListener('keydown', onKey)
-    }
-    triggerRef.current?.focus?.()
-    triggerRef.current = null
-  }, [open, onClose])
-
-  const { config } = useAiConfig()
+  const focusTrapRef = useModalFocusTrap<HTMLElement>(open, onClose)
 
   const [projectRoot, setProjectRoot] = useState('')
   const [switching, setSwitching] = useState(false)
@@ -45,7 +27,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
 
   const handleSwitchProject = useCallback(async () => {
     const trimmed = projectRoot.trim()
-    if (trimmed === '' || switching) return
+    if (trimmed === '' || switching || !isAbsoluteProjectPath(trimmed)) return
     setSwitching(true)
     setProjectMsg(null)
     setProjectErr(null)
@@ -53,8 +35,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
       const result = await postProject(trimmed)
       if (result.ok) {
         setProjectMsg(result.projectRoot ?? trimmed)
-        await queryClient.invalidateQueries({ queryKey: ['graph'] })
-        await queryClient.invalidateQueries({ queryKey: STATUS_QUERY_KEY })
+        await invalidateAnalysisQueries(queryClient)
+        await queryClient.invalidateQueries({ queryKey: PROJECT_QUERY_KEY })
       } else {
         setProjectErr(result.errorMessage ?? t('settings.project.failed'))
       }
@@ -65,10 +47,14 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     }
   }, [projectRoot, switching, queryClient, t])
 
+  const projectPathInvalid = projectRoot.trim() !== '' && !isAbsoluteProjectPath(projectRoot)
+  const visibleProjectError = projectErr
+    ?? (projectPathInvalid ? t('settings.project.absoluteRequired', 'Enter an absolute project path') : null)
+
   const isZh = i18n.language === 'zh-CN'
   const setLang = useCallback((lang: 'zh-CN' | 'en-US') => {
     i18n.changeLanguage(lang)
-    localStorage.setItem('codeomnivis-lang', lang)
+    persistBrowserLanguage(lang)
   }, [i18n])
 
   if (!open) return null
@@ -76,18 +62,22 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
   return (
     <div className="fixed inset-0 z-modal flex justify-end" role="dialog" aria-modal="true" aria-label={t('settings.title')}>
       {/* 遮罩 */}
-      <button
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        aria-label={t('settings.close')}
+      <div
+        data-settings="backdrop"
+        className="absolute inset-0 bg-black/70"
+        aria-hidden="true"
         onClick={onClose}
       />
 
       {/* 抽屉主体 */}
-      <aside className="relative flex h-full w-96 max-w-full flex-col overflow-y-auto border-l border-border-subtle bg-surface-raised shadow-ds-panel">
+      <aside
+        ref={focusTrapRef}
+        tabIndex={-1}
+        data-modal-focus-trap="settings"
+        className="relative flex h-full w-96 max-w-full flex-col overflow-y-auto border-l border-border-strong bg-surface-raised shadow-ds-panel"
+      >
         <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border-subtle bg-surface-raised px-ds-4 py-ds-3">
-          <h2 className="flex items-center gap-1.5 text-ds-sm font-semibold text-content">
-            <span aria-hidden="true">⚙</span> {t('settings.title')}
-          </h2>
+          <div><h2 className="text-ds-sm font-semibold text-content">{t('settings.title')}</h2><p className="mt-0.5 text-[11px] text-content-muted">{t('settings.subtitle', 'Workspace preferences')}</p></div>
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-ds-md text-content-muted transition-colors hover:bg-surface-hover hover:text-content"
@@ -97,20 +87,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
           </button>
         </div>
 
-        {/* 组 1:AI */}
         <section className="space-y-ds-2 border-b border-border-subtle px-ds-4 py-ds-4">
-          <h3 className="text-ds-xs font-semibold uppercase tracking-wide text-content-muted">
-            {t('settings.group.ai')}
-          </h3>
-          <AiConfigForm saveLabel={t('settings.ai.save')} showClear />
-          <p className="text-ds-xs text-content-muted">
-            {config ? `${t('settings.ai.current')}: ${config.model}` : t('ai.notConfigured')}
-          </p>
-        </section>
-
-        {/* 组 2:项目 */}
-        <section className="space-y-ds-2 border-b border-border-subtle px-ds-4 py-ds-4">
-          <h3 className="text-ds-xs font-semibold uppercase tracking-wide text-content-muted">
+          <h3 className="text-ds-xs font-semibold text-content-secondary">
             {t('settings.group.project')}
           </h3>
           <input
@@ -118,11 +96,12 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
             value={projectRoot}
             onChange={(e) => setProjectRoot(e.target.value)}
             placeholder={t('settings.project.placeholder')}
+            aria-invalid={projectPathInvalid}
             className="w-full rounded-ds-md border border-border-subtle bg-surface px-ds-2 py-1.5 text-ds-xs text-content placeholder-content-muted focus:border-primary-500 focus:outline-none"
           />
           <button
             onClick={handleSwitchProject}
-            disabled={!projectRoot.trim() || switching}
+            disabled={!projectRoot.trim() || projectPathInvalid || switching}
             className="w-full rounded-ds-md bg-primary-600 px-ds-2 py-1.5 text-ds-xs font-medium text-white transition-colors hover:bg-primary-500 disabled:opacity-50"
           >
             {switching ? t('settings.project.switching') : t('settings.project.switch')}
@@ -132,12 +111,11 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
               {t('settings.project.switched')}: {projectMsg}
             </p>
           )}
-          {projectErr && <p className="break-all text-ds-xs text-rose-400">{projectErr}</p>}
+          {visibleProjectError && <p className="break-all text-ds-xs text-rose-400">{visibleProjectError}</p>}
         </section>
 
-        {/* 组 3:显示 */}
         <section className="space-y-ds-2 border-b border-border-subtle px-ds-4 py-ds-4">
-          <h3 className="text-ds-xs font-semibold uppercase tracking-wide text-content-muted">
+          <h3 className="text-ds-xs font-semibold text-content-secondary">
             {t('settings.group.display')}
           </h3>
           <div className="flex items-center justify-between">
@@ -159,27 +137,12 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
           </div>
         </section>
 
-        {/* 组 4:关于(三层推广位 + License) */}
         <section className="space-y-ds-3 px-ds-4 py-ds-4">
-          <h3 className="text-ds-xs font-semibold uppercase tracking-wide text-content-muted">
+          <h3 className="text-ds-xs font-semibold text-content-secondary">
             {t('settings.group.about')}
           </h3>
-
-          {PROMOTION_TIERS.map((slot) => (
-            <a
-              key={slot.tier}
-              href={slot.url}
-              target="_blank"
-              rel="noreferrer"
-              className={`block rounded-ds-md px-ds-3 py-ds-2 transition hover:brightness-110 ${TIER_ACCENT[slot.tier]}`}
-            >
-              <p className="text-ds-xs font-medium text-content">{t(slot.titleKey)}</p>
-              <p className="mt-0.5 text-ds-xs text-content-secondary">{t(slot.descKey)}</p>
-              <span className="mt-1 inline-block text-ds-xs text-primary-300">{t(slot.ctaKey)} →</span>
-            </a>
-          ))}
-
-          <div className="border-t border-border-subtle pt-ds-2">
+          <div className="space-y-1 rounded-md border border-border-subtle bg-surface-panel p-3">
+            <p className="text-ds-xs font-medium text-content">CodeOmniVis</p>
             <p className="text-ds-xs text-content-muted">{t(LICENSE_INFO.summaryKey)}</p>
             <a
               href={LICENSE_INFO.url}

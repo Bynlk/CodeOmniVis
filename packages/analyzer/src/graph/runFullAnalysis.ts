@@ -258,7 +258,7 @@ export async function runFullAnalysis(options: FullAnalysisOptions): Promise<Ful
 
     // 跨层连线
     const tsConfigPath = findTsConfig(projectRoot)
-    const linker = new CrossLayerLinker(tsConfigPath)
+    const linker = new CrossLayerLinker(tsConfigPath, projectRoot)
     const graph = builder.loadGraph()
     const crossLayerResult = await linker.link(graph)
 
@@ -272,6 +272,7 @@ export async function runFullAnalysis(options: FullAnalysisOptions): Promise<Ful
       edgesCreated += crossLayerResult.edges.length
       crossLayerEdges = crossLayerResult.edges.length
     }
+    db.removeDanglingEdges()
   }
 
   db.close()

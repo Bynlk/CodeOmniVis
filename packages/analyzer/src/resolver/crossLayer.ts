@@ -17,9 +17,10 @@ import type {
   TypedOmniEdge,
 } from '@codeomnivis/shared'
 import { createEdgeId, createTypedEdge, createTypedNode, isNodeOfType } from '@codeomnivis/shared'
-import * as fs from 'fs'
-import * as path from 'path'
-import { SymbolResolver, type DbCall } from './symbolResolver'
+import { DbCallResolver } from './dbCallResolver'
+import { ServiceLinkResolver } from './serviceLinkResolver'
+import { SymbolResolver } from './symbolResolver'
+import { SourceScopeResolver } from './sourceScope'
 
 // ============================================================
 // 辅助函数
@@ -40,15 +41,6 @@ function makeEdge<T extends EdgeType>(
     confidence,
     metadata,
   })
-}
-
-function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1)
-}
-
-interface ServiceImport {
-  importedName: string
-  resolvedPath: string
 }
 
 const API_CALL_TYPES = new Set<string>([
@@ -95,17 +87,23 @@ export interface CrossLayerResult {
 // ============================================================
 
 export class CrossLayerLinker {
-  private symbolResolver: SymbolResolver | null = null
+  private readonly sourceScopes: SourceScopeResolver
+  private readonly serviceLinks: ServiceLinkResolver
+  private readonly dbCalls: DbCallResolver
 
-  constructor(private tsConfigPath?: string) {
+  constructor(tsConfigPath?: string, projectRoot: string = process.cwd()) {
+    this.sourceScopes = new SourceScopeResolver(projectRoot)
+    this.serviceLinks = new ServiceLinkResolver(projectRoot, this.sourceScopes)
+    let symbolResolver: SymbolResolver | null = null
     if (tsConfigPath) {
       try {
-        this.symbolResolver = new SymbolResolver(tsConfigPath)
+        symbolResolver = new SymbolResolver(tsConfigPath)
       } catch {
         // tsconfig 不存在或无效：降级，不使用符号追踪
-        this.symbolResolver = null
+        symbolResolver = null
       }
     }
+    this.dbCalls = new DbCallResolver(projectRoot, this.sourceScopes, symbolResolver)
   }
 
   /**
@@ -131,8 +129,8 @@ export class CrossLayerLinker {
     edges.push(...callsServiceEdges)
 
     // 4. service/handler → DB model（优先符号追踪）
-    const queriesDbEdges = await this.linkQueriesDbWithSymbols(graph, nodeMap)
-    edges.push(...queriesDbEdges)
+    const dbLinks = await this.linkQueriesDb(graph, nodeMap)
+    edges.push(...dbLinks.serviceEdges, ...dbLinks.dbEdges)
 
     // 5. Kotlin 跨层连线
     const kotlinEdges = this.linkKotlinCrossLayer(graph, nodeMap)
@@ -147,8 +145,8 @@ export class CrossLayerLinker {
       stats: {
         callsApiEdges: callsApiEdges.length,
         handlesEdges: handlesEdges.length,
-        callsServiceEdges: callsServiceEdges.length,
-        queriesDbEdges: queriesDbEdges.length,
+        callsServiceEdges: callsServiceEdges.length + dbLinks.serviceEdges.length,
+        queriesDbEdges: dbLinks.dbEdges.length,
       },
     }
   }
@@ -485,7 +483,9 @@ export class CrossLayerLinker {
     }
 
     // 处理 tRPC procedure 节点
-    const trpcNodes = graph.nodes.filter(n => isNodeOfType(n, 'trpc_procedure'))
+    const trpcNodes = graph.nodes.filter(n =>
+      isNodeOfType(n, 'trpc_procedure') && n.metadata.isRouter !== true
+    )
     for (const proc of trpcNodes) {
       const handlerId = `handler:${proc.filePath}:${proc.name}:resolver`
       if (!nodeMap.has(handlerId)) {
@@ -576,268 +576,63 @@ export class CrossLayerLinker {
   private linkCallsService(graph: OmniGraph, nodeMap: Map<string, OmniNode>): OmniEdge[] {
     const edges: OmniEdge[] = []
     const handlerNodes = graph.nodes.filter(n => n.type === 'handler')
-    const serviceNodes = graph.nodes.filter(n => n.type === 'service')
-
-    // 预构建 service 节点索引（name + filePath）
-    const serviceByName = new Map<string, OmniNode[]>()
-    for (const s of serviceNodes) {
-      const existing = serviceByName.get(s.name) || []
-      existing.push(s)
-      serviceByName.set(s.name, existing)
-    }
 
     for (const handler of handlerNodes) {
-      const filePath = handler.filePath
-      const serviceImports = this.extractServiceImports(filePath)
-
-      for (const imp of serviceImports) {
-        // 在现有 service 节点中按名称查找
-        const candidates = serviceByName.get(imp.importedName)
-        let matched: OmniNode | null = null
-
-        if (candidates) {
-          // 优先精确匹配 filePath
-          matched = candidates.find(c => c.filePath === imp.resolvedPath) || candidates[0]
-        }
-
-        if (matched) {
-          edges.push(makeEdge(handler.id, matched.id, 'calls_service', 'certain', {}))
-        } else if (this.looksLikeServicePath(imp.resolvedPath)) {
-          // 只在路径看起来像 service 时才创建 synthetic 节点
-          const serviceId = `service:${imp.resolvedPath}:${imp.importedName}`
-          if (!nodeMap.has(serviceId)) {
-            const syntheticService = createTypedNode({
-              id: serviceId,
-              type: 'service',
-              name: imp.importedName,
-              filePath: imp.resolvedPath,
-              line: 0,
-              column: 0,
-              metadata: { className: null, methodName: imp.importedName, isSynthetic: true, importedFrom: filePath },
-            })
-            graph.nodes.push(syntheticService)
-            nodeMap.set(syntheticService.id, syntheticService)
-          }
-          edges.push(makeEdge(handler.id, serviceId, 'calls_service', 'inferred', {}))
-        }
+      const result = this.serviceLinks.resolve(
+        handler,
+        graph.nodes.filter(node => node.type === 'service'),
+      )
+      for (const serviceNode of result.nodes) {
+        if (nodeMap.has(serviceNode.id)) continue
+        graph.nodes.push(serviceNode)
+        nodeMap.set(serviceNode.id, serviceNode)
       }
+      edges.push(...result.edges)
     }
 
     return edges
   }
 
-  /**
-   * 连接 handler/service → db_model
-   * 优先使用符号追踪，降级到正则扫描
-   */
-  private async linkQueriesDbWithSymbols(graph: OmniGraph, nodeMap: Map<string, OmniNode>): Promise<OmniEdge[]> {
-    const edges: OmniEdge[] = []
+  private async linkQueriesDb(
+    graph: OmniGraph,
+    nodeMap: Map<string, OmniNode>,
+  ): Promise<{ serviceEdges: OmniEdge[]; dbEdges: OmniEdge[] }> {
+    const serviceEdges: OmniEdge[] = []
+    const dbEdges: OmniEdge[] = []
     const dbNodes = graph.nodes.filter(n => n.type === 'db_model')
-    const callerNodes = graph.nodes.filter(n =>
-      n.type === 'handler' || n.type === 'service' || n.type === 'api_route'
-    )
-
-    // 预构建 db model 名称索引（大小写不敏感）
-    const dbNodeByName = new Map<string, OmniNode>()
-    for (const dbNode of dbNodes) {
-      dbNodeByName.set(dbNode.name.toLowerCase(), dbNode)
+    const callerNodes = graph.nodes.filter(n => n.type === 'handler' || n.type === 'service')
+    const callerCountByFile = new Map<string, number>()
+    for (const caller of callerNodes) {
+      callerCountByFile.set(caller.filePath, (callerCountByFile.get(caller.filePath) ?? 0) + 1)
     }
 
     for (const caller of callerNodes) {
-      let dbCalls: DbCall[]
-
-      if (this.symbolResolver) {
-        // Phase 2：精确符号追踪
-        try {
-          const result = await this.symbolResolver.traceHandlerToDb(caller)
-          dbCalls = result.dbCalls
-
-          // 将追踪中发现的中间 service 节点动态加入图，并连接调用链
-          const callChain = result.callChain
-          for (let i = 0; i < callChain.length; i++) {
-            const nodeId = callChain[i]
-            if (nodeId.startsWith('service:') && !nodeMap.has(nodeId)) {
-              const parts = nodeId.split(':')
-              const syntheticService = createTypedNode({
-                id: nodeId,
-                type: 'service',
-                name: parts[2] ?? 'unknown',
-                filePath: parts[1] ?? '',
-                line: 0, column: 0,
-                metadata: {
-                  className: null,
-                  methodName: parts[2] ?? 'unknown',
-                  discoveredBySymbolResolver: true,
-                },
-              })
-              graph.nodes.push(syntheticService)
-              nodeMap.set(syntheticService.id, syntheticService)
-            }
-            // 连接调用链中的相邻节点
-            if (i > 0) {
-              const prevId = callChain[i - 1]
-              const edgeId = `${prevId}--calls_service--${nodeId}`
-              if (!edges.find(e => e.id === edgeId)) {
-                edges.push(makeEdge(prevId, nodeId, 'calls_service', 'inferred', {}))
-              }
-            }
-          }
-        } catch {
-          // 符号追踪失败：降级到正则扫描
-          dbCalls = this.scanFileForDbCalls(caller.filePath)
-        }
-      } else {
-        // Phase 1 降级：正则扫描
-        dbCalls = this.scanFileForDbCalls(caller.filePath)
-      }
-
-      for (const call of dbCalls) {
-        const dbNode = dbNodeByName.get(call.modelName.toLowerCase())
-
-        if (dbNode) {
-          const edgeId = createEdgeId(caller.id, 'queries_db', dbNode.id)
-          if (!graph.edges.find(e => e.id === edgeId)) {
-            edges.push(makeEdge(caller.id, dbNode.id, 'queries_db', call.confidence, {}))
-          }
+      const result = await this.dbCalls.resolve(
+        caller,
+        dbNodes,
+        callerCountByFile.get(caller.filePath) ?? 0,
+      )
+      for (const serviceNode of result.nodes) {
+        if (!nodeMap.has(serviceNode.id)) {
+          graph.nodes.push(serviceNode)
+          nodeMap.set(serviceNode.id, serviceNode)
         }
       }
+      serviceEdges.push(...result.serviceEdges.filter(edge =>
+        nodeMap.has(edge.source)
+        && nodeMap.has(edge.target)
+        && !graph.edges.some(existing => existing.id === edge.id)
+        && !serviceEdges.some(existing => existing.id === edge.id)
+      ))
+      dbEdges.push(...result.dbEdges.filter(edge =>
+        nodeMap.has(edge.source)
+        && nodeMap.has(edge.target)
+        && !graph.edges.some(existing => existing.id === edge.id)
+        && !dbEdges.some(existing => existing.id === edge.id)
+      ))
     }
 
-    return edges
-  }
-
-  /**
-   * 正则扫描文件中的 DB 调用（Phase 1 降级方案）
-   */
-  private scanFileForDbCalls(filePath: string): DbCall[] {
-    const calls: DbCall[] = []
-    let content: string
-    try {
-      content = fs.readFileSync(filePath, 'utf-8')
-    } catch {
-      return calls
-    }
-
-    // Prisma 模式：prisma.user.findMany / ctx.prisma.booking.create / this.db.xxx.findFirst
-    const PRISMA_PATTERN = /(?:prisma|ctx\.prisma|db|this\.prisma|this\.db)\s*\.\s*(\w+)\s*\.\s*(findMany|findFirst|findUnique|findUniqueOrThrow|create|createMany|update|updateMany|upsert|delete|deleteMany|count|aggregate|groupBy)/g
-
-    // TypeORM Repository 模式：this.userRepo.find / this.bookingRepository.findOne
-    const TYPEORM_REPO_PATTERN = /this\.(\w+)(?:Repo|Repository)\s*\.\s*(find|findOne|findOneBy|findBy|findOneOrFail|save|remove|delete|update|insert|count|query)/g
-
-    // TypeORM EntityManager 模式：this.entityManager.save(User, ...) / this.manager.find(Booking)
-    const TYPEORM_MANAGER_PATTERN = /this\.(?:entityManager|manager)\s*\.\s*(save|find|findOne|findOneBy|findBy|remove|delete|update|insert|count)\s*(?:<\s*(\w+)\s*>)?\s*\(\s*(\w+)/g
-
-    let match: RegExpExecArray | null
-
-    // Prisma
-    PRISMA_PATTERN.lastIndex = 0
-    while ((match = PRISMA_PATTERN.exec(content)) !== null) {
-      calls.push({
-        modelName: capitalize(match[1]),
-        operation: match[2],
-        filePath,
-        line: 0,
-        confidence: 'certain',
-      })
-    }
-
-    // TypeORM Repository
-    TYPEORM_REPO_PATTERN.lastIndex = 0
-    while ((match = TYPEORM_REPO_PATTERN.exec(content)) !== null) {
-      const entityName = capitalize(match[1].replace(/(Repo|Repository|Dao)$/i, ''))
-      calls.push({
-        modelName: entityName,
-        operation: match[2],
-        filePath,
-        line: 0,
-        confidence: 'certain',
-      })
-    }
-
-    // TypeORM EntityManager
-    TYPEORM_MANAGER_PATTERN.lastIndex = 0
-    while ((match = TYPEORM_MANAGER_PATTERN.exec(content)) !== null) {
-      const entityName = match[2] || capitalize(match[3])
-      calls.push({
-        modelName: entityName,
-        operation: match[1],
-        filePath,
-        line: 0,
-        confidence: 'inferred',
-      })
-    }
-
-    return calls
-  }
-
-  /**
-   * 判断路径是否看起来像 service/repository 文件
-   * 排除 handler/test/mock 等非 service 文件
-   */
-  private looksLikeServicePath(importPath: string): boolean {
-    // 排除 handler/test/mock/config 等
-    if (/(?:handler|test|mock|config|constant|util|helper)/i.test(importPath)) return false
-    // 包含 service/repository/di 等关键词
-    return /(?:service|Service|repository|Repository|repo|Repo|di\/)/i.test(importPath)
-  }
-
-  /**
-   * 从文件中提取 service 相关 import
-   * 匹配：service/repository 路径、@calcom/features/*、@calcom/lib/*
-   */
-  private extractServiceImports(filePath: string): ServiceImport[] {
-    const imports: ServiceImport[] = []
-    try {
-      const content = fs.readFileSync(filePath, 'utf-8')
-
-      // 匹配所有 import { ... } from '...' 语句
-      const importRegex = /import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/g
-      let match: RegExpExecArray | null
-
-      while ((match = importRegex.exec(content)) !== null) {
-        const namedImports = match[1]
-        const fromPath = match[2]
-
-        // 跳过类型导入
-        if (match[0].includes('import type')) continue
-
-        // 只处理 service/repository 相关路径
-        const isServicePath = /(?:service|Service|repository|Repository|repo|Repo|di\/)/i.test(fromPath)
-        // @calcom/features/* 只匹配包含 service/repository/di 的子路径
-        const isFeaturesService = /^@calcom\/features\/.*(?:service|Service|repository|Repository|repo|Repo|di\/)/i.test(fromPath)
-        // @calcom/lib/* 匹配 server/ 或 service 相关
-        const isLibService = /^@calcom\/lib\/(?:server\/|.*(?:service|Service))/i.test(fromPath)
-
-        if (!isServicePath && !isFeaturesService && !isLibService) continue
-
-        namedImports.split(',').forEach(name => {
-          const trimmed = name.trim().split(/\s+as\s+/)[0].trim()
-          // 跳过类型前缀和无效标识符
-          if (trimmed && !trimmed.startsWith('type ') && /^[a-zA-Z_$]/.test(trimmed)) {
-            imports.push({
-              importedName: trimmed,
-              resolvedPath: this.resolveRelativePath(filePath, fromPath),
-            })
-          }
-        })
-      }
-    } catch {
-      // 文件读取失败，返回空数组（降级原则）
-    }
-    return imports
-  }
-
-  /**
-   * 解析 import 路径为标准化路径
-   */
-  private resolveRelativePath(fromFile: string, importPath: string): string {
-    if (importPath.startsWith('.')) {
-      // 相对路径：解析为绝对路径，然后转为 POSIX 格式
-      const resolved = path.resolve(path.dirname(fromFile), importPath)
-      return resolved.replace(/\\/g, '/')
-    }
-    // workspace 路径（@calcom/...）：直接返回
-    return importPath
+    return { serviceEdges, dbEdges }
   }
 
   /**

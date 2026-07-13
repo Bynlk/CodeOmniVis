@@ -11,6 +11,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { TabBar } from '../../src/components/TabBar/TabBar'
 import { TabPanel } from '../../src/components/TabBar/TabPanel'
 import { TAB_GROUPS, findGroupOfTab } from '../../src/components/TabBar/tabGroups'
+import enUS from '../../src/locales/en-US.json'
+
+const translations: Record<string, unknown> = enUS
+
+function translation(key: string): string {
+  const value = translations[key]
+  if (typeof value !== 'string') throw new Error(`Missing string translation: ${key}`)
+  return value
+}
 
 function renderWithQuery(el: ReactElement): string {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -22,12 +31,12 @@ describe('TabBar 分组导航', () => {
     expect(TAB_GROUPS.length).toBeLessThanOrEqual(4)
   })
 
-  it('渲染每个分组的 i18n label key', () => {
+  it('渲染每个分组的本地化标签', () => {
     const html = renderToStaticMarkup(
       <TabBar activeTab={null} onTabChange={() => {}} issueBadgeCount={0} />,
     )
     for (const g of TAB_GROUPS) {
-      expect(html).toContain(g.labelKey)
+      expect(html).toContain(translation(g.labelKey))
     }
   })
 
@@ -57,13 +66,12 @@ describe('TabPanel dock', () => {
     const html = renderWithQuery(<TabPanel activeTab="filter" onTabChange={() => {}} />)
     expect(html).toContain('<aside')
     expect(html).not.toContain('absolute')
-    expect(html).toContain('panel.close')
+    expect(html).toContain(enUS['panel.close'])
   })
 
   it('分析组(多子 tab)渲染子导航', () => {
     const html = renderWithQuery(<TabPanel activeTab="filter" onTabChange={() => {}} />)
-    // 子导航含同组其它子 tab 的 label key
-    expect(html).toContain('tab.dataflow')
-    expect(html).toContain('tab.trace')
+    expect(html).toContain(enUS['tab.dataflow'])
+    expect(html).toContain(enUS['tab.trace'])
   })
 })

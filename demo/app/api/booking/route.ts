@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { createBooking, listBookings } from '../../../server/services/bookingService'
 
 export async function GET() {
-  const bookings = await prisma.booking.findMany()
+  const bookings = await listBookings()
   return NextResponse.json(bookings)
 }
 
 export async function POST(request: Request) {
   const body = await request.json()
-  const booking = await prisma.booking.create({ data: body })
+  const booking = await createBooking(body)
   return NextResponse.json(booking)
 }

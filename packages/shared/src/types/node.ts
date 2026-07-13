@@ -82,6 +82,8 @@ export interface TrpcProcedureMetadata {
   procedureName: string
   hasInput: boolean
   hasOutput: boolean
+  /** Container declaration created by createTRPCRouter; it is not an executable endpoint. */
+  isRouter?: boolean
 }
 
 export interface TsrpcServiceMetadata {

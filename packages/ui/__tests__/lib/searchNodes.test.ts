@@ -12,8 +12,8 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { filterNodesByQuery, selectVisibleNodeIds } from '../../src/lib/searchNodes'
-import type { OmniNode } from '@codeomnivis/shared'
+import { filterGraphByVisibleNodeIds, filterNodesByQuery, selectVisibleNodeIds } from '../../src/lib/searchNodes'
+import type { OmniGraph, OmniNode } from '@codeomnivis/shared'
 
 const nodeA: OmniNode = {
   id: 'page:app/page.tsx:/',
@@ -80,5 +80,18 @@ describe('selectVisibleNodeIds (feature-005 统一搜索可见性 selector)', ()
 
   it('无匹配返回空 Set', () => {
     expect(selectVisibleNodeIds(nodes, 'zzz-nomatch')).toEqual(new Set())
+  })
+})
+
+describe('filterGraphByVisibleNodeIds', () => {
+  it('keeps only matched nodes and edges with two visible endpoints', () => {
+    const graph: OmniGraph = {
+      nodes,
+      edges: [{
+        id: 'node-a-to-b', source: nodeA.id, target: nodeB.id, type: 'renders', confidence: 'certain', metadata: {},
+      }],
+    }
+
+    expect(filterGraphByVisibleNodeIds(graph, new Set([nodeB.id]))).toEqual({ nodes: [nodeB], edges: [] })
   })
 })

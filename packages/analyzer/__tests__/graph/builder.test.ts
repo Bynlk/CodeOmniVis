@@ -3,6 +3,9 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
 import { GraphBuilder } from '../../src/graph/builder'
 import { OmniDatabase } from '../../src/storage/db'
 import type { OmniNode, OmniEdge, Parser, ParseContext, ProjectMeta, ParseResult } from '@codeomnivis/shared'
@@ -225,6 +228,66 @@ describe('GraphBuilder', () => {
     expect(result.graph.edges).toHaveLength(1)
 
     freshDb.close()
+  })
+
+  it('links a page route through its page component without duplicate child fan-out', async () => {
+    const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-page-hierarchy-'))
+    const pageFile = path.join(projectRoot, 'app', 'page.tsx')
+    fs.mkdirSync(path.dirname(pageFile), { recursive: true })
+    fs.writeFileSync(pageFile, "import Child from '../components/Child'\nexport default function HomePage() { return <Child /> }")
+
+    const page: OmniNode = {
+      id: 'page:app/page.tsx:/',
+      type: 'page',
+      name: '/',
+      filePath: 'app/page.tsx',
+      line: 2,
+      column: 1,
+      metadata: PAGE_META,
+    }
+    const pageComponent: OmniNode = {
+      id: 'component:app/page.tsx:HomePage',
+      type: 'component',
+      name: 'HomePage',
+      filePath: 'app/page.tsx',
+      line: 2,
+      column: 1,
+      metadata: { ...COMPONENT_META, isPage: true },
+    }
+    const child: OmniNode = {
+      id: 'component:components/Child.tsx:Child',
+      type: 'component',
+      name: 'Child',
+      filePath: 'components/Child.tsx',
+      line: 1,
+      column: 1,
+      metadata: COMPONENT_META,
+    }
+    const freshDb = new OmniDatabase(':memory:')
+    await freshDb.ready()
+    const freshBuilder = new GraphBuilder(freshDb)
+    freshBuilder.registerParser({
+      name: 'page-fixture',
+      canHandle: () => true,
+      parse: async (): Promise<ParseResult> => ({ nodes: [page, pageComponent, child], edges: [], errors: [] }),
+    })
+
+    try {
+      const result = await freshBuilder.parseFiles(['app/page.tsx'], {
+        ...context,
+        projectRoot,
+        projectMeta: { ...projectMeta, root: projectRoot },
+      })
+      expect(result.graph.edges.filter(edge => edge.type === 'renders').map(edge =>
+        `${edge.source}->${edge.target}`
+      ).sort()).toEqual([
+        `${pageComponent.id}->${child.id}`,
+        `${page.id}->${pageComponent.id}`,
+      ])
+    } finally {
+      freshDb.close()
+      fs.rmSync(projectRoot, { recursive: true, force: true })
+    }
   })
 
   it('loadGraph 从数据库加载已写入的节点', async () => {

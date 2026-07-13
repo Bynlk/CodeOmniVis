@@ -13,7 +13,7 @@ function makeHandlerNode(overrides: Pick<OmniNode, 'id' | 'name' | 'filePath' | 
     type: 'handler',
     column: 0,
     metadata: {
-      functionName: 'handler',
+      functionName: overrides.name.split(' ')[0],
       routeId: null,
     },
   }
@@ -26,19 +26,21 @@ describe('SymbolResolver', () => {
     resolver = new SymbolResolver(DEMO_TSCONFIG)
   })
 
-  it('should find Prisma calls in a Next.js route handler', async () => {
+  it('prefers the handler function name when a shared route line points at another method', async () => {
     const handlerNode = makeHandlerNode({
       id: 'handler:demo/app/api/booking/route.ts:POST',
       name: 'POST handler',
       filePath: DEMO_ROUTE,
-      line: 9,
+      line: 4,
     })
 
     const result = await resolver.traceHandlerToDb(handlerNode)
 
-    expect(result.dbCalls.length).toBeGreaterThan(0)
-    expect(result.dbCalls[0].modelName).toBe('Booking')
-    expect(['create', 'findMany', 'findFirst']).toContain(result.dbCalls[0].operation)
+    expect(result.dbCalls.map(call => [call.modelName, call.operation])).toEqual([
+      ['Booking', 'create'],
+    ])
+    expect(result.callChain.some(id => id.endsWith(':createBooking'))).toBe(true)
+    expect(result.callChain.some(id => id.endsWith(':listBookings'))).toBe(false)
   })
 
   it('should find Prisma calls in GET handler', async () => {

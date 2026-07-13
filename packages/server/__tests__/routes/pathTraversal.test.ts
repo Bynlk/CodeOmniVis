@@ -36,7 +36,12 @@ describe('POST /api/project — path traversal guard', () => {
     baseRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'omni-pt-'))
     subRoot = path.join(baseRoot, 'packages', 'app')
     fs.mkdirSync(subRoot, { recursive: true })
-    server = createOmniServer({ projectRoot: baseRoot, dbPath: ':memory:' })
+    server = createOmniServer({
+      projectRoot: baseRoot,
+      dbPath: ':memory:',
+      host: '0.0.0.0',
+      accessToken: 'test-token',
+    })
     await server.db.ready()
   })
 
@@ -47,6 +52,7 @@ describe('POST /api/project — path traversal guard', () => {
   it('rejects ../ traversal with 400 and does not trigger analysis', async () => {
     const res = await request(server.app)
       .post('/api/project')
+      .set('Authorization', 'Bearer test-token')
       .send({ projectRoot: '../../etc/passwd' })
     expect(res.status).toBe(400)
     expect(res.body.error.code).toBe('PATH_TRAVERSAL')
@@ -58,6 +64,7 @@ describe('POST /api/project — path traversal guard', () => {
     try {
       const res = await request(server.app)
         .post('/api/project')
+        .set('Authorization', 'Bearer test-token')
         .send({ projectRoot: outside })
       expect(res.status).toBe(400)
       expect(res.body.error.code).toBe('PATH_TRAVERSAL')
@@ -70,6 +77,7 @@ describe('POST /api/project — path traversal guard', () => {
   it('rejects a symbolic .. combination that escapes the boundary with 400', async () => {
     const res = await request(server.app)
       .post('/api/project')
+      .set('Authorization', 'Bearer test-token')
       .send({ projectRoot: path.join('packages', '..', '..', '..', 'etc') })
     expect(res.status).toBe(400)
     expect(res.body.error.code).toBe('PATH_TRAVERSAL')
@@ -83,6 +91,7 @@ describe('POST /api/project — path traversal guard', () => {
       fs.symlinkSync(outside, linkPath, 'dir')
       const res = await request(server.app)
         .post('/api/project')
+        .set('Authorization', 'Bearer test-token')
         .send({ projectRoot: path.join('packages', 'evil-link') })
       expect(res.status).toBe(400)
       expect(res.body.error.code).toBe('PATH_TRAVERSAL')
@@ -96,6 +105,7 @@ describe('POST /api/project — path traversal guard', () => {
   it('accepts a legitimate sub-path and triggers analysis', async () => {
     const res = await request(server.app)
       .post('/api/project')
+      .set('Authorization', 'Bearer test-token')
       .send({ projectRoot: subRoot })
     expect(res.status).toBe(200)
     expect(res.body.data.projectRoot).toBe(path.resolve(subRoot))
@@ -105,6 +115,7 @@ describe('POST /api/project — path traversal guard', () => {
   it('accepts a relative sub-path resolved against the boundary', async () => {
     const res = await request(server.app)
       .post('/api/project')
+      .set('Authorization', 'Bearer test-token')
       .send({ projectRoot: path.join('packages', 'app') })
     expect(res.status).toBe(200)
     expect(res.body.data.projectRoot).toBe(path.resolve(subRoot))

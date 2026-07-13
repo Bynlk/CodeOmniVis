@@ -8,12 +8,10 @@
 import type { Command } from 'commander'
 import ora from 'ora'
 import chalk from 'chalk'
-import * as fs from 'fs'
 import * as path from 'path'
-import { autoDetectProject, collectScanDirs } from '../utils/autoDetect'
-import { scanDirectory } from '../utils/scanDirectory'
+import { autoDetectProject } from '../utils/autoDetect'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
-import { OmniDatabase, GraphBuilder, ConsistencyChecker, createDefaultParsers } from '@codeomnivis/analyzer'
+import { OmniDatabase, ConsistencyChecker, runAnalysis } from '@codeomnivis/analyzer'
 
 /**
  * LEAK-05 · F13:依赖注入点,测试可注入以观察异常路径下数据库句柄是否被释放。
@@ -53,54 +51,29 @@ export async function runCheck(deps: CheckDeps = defaultCheckDeps): Promise<void
 
   try {
     await db.ready()
-
-    // 创建图构建器
-    const builder = new GraphBuilder(db)
-    builder.registerParsers(createDefaultParsers())
-
-    // 获取要解析的文件
-    const files: string[] = []
-
-    // 添加 Prisma schema
-    if (projectMeta.prismaSchemaPath) {
-      files.push(projectMeta.prismaSchemaPath)
-    }
-
-    // 扫描项目中的 TypeScript/JavaScript 文件
-    // DUP-04 · F18:复用 collectScanDirs(projectRoot, config),与 analyze 命令一致,
-    // 支持配置目录与 monorepo packages/*/src,不再硬编码且不再依赖 process.cwd()。
-    const scanDirs = collectScanDirs(projectRoot, config)
-    for (const dir of scanDirs) {
-      if (fs.existsSync(dir)) {
-        const scanned = scanDirectory(dir, projectRoot)
-        files.push(...scanned)
-      }
-    }
-
-    // 执行解析
-    report(`Parsing ${files.length} files...`)
-    const result = await builder.parseFiles(files, {
+    const result = await runAnalysis({
       projectRoot,
+      dbPath,
       projectMeta,
-      tsConfig: null,
-      pathAliases: {},
+      db,
+      onFilesCollected: count => report(`Parsing ${count} files...`),
     })
 
     // 执行一致性检测
     report('Checking consistency...')
-    const graph = builder.loadGraph()
+    const graph = db.loadGraph()
     const checker = new ConsistencyChecker()
     const consistencyReport = checker.check(graph)
 
     // 输出统计信息
     console.log('')
     console.log(chalk.blue('Statistics:'))
-    console.log(`  Nodes: ${result.stats.totalNodes}`)
-    console.log(`  Edges: ${result.stats.totalEdges}`)
-    console.log(`  Errors: ${result.stats.totalErrors}`)
+    console.log(`  Nodes: ${graph.nodes.length}`)
+    console.log(`  Edges: ${graph.edges.length}`)
+    console.log(`  Errors: ${result.errors}`)
 
     // 输出解析错误
-    if (result.stats.totalErrors > 0) {
+    if (result.errors > 0) {
       console.log('')
       console.log(chalk.yellow('Parse Errors:'))
       const errors = db.getAllErrors()

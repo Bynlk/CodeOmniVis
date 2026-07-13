@@ -9,6 +9,7 @@
 import { describe, it, expect } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { AiConfigForm, prepareAiSave } from '../../src/components/AiConfigForm'
+import enUS from '../../src/locales/en-US.json'
 
 describe('AiConfigForm 渲染', () => {
   it('渲染 baseUrl / apiKey / model 输入、记住密钥与保存按钮', () => {
@@ -16,19 +17,18 @@ describe('AiConfigForm 渲染', () => {
     expect(html).toContain('Base URL')
     expect(html).toContain('API Key')
     expect(html).toContain('Model')
-    // useTranslation 无实例时 t 回显 key,可据此断言记住密钥文案存在。
-    expect(html).toContain('settings.ai.rememberKey')
+    expect(html).toContain(enUS['settings.ai.rememberKey'])
     expect(html).toContain('SAVE_LABEL_X')
   })
 
   it('showClear 时渲染清除按钮', () => {
     const html = renderToStaticMarkup(<AiConfigForm saveLabel="SAVE" showClear />)
-    expect(html).toContain('settings.ai.clear')
+    expect(html).toContain(enUS['settings.ai.clear'])
   })
 
   it('默认不渲染清除按钮', () => {
     const html = renderToStaticMarkup(<AiConfigForm saveLabel="SAVE" />)
-    expect(html).not.toContain('settings.ai.clear')
+    expect(html).not.toContain(enUS['settings.ai.clear'])
   })
 })
 

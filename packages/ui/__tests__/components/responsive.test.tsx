@@ -12,6 +12,7 @@ import type { OmniGraph } from '@codeomnivis/shared'
 import Sidebar from '../../src/components/Sidebar'
 import { TabPanel } from '../../src/components/TabBar/TabPanel'
 import { getUiState, __resetUiStore } from '../../src/store/uiStore'
+import enUS from '../../src/locales/en-US.json'
 
 function renderWithQuery(el: ReactElement): string {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -63,6 +64,6 @@ describe('feature-007 responsive - TabPanel', () => {
     expect(html).toContain('fixed')
     expect(html).toContain('md:static')
     expect(html).toContain('md:w-96')
-    expect(html).toContain('panel.close')
+    expect(html).toContain(enUS['panel.close'])
   })
 })

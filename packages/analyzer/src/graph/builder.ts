@@ -207,9 +207,38 @@ export class GraphBuilder {
     // 构建已有的 renders 边集合（避免重复）
     const existingRenders = new Set<string>()
 
+    // 路由节点描述 URL，页面组件描述实现。先连接这两个层级，避免二者同时
+    // 扫描同一 page.tsx 后各自扇出到相同子组件。
+    const pageComponentsByFile = new Map<string, OmniNode[]>()
+    for (const node of nodes) {
+      if (node.type !== 'component' || !node.metadata.isPage) continue
+      pageComponentsByFile.set(node.filePath, [
+        ...(pageComponentsByFile.get(node.filePath) ?? []),
+        node,
+      ])
+    }
+    for (const node of nodes) {
+      if (node.type !== 'page') continue
+      for (const component of pageComponentsByFile.get(node.filePath) ?? []) {
+        const edgeId = `${node.id}--renders--${component.id}`
+        existingRenders.add(edgeId)
+        edges.push({
+          id: edgeId,
+          source: node.id,
+          target: component.id,
+          type: 'renders',
+          confidence: 'certain',
+          metadata: {},
+        })
+      }
+    }
+
     // 需要扫描的节点类型
     const scanTypes = new Set(['page', 'component', 'handler'])
-    const scanNodes = nodes.filter(n => scanTypes.has(n.type))
+    const scanNodes = nodes.filter(n =>
+      scanTypes.has(n.type)
+      && !(n.type === 'page' && pageComponentsByFile.has(n.filePath))
+    )
 
     for (const node of scanNodes) {
       try {

@@ -2,12 +2,12 @@
  * Cytoscape.js 配置
  *
  * 定义节点和边的样式，用于 ER 图可视化。
- * 节点 label 带 Emoji 前缀，inferred 边用虚线。
+ * 节点以克制的工具样式呈现，inferred 边用虚线。
  */
 
 import type { NodeType, EdgeType } from '@codeomnivis/shared'
 import { isNodeType } from '@codeomnivis/shared'
-import { NODE_EMOJI, NODE_COLORS } from '../lib/nodeConfig'
+import { NODE_COLORS } from '../lib/nodeConfig'
 import { EDGE_COLORS, EDGE_TYPE_LIST } from '../lib/edgeConfig'
 
 function getNodeType(node: cytoscape.NodeSingular): NodeType | undefined {
@@ -42,35 +42,33 @@ const EDGE_TYPE_EXTRAS: Partial<Record<EdgeType, cytoscape.Css.Edge>> = {
 
 export function getCytoscapeStyle(): cytoscape.StylesheetJson {
   return [
-    // 节点基础样式 — emoji + 文字在节点内
+    // 类型色只用于边框，避免大面积高饱和节点争夺注意力。
     {
       selector: 'node',
       style: {
-        'background-color': (node: cytoscape.NodeSingular) => {
+        'background-color': '#12161e',
+        'border-width': 1.5,
+        'border-color': (node: cytoscape.NodeSingular) => {
           const type = getNodeType(node)
-          return type ? NODE_COLORS[type] : '#6b7280'
+          return type ? NODE_COLORS[type] : '#343e4d'
         },
         'label': (node: cytoscape.NodeSingular) => {
-          const type = getNodeType(node)
           const label = getNodeLabel(node)
-          const emoji = type ? NODE_EMOJI[type] : '●'
-          const displayName = label && label.length > 16 ? label.slice(0, 14) + '…' : label ?? '?'
-          return `${emoji} ${displayName}`
+          return label && label.length > 20 ? label.slice(0, 18) + '…' : label ?? '?'
         },
         'text-valign': 'center',
         'text-halign': 'center',
         'font-size': '10px',
         'font-weight': 500,
-        'color': '#ffffff',
-        'text-outline-color': '#000000',
-        'text-outline-width': 2,
+        'color': '#e7eaf0',
+        'text-outline-width': 0,
         'text-wrap': 'wrap',
         'text-max-width': '100px',
-        'width': 80,
-        'height': 40,
-        'padding': '8px',
+        'width': 104,
+        'height': 34,
+        'padding': '6px',
         'shape': 'roundrectangle',
-        'corner-radius': '8',
+        'corner-radius': '6',
       } satisfies cytoscape.Css.Node,
     },
 
@@ -78,8 +76,7 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
     {
       selector: 'node[type="db_model"]',
       style: {
-        'border-width': 2,
-        'border-color': '#f472b6',
+        'shape': 'roundrectangle',
       } satisfies cytoscape.Css.Node,
     },
 
@@ -88,13 +85,13 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
       selector: 'edge',
       style: {
         'width': 1.5,
-        'line-color': '#64748b',
-        'target-arrow-color': '#64748b',
+        'line-color': '#4b5565',
+        'target-arrow-color': '#4b5565',
         'target-arrow-shape': 'triangle',
         'curve-style': 'bezier',
         'control-point-step-size': 40,
         'arrow-scale': 0.7,
-        'opacity': 0.7,
+        'opacity': 0.62,
       } satisfies cytoscape.Css.Edge,
     },
 
@@ -125,9 +122,9 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
     {
       selector: 'node.selected',
       style: {
-        'border-width': 3,
-        'border-color': '#3b82f6',
-        'background-color': '#1d4ed8',
+        'border-width': 2.5,
+        'border-color': '#78a1ff',
+        'background-color': '#1a2540',
         'font-weight': 'bold',
       } satisfies cytoscape.Css.Node,
     },
@@ -156,7 +153,7 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
         'border-color': '#fbbf24',
         'background-color': '#b45309',
         'font-weight': 'bold',
-        'z-index': 9999,
+        'z-index': 20,
       } satisfies cytoscape.Css.Node,
     },
 
@@ -168,7 +165,7 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
         'target-arrow-color': '#fbbf24',
         'width': 3,
         'opacity': 1,
-        'z-index': 9998,
+        'z-index': 19,
       } satisfies cytoscape.Css.Edge,
     },
 

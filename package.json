@@ -1,6 +1,7 @@
 {
   "name": "codeomnivis",
   "version": "0.0.1",
+  "type": "module",
   "description": "Full-stack architecture visualizer for TypeScript projects",
   "private": true,
   "license": "LicenseRef-PolyForm-Noncommercial-1.0.0",

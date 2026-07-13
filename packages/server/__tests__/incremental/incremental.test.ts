@@ -8,7 +8,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { OmniDatabase } from '@codeomnivis/analyzer'
-import type { FreshnessStatus } from '@codeomnivis/shared'
+import type { FreshnessStatus, ProjectMeta } from '@codeomnivis/shared'
 import { IncrementalAnalyzer } from '../../src/incremental'
 import { codeomnivisEvents, EVENTS } from '../../src/events'
 
@@ -31,8 +31,27 @@ function deferred(): Deferred {
   return { promise, resolve }
 }
 
-function makeAnalyzer(db: OmniDatabase): IncrementalAnalyzer {
-  return new IncrementalAnalyzer({ projectRoot: process.cwd(), dbPath: ':memory:', db })
+const expressMeta: ProjectMeta = {
+  root: process.cwd(),
+  frontendFramework: 'unknown',
+  backendFramework: 'express',
+  databaseType: 'unknown',
+  monorepoType: 'none',
+  frontendDirs: [],
+  backendDirs: ['server'],
+  trpcRouterPaths: [],
+  tsrpcServicePaths: [],
+  tsrpcApiDirs: [],
+  tsrpcProtocolDirs: [],
+  prismaSchemaPath: null,
+  typeormEntityDirs: [],
+  tsConfigPath: null,
+  buildFile: null,
+  packages: [],
+}
+
+function makeAnalyzer(db: OmniDatabase, projectMeta?: ProjectMeta): IncrementalAnalyzer {
+  return new IncrementalAnalyzer({ projectRoot: process.cwd(), dbPath: ':memory:', db, projectMeta })
 }
 
 describe('IncrementalAnalyzer freshness', () => {
@@ -45,10 +64,10 @@ describe('IncrementalAnalyzer freshness', () => {
     await db.ready()
   })
 
-  it('starts fresh with no analysis and zero pending', () => {
+  it('starts stale until a valid analysis has completed', () => {
     const analyzer = makeAnalyzer(db)
     expect(analyzer.getStatus()).toEqual<FreshnessStatus>({
-      state: 'fresh',
+      state: 'stale',
       lastAnalyzedAt: null,
       pendingChanges: 0,
     })
@@ -70,6 +89,17 @@ describe('IncrementalAnalyzer freshness', () => {
     expect(seen).toContain('analyzing')
     expect(seen[seen.length - 1]).toBe('fresh')
     expect(runAnalysisMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes detected project metadata to every re-analysis', async () => {
+    runAnalysisMock.mockResolvedValue({
+      filesScanned: 0, nodesCreated: 0, edgesCreated: 0, crossLayerEdges: 0, errors: 0,
+    })
+    const analyzer = makeAnalyzer(db, expressMeta)
+
+    await analyzer.refresh()
+
+    expect(runAnalysisMock).toHaveBeenCalledWith(expect.objectContaining({ projectMeta: expressMeta }))
   })
 
   it('does not drop changes that arrive while analyzing (reruns once)', async () => {
@@ -106,6 +136,7 @@ describe('IncrementalAnalyzer freshness', () => {
     await expect(analyzer.refresh()).rejects.toThrow('boom')
     // 失败后状态不能误报 fresh —— 即便没有残留变更,也应保持 stale 以反映数据未更新。
     expect(analyzer.getStatus().state).toBe('stale')
+    expect(analyzer.getStatus().lastAnalyzedAt).toBeNull()
     expect(runAnalysisMock).toHaveBeenCalledTimes(1)
   })
 

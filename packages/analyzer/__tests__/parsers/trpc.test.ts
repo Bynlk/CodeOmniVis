@@ -94,6 +94,49 @@ describe('TrpcParser', () => {
       expect(listProc?.metadata.procedureType).toBe('query')
     })
 
+    it('detects chained input and output schemas', async () => {
+      const booking = await parser.parse('server/routers/booking.ts', context)
+      const metadata = (name: string) => booking.nodes.find((node): node is TypedOmniNode<'trpc_procedure'> =>
+        isNodeOfType(node, 'trpc_procedure') && node.name === name
+      )?.metadata
+
+      expect(metadata('list')?.hasInput).toBe(false)
+      expect(metadata('getById')?.hasInput).toBe(true)
+      expect(metadata('create')?.hasInput).toBe(true)
+
+      const output = await parser.parse('server/routers/output.ts', context)
+      const health = output.nodes.find((node): node is TypedOmniNode<'trpc_procedure'> =>
+        isNodeOfType(node, 'trpc_procedure') && node.name === 'health'
+      )
+      expect(health?.metadata.hasOutput).toBe(true)
+    })
+
+    it('propagates the normalized router key to every child procedure', async () => {
+      const result = await parser.parse('server/routers/booking.ts', context)
+      const procedures = result.nodes.filter((node): node is TypedOmniNode<'trpc_procedure'> =>
+        isNodeOfType(node, 'trpc_procedure') && ['list', 'getById', 'create'].includes(node.name)
+      )
+
+      expect(procedures).toHaveLength(3)
+      expect(procedures.map(node => node.metadata.routerName)).toEqual([
+        'booking',
+        'booking',
+        'booking',
+      ])
+    })
+
+    it('distinguishes the router declaration from executable procedures', async () => {
+      const result = await parser.parse('server/routers/booking.ts', context)
+      const router = result.nodes.find(node => node.name === 'bookingRouter')
+      const procedures = result.nodes.filter(node =>
+        ['list', 'getById', 'create'].includes(node.name)
+      )
+
+      expect(router && 'isRouter' in router.metadata && router.metadata.isRouter).toBe(true)
+      expect(procedures.every(node => !('isRouter' in node.metadata) || !node.metadata.isRouter))
+        .toBe(true)
+    })
+
     it('should handle non-existent file gracefully', async () => {
       const result = await parser.parse('server/routers/nonexistent.ts', context)
 

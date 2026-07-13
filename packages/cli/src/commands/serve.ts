@@ -11,12 +11,10 @@ import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
-import { autoDetectProject, findTsConfig, collectScanDirs } from '../utils/autoDetect'
-import { scanDirectory } from '../utils/scanDirectory'
-import { isSyntheticNode } from '../utils/isSyntheticNode'
+import { autoDetectProject } from '../utils/autoDetect'
+import { validateProjectRoot } from '../utils/validateProjectRoot'
 import { createOmniServer, isLoopbackHost } from '@codeomnivis/server'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
-import { GraphBuilder, createDefaultParsers, CrossLayerLinker } from '@codeomnivis/analyzer'
 
 /**
  * 解析自包含 UI 产物目录。
@@ -53,7 +51,7 @@ export function serveCommand(program: Command): void {
       try {
         // 加载配置 + 自动检测项目
         spinner.text = 'Detecting project structure...'
-        const projectRoot = path.resolve(options.project ?? '.')
+        const projectRoot = validateProjectRoot(options.project ?? '.')
         const config = loadConfig(projectRoot)
         const projectMeta = await autoDetectProject(projectRoot, config)
 
@@ -85,6 +83,8 @@ export function serveCommand(program: Command): void {
           host: options.host,
           dbPath,
           projectRoot,
+          projectMeta,
+          detectProjectMeta: async root => autoDetectProject(root, loadConfig(root)),
           uiDistPath: resolveUiDistPath(),
           accessToken,
         })
@@ -94,94 +94,49 @@ export function serveCommand(program: Command): void {
 
         // 自动分析项目
         spinner.text = 'Analyzing project...'
-        const builder = new GraphBuilder(server.db)
-        builder.registerParsers(createDefaultParsers())
+        let filesScanned = 0
+        await server.analyze(count => {
+          filesScanned = count
+          spinner.text = `Analyzing ${count} files...`
+        })
+        console.log(chalk.gray(`\nScanned ${filesScanned} files.`))
 
-        // 获取要解析的文件
-        const files: string[] = []
+        const finalGraph = server.db.loadGraph()
+        spinner.succeed(chalk.green(`Server running at http://${options.host}:${options.port}`))
 
-        // 添加 Prisma schema
-        if (projectMeta.prismaSchemaPath) {
-          files.push(projectMeta.prismaSchemaPath)
-        }
+        console.log('')
+        console.log(chalk.blue('Analysis results:'))
+        console.log(`  Files scanned: ${filesScanned}`)
+        console.log(`  Nodes: ${finalGraph.nodes.length}`)
+        console.log(`  Edges: ${finalGraph.edges.length}`)
 
-        // 添加 tRPC router 文件
-        if (projectMeta.trpcRouterPaths && projectMeta.trpcRouterPaths.length > 0) {
-          files.push(...projectMeta.trpcRouterPaths)
-        }
-
-        // 扫描项目中的 TypeScript/JavaScript 文件
-        const scanDirs = collectScanDirs(projectRoot, config)
-        for (const dir of scanDirs) {
-          if (fs.existsSync(dir)) {
-            const scanned = scanDirectory(dir, projectRoot)
-            files.push(...scanned)
-          }
-        }
-
-        // 执行解析
-        if (files.length > 0) {
-          console.log(chalk.gray(`\nScanning ${files.length} files...`))
-
-          const result = await builder.parseFiles(files, {
-            projectRoot,
-            projectMeta,
-            tsConfig: null,
-            pathAliases: {},
-          })
-
-          // 跨层连线
-          const tsConfigPath = findTsConfig(projectRoot)
-          const linker = new CrossLayerLinker(tsConfigPath)
-          const graph = builder.loadGraph()
-          const crossLayerResult = await linker.link(graph)
-
-          if (crossLayerResult.edges.length > 0) {
-            server.db.upsertEdges(crossLayerResult.edges)
-          }
-          // 将跨层连线产生的 synthetic 节点写入 DB
-            const syntheticNodes = graph.nodes.filter(isSyntheticNode)
-          if (syntheticNodes.length > 0) {
-            server.db.upsertNodes(syntheticNodes)
-          }
-
-          // 从 DB 加载最终图（包含所有节点和边）
-          const finalGraph = server.db.loadGraph()
-
-          spinner.succeed(chalk.green(`Server running at http://${options.host}:${options.port}`))
-
-          // 显示统计
+        const countEdge = (type: string): number => finalGraph.edges.filter(edge => edge.type === type).length
+        const crossLayerEdges = ['calls_api', 'handles', 'calls_service', 'queries_db']
+          .reduce((count, type) => count + countEdge(type), 0)
+        if (crossLayerEdges > 0) {
           console.log('')
-          console.log(chalk.blue('Analysis results:'))
-          console.log(`  Files scanned: ${files.length}`)
-          console.log(`  Nodes: ${finalGraph.nodes.length}`)
-          console.log(`  Edges: ${finalGraph.edges.length}`)
+          console.log(chalk.blue('Cross-layer links:'))
+          console.log(`  calls_api:      ${countEdge('calls_api')}`)
+          console.log(`  handles:        ${countEdge('handles')}`)
+          console.log(`  calls_service:  ${countEdge('calls_service')}`)
+          console.log(`  queries_db:     ${countEdge('queries_db')}`)
+        }
 
-          // 跨层连线统计
-          if (crossLayerResult.edges.length > 0) {
-            console.log('')
-            console.log(chalk.blue('Cross-layer links:'))
-            console.log(`  calls_api:      ${crossLayerResult.stats.callsApiEdges}`)
-            console.log(`  handles:        ${crossLayerResult.stats.handlesEdges}`)
-            console.log(`  calls_service:  ${crossLayerResult.stats.callsServiceEdges}`)
-            console.log(`  queries_db:     ${crossLayerResult.stats.queriesDbEdges}`)
+        const nodesByType = finalGraph.nodes.reduce<Record<string, number>>((counts, node) => {
+          counts[node.type] = (counts[node.type] ?? 0) + 1
+          return counts
+        }, {})
+        if (Object.keys(nodesByType).length > 0) {
+          console.log('')
+          console.log(chalk.blue('Node types:'))
+          for (const [type, count] of Object.entries(nodesByType)) {
+            console.log(`  ${type}: ${count}`)
           }
+        }
 
-          // 显示节点类型分布
-          if (Object.keys(result.stats.nodesByType).length > 0) {
-            console.log('')
-            console.log(chalk.blue('Node types:'))
-            for (const [type, count] of Object.entries(result.stats.nodesByType)) {
-              console.log(`  ${type}: ${count}`)
-            }
-          }
-
-          if (result.stats.totalErrors > 0) {
-            console.log(`\n  Errors: ${result.stats.totalErrors}`)
-          }
-        } else {
-          spinner.succeed(chalk.green(`Server running at http://${options.host}:${options.port}`))
-          console.log(chalk.yellow('\nNo Prisma schema found. Place your schema.prisma in the project root.'))
+        const errorCount = server.db.getAllErrors().length
+        if (errorCount > 0) {
+          console.log(`\n  Errors: ${errorCount}`)
         }
 
         // 显示项目信息

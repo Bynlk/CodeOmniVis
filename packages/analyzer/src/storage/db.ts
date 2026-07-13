@@ -733,6 +733,21 @@ export class OmniDatabase {
     }
   }
 
+  /** Remove edges whose endpoints are absent after cross-layer resolution. */
+  removeDanglingEdges(): number {
+    try {
+      this.ensureReady()
+      const before = this.getAllEdges().length
+      this.ensureReady().run(
+        'DELETE FROM edges WHERE source NOT IN (SELECT id FROM nodes) OR target NOT IN (SELECT id FROM nodes)',
+      )
+      return before - this.getAllEdges().length
+    } catch (err) {
+      console.error('Failed to remove dangling edges:', err)
+      return 0
+    }
+  }
+
   // ============================================================
   // 统计查询
   // ============================================================

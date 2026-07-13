@@ -12,17 +12,17 @@ import fs from 'fs'
 import { fileURLToPath } from 'url'
 import { createServer as createHttpServer } from 'http'
 import { WebSocket, WebSocketServer } from 'ws'
-import type { FreshnessStatus } from '@codeomnivis/shared'
+import type { FreshnessStatus, ProjectMeta } from '@codeomnivis/shared'
 import { isJsonObject } from '@codeomnivis/shared'
 import { OmniDatabase } from '@codeomnivis/analyzer'
 import { createGraphRouter } from './routes/graph'
 import { codeomnivisEvents, EVENTS } from './events'
 import { IncrementalAnalyzer } from './incremental'
 import { registerAiRoutes } from './ai'
-import { resolveWithinBoundary } from './pathGuard'
-import { createMutatingGuard } from './authGuard'
+import { createMutatingGuard, isLoopbackHost } from './authGuard'
 export { isLoopbackHost, createMutatingGuard } from './authGuard'
 import { isOriginAllowed, toOriginAllowlist } from './originGuard'
+import { resolveProjectRootRequest } from './projectRootPolicy'
 
 // ESM 兼容的 __dirname
 const __filename = fileURLToPath(import.meta.url)
@@ -37,6 +37,9 @@ export interface ServerOptions {
   host?: string
   dbPath?: string
   projectRoot?: string
+  projectMeta?: ProjectMeta
+  /** Detect complete metadata for a runtime project switch without reversing package dependencies. */
+  detectProjectMeta?: (projectRoot: string) => Promise<ProjectMeta>
   uiDistPath?: string
   corsOrigin?: string | string[]
   /** S-07:非 loopback 绑定时,mutating endpoints 要求的访问 token。 */
@@ -47,6 +50,7 @@ export interface ServerInstance {
   app: express.Express
   server: ReturnType<typeof createHttpServer>
   db: OmniDatabase
+  analyze: (onFilesCollected?: (count: number) => void) => Promise<void>
   start: () => Promise<void>
   stop: () => Promise<void>
 }
@@ -61,6 +65,8 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     host = 'localhost',
     dbPath = ':memory:',
     projectRoot = process.cwd(),
+    projectMeta,
+    detectProjectMeta,
     uiDistPath = path.resolve(__dirname, '../../ui/dist'),
     corsOrigin = `http://localhost:${port}`,
     accessToken,
@@ -81,7 +87,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
   })
 
   // 存储项目根路径供路由使用
-  app.locals.projectRoot = projectRoot
+  app.locals.projectRoot = path.resolve(projectRoot)
   app.locals.dbPath = dbPath
 
   // 中间件
@@ -96,13 +102,15 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     projectRoot,
     dbPath,
     db,
+    projectMeta,
   })
 
   // S-07:mutating endpoints 鉴权守卫(非 loopback 绑定必须携带 token)。
   const mutatingGuard = createMutatingGuard({ host, token: accessToken })
+  const allowArbitraryAbsoluteProjectRoots = isLoopbackHost(host)
 
   // API 路由
-  const graphRouter = createGraphRouter(db, mutatingGuard)
+  const graphRouter = createGraphRouter(db, mutatingGuard, () => app.locals.projectRoot as string)
   app.use('/api/graph', graphRouter)
 
   // 健康检查
@@ -115,6 +123,11 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     res.json({ data: incrementalAnalyzer.getStatus(), meta: {} })
   })
 
+  // GET /api/project — UI 需要绝对项目根路径来解析节点的相对源码位置。
+  app.get('/api/project', (_req, res) => {
+    res.json({ data: { projectRoot: app.locals.projectRoot as string }, meta: {} })
+  })
+
   // POST /api/analyze — 手动触发重新分析(兜底)
   // 与文件监听共用串行化逻辑,分析期间到达的变更不会丢失。
   app.post('/api/analyze', mutatingGuard, async (_req, res) => {
@@ -123,7 +136,12 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       res.json({ data: { success: true, status: incrementalAnalyzer.getStatus() }, meta: {} })
     } catch (err) {
       console.error('Analysis failed:', err)
-      res.status(500).json({ error: String(err) })
+      res.status(500).json({
+        error: {
+          code: 'ANALYSIS_FAILED',
+          message: err instanceof Error ? err.message : String(err),
+        },
+      })
     }
   })
 
@@ -139,9 +157,13 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       return
     }
 
-    // H3 · S-01:将入参约束在配置边界根内,阻断 ../ 穿越与越界绝对路径。
+    // 本机绑定沿用本地工具信任模型；远程绑定继续约束在启动项目边界内。
     const boundaryRoot = path.resolve(projectRoot)
-    const { ok, resolved } = resolveWithinBoundary(boundaryRoot, projectRootInput)
+    const { ok, resolved } = resolveProjectRootRequest(
+      boundaryRoot,
+      projectRootInput.trim(),
+      allowArbitraryAbsoluteProjectRoots,
+    )
     if (!ok) {
       res.status(400).json({
         error: { code: 'PATH_TRAVERSAL', message: `projectRoot escapes the allowed boundary: ${boundaryRoot}` },
@@ -155,8 +177,22 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       return
     }
 
+    let targetProjectMeta: ProjectMeta | undefined
     try {
-      await incrementalAnalyzer.setProjectRoot(resolved)
+      targetProjectMeta = await detectProjectMeta?.(resolved)
+    } catch (err) {
+      console.error('Failed to detect target project metadata:', err)
+      res.status(500).json({
+        error: {
+          code: 'PROJECT_DETECTION_FAILED',
+          message: 'Failed to detect the target project structure',
+        },
+      })
+      return
+    }
+
+    try {
+      await incrementalAnalyzer.setProjectRoot(resolved, targetProjectMeta)
       app.locals.projectRoot = resolved
       res.json({
         data: { projectRoot: resolved, status: incrementalAnalyzer.getStatus() },
@@ -164,7 +200,12 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
       })
     } catch (err) {
       console.error('Failed to switch project root:', err)
-      res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: String(err) } })
+      res.status(500).json({
+        error: {
+          code: 'PROJECT_SWITCH_FAILED',
+          message: 'Failed to switch project',
+        },
+      })
     }
   })
 
@@ -336,6 +377,11 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     })
   }
 
+  // 供 CLI 首次分析复用与 REST refresh 相同的新鲜度状态机。
+  async function analyze(onFilesCollected?: (count: number) => void): Promise<void> {
+    await incrementalAnalyzer.refresh(onFilesCollected)
+  }
+
   // 停止服务器
   async function stop(): Promise<void> {
     // H9:注销退出钩子,避免重复 stop 时累积监听器。
@@ -380,5 +426,5 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     })
   }
 
-  return { app, server, db, start, stop }
+  return { app, server, db, analyze, start, stop }
 }

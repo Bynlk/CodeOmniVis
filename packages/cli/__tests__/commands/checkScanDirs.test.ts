@@ -36,8 +36,8 @@ function makeMonorepoFixture(): string {
     'utf-8',
   )
   fs.writeFileSync(
-    path.join(pkgSrc, 'handler.ts'),
-    'export function handler(): string {\n  return "ok"\n}\n',
+    path.join(pkgSrc, 'Panel.tsx'),
+    'export function Panel(){ return <section>ok</section> }\n',
     'utf-8',
   )
   return dir

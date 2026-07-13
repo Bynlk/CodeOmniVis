@@ -88,7 +88,11 @@ export class TrpcParser implements Parser {
             nodes.push(routerNode)
 
             // 解析 procedures
-            const procedureNodes = this.parseProcedures(call, filePath)
+            const procedureNodes = this.parseProcedures(
+              call,
+              filePath,
+              this.normalizeRouterName(routerNode.name),
+            )
             nodes.push(...procedureNodes)
 
             // 创建 router → procedure 的 contains 边
@@ -184,6 +188,7 @@ export class TrpcParser implements Parser {
         procedureName: routerName,
         hasInput: false,
         hasOutput: false,
+        isRouter: true,
       },
     }
   }
@@ -191,7 +196,7 @@ export class TrpcParser implements Parser {
   /**
    * 解析 procedures
    */
-  private parseProcedures(call: CallExpression, filePath: string): OmniNode[] {
+  private parseProcedures(call: CallExpression, filePath: string, routerName: string): OmniNode[] {
     const nodes: OmniNode[] = []
 
     // 获取参数（通常是对象字面量）
@@ -220,10 +225,10 @@ export class TrpcParser implements Parser {
                 column: 1,
                 metadata: {
                   procedureType,
-                  routerName: 'unknown',
+                  routerName,
                   procedureName,
                   hasInput: this.hasInputSchema(initializer),
-                  hasOutput: false,
+                  hasOutput: this.hasOutputSchema(initializer),
                 },
               })
             }
@@ -233,6 +238,11 @@ export class TrpcParser implements Parser {
     }
 
     return nodes
+  }
+
+  private normalizeRouterName(declarationName: string): string {
+    const normalized = declarationName.replace(/Router$/, '')
+    return normalized.length > 0 ? normalized : declarationName
   }
 
   /**
@@ -251,15 +261,14 @@ export class TrpcParser implements Parser {
    * 检查是否有 input schema
    */
   private hasInputSchema(call: CallExpression): boolean {
-    const args = call.getArguments()
+    return this.hasChainedMethod(call, 'input')
+  }
 
-    for (const arg of args) {
-      if (Node.isObjectLiteralExpression(arg)) {
-        const inputProp = arg.getProperty('input')
-        return !!inputProp
-      }
-    }
+  private hasOutputSchema(call: CallExpression): boolean {
+    return this.hasChainedMethod(call, 'output')
+  }
 
-    return false
+  private hasChainedMethod(call: CallExpression, methodName: 'input' | 'output'): boolean {
+    return new RegExp(`\\.${methodName}\\s*\\(`).test(call.getExpression().getText())
   }
 }

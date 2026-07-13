@@ -71,9 +71,14 @@ describe('analyze 跨多次运行不累积重复跨层边(缓存去重回归)', 
     expect(countDuplicateEdges(out)).toBe(0)
 
     // 且 calls_api 边应稳定存在(修复未误伤功能)
-    const graph = JSON.parse(fs.readFileSync(out, 'utf-8')) as { edges: Array<{ type: string }> }
+    const graph = JSON.parse(fs.readFileSync(out, 'utf-8')) as {
+      nodes: Array<{ id: string }>
+      edges: Array<{ type: string; source: string; target: string }>
+    }
     const calls = graph.edges.filter(e => e.type === 'calls_api')
-    expect(calls.length).toBeGreaterThanOrEqual(2)
+    expect(calls).toHaveLength(1)
+    const nodeIds = new Set(graph.nodes.map(node => node.id))
+    expect(calls.every(edge => nodeIds.has(edge.source) && nodeIds.has(edge.target))).toBe(true)
 
     fs.rmSync(fixture, { recursive: true, force: true })
   })

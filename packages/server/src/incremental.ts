@@ -9,15 +9,16 @@
 import * as path from 'path'
 import * as fs from 'fs'
 import chokidar from 'chokidar'
-import type { OmniDatabase } from '@codeomnivis/analyzer'
-import { runAnalysis } from '@codeomnivis/analyzer'
-import type { FreshnessState, FreshnessStatus } from '@codeomnivis/shared'
+import { runAnalysis, type DbError, type OmniDatabase } from '@codeomnivis/analyzer'
+import type { FreshnessState, FreshnessStatus, OmniGraph, ProjectMeta } from '@codeomnivis/shared'
 import { codeomnivisEvents, EVENTS } from './events'
 
 export interface IncrementalAnalyzerOptions {
   projectRoot: string
   dbPath: string
   db: OmniDatabase
+  /** 启动时探测到的项目元数据，重分析必须复用而非猜测框架。 */
+  projectMeta?: ProjectMeta
   /**
    * 要监听的目录(相对于 projectRoot)。
    * 省略时使用智能监听:监听整个 projectRoot 并按忽略规则过滤,
@@ -42,17 +43,31 @@ const IGNORED_PATHS: Array<RegExp> = [
 /** 触发重新分析的源码文件后缀。 */
 const SOURCE_FILE_RE = /\.(ts|tsx|js|jsx|prisma)$/
 
+interface ProjectSwitchSnapshot {
+  projectRoot: string
+  projectMeta: ProjectMeta | undefined
+  graph: OmniGraph
+  errors: DbError[]
+  state: FreshnessState
+  lastAnalyzedAt: number | null
+  pendingChanges: number
+  rerunRequested: boolean
+  lastChangedFile: string | null
+  wasWatching: boolean
+}
+
 export class IncrementalAnalyzer {
   private watcher: ReturnType<typeof chokidar.watch> | null = null
   private projectRoot: string
   private dbPath: string
   private readonly db: OmniDatabase
+  private projectMeta: ProjectMeta | undefined
   private debounceMs: number
   private watchDirs: string[] | undefined
   private debounceTimer: ReturnType<typeof setTimeout> | null = null
 
   // 新鲜度状态
-  private state: FreshnessState = 'fresh'
+  private state: FreshnessState = 'stale'
   private lastAnalyzedAt: number | null = null
   private pendingChanges = 0
   private isAnalyzing = false
@@ -71,6 +86,7 @@ export class IncrementalAnalyzer {
     this.projectRoot = options.projectRoot
     this.dbPath = options.dbPath
     this.db = options.db
+    this.projectMeta = options.projectMeta
     this.debounceMs = options.debounceMs ?? 1000
     this.watchDirs = options.watchDirs
   }
@@ -82,28 +98,18 @@ export class IncrementalAnalyzer {
 
   /**
    * 运行时切换项目根目录。
-   * 停止旧监听 -> 清空旧图 -> 切换根 -> 重启监听 -> 重新分析。
+   * 停止旧监听 -> 稳定并快照旧状态 -> 分析目标 -> 成功提交或失败回滚。
    * 调用方需先确保 newRoot 是存在的目录;此处再次防御性校验。
    */
-  async setProjectRoot(newRoot: string): Promise<void> {
+  async setProjectRoot(newRoot: string, projectMeta?: ProjectMeta): Promise<void> {
     const resolved = path.resolve(newRoot)
     if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
       throw new Error(`Project root is not an existing directory: ${resolved}`)
     }
-    if (resolved === this.projectRoot) {
-      // 同一目录:直接重跑一次分析即可。
-      await this.refresh()
-      return
-    }
 
-    // 作废切根前启动的所有排队/在途分析:旧世代分析完成后不会再写状态或补跑。
-    this.generation += 1
-
-    // 停止旧监听(等待 watcher 真正关闭,避免关闭竞态)。
+    const wasWatching = this.watcher !== null
+    // 先停止旧监听并等待在途分析完成，使快照代表一个稳定、可恢复的项目状态。
     await this.stop()
-
-    // 串行化:等待在途分析(针对旧 root)落库完成,
-    // 再 clearGraph,确保旧项目数据不会在清图之后被写回 DB。
     if (this.analysisInFlight) {
       try {
         await this.analysisInFlight
@@ -112,18 +118,85 @@ export class IncrementalAnalyzer {
       }
     }
 
-    // 切换根并重置新鲜度,旧图先清空避免跨项目脏数据。
-    this.projectRoot = resolved
-    this.db.clearGraph()
-    this.pendingChanges = 0
-    this.lastChangedFile = null
-    this.lastAnalyzedAt = null
-    this.rerunRequested = false
-    this.setState('stale')
+    const snapshot = this.captureProjectSwitchSnapshot(wasWatching)
+    // 从此刻起，任何旧世代的排队结果都不能提交到目标项目状态。
+    this.generation += 1
 
-    // 重启监听并触发首轮分析
-    this.start()
-    await this.refresh()
+    try {
+      this.projectRoot = resolved
+      // 跨根目录时绝不能复用旧 metadata；同根目录且调用方未提供新值时才保留。
+      this.projectMeta = resolved === snapshot.projectRoot && projectMeta === undefined
+        ? snapshot.projectMeta
+        : projectMeta
+      if (!this.db.clearGraph()) {
+        throw new Error('Failed to clear graph before project analysis')
+      }
+      this.pendingChanges = 0
+      this.lastChangedFile = null
+      this.lastAnalyzedAt = null
+      this.rerunRequested = false
+      this.setState('stale')
+
+      if (wasWatching) this.start()
+      await this.refresh()
+    } catch (err) {
+      // 作废目标世代，并停止目标 watcher 后再恢复旧项目，避免失败项目继续触发分析。
+      this.generation += 1
+      await this.stop()
+      const rollbackError = this.restoreProjectSwitchSnapshot(snapshot)
+      if (snapshot.wasWatching) this.start()
+      this.setState(snapshot.state)
+
+      const failure = err instanceof Error ? err : new Error(String(err))
+      if (rollbackError !== null) {
+        throw new AggregateError(
+          [failure, rollbackError],
+          `Project switch failed and rollback was incomplete: ${rollbackError.message}`,
+          { cause: err },
+        )
+      }
+      throw failure
+    }
+  }
+
+  private captureProjectSwitchSnapshot(wasWatching: boolean): ProjectSwitchSnapshot {
+    return {
+      projectRoot: this.projectRoot,
+      projectMeta: this.projectMeta,
+      graph: this.db.loadGraph(),
+      errors: this.db.getAllErrors(),
+      state: this.state,
+      lastAnalyzedAt: this.lastAnalyzedAt,
+      pendingChanges: this.pendingChanges,
+      rerunRequested: this.rerunRequested,
+      lastChangedFile: this.lastChangedFile,
+      wasWatching,
+    }
+  }
+
+  /** Restore fields even when DB restoration fails, so roots and watcher authority never stay split. */
+  private restoreProjectSwitchSnapshot(snapshot: ProjectSwitchSnapshot): Error | null {
+    this.projectRoot = snapshot.projectRoot
+    this.projectMeta = snapshot.projectMeta
+    this.state = snapshot.state
+    this.lastAnalyzedAt = snapshot.lastAnalyzedAt
+    this.pendingChanges = snapshot.pendingChanges
+    this.rerunRequested = snapshot.rerunRequested
+    this.lastChangedFile = snapshot.lastChangedFile
+
+    if (!this.db.clearGraph()) {
+      return new Error('Failed to clear the failed target graph during rollback')
+    }
+    const restored = this.db.saveGraph(snapshot.graph)
+    const restoredErrors = this.db.insertErrors(snapshot.errors)
+    if (
+      restored.nodesSaved !== snapshot.graph.nodes.length
+      || restored.edgesSaved !== snapshot.graph.edges.length
+      || restoredErrors !== snapshot.errors.length
+    ) {
+      return new Error('Failed to restore the complete project analysis snapshot')
+    }
+    return null
   }
 
   /** 当前新鲜度快照(供 REST / WS 读取)。 */
@@ -210,15 +283,19 @@ export class IncrementalAnalyzer {
    * 手动触发重新分析(REST 兜底入口)。
    * 与文件监听共用串行化逻辑;分析进行中则记为补跑请求。
    */
-  async refresh(): Promise<void> {
+  async refresh(onFilesCollected?: (count: number) => void): Promise<void> {
     // manual=true:手动刷新失败必须向调用方传播,避免 REST /api/analyze 误报 success(E-07)。
-    await this.triggerAnalysis(this.lastChangedFile, true)
+    await this.triggerAnalysis(this.lastChangedFile, true, onFilesCollected)
   }
 
   /**
    * 触发增量分析(串行化,不丢失分析期间到达的变更)
    */
-  private async triggerAnalysis(filePath: string | null, manual = false): Promise<void> {
+  private async triggerAnalysis(
+    filePath: string | null,
+    manual = false,
+    onFilesCollected?: (count: number) => void,
+  ): Promise<void> {
     if (this.isAnalyzing) {
       // 修复丢变更 bug:分析进行中再来变更不直接丢弃,而是标记补跑。
       console.log('[IncrementalAnalyzer] Analysis in progress, queuing rerun')
@@ -228,7 +305,7 @@ export class IncrementalAnalyzer {
 
     // 绑定本轮分析所属世代;切根会递增 generation,使旧世代结果被丢弃。
     const myGeneration = this.generation
-    const run = this.runAnalysisCycle(filePath, myGeneration, manual)
+    const run = this.runAnalysisCycle(filePath, myGeneration, manual, onFilesCollected)
     this.analysisInFlight = run
     try {
       await run
@@ -241,7 +318,12 @@ export class IncrementalAnalyzer {
   }
 
   /** 实际执行一轮分析;myGeneration 用于切根后作废过期结果。 */
-  private async runAnalysisCycle(filePath: string | null, myGeneration: number, manual: boolean): Promise<void> {
+  private async runAnalysisCycle(
+    filePath: string | null,
+    myGeneration: number,
+    manual: boolean,
+    onFilesCollected?: (count: number) => void,
+  ): Promise<void> {
     this.isAnalyzing = true
     this.setState('analyzing')
     codeomnivisEvents.emit(EVENTS.ANALYSIS_STARTED)
@@ -258,6 +340,8 @@ export class IncrementalAnalyzer {
       await runAnalysis({
         projectRoot: this.projectRoot,
         dbPath: this.dbPath,
+        projectMeta: this.projectMeta,
+        onFilesCollected,
         // 共享 server 持有的同一 DB 句柄(修复 RACE-01::memory: 下查询层才读得到结果)。
         db: this.db,
       })

@@ -12,6 +12,23 @@ import { isJsonObject, isFreshnessStatus } from '@codeomnivis/shared'
 import { STATUS_QUERY_KEY } from './useStatus'
 import { WebSocketController, type MinimalSocket } from './websocketController'
 import { getUiState } from '../store/uiStore'
+import { invalidateAnalysisQueries } from './invalidateAnalysisQueries'
+
+interface WebSocketQueryClient {
+  invalidateQueries: (filters: { queryKey: readonly unknown[] }) => Promise<unknown>
+  setQueryData: (queryKey: readonly unknown[], data: unknown) => unknown
+}
+
+export async function handleWebSocketMessage(
+  data: unknown,
+  queryClient: WebSocketQueryClient,
+): Promise<void> {
+  if (isJsonObject(data) && data.type === 'graph_updated') {
+    await invalidateAnalysisQueries(queryClient)
+  } else if (isJsonObject(data) && data.type === 'status_changed' && isFreshnessStatus(data.payload)) {
+    queryClient.setQueryData(STATUS_QUERY_KEY, data.payload)
+  }
+}
 
 /**
  * 把浏览器原生 WebSocket 适配成控制器所需的最小接口。
@@ -37,11 +54,19 @@ interface WebSocketOptions {
   enabled?: boolean
 }
 
+interface WebSocketLocation {
+  protocol: string
+  host: string
+}
+
+export function getDefaultWebSocketUrl(location: WebSocketLocation): string {
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${protocol}//${location.host}/ws`
+}
+
 export function useWebSocket(options: WebSocketOptions = {}) {
-  const {
-    url = `ws://${window.location.host}/ws`,
-    enabled = true,
-  } = options
+  const enabled = options.enabled ?? true
+  const url = options.url ?? getDefaultWebSocketUrl(window.location)
 
   const queryClient = useQueryClient()
   const [isConnected, setIsConnected] = useState(false)
@@ -77,15 +102,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
         }
       },
       onMessage: (data) => {
-        if (isJsonObject(data) && data.type === 'graph_updated') {
-          queryClient.invalidateQueries({ queryKey: ['graph'] })
-          queryClient.invalidateQueries({ queryKey: ['graph-stats'] })
-          queryClient.invalidateQueries({ queryKey: ['graph-errors'] })
-        } else if (isJsonObject(data) && data.type === 'status_changed') {
-          if (isFreshnessStatus(data.payload)) {
-            queryClient.setQueryData(STATUS_QUERY_KEY, data.payload)
-          }
-        }
+        void handleWebSocketMessage(data, queryClient)
       },
     })
     controllerRef.current = controller

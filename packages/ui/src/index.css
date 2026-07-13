@@ -20,20 +20,22 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* 表面层级（深色主题） */
-  --surface-base: #0f172a;      /* 最底背景 */
-  --surface-raised: #1e293b;    /* Header / Sidebar / 面板 */
-  --surface-overlay: #1e293bf2; /* 浮层 / 卡片（带透明） */
-  --surface-hover: #334155;     /* 悬停 / 选中底 */
+  --surface-base: #090b0f;
+  --surface-panel: #0d1016;
+  --surface-raised: #12161e;
+  --surface-overlay: #12161e;
+  --surface-hover: #181e28;
 
   /* 边框层级 */
-  --border-subtle: #334155;
-  --border-strong: #475569;
+  --border-subtle: #242b36;
+  --border-strong: #343e4d;
 
   /* 文本层级 */
-  --text-primary: rgba(248, 250, 252, 0.95);
-  --text-secondary: rgba(203, 213, 225, 0.85);
-  --text-muted: rgba(148, 163, 184, 0.75);
+  --text-primary: #e7eaf0;
+  --text-secondary: #a9b1be;
+  --text-muted: #7f8998;
+  --accent: #5b8cff;
+  --accent-hover: #78a1ff;
 
   color: var(--text-primary);
   background-color: var(--surface-base);
@@ -53,7 +55,7 @@ body {
 
 /* feature-008 a11y: 可辨识的键盘焦点环（仅键盘导航时出现） */
 :focus-visible {
-  outline: 2px solid #60a5fa;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -97,21 +99,4 @@ body {
   overflow: visible;
   clip: auto;
   white-space: normal;
-}
-
-/* 自定义滚动条（深色主题友好，不影响布局） */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
-}
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-*::-webkit-scrollbar-thumb {
-  background-color: var(--border-strong);
-  border-radius: 4px;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
 }

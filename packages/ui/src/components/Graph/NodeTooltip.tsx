@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NODE_EMOJI, NODE_COLORS } from '../../lib/nodeConfig'
+import { NODE_COLORS } from '../../lib/nodeConfig'
 import { useCytoscapeRef } from '../../lib/cytoscapeContext'
 import { useUiStore, selectIsAnyModalOpen } from '../../store/uiStore'
 import { isNodeType } from '@codeomnivis/shared'
@@ -94,21 +94,17 @@ export function NodeTooltip() {
 
   if (!tooltip || isAnyModalOpen) return null
 
-  const emoji = NODE_EMOJI[tooltip.type] ?? '●'
   const color = NODE_COLORS[tooltip.type] ?? '#6b7280'
 
   return (
     <div
-      className="pointer-events-none fixed z-tooltip animate-fadeIn rounded-ds-lg border border-border-strong bg-surface-overlay p-ds-3 text-ds-sm shadow-ds-panel backdrop-blur-md"
+      className="pointer-events-none fixed z-tooltip animate-fadeIn rounded-md border border-border-strong bg-surface-overlay p-ds-3 text-ds-sm shadow-ds-card"
       style={{ left: tooltip.x + 12, top: tooltip.y - 60 }}
     >
       {/* 节点类型行 */}
       <div className="mb-1 flex items-center gap-1.5">
-        <span className="text-base">{emoji}</span>
-        <span
-          className="rounded-ds-sm px-1.5 py-0.5 text-ds-xs font-medium text-white"
-          style={{ backgroundColor: color }}
-        >
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
+        <span className="text-ds-xs font-medium text-content-secondary">
           {t(`nodeType.${tooltip.type}`)}
         </span>
       </div>

@@ -175,6 +175,7 @@ export class NextjsAppParser implements Parser {
     let routePath = appMatch[1]
 
     // 移除文件名（page.tsx, route.ts 等）
+    routePath = routePath.replace(/^(?:page|route|layout|loading|error)\.(tsx|ts|jsx|js)$/, '')
     routePath = routePath.replace(/\/(?:page|route|layout|loading|error)\.(tsx|ts|jsx|js)$/, '')
 
     // 处理路由组：(group)/ → 完全移除（路由组不影响 URL）

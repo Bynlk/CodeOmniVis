@@ -73,6 +73,10 @@ describe('ConsistencyChecker', () => {
     const deadCalls = report.issues.filter(i => i.type === 'dead_api_call')
     expect(deadCalls).toHaveLength(1)
     expect(deadCalls[0].severity).toBe('warning')
+    expect(deadCalls[0]).toMatchObject({
+      messageKey: 'dead_api_call',
+      messageParams: { target: 'api_route:nonexistent:/api' },
+    })
   })
 
   // ─── 未使用路由 ───
@@ -87,6 +91,10 @@ describe('ConsistencyChecker', () => {
     // unused_route 和 orphan 都使用 type='unused_route'，按 description 区分
     const unused = report.issues.filter(i => i.type === 'unused_route' && i.description.includes('unused'))
     expect(unused).toHaveLength(1)
+    expect(unused[0]).toMatchObject({
+      messageKey: 'unused_route',
+      messageParams: { name: 'Test' },
+    })
   })
 
   it('有入边的路由不算未使用', () => {
@@ -104,6 +112,55 @@ describe('ConsistencyChecker', () => {
     expect(unused).toHaveLength(0)
   })
 
+  it('does not report tRPC router declaration containers as unused or dead routes', () => {
+    const router: OmniNode = {
+      id: 'trpc_procedure:server/routers/booking.ts:bookingRouter',
+      type: 'trpc_procedure',
+      name: 'bookingRouter',
+      filePath: 'server/routers/booking.ts',
+      line: 1,
+      column: 1,
+      metadata: {
+        procedureType: 'query',
+        routerName: 'booking',
+        procedureName: 'bookingRouter',
+        hasInput: false,
+        hasOutput: false,
+        isRouter: true,
+      },
+    }
+    const procedure: OmniNode = {
+      id: 'trpc_procedure:server/routers/booking.ts:list',
+      type: 'trpc_procedure',
+      name: 'list',
+      filePath: 'server/routers/booking.ts',
+      line: 2,
+      column: 1,
+      metadata: {
+        procedureType: 'query',
+        routerName: 'booking',
+        procedureName: 'list',
+        hasInput: false,
+        hasOutput: false,
+      },
+    }
+    const graph: OmniGraph = {
+      nodes: [router, procedure],
+      edges: [{
+        id: `${router.id}--contains--${procedure.id}`,
+        source: router.id,
+        target: procedure.id,
+        type: 'contains',
+        confidence: 'certain',
+        metadata: { routerName: 'booking', procedureName: 'list' },
+      }],
+    }
+
+    const report = checker.check(graph)
+
+    expect(report.issues.some(issue => issue.relatedNodeIds.includes(router.id))).toBe(false)
+  })
+
   // ─── 孤立节点 ───
   it('检测孤立节点', () => {
     const graph: OmniGraph = {
@@ -115,6 +172,10 @@ describe('ConsistencyChecker', () => {
     const report = checker.check(graph)
     const orphans = report.issues.filter(i => i.description.includes('no connections'))
     expect(orphans).toHaveLength(1)
+    expect(orphans[0]).toMatchObject({
+      messageKey: 'orphan_node',
+      messageParams: { name: 'Test' },
+    })
   })
 
   it('module 类型不算孤立', () => {

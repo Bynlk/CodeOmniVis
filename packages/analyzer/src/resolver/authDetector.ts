@@ -10,6 +10,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import type { OmniGraph, OmniNode, Issue } from '@codeomnivis/shared'
+import { SourceScopeResolver } from './sourceScope'
 
 // Auth 函数白名单
 const AUTH_FUNCTIONS = new Set([
@@ -65,6 +66,7 @@ export class AuthDetector {
    */
   detect(graph: OmniGraph, projectRoot: string): Issue[] {
     const issues: Issue[] = []
+    const sourceScopes = new SourceScopeResolver(projectRoot)
 
     // 检测 api_route 和 handler 节点
     const routeNodes = graph.nodes.filter(n =>
@@ -86,7 +88,7 @@ export class AuthDetector {
       if (!/\.(tsx?|jsx?)$/.test(fullPath)) continue
 
       try {
-        const fileIssues = this.analyzeFile(fullPath, nodes, projectRoot)
+        const fileIssues = this.analyzeFile(fullPath, nodes, sourceScopes)
         issues.push(...fileIssues)
       } catch {
         // 降级
@@ -99,30 +101,39 @@ export class AuthDetector {
   /**
    * 分析单个文件的鉴权覆盖
    */
-  private analyzeFile(fullPath: string, nodes: OmniNode[], _projectRoot: string): Issue[] {
+  private analyzeFile(
+    fullPath: string,
+    nodes: OmniNode[],
+    sourceScopes: SourceScopeResolver,
+  ): Issue[] {
     const issues: Issue[] = []
 
     const content = fs.readFileSync(fullPath, 'utf-8')
 
-    // 快速检查：文件中是否有 auth 函数调用
-    const hasAuthCall = this.hasAuthFunction(content)
+    const handlers = nodes.filter(node => node.type === 'handler')
+    const candidates = handlers.length > 0
+      ? handlers
+      : nodes.filter(node => node.type === 'api_route')
 
-    // 收集文件中导入的 auth 函数
-    const importedAuthFunctions = this.collectImportedAuthFunctions(content)
+    for (const node of candidates) {
+      const linkedRoute = node.type === 'handler' && node.metadata.routeId
+        ? nodes.find(candidate => candidate.id === node.metadata.routeId)
+        : undefined
+      const route = routeFromNode(linkedRoute ?? node)
 
-    for (const node of nodes) {
       // 跳过公开路由
-        const route = routeFromNode(node)
       if (route && this.isPublicRoute(route)) continue
 
-      // 如果文件整体有 auth 调用，认为已覆盖
-      if (hasAuthCall || importedAuthFunctions.size > 0) continue
-
-      // 检查节点级别的 auth 调用
-      const nodeContent = this.extractNodeContent(content, node.line)
+      // handler 必须在自己的函数作用域内调用鉴权；仅导入或其它方法调用不算覆盖。
+      const scope = node.type === 'handler' ? sourceScopes.findScope(node) : null
+      const nodeContent = scope?.getText()
+        ?? (node.type === 'handler' ? this.extractNodeContent(content, node.line) : content)
       if (this.hasAuthFunction(nodeContent)) continue
 
-      issues.push(this.createIssue(node))
+      const methodRoute = node.type === 'handler' && route
+        ? `${node.metadata.functionName} ${route}`
+        : undefined
+      issues.push(this.createIssue(node, methodRoute))
     }
 
     return issues
@@ -133,31 +144,11 @@ export class AuthDetector {
    */
   private hasAuthFunction(content: string): boolean {
     for (const fn of AUTH_FUNCTIONS) {
-      if (content.includes(fn)) return true
+      if (fn === 'protectedProcedure' && /\bprotectedProcedure\b/.test(content)) return true
+      const escaped = fn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      if (new RegExp(`\\b${escaped}\\s*\\(`, 'i').test(content)) return true
     }
     return false
-  }
-
-  /**
-   * 收集文件中导入的 auth 函数
-   */
-  private collectImportedAuthFunctions(content: string): Set<string> {
-    const imported = new Set<string>()
-
-    // 匹配 import { ... } from '...'
-    const importRegex = /import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/g
-    let m: RegExpExecArray | null
-
-    while ((m = importRegex.exec(content)) !== null) {
-      const names = m[1].split(',').map(s => s.trim().split(/\s+as\s+/)[0].trim())
-      for (const name of names) {
-        if (AUTH_FUNCTIONS.has(name)) {
-          imported.add(name)
-        }
-      }
-    }
-
-    return imported
   }
 
   /**
@@ -193,14 +184,16 @@ export class AuthDetector {
   /**
    * 创建未鉴权路由 Issue
    */
-  private createIssue(node: OmniNode): Issue {
-    const route = routeFromNode(node) || node.name
+  private createIssue(node: OmniNode, routeLabel?: string): Issue {
+    const route = routeLabel ?? routeFromNode(node) ?? node.name
 
     return {
       id: `auth-${node.id}`,
       type: 'unguarded_route',
       severity: 'critical',
       description: `API route "${route}" has no authentication guard`,
+      messageKey: 'unguarded_route',
+      messageParams: { route },
       locations: [
         { file: node.filePath, line: node.line, note: 'route definition' },
       ],

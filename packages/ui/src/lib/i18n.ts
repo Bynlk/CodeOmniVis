@@ -2,6 +2,7 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import zhCN from '../locales/zh-CN.json'
 import enUS from '../locales/en-US.json'
+import { readBrowserLanguage } from './languageStorage'
 
 i18n
   .use(initReactI18next)
@@ -10,7 +11,7 @@ i18n
       'zh-CN': { translation: zhCN },
       'en-US': { translation: enUS },
     },
-    lng: localStorage.getItem('codeomnivis-lang') ?? 'en-US',
+    lng: readBrowserLanguage(),
     fallbackLng: 'en-US',
     interpolation: { escapeValue: false },
   })

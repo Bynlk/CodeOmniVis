@@ -33,6 +33,17 @@ describe('uiStore actions', () => {
     expect(getUiState().searchQuery).toBe('user')
   })
 
+  it('leaving architecture focus resets the depth before returning', () => {
+    getUiState().selectNode('node-1')
+    getUiState().setArchitectureDepth('focus')
+
+    getUiState().setActiveView('requests')
+    getUiState().setActiveView('architecture')
+
+    expect(getUiState().selectedNodeId).toBeNull()
+    expect(getUiState().architectureDepth).toBe('overview')
+  })
+
   it('toggleCommandPalette flips without arg, sets with arg', () => {
     getUiState().toggleCommandPalette()
     expect(getUiState().isCommandPaletteOpen).toBe(true)

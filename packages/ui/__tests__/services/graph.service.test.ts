@@ -3,6 +3,7 @@ import {
   getGraph,
   getGraphStats,
   getGraphErrors,
+  getGraphIssues,
   getGraphNodes,
   getGraphDataflow,
 } from '../../src/services'
@@ -57,6 +58,120 @@ describe('graph service — URL/method 契约', () => {
     expect(spy).toHaveBeenCalledWith('/api/graph/errors', undefined)
     expect(res).toHaveLength(1)
     expect(res[0].severity).toBe('error')
+  })
+
+  it('getGraphIssues validates sourced issues and preserves detector failures', async () => {
+    const spy = captureFetch(200, {
+      data: [
+        {
+          id: 'auth-route',
+          source: 'security',
+          severity: 'critical',
+          type: 'unguarded_route',
+          description: 'Missing authentication guard',
+          messageKey: 'unguarded_route',
+          messageParams: { route: 'GET /api/demo' },
+          locations: [{ file: 'app/api/route.ts', line: 4 }],
+          relatedNodeIds: ['handler:route'],
+          relatedEdgeIds: [],
+        },
+        { id: 'invalid', source: 'guess' },
+      ],
+      meta: {
+        count: 1,
+        total: 1,
+        critical: 1,
+        warning: 0,
+        info: 0,
+        detectors: [
+          { id: 'consistency', status: 'complete' },
+          { id: 'auth', status: 'failed', message: 'source unavailable' },
+          { id: 'n_plus_one', status: 'complete' },
+          { id: 'rsc', status: 'complete' },
+        ],
+      },
+    })
+
+    const result = await getGraphIssues()
+
+    expect(spy).toHaveBeenCalledWith('/api/graph/issues', undefined)
+    expect(result.issues).toHaveLength(1)
+    expect(result.issues[0]).toMatchObject({
+      source: 'security',
+      type: 'unguarded_route',
+      messageKey: 'unguarded_route',
+      messageParams: { route: 'GET /api/demo' },
+    })
+    expect(result.detectors[1]).toEqual({ id: 'auth', status: 'failed', message: 'source unavailable' })
+  })
+
+  it('getGraphIssues rejects a malformed response envelope', async () => {
+    captureFetch(200, { data: [], meta: { count: 'zero' } })
+
+    await expect(getGraphIssues()).rejects.toThrow('Invalid graph issues response')
+  })
+
+  it('filters issues with malformed structured message parameters', async () => {
+    captureFetch(200, {
+      data: [{
+        id: 'auth-route',
+        source: 'security',
+        severity: 'critical',
+        type: 'unguarded_route',
+        description: 'Missing authentication guard',
+        messageKey: 'unguarded_route',
+        messageParams: { route: { unsafe: true } },
+        locations: [{ file: 'app/api/route.ts', line: 4 }],
+        relatedNodeIds: [],
+        relatedEdgeIds: [],
+      }],
+      meta: {
+        count: 0,
+        total: 0,
+        critical: 0,
+        warning: 0,
+        info: 0,
+        detectors: [
+          { id: 'consistency', status: 'complete' },
+          { id: 'auth', status: 'complete' },
+          { id: 'n_plus_one', status: 'complete' },
+          { id: 'rsc', status: 'complete' },
+        ],
+      },
+    })
+
+    const result = await getGraphIssues()
+    expect(result.issues).toEqual([])
+  })
+
+  it('getGraphIssues rejects summary counts that contradict the findings', async () => {
+    captureFetch(200, {
+      data: [{
+        id: 'auth-route',
+        source: 'security',
+        severity: 'critical',
+        type: 'unguarded_route',
+        description: 'Missing authentication guard',
+        locations: [{ file: 'app/api/route.ts', line: 4 }],
+        relatedNodeIds: [],
+        relatedEdgeIds: [],
+      }],
+      meta: {
+        count: 1,
+        total: 1,
+        critical: 0,
+        warning: 1,
+        info: 0,
+        detectors: [
+          { id: 'consistency', status: 'complete' },
+          { id: 'auth', status: 'complete' },
+          { id: 'n_plus_one', status: 'complete' },
+          { id: 'rsc', status: 'complete' },
+        ],
+      },
+    })
+
+    await expect(getGraphIssues()).rejects.toThrow('Invalid graph issues response')
   })
 
   it('getGraphNodes 携带 type 查询参数请求 /api/graph/nodes', async () => {

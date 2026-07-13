@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { TabId } from '../types/tabs'
+import type { ArchitectureDepth, WorkbenchView } from '../types/workbench'
 
 /**
  * UI 状态集中管理(feature-002 状态分层)。
@@ -26,6 +27,8 @@ export interface UiState {
   isMobileDrawerOpen: boolean
   isLegendCollapsed: boolean
   wsStatus: WsStatus
+  activeView: WorkbenchView
+  architectureDepth: ArchitectureDepth
 }
 
 export interface UiActions {
@@ -37,6 +40,8 @@ export interface UiActions {
   toggleMobileDrawer: (open?: boolean) => void
   toggleLegend: (collapsed?: boolean) => void
   setWsStatus: (status: WsStatus) => void
+  setActiveView: (view: WorkbenchView) => void
+  setArchitectureDepth: (depth: ArchitectureDepth) => void
 }
 
 export type UiStore = UiState & UiActions
@@ -60,6 +65,8 @@ const initialState: UiState = {
   isMobileDrawerOpen: false,
   isLegendCollapsed: readLegendCollapsed(),
   wsStatus: 'connecting',
+  activeView: 'architecture',
+  architectureDepth: 'overview',
 }
 
 let state: UiStore
@@ -107,6 +114,12 @@ state = {
       : { isMobileDrawerOpen: false })
   },
   setWsStatus: (status) => setState({ wsStatus: status }),
+  setActiveView: (view) => setState({
+    activeView: view,
+    selectedNodeId: null,
+    ...(state.architectureDepth === 'focus' ? { architectureDepth: 'overview' } : {}),
+  }),
+  setArchitectureDepth: (depth) => setState({ architectureDepth: depth }),
   toggleLegend: (collapsed) => {
     const next = collapsed ?? !state.isLegendCollapsed
     try {
@@ -123,10 +136,6 @@ function subscribe(listener: () => void): () => void {
   return () => {
     listeners.delete(listener)
   }
-}
-
-function getSnapshot(): UiStore {
-  return state
 }
 
 /**

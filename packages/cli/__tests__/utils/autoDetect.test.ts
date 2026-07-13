@@ -164,3 +164,72 @@ describe('collectScanDirs 覆盖顶层源码目录（回归：根级组件/数�
     expect(dirs.length).toBe(new Set(dirs).size)
   })
 })
+
+describe('split frontend/backend application discovery', () => {
+  let root: string
+
+  beforeAll(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'codeomnivis-split-app-'))
+    fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'split-app' }))
+    fs.mkdirSync(path.join(root, 'frontend', 'src'), { recursive: true })
+    fs.mkdirSync(path.join(root, 'backend', 'src'), { recursive: true })
+    fs.writeFileSync(path.join(root, 'frontend', 'package.json'), JSON.stringify({ dependencies: { next: '15.0.0', react: '19.0.0' } }))
+    fs.writeFileSync(path.join(root, 'backend', 'package.json'), JSON.stringify({ dependencies: { tsrpc: '3.4.0' } }))
+    fs.writeFileSync(path.join(root, 'frontend', 'src', 'App.tsx'), 'export function App() { return null }')
+    fs.writeFileSync(path.join(root, 'backend', 'src', 'index.ts'), 'export const server = true')
+  })
+
+  afterAll(() => {
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('detects framework dependencies declared by conventional child applications', async () => {
+    const meta = await autoDetectProject(root)
+    expect(meta.frontendFramework).toBe('next')
+    expect(meta.backendFramework).toBe('tsrpc')
+  })
+
+  it('scans both conventional child source directories', () => {
+    const dirs = collectScanDirs(root).map(dir => path.resolve(dir))
+    expect(dirs).toContain(path.resolve(root, 'frontend', 'src'))
+    expect(dirs).toContain(path.resolve(root, 'backend', 'src'))
+  })
+})
+
+describe('pnpm workspace package discovery', () => {
+  let root: string
+
+  beforeAll(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'codeomnivis-pnpm-workspace-'))
+    fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'workspace-root', private: true }))
+    fs.writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n")
+
+    const uiRoot = path.join(root, 'packages', 'ui')
+    const apiRoot = path.join(root, 'packages', 'api')
+    fs.mkdirSync(path.join(uiRoot, 'src'), { recursive: true })
+    fs.mkdirSync(path.join(apiRoot, 'src'), { recursive: true })
+    fs.writeFileSync(path.join(uiRoot, 'package.json'), JSON.stringify({
+      name: '@fixture/ui',
+      dependencies: { next: '15.0.0', react: '19.0.0' },
+    }))
+    fs.writeFileSync(path.join(apiRoot, 'package.json'), JSON.stringify({
+      name: '@fixture/api',
+      dependencies: { express: '5.0.0', '@prisma/client': '6.0.0' },
+    }))
+  })
+
+  afterAll(() => {
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('detects frameworks and package metadata declared only under packages/*', async () => {
+    const meta = await autoDetectProject(root)
+
+    expect(meta.frontendFramework).toBe('next')
+    expect(meta.backendFramework).toBe('express')
+    expect(meta.databaseType).toBe('prisma')
+    expect(meta.packages.map(pkg => pkg.path)).toEqual(['packages/api', 'packages/ui'])
+    expect(meta.frontendDirs).toContain('packages/ui/src')
+    expect(meta.backendDirs).toContain('packages/api/src')
+  })
+})

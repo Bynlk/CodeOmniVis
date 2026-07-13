@@ -21,6 +21,7 @@ export default {
         // 供全站以 class 引用统一的背景/边框/文本层级(深色主题)。
         surface: {
           DEFAULT: 'var(--surface-base)',
+          panel: 'var(--surface-panel)',
           raised: 'var(--surface-raised)',
           overlay: 'var(--surface-overlay)',
           hover: 'var(--surface-hover)',
@@ -37,14 +38,14 @@ export default {
           50: '#f0f9ff',
           100: '#e0f2fe',
           200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+          300: '#a6bcff',
+          400: '#78a1ff',
+          500: '#5b8cff',
+          600: '#4776e6',
+          700: '#365fc2',
+          800: '#2f4f9d',
+          900: '#2b447d',
+          950: '#1b294d',
         },
         // 节点类型语义色 —— 单一真源与 packages/shared NODE_COLORS 对齐。
         // Cytoscape 画布与图例(Legend)均从 NODE_COLORS 取色,tailwind token 仅镜像同值,
@@ -95,8 +96,8 @@ export default {
       },
       // 统一阴影 scale(深色背景友好)
       boxShadow: {
-        'ds-panel': '0 4px 24px rgba(0, 0, 0, 0.4)',
-        'ds-card': '0 1px 3px rgba(0, 0, 0, 0.3)',
+        'ds-panel': '0 8px 24px rgba(0, 0, 0, 0.34)',
+        'ds-card': '0 1px 3px rgba(0, 0, 0, 0.28)',
       },
       animation: {
         slideDown: 'slideDown 0.2s ease-out',

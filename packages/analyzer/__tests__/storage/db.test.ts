@@ -90,6 +90,29 @@ describe('OmniDatabase', () => {
       expect(retrieved).toEqual(testNode)
     })
 
+    it('preserves tRPC router container identity across storage', () => {
+      const routerNode: OmniNode = {
+        id: 'trpc_procedure:server/routers/booking.ts:bookingRouter',
+        type: 'trpc_procedure',
+        name: 'bookingRouter',
+        filePath: 'server/routers/booking.ts',
+        line: 1,
+        column: 1,
+        metadata: {
+          procedureType: 'query',
+          routerName: 'booking',
+          procedureName: 'bookingRouter',
+          hasInput: false,
+          hasOutput: false,
+          isRouter: true,
+        },
+      }
+
+      db.upsertNode(routerNode)
+
+      expect(db.getNode(routerNode.id)).toEqual(routerNode)
+    })
+
     it('should update an existing node', () => {
       db.upsertNode(testNode)
 

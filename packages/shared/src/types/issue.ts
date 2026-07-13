@@ -10,6 +10,18 @@
 
 export type IssueSeverity = 'critical' | 'warning' | 'info'
 
+/** Product-facing origin of a deterministic project issue. */
+export type IssueSource = 'consistency' | 'security' | 'performance' | 'framework'
+
+/** Stable detector identifiers used by the Web quality contract. */
+export type IssueDetectorId = 'consistency' | 'auth' | 'n_plus_one' | 'rsc'
+
+export interface IssueDetectorStatus {
+  id: IssueDetectorId
+  status: 'complete' | 'failed'
+  message?: string
+}
+
 // ============================================================
 // 问题类型
 // ============================================================
@@ -27,6 +39,24 @@ export type IssueType =
   | 'n_plus_one_query'    // N+1 查询：循环内的 DB 调用
   | 'unguarded_route'     // API 路由没有鉴权
   | 'rsc_boundary_violation' // RSC 边界违规
+
+/** Stable presentation keys for localized deterministic detector descriptions. */
+export type IssueMessageKey =
+  | 'dead_api_call'
+  | 'unused_route'
+  | 'orphan_node'
+  | 'method_mismatch'
+  | 'missing_procedure'
+  | 'param_mismatch'
+  | 'dead_route'
+  | 'dead_component'
+  | 'dead_service'
+  | 'circular_dependency'
+  | 'n_plus_one_query'
+  | 'unguarded_route'
+  | 'rsc_boundary_violation'
+
+export type IssueMessageParams = Record<string, string | number>
 
 // ============================================================
 // 问题位置
@@ -51,12 +81,20 @@ export interface Issue {
   type: IssueType
   /** 问题描述 */
   description: string
+  /** Optional structured presentation data; description remains the compatibility fallback. */
+  messageKey?: IssueMessageKey
+  messageParams?: IssueMessageParams
   /** 相关位置 */
   locations: IssueLocation[]
   /** 相关节点 ID */
   relatedNodeIds: string[]
   /** 相关边 ID */
   relatedEdgeIds: string[]
+}
+
+/** Issue enriched with the product category that produced it. */
+export interface SourcedIssue extends Issue {
+  source: IssueSource
 }
 
 // ============================================================

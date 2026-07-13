@@ -23,8 +23,12 @@ function renderWithQuery(el: ReactElement): string {
 const sampleNode: OmniNode = {
   id: 'n1',
   name: 'DemoNode',
-  type: 'function',
-} as OmniNode
+  type: 'module',
+  filePath: 'src/demo.ts',
+  line: 1,
+  column: 1,
+  metadata: { childCount: 0, childTypes: [] },
+}
 
 describe('NodeDetailPanel 进栅格右轨(AC1/AC2)', () => {
   it('桌面为 md:static 栅格轨道成员,而非相对视口 absolute 覆盖', () => {
@@ -50,6 +54,64 @@ describe('NodeDetailPanel 进栅格右轨(AC1/AC2)', () => {
       <NodeDetailPanel node={null} inEdges={[]} outEdges={[]} onClose={() => {}} onNodeSelect={() => {}} />,
     )
     expect(html).toBe('')
+  })
+
+  it('builds an absolute VS Code link from a POSIX project root', () => {
+    const html = renderWithQuery(
+      <NodeDetailPanel
+        node={{ ...sampleNode, filePath: 'src/demo file.ts', line: 9 }}
+        projectRoot="/Users/dev/CodeOmniVis"
+        inEdges={[]}
+        outEdges={[]}
+        onClose={() => {}}
+        onNodeSelect={() => {}}
+      />,
+    )
+
+    expect(html).toContain('href="vscode://file/Users/dev/CodeOmniVis/src/demo%20file.ts:9"')
+    expect(html).not.toContain('window.open')
+  })
+
+  it('normalizes Windows paths and preserves an already absolute node path', () => {
+    const windowsHtml = renderWithQuery(
+      <NodeDetailPanel
+        node={{ ...sampleNode, filePath: 'src\\demo.ts', line: 4 }}
+        projectRoot={'C:\\code\\repo'}
+        inEdges={[]}
+        outEdges={[]}
+        onClose={() => {}}
+        onNodeSelect={() => {}}
+      />,
+    )
+    const absoluteHtml = renderWithQuery(
+      <NodeDetailPanel
+        node={{ ...sampleNode, filePath: '/tmp/external.ts', line: 7 }}
+        projectRoot="/Users/dev/CodeOmniVis"
+        inEdges={[]}
+        outEdges={[]}
+        onClose={() => {}}
+        onNodeSelect={() => {}}
+      />,
+    )
+
+    expect(windowsHtml).toContain('href="vscode://file/C:/code/repo/src/demo.ts:4"')
+    expect(absoluteHtml).toContain('href="vscode://file/tmp/external.ts:7"')
+  })
+
+  it('disables source navigation while a relative path has no project root', () => {
+    const html = renderWithQuery(
+      <NodeDetailPanel
+        node={sampleNode}
+        projectRoot=""
+        inEdges={[]}
+        outEdges={[]}
+        onClose={() => {}}
+        onNodeSelect={() => {}}
+      />,
+    )
+
+    expect(html).toContain('aria-disabled="true"')
+    expect(html).not.toContain('href="vscode://file/')
   })
 })
 

@@ -39,6 +39,7 @@ interface DmmfField {
   isList: boolean
   isUnique: boolean
   relationName?: string
+  relationFromFields?: string[]
 }
 
 interface DmmfDatamodel {
@@ -219,7 +220,7 @@ export class PrismaParser implements Parser {
   /**
    * 解析 Model 的关系字段，生成 db_relation 边
    */
-  private parseRelations(model: DmmfModel, filePath: string, _dmmf: DmmfDocument): OmniEdge[] {
+  private parseRelations(model: DmmfModel, filePath: string, dmmf: DmmfDocument): OmniEdge[] {
     const edges: OmniEdge[] = []
 
     for (const field of model.fields) {
@@ -231,7 +232,8 @@ export class PrismaParser implements Parser {
       const targetNodeId = createNodeId('db_model', filePath, targetModelName)
 
       // 确定关系类型
-      const relationType = this.getRelationType(field)
+      const targetModel = dmmf.datamodel.models.find(candidate => candidate.name === targetModelName)
+      const relationType = this.getRelationType(model, field, targetModel)
 
 
       const edgeId = createEdgeId(sourceNodeId, 'db_relation', targetNodeId)
@@ -260,19 +262,29 @@ export class PrismaParser implements Parser {
   /**
    * 根据字段信息判断关系类型
    */
-  private getRelationType(field: DmmfField): 'one_to_one' | 'one_to_many' | 'many_to_many' {
-    // 如果字段是列表，那就是一对多（从对方角度看）
+  private getRelationType(
+    sourceModel: DmmfModel,
+    field: DmmfField,
+    targetModel: DmmfModel | undefined,
+  ): 'one_to_one' | 'one_to_many' | 'many_to_many' | 'many_to_one' {
+    const inverse = targetModel?.fields.find(candidate => candidate.relationName === field.relationName)
+
     if (field.isList) {
-      return 'one_to_many'
+      return inverse?.isList ? 'many_to_many' : 'one_to_many'
     }
 
-    // 如果字段有 @unique，那就是一对一
-    if (field.isUnique) {
+    if (inverse?.isList) return 'many_to_one'
+
+    // Prisma records @relation(fields: [...]) on the owning relation field;
+    // one-to-one is determined by the uniqueness of that FK scalar, not the relation field itself.
+    const owningModel = field.relationFromFields?.length ? sourceModel : targetModel
+    const owningField = field.relationFromFields?.length ? field : inverse
+    const foreignKeys = owningField?.relationFromFields ?? []
+    if (owningModel && foreignKeys.some(name => owningModel.fields.find(candidate => candidate.name === name)?.isUnique)) {
       return 'one_to_one'
     }
 
-    // 默认一对一
-    return 'one_to_one'
+    return 'many_to_one'
   }
 
   /**

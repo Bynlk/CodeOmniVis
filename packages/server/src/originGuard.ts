@@ -5,6 +5,8 @@
  * 仅放行白名单内的源。无 Origin 的连接来自非浏览器客户端(不受 CSWSH 影响),放行。
  */
 
+import { isLoopbackHost } from './authGuard'
+
 /** 将 corsOrigin 配置规整为白名单数组。 */
 export function toOriginAllowlist(corsOrigin: string | string[]): readonly string[] {
   return Array.isArray(corsOrigin) ? corsOrigin : [corsOrigin]
@@ -20,5 +22,18 @@ export function isOriginAllowed(origin: string | undefined, allowlist: readonly 
   // 非浏览器客户端不发送 Origin,不受 CSWSH 影响,放行。
   if (origin === undefined || origin === '') return true
   if (allowlist.includes('*')) return true
-  return allowlist.includes(origin)
+  if (allowlist.includes(origin)) return true
+
+  try {
+    const candidate = new URL(origin)
+    return allowlist.some(allowed => {
+      const configured = new URL(allowed)
+      return candidate.protocol === configured.protocol
+        && candidate.port === configured.port
+        && isLoopbackHost(candidate.hostname)
+        && isLoopbackHost(configured.hostname)
+    })
+  } catch {
+    return false
+  }
 }

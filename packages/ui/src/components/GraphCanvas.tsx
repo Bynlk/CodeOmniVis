@@ -102,19 +102,23 @@ interface GraphCanvasProps {
   graph?: OmniGraph
   selectedNode: string | null
   onNodeSelect: (nodeId: string | null) => void
+  onNodeFocus?: (nodeId: string) => void
   onCyInit?: (cy: cytoscape.Core) => void
 }
 
-export default function GraphCanvas({ graph, selectedNode, onNodeSelect, onCyInit }: GraphCanvasProps) {
+export default function GraphCanvas({ graph, selectedNode, onNodeSelect, onNodeFocus, onCyInit }: GraphCanvasProps) {
   const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const cyRef = useRef<cytoscape.Core | null>(null)
   const onNodeSelectRef = useRef(onNodeSelect)
   const onCyInitRef = useRef(onCyInit)
+  const onNodeFocusRef = useRef(onNodeFocus)
+  const hasRenderedGraphRef = useRef(false)
 
   // 保持 ref 最新，避免 useEffect 依赖函数引用
   onNodeSelectRef.current = onNodeSelect
   onCyInitRef.current = onCyInit
+  onNodeFocusRef.current = onNodeFocus
 
   // 初始化 Cytoscape 实例（仅在 mount 时执行一次）
   useEffect(() => {
@@ -139,6 +143,10 @@ export default function GraphCanvas({ graph, selectedNode, onNodeSelect, onCyIni
 
     cy.on('tap', 'node', (event: cytoscape.EventObjectNode) => {
       onNodeSelectRef.current(event.target.id())
+    })
+
+    cy.on('dbltap', 'node', (event: cytoscape.EventObjectNode) => {
+      onNodeFocusRef.current?.(event.target.id())
     })
 
     // 容器尺寸变化(如分析面板 dock 开合导致画布收窄/展开)时,
@@ -170,11 +178,15 @@ export default function GraphCanvas({ graph, selectedNode, onNodeSelect, onCyIni
     cy.elements().remove()
     cy.add(elements)
 
-    // 布局
+    // 首次加载才适配整图；后续实时更新保留用户当前缩放和平移。
+    const viewport = hasRenderedGraphRef.current ? { zoom: cy.zoom(), pan: cy.pan() } : null
     layoutByTypeNetwork(cy)
-
-    // 适应视图
-    cy.fit(undefined, 50)
+    if (viewport) {
+      cy.viewport(viewport)
+    } else {
+      cy.fit(undefined, 50)
+      hasRenderedGraphRef.current = true
+    }
   }, [graph])
 
   // 高亮选中节点
@@ -199,9 +211,27 @@ export default function GraphCanvas({ graph, selectedNode, onNodeSelect, onCyIni
     <>
       <div
         ref={containerRef}
-        className="w-full h-full"
+        className="h-full w-full bg-[#090b0f]"
         aria-label={t('graph.canvasLabel')}
-        role="img"
+        role="application"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          const cy = cyRef.current
+          if (!cy) return
+          if (event.key === 'Escape') {
+            event.preventDefault()
+            onNodeSelect(null)
+            return
+          }
+          if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return
+          const nodes = cy.nodes()
+          if (nodes.length === 0) return
+          event.preventDefault()
+          const selectedIndex = selectedNode ? nodes.toArray().findIndex(node => node.id() === selectedNode) : -1
+          const direction = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1
+          const nextIndex = (selectedIndex + direction + nodes.length) % nodes.length
+          onNodeSelect(nodes[nextIndex].id())
+        }}
       />
       <NodeTooltip />
     </>

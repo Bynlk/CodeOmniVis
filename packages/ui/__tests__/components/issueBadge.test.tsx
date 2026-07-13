@@ -10,6 +10,7 @@ import { TabBar } from '../../src/components/TabBar/TabBar'
 import { WsStatusIndicator } from '../../src/components/Header/WsStatusIndicator'
 import type { ParseError } from '../../src/services'
 import { getUiState, __resetUiStore, type WsStatus } from '../../src/store/uiStore'
+import enUS from '../../src/locales/en-US.json'
 
 /** 复刻 App.tsx 里的映射逻辑,保证与生产一致。 */
 function toBadgeCount(errors: ParseError[] | undefined): number {
@@ -53,10 +54,10 @@ describe('feature-006 WsStatusIndicator', () => {
     __resetUiStore()
   })
 
-  const cases: Array<{ status: WsStatus; labelKey: string; dot: string }> = [
-    { status: 'connected', labelKey: 'ws.connected', dot: 'bg-green-500' },
-    { status: 'connecting', labelKey: 'ws.connecting', dot: 'bg-slate-400' },
-    { status: 'reconnecting', labelKey: 'ws.reconnecting', dot: 'bg-yellow-500' },
+  const cases: Array<{ status: WsStatus; label: string; dot: string }> = [
+    { status: 'connected', label: enUS.ws.connected, dot: 'bg-green-500' },
+    { status: 'connecting', label: enUS.ws.connecting, dot: 'bg-slate-400' },
+    { status: 'reconnecting', label: enUS.ws.reconnecting, dot: 'bg-yellow-500' },
   ]
 
   for (const c of cases) {
@@ -64,7 +65,7 @@ describe('feature-006 WsStatusIndicator', () => {
       getUiState().setWsStatus(c.status)
       const html = renderToStaticMarkup(<WsStatusIndicator />)
       expect(html).toContain(c.dot)
-      expect(html).toContain(c.labelKey)
+      expect(html).toContain(c.label)
       expect(html).toContain('role="status"')
     })
   }

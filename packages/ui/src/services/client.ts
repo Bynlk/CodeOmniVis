@@ -23,6 +23,15 @@ export interface RequestOptions {
   signal?: AbortSignal
 }
 
+async function createApiError(response: Response): Promise<ApiError> {
+  const payload: unknown = await response.json().catch(() => undefined)
+  const error = isJsonObject(payload) ? payload.error : undefined
+  const message = isJsonObject(error) && typeof error.message === 'string'
+    ? error.message
+    : undefined
+  return new ApiError(response.status, response.statusText, message)
+}
+
 /**
  * 发起请求并解析为 JSON（返回 unknown 边界值，交由调用方类型收敛）。
  * 非 2xx 抛出 ApiError（保留 status，兼容 429 等分支判断）。
@@ -33,7 +42,7 @@ export async function requestJson(
 ): Promise<unknown> {
   const res = await fetch(url, init)
   if (!res.ok) {
-    throw new ApiError(res.status, res.statusText)
+    throw await createApiError(res)
   }
   return (await res.json()) as unknown
 }
@@ -45,7 +54,7 @@ export async function requestJson(
 export async function requestOk(url: string, init?: RequestInit): Promise<void> {
   const res = await fetch(url, init)
   if (!res.ok) {
-    throw new ApiError(res.status, res.statusText)
+    throw await createApiError(res)
   }
 }
 

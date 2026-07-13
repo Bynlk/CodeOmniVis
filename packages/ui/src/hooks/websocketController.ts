@@ -38,6 +38,8 @@ export interface WebSocketControllerOptions {
   onConnectedChange?: (connected: boolean) => void
   /** 自动重连延迟(毫秒),默认 3000。 */
   reconnectDelayMs?: number
+  /** 连续失败时的最大重连延迟(毫秒),默认 30000。 */
+  maxReconnectDelayMs?: number
   /** 注入式重连调度,默认基于 setTimeout/clearTimeout。 */
   scheduleReconnect?: ScheduleReconnect
 }
@@ -53,6 +55,7 @@ export class WebSocketController {
   private cancelReconnect: (() => void) | null = null
   private disposed = false
   private shouldReconnect = true
+  private reconnectAttempt = 0
 
   constructor(options: WebSocketControllerOptions) {
     this.options = options
@@ -75,6 +78,7 @@ export class WebSocketController {
 
     socket.onopen = () => {
       if (this.disposed) return
+      this.reconnectAttempt = 0
       this.options.onConnectedChange?.(true)
     }
 
@@ -96,7 +100,10 @@ export class WebSocketController {
       this.options.onConnectedChange?.(false)
       // 仅在非主动关闭时重连。
       if (this.shouldReconnect) {
-        const delay = this.options.reconnectDelayMs ?? 3000
+        const baseDelay = this.options.reconnectDelayMs ?? 1000
+        const maxDelay = this.options.maxReconnectDelayMs ?? 30000
+        const delay = Math.min(baseDelay * (2 ** this.reconnectAttempt), maxDelay)
+        this.reconnectAttempt += 1
         const schedule = this.options.scheduleReconnect ?? defaultScheduleReconnect
         this.cancelReconnect = schedule(() => {
           this.cancelReconnect = null

@@ -11,7 +11,7 @@ import { getStatus } from '../services'
 export const STATUS_QUERY_KEY: string[] = ['status']
 
 const FALLBACK_STATUS: FreshnessStatus = {
-  state: 'fresh',
+  state: 'stale',
   lastAnalyzedAt: null,
   pendingChanges: 0,
 }
@@ -21,6 +21,7 @@ export function useStatus() {
     queryKey: STATUS_QUERY_KEY,
     queryFn: getStatus,
     initialData: FALLBACK_STATUS,
+    initialDataUpdatedAt: 0,
     // 主要依赖 WebSocket 推送;轮询作为兜底。
     refetchInterval: 15000,
   })

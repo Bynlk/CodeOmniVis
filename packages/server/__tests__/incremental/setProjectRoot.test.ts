@@ -11,6 +11,7 @@ import * as os from 'os'
 import * as fs from 'fs'
 import * as path from 'path'
 import { OmniDatabase } from '@codeomnivis/analyzer'
+import type { OmniEdge, OmniNode, ProjectMeta } from '@codeomnivis/shared'
 import { IncrementalAnalyzer } from '../../src/incremental'
 import { codeomnivisEvents } from '../../src/events'
 
@@ -21,6 +22,56 @@ vi.mock('@codeomnivis/analyzer', async () => {
 
 const analyzerModule = await import('@codeomnivis/analyzer')
 const runAnalysisMock = vi.mocked(analyzerModule.runAnalysis)
+
+function projectMeta(root: string, backendFramework: ProjectMeta['backendFramework']): ProjectMeta {
+  return {
+    root,
+    frontendFramework: 'unknown',
+    backendFramework,
+    databaseType: 'unknown',
+    monorepoType: 'none',
+    frontendDirs: [],
+    backendDirs: [],
+    trpcRouterPaths: [],
+    tsrpcServicePaths: [],
+    tsrpcApiDirs: [],
+    tsrpcProtocolDirs: [],
+    prismaSchemaPath: null,
+    typeormEntityDirs: [],
+    tsConfigPath: null,
+    buildFile: null,
+    packages: [],
+  }
+}
+
+const retainedPage: OmniNode = {
+  id: 'page:app/page.tsx:/',
+  type: 'page',
+  name: '/',
+  filePath: 'app/page.tsx',
+  line: 1,
+  column: 1,
+  metadata: { route: '/', isDynamic: false, params: [], isGroupLayout: false, layoutFile: null },
+}
+
+const retainedComponent: OmniNode = {
+  id: 'component:components/Nav.tsx:Nav',
+  type: 'component',
+  name: 'Nav',
+  filePath: 'components/Nav.tsx',
+  line: 1,
+  column: 1,
+  metadata: { props: [], hasState: false, isPage: false, jsxChildCount: 0 },
+}
+
+const retainedEdge: OmniEdge = {
+  id: 'page:app/page.tsx:/--renders--component:components/Nav.tsx:Nav',
+  source: retainedPage.id,
+  target: retainedComponent.id,
+  type: 'renders',
+  confidence: 'certain',
+  metadata: {},
+}
 
 describe('IncrementalAnalyzer.setProjectRoot', () => {
   let db: OmniDatabase
@@ -63,6 +114,25 @@ describe('IncrementalAnalyzer.setProjectRoot', () => {
     await analyzer.stop()
   })
 
+  it('uses metadata detected for the target directory', async () => {
+    const initialMeta = projectMeta(dirA, 'trpc')
+    const targetMeta = projectMeta(dirB, 'express')
+    const analyzer = new IncrementalAnalyzer({
+      projectRoot: dirA,
+      dbPath: ':memory:',
+      db,
+      projectMeta: initialMeta,
+    })
+
+    await analyzer.setProjectRoot(dirB, targetMeta)
+
+    expect(runAnalysisMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      projectRoot: path.resolve(dirB),
+      projectMeta: targetMeta,
+    }))
+    await analyzer.stop()
+  })
+
   it('clears existing graph data when switching roots', async () => {
     const clearSpy = vi.spyOn(db, 'clearGraph')
     const analyzer = new IncrementalAnalyzer({ projectRoot: dirA, dbPath: ':memory:', db })
@@ -95,7 +165,7 @@ describe('IncrementalAnalyzer.setProjectRoot', () => {
       return true
     })
 
-    // 触发切根;它应:bump generation → stop(await watcher) → await 在途分析 → clearGraph。
+    // 触发切根;它应:stop(await watcher) → await 在途分析 → snapshot → bump generation → clearGraph。
     const switching = analyzer.setProjectRoot(dirB)
 
     // 在途分析此刻仍阻塞,clearGraph 不应被调用(被串行化阻塞)。
@@ -113,33 +183,107 @@ describe('IncrementalAnalyzer.setProjectRoot', () => {
     await analyzer.stop()
   })
 
-  it('discards a stale analysis result started before the root switch', async () => {
+  it('finishes an in-flight old-root analysis before analyzing the target root', async () => {
     let releaseFirst: () => void = () => {}
     const firstDone = new Promise<void>((resolve) => {
       releaseFirst = () => resolve()
     })
     const result = { filesScanned: 0, nodesCreated: 0, edgesCreated: 0, crossLayerEdges: 0, errors: 0 }
+    const analyzedRoots: string[] = []
     // 首轮(旧 root)阻塞;后续轮(新 root)立即完成。
-    runAnalysisMock.mockImplementationOnce(async () => {
+    runAnalysisMock.mockImplementationOnce(async ({ projectRoot }) => {
+      analyzedRoots.push(projectRoot)
       await firstDone
       return result
     })
-    runAnalysisMock.mockResolvedValue(result)
-
-    const completedEvents: number[] = []
-    codeomnivisEvents.on('analysis:completed', () => completedEvents.push(Date.now()))
+    runAnalysisMock.mockImplementationOnce(async ({ projectRoot }) => {
+      analyzedRoots.push(projectRoot)
+      return result
+    })
 
     const analyzer = new IncrementalAnalyzer({ projectRoot: dirA, dbPath: ':memory:', db })
     const inFlight = analyzer.refresh()
 
-    // 切根:作废旧世代;它会 await 旧在途分析,但旧分析仍阻塞。
+    // 切根会先等待旧分析稳定落库，再快照并开始目标分析。
     const switching = analyzer.setProjectRoot(dirB)
     releaseFirst()
     await inFlight
     await switching
 
-    // 旧世代分析结果被丢弃:不应保留指向旧 root 的状态。
+    expect(analyzedRoots).toEqual([path.resolve(dirA), path.resolve(dirB)])
     expect(analyzer.getProjectRoot()).toBe(path.resolve(dirB))
     await analyzer.stop()
+  })
+
+  it('restores the previous project snapshot when target analysis fails', async () => {
+    const initialMeta = projectMeta(dirA, 'trpc')
+    const analyzer = new IncrementalAnalyzer({
+      projectRoot: dirA,
+      dbPath: ':memory:',
+      db,
+      projectMeta: initialMeta,
+    })
+    db.upsertNodes([retainedPage, retainedComponent])
+    db.upsertEdge(retainedEdge)
+    db.insertError({ file: 'app/page.tsx', message: 'retained warning', severity: 'warning' })
+    await analyzer.refresh()
+    const previousStatus = analyzer.getStatus()
+
+    runAnalysisMock.mockImplementationOnce(async ({ db: targetDb }) => {
+      targetDb?.clearGraph()
+      throw new Error('target analysis failed')
+    })
+
+    try {
+      await expect(analyzer.setProjectRoot(dirB, projectMeta(dirB, 'express')))
+        .rejects.toThrow('target analysis failed')
+
+      expect(analyzer.getProjectRoot()).toBe(path.resolve(dirA))
+      expect(db.loadGraph()).toEqual({
+        nodes: [retainedPage, retainedComponent],
+        edges: [retainedEdge],
+      })
+      expect(db.getAllErrors()).toEqual([{
+        file: 'app/page.tsx',
+        message: 'retained warning',
+        severity: 'warning',
+        originalError: undefined,
+      }])
+      expect(analyzer.getStatus()).toEqual(previousStatus)
+    } finally {
+      await analyzer.stop()
+    }
+  })
+
+  it('restores previous metadata and graph when same-root analysis fails', async () => {
+    const initialMeta = projectMeta(dirA, 'trpc')
+    const replacementMeta = projectMeta(dirA, 'express')
+    const analyzer = new IncrementalAnalyzer({
+      projectRoot: dirA,
+      dbPath: ':memory:',
+      db,
+      projectMeta: initialMeta,
+    })
+    db.upsertNode(retainedPage)
+    await analyzer.refresh()
+
+    runAnalysisMock.mockImplementationOnce(async ({ db: targetDb }) => {
+      targetDb?.clearGraph()
+      throw new Error('same-root analysis failed')
+    })
+
+    try {
+      await expect(analyzer.setProjectRoot(dirA, replacementMeta))
+        .rejects.toThrow('same-root analysis failed')
+      expect(db.getAllNodes()).toEqual([retainedPage])
+
+      await analyzer.refresh()
+      expect(runAnalysisMock).toHaveBeenLastCalledWith(expect.objectContaining({
+        projectRoot: path.resolve(dirA),
+        projectMeta: initialMeta,
+      }))
+    } finally {
+      await analyzer.stop()
+    }
   })
 })

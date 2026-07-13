@@ -63,6 +63,17 @@ describe('NextjsAppParser', () => {
   })
 
   describe('parse', () => {
+    it('maps root page and root route files to the root URL', async () => {
+      const root = path.resolve(__dirname, '../fixtures/root-route')
+      const rootContext: ParseContext = { ...context, projectRoot: root, projectMeta: { ...projectMeta, root } }
+      const rootParser = new NextjsAppParser()
+
+      const page = await rootParser.parse('app/page.tsx', rootContext)
+      const route = await rootParser.parse('app/route.ts', rootContext)
+
+      expect(page.nodes[0]?.name).toBe('/')
+      expect(route.nodes[0]?.name).toBe('/')
+    })
     it('should parse page file correctly', async () => {
       const result = await parser.parse('app/booking/[id]/page.tsx', context)
 

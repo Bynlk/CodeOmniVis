@@ -180,6 +180,8 @@ export class RSCBoundaryDetector {
       type: 'rsc_boundary_violation',
       severity: 'warning',
       description: `Server Component "${node.name}" imports Client Component from "${importPath}"`,
+      messageKey: 'rsc_boundary_violation',
+      messageParams: { component: node.name, importPath },
       locations: [
         { file: node.filePath, line: node.line, note: 'server component' },
         { file: node.filePath, line: importLine, note: `import of client component: ${importPath}` },

@@ -89,6 +89,28 @@ http://localhost:4321
 - 相关 API 路由
 - 相关消费组件
 
+### 5. 完整跨层链路
+
+REST 示例应精确展示以下链路，且 GET/POST 不应互相串线：
+
+```text
+BookingList → /api/booking → GET → listBookings → Booking
+/api/booking → POST → createBooking → Booking
+UserProfile → /api/user → GET → listUsers → User
+```
+
+tRPC 示例应精确展示：
+
+```text
+BookingDetail → booking.getById → getById resolver → Booking
+```
+
+2026-07-13 的连续两次 CLI 验证结果一致：47 个节点、59 条边，其中
+`calls_api` 3 条、`handles` 11 条、`calls_service` 3 条、`queries_db` 11 条；
+无重复 ID、悬空边、缺失 confidence 或 router 容器伪 resolver 边。当前 6 个
+`unguarded_route` 来自 3 个未鉴权 REST handler 和 3 个显式 `publicProcedure`，
+是 demo 刻意保留的质量提示，不是解析失败。`check` 另报告 7 个没有 demo 前端调用者的 tRPC procedure。
+
 ## 额外验证
 
 如果你想拿 JSON 结果做离线对比，可以切到 `demo/` 目录再执行：

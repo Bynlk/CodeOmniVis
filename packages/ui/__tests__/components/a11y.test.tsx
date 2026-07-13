@@ -4,7 +4,7 @@
  *  - SettingsDrawer:role=dialog + aria-modal + aria-label。
  *  - TabBar:role=tablist/tab + aria-selected。
  *  - LangToggle:图标按钮有 aria-label。
- * 不依赖 jsdom 视口与 i18n 初始化(未初始化时返回 key 文本)。
+ * 不依赖 jsdom 视口；测试 setup 提供与运行时一致的英文 i18n。
  */
 import { describe, it, expect } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -15,6 +15,7 @@ import { CommandPalette } from '../../src/components/CommandPalette'
 import { SettingsDrawer } from '../../src/components/SettingsDrawer'
 import { TabBar } from '../../src/components/TabBar/TabBar'
 import { LangToggle } from '../../src/components/Header/LangToggle'
+import GraphCanvas from '../../src/components/GraphCanvas'
 
 function renderWithQuery(el: ReactElement): string {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -37,6 +38,8 @@ describe('feature-008 a11y - CommandPalette', () => {
     expect(html).toContain('aria-modal="true"')
     expect(html).toContain('role="listbox"')
     expect(html).toContain('role="combobox"')
+    expect(html).toContain('data-modal-focus-trap="command-palette"')
+    expect(html).toContain('tabindex="-1"')
   })
 
   it('有匹配结果时渲染 option + aria-selected', () => {
@@ -54,6 +57,23 @@ describe('feature-008 a11y - SettingsDrawer', () => {
     expect(html).toContain('role="dialog"')
     expect(html).toContain('aria-modal="true"')
     expect(html).toContain('aria-label')
+  })
+
+  it('keeps settings focused on the workbench instead of AI provider setup', () => {
+    const html = renderWithQuery(<SettingsDrawer open onClose={() => {}} />)
+    expect(html).not.toContain('AI Assistant')
+    expect(html).not.toContain('AI not configured')
+  })
+
+  it('exposes one explicit close control instead of duplicate backdrop buttons', () => {
+    const html = renderWithQuery(<SettingsDrawer open onClose={() => {}} />)
+    expect(html.match(/aria-label="Close settings"/g)).toHaveLength(1)
+  })
+
+  it('provides a programmatic focus target inside the settings modal', () => {
+    const html = renderWithQuery(<SettingsDrawer open onClose={() => {}} />)
+    expect(html).toContain('data-modal-focus-trap="settings"')
+    expect(html).toContain('tabindex="-1"')
   })
 })
 
@@ -73,5 +93,16 @@ describe('feature-008 a11y - LangToggle', () => {
     const html = renderToStaticMarkup(<LangToggle />)
     expect(html).toContain('aria-label')
     expect(html).toContain('aria-hidden="true"')
+    expect(html).not.toContain('🌐')
+  })
+})
+
+describe('GraphCanvas keyboard access', () => {
+  it('is focusable and exposes application semantics', () => {
+    const html = renderToStaticMarkup(
+      <GraphCanvas graph={graph} selectedNode={null} onNodeSelect={() => {}} />,
+    )
+    expect(html).toContain('role="application"')
+    expect(html).toContain('tabindex="0"')
   })
 })

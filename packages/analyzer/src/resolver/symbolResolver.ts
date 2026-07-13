@@ -31,6 +31,8 @@ export interface DbCall {
   filePath: string
   line: number
   confidence: 'certain' | 'inferred'
+  /** The traced handler/service that directly owns this DB call site. */
+  ownerId?: string
 }
 
 export interface TraceResult {
@@ -143,7 +145,7 @@ export class SymbolResolver {
       // ① 先检查是否是终态的 Prisma / TypeORM 调用
       const dbCall = this.extractDbCall(callExpr)
       if (dbCall) {
-        result.dbCalls.push(dbCall)
+        result.dbCalls.push({ ...dbCall, ownerId: currentNodeId })
         continue
       }
 
@@ -274,16 +276,17 @@ export class SymbolResolver {
 
       if (!sourceFile) return null
 
-      // 策略1：按行号定位
-      if (node.line > 0) {
-        const fn = this.findFunctionAtLine(sourceFile, node.line)
+      // 同文件多 handler 会共享路由节点行号，显式函数名比聚合行号更可靠。
+      const name = this.extractFunctionName(node)
+      if (name) {
+        const fn = this.findFunctionByName(sourceFile, name)
         if (fn) return fn
       }
 
-      // 策略2：按函数名定位
-      const name = this.extractFunctionName(node)
-      if (name) {
-        return this.findFunctionByName(sourceFile, name)
+      // 没有可解析的函数名时再按行号降级定位。
+      if (node.line > 0) {
+        const fn = this.findFunctionAtLine(sourceFile, node.line)
+        if (fn) return fn
       }
     } catch {
       // 文件加载失败，返回 null
@@ -331,6 +334,9 @@ export class SymbolResolver {
   }
 
   private extractFunctionName(node: OmniNode): string | null {
+    if ('functionName' in node.metadata && typeof node.metadata.functionName === 'string') {
+      return node.metadata.functionName
+    }
     const parts = node.name.split(' ')
     if (parts.length > 0) return parts[0]
     return null

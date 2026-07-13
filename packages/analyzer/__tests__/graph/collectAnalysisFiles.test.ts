@@ -1,0 +1,84 @@
+import { afterEach, describe, expect, it } from 'vitest'
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
+import type { ProjectMeta } from '@codeomnivis/shared'
+import { collectAnalysisFiles } from '../../src/graph/collectAnalysisFiles'
+
+function makeMeta(root: string): ProjectMeta {
+  return {
+    root,
+    frontendFramework: 'unknown',
+    backendFramework: 'unknown',
+    databaseType: 'unknown',
+    monorepoType: 'none',
+    frontendDirs: [],
+    backendDirs: [],
+    trpcRouterPaths: [],
+    tsrpcServicePaths: [],
+    tsrpcApiDirs: [],
+    tsrpcProtocolDirs: [],
+    prismaSchemaPath: null,
+    typeormEntityDirs: [],
+    tsConfigPath: null,
+    buildFile: null,
+    packages: [],
+  }
+}
+
+describe('collectAnalysisFiles', () => {
+  const cleanupPaths: string[] = []
+
+  afterEach(() => {
+    for (const cleanupPath of cleanupPaths.splice(0)) {
+      fs.rmSync(cleanupPath, { recursive: true, force: true })
+    }
+  })
+
+  it('deduplicates overlapping and symlinked source directories by real file path', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-analysis-files-'))
+    cleanupPaths.push(root)
+    const source = path.join(root, 'src', 'shared')
+    fs.mkdirSync(source, { recursive: true })
+    fs.writeFileSync(path.join(source, 'service.ts'), 'export const service = true')
+    fs.symlinkSync(source, path.join(root, 'linked'), 'dir')
+    const meta = makeMeta(root)
+    meta.frontendDirs = ['src', 'src/shared', path.join(root, 'linked')]
+
+    expect(collectAnalysisFiles(root, meta)).toEqual(['src/shared/service.ts'])
+  })
+
+  it('supports an explicitly supplied sibling source directory', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-analysis-sibling-'))
+    cleanupPaths.push(base)
+    const root = path.join(base, 'project')
+    const sibling = path.join(base, 'frontend', 'src')
+    fs.mkdirSync(root)
+    fs.mkdirSync(sibling, { recursive: true })
+    fs.writeFileSync(path.join(sibling, 'App.tsx'), 'export function App() { return null }')
+    const meta = makeMeta(root)
+    meta.frontendDirs = [sibling]
+
+    expect(collectAnalysisFiles(root, meta)).toEqual(['../frontend/src/App.tsx'])
+  })
+
+  it('rejects package metadata whose real directory escapes through a symlink', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-analysis-boundary-'))
+    cleanupPaths.push(base)
+    const root = path.join(base, 'project')
+    const externalPackage = path.join(base, 'external-package')
+    fs.mkdirSync(path.join(root, 'packages'), { recursive: true })
+    fs.mkdirSync(path.join(externalPackage, 'src'), { recursive: true })
+    fs.writeFileSync(path.join(externalPackage, 'src', 'External.ts'), 'export const external = true')
+    fs.symlinkSync(externalPackage, path.join(root, 'packages', 'external'), 'dir')
+    const meta = makeMeta(root)
+    meta.packages = [{
+      name: 'external',
+      path: 'packages/external',
+      dependencies: [],
+      devDependencies: [],
+    }]
+
+    expect(collectAnalysisFiles(root, meta)).toEqual([])
+  })
+})

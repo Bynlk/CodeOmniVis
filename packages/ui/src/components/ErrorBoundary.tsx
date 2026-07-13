@@ -28,8 +28,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (this.state.hasError) {
       return this.props.fallback ?? (
         <div className="flex h-screen items-center justify-center bg-surface">
-          <div className="max-w-sm rounded-ds-xl border border-border-subtle bg-surface-raised p-ds-6 text-center shadow-ds-panel">
-            <div className="mb-ds-4 text-4xl">⚠️</div>
+          <div className="max-w-sm rounded-lg border border-border-strong bg-surface-raised p-ds-6 text-center">
+            <div className="mx-auto mb-ds-4 flex h-9 w-9 items-center justify-center rounded-full border border-rose-500/40 text-sm font-semibold text-rose-300">!</div>
             <div className="mb-ds-2 text-ds-lg font-semibold text-content">Something went wrong</div>
             <div className="mb-ds-4 text-ds-sm text-content-muted">
               {this.state.error?.message}

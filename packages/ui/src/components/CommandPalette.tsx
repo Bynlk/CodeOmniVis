@@ -4,10 +4,11 @@
  */
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NODE_EMOJI } from '../lib/nodeConfig'
+import { NODE_COLORS } from '../lib/nodeConfig'
 import { filterNodesByQuery } from '../lib/searchNodes'
 import { useUiStore } from '../store/uiStore'
 import type { OmniGraph } from '@codeomnivis/shared'
+import { useModalFocusTrap } from '../hooks/useModalFocusTrap'
 
 interface CommandPaletteProps {
   graph?: OmniGraph
@@ -21,10 +22,8 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
   const query = useUiStore((s) => s.searchQuery)
   const setQuery = useUiStore((s) => s.setSearchQuery)
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
-  // 记住打开前的焦点元素,关闭后归还焦点(a11y)。
-  const triggerRef = useRef<HTMLElement | null>(null)
+  const focusTrapRef = useModalFocusTrap<HTMLDivElement>(isOpen, onClose)
 
   const results = useMemo(() => {
     if (!graph || !query.trim()) return []
@@ -32,14 +31,7 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
   }, [graph, query])
 
   useEffect(() => {
-    if (isOpen) {
-      triggerRef.current = (document.activeElement as HTMLElement) ?? null
-      setSelectedIndex(0)
-      setTimeout(() => inputRef.current?.focus(), 50)
-    } else if (triggerRef.current) {
-      triggerRef.current.focus?.()
-      triggerRef.current = null
-    }
+    if (isOpen) setSelectedIndex(0)
   }, [isOpen])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -81,19 +73,21 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
 
   return (
     <div className="fixed inset-0 z-modal flex items-start justify-center pt-[18vh]">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} aria-hidden="true" />
 
       <div
-        className="relative w-full max-w-xl overflow-hidden rounded-ds-xl border border-border-strong bg-surface-raised shadow-ds-panel"
+        ref={focusTrapRef}
+        tabIndex={-1}
+        data-modal-focus-trap="command-palette"
+        className="relative w-full max-w-xl overflow-hidden rounded-lg border border-border-strong bg-surface-raised shadow-ds-panel"
         role="dialog"
         aria-modal="true"
         aria-label={t('commandPalette.placeholder')}
       >
         {/* 搜索输入 */}
         <div className="flex items-center gap-ds-3 border-b border-border-subtle px-ds-4 py-ds-3">
-          <span className="text-content-muted" aria-hidden="true">🔍</span>
+          <span className="h-3 w-3 rounded-full border border-content-muted" aria-hidden="true" />
           <input
-            ref={inputRef}
             type="text"
             role="combobox"
             aria-expanded={results.length > 0}
@@ -146,7 +140,7 @@ export function CommandPalette({ graph, isOpen, onClose, onNodeSelect }: Command
               }}
               onMouseEnter={() => setSelectedIndex(idx)}
             >
-              <span className="w-6 text-center" aria-hidden="true">{NODE_EMOJI[node.type] ?? '●'}</span>
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: NODE_COLORS[node.type] }} aria-hidden="true" />
               <div className="min-w-0 flex-1">
                 <div className="truncate">{node.name}</div>
                 <div className="truncate text-ds-xs text-content-muted">{node.filePath}</div>

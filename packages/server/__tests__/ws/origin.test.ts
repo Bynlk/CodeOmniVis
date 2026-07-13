@@ -66,6 +66,11 @@ describe('WebSocket Origin guard', () => {
     expect(result).toBe('open')
   })
 
+  it('accepts the equivalent loopback host with the allowed protocol and port', async () => {
+    const result = await connect(wsUrl, 'http://127.0.0.1:5173')
+    expect(result).toBe('open')
+  })
+
   it('accepts a connection with no Origin (non-browser client)', async () => {
     const result = await connect(wsUrl)
     expect(result).toBe('open')

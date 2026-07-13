@@ -11,6 +11,7 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { WebSocketController, type MinimalSocket } from '../../src/hooks/websocketController'
+import { handleWebSocketMessage } from '../../src/hooks/useWebSocket'
 
 function makeFakeSocket(): MinimalSocket {
   return {
@@ -23,6 +24,24 @@ function makeFakeSocket(): MinimalSocket {
 }
 
 describe('WebSocketController 生命周期 (LEAK-04/F10)', () => {
+  it('graph_updated invalidates every analysis-derived query', async () => {
+    const invalidateQueries = vi.fn().mockResolvedValue(undefined)
+    const setQueryData = vi.fn()
+
+    await handleWebSocketMessage(
+      { type: 'graph_updated' },
+      { invalidateQueries, setQueryData },
+    )
+
+    expect(invalidateQueries.mock.calls.map(([filters]) => filters.queryKey)).toEqual([
+      ['graph'],
+      ['graph-stats'],
+      ['graph-errors'],
+      ['graph-issues'],
+      ['status'],
+    ])
+  })
+
   it('dispose() 取消挂起重连且不再创建新 socket', () => {
     const sockets: MinimalSocket[] = []
     const pending: Array<() => void> = []
@@ -133,6 +152,35 @@ describe('WebSocketController 生命周期 (LEAK-04/F10)', () => {
     sockets[0].onmessage?.({ data: 'not json{' })
     sockets[0].onmessage?.({ data: JSON.stringify({ type: 'graph_updated' }) })
     expect(received.length).toBe(1)
+    controller.dispose()
+  })
+
+  it('连续失败时指数退避并在连接成功后复位', () => {
+    const sockets: MinimalSocket[] = []
+    const delays: number[] = []
+    const pending: Array<() => void> = []
+    const controller = new WebSocketController({
+      createSocket: () => { const socket = makeFakeSocket(); sockets.push(socket); return socket },
+      onMessage: () => {},
+      reconnectDelayMs: 1000,
+      maxReconnectDelayMs: 4000,
+      scheduleReconnect: (callback, delay) => {
+        delays.push(delay)
+        pending.push(callback)
+        return () => {}
+      },
+    })
+
+    controller.connect()
+    for (let attempt = 0; attempt < 4; attempt++) {
+      sockets[attempt].onclose?.()
+      pending.shift()?.()
+    }
+    expect(delays).toEqual([1000, 2000, 4000, 4000])
+
+    sockets[4].onopen?.()
+    sockets[4].onclose?.()
+    expect(delays.at(-1)).toBe(1000)
     controller.dispose()
   })
 })

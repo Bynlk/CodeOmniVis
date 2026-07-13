@@ -5,7 +5,7 @@
  * 便于单测且可被 Sidebar 列表等消费,使 Header 搜索框真正生效。
  */
 
-import type { OmniNode } from '@codeomnivis/shared'
+import type { OmniGraph, OmniNode } from '@codeomnivis/shared'
 
 /**
  * 按搜索词过滤节点(大小写不敏感,匹配 name 或 filePath)。
@@ -35,4 +35,19 @@ export function selectVisibleNodeIds(
 ): Set<string> | undefined {
   if (!query.trim() || !nodes) return undefined
   return new Set(filterNodesByQuery(nodes, query).map((n) => n.id))
+}
+
+/**
+ * 搜索结果同时约束画布与侧栏：只保留可见节点以及两端都可见的边。
+ * undefined 表示未启用搜索，直接保留原图引用以避免不必要的 Cytoscape 重绘。
+ */
+export function filterGraphByVisibleNodeIds(
+  graph: OmniGraph | undefined,
+  visibleNodeIds: Set<string> | undefined,
+): OmniGraph | undefined {
+  if (!graph || !visibleNodeIds) return graph
+  return {
+    nodes: graph.nodes.filter(node => visibleNodeIds.has(node.id)),
+    edges: graph.edges.filter(edge => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)),
+  }
 }

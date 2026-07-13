@@ -10,6 +10,7 @@ import * as path from 'path'
 import type { ProjectMeta, FrameworkType, DatabaseType, MonorepoType, CodeOmniVisConfig } from '@codeomnivis/shared'
 import { readDependencies } from '@codeomnivis/shared'
 import { detectGradleFrameworks } from '@codeomnivis/shared/node'
+import { discoverWorkspacePackages } from './workspacePackages'
 
 const FRAMEWORK_TYPES = new Set<string>([
   'next',
@@ -74,6 +75,27 @@ async function doAutoDetect(root: string): Promise<ProjectMeta> {
 
   // 收集依赖：根目录 + 主应用（monorepo 场景）
   const dependencies: Record<string, string> = { ...readDependencies(packageJson) }
+  const workspacePackages = discoverWorkspacePackages(root)
+  for (const workspacePackage of workspacePackages) {
+    for (const dependency of [...workspacePackage.dependencies, ...workspacePackage.devDependencies]) {
+      dependencies[dependency] = '*'
+    }
+  }
+
+  // 许多非 workspace 项目仍采用 frontend/ + backend/ 双应用结构。
+  // 根 package.json 往往只放脚本，框架依赖实际声明在子应用中。
+  const frontendPackagePath = path.join(root, 'frontend', 'package.json')
+  const backendPackagePath = path.join(root, 'backend', 'package.json')
+  const frontendDependencies: Record<string, string> = { ...dependencies }
+  const backendDependencies: Record<string, string> = { ...dependencies }
+  if (fs.existsSync(frontendPackagePath)) {
+    const frontendPackage: unknown = JSON.parse(fs.readFileSync(frontendPackagePath, 'utf-8'))
+    Object.assign(frontendDependencies, readDependencies(frontendPackage))
+  }
+  if (fs.existsSync(backendPackagePath)) {
+    const backendPackage: unknown = JSON.parse(fs.readFileSync(backendPackagePath, 'utf-8'))
+    Object.assign(backendDependencies, readDependencies(backendPackage))
+  }
 
   // monorepo：合并 apps/web/package.json 的依赖
   const monorepoType = detectMonorepoType(root)
@@ -91,16 +113,44 @@ async function doAutoDetect(root: string): Promise<ProjectMeta> {
     }
   }
 
+  Object.assign(frontendDependencies, dependencies)
+  Object.assign(backendDependencies, dependencies)
+
+  const workspaceFrontendDirs: string[] = []
+  const workspaceBackendDirs: string[] = []
+  for (const workspacePackage of workspacePackages) {
+    const packageDependencies = new Set([
+      ...workspacePackage.dependencies,
+      ...workspacePackage.devDependencies,
+    ])
+    const sourceDir = path.join(root, workspacePackage.path, 'src')
+    if (!fs.existsSync(sourceDir) || !fs.statSync(sourceDir).isDirectory()) continue
+
+    const relativeSourceDir = path.relative(root, sourceDir).replaceAll('\\', '/')
+    if (packageDependencies.has('next') || packageDependencies.has('react')) {
+      workspaceFrontendDirs.push(relativeSourceDir)
+    }
+    if (
+      packageDependencies.has('express')
+      || packageDependencies.has('@trpc/server')
+      || packageDependencies.has('@nestjs/core')
+      || packageDependencies.has('@nestjs/common')
+      || packageDependencies.has('tsrpc')
+    ) {
+      workspaceBackendDirs.push(relativeSourceDir)
+    }
+  }
+
   // 检测框架（TypeScript 项目）
-  const frontendFramework = detectFrontendFramework(dependencies)
-  let backendFramework = detectBackendFramework(dependencies)
+  const frontendFramework = detectFrontendFramework(frontendDependencies)
+  let backendFramework = detectBackendFramework(backendDependencies)
 
   // tsrpc.config.ts 存在也表示 TSRPC 项目
   if (backendFramework === 'unknown' && fs.existsSync(path.join(root, 'tsrpc.config.ts'))) {
     backendFramework = 'tsrpc'
   }
 
-  let databaseType = detectDatabaseType(root, dependencies)
+  let databaseType = detectDatabaseType(root, backendDependencies)
 
   // tsrpc.config.ts 存在也表示 TSRPC 项目
   if (backendFramework === 'unknown' && fs.existsSync(path.join(root, 'tsrpc.config.ts'))) {
@@ -135,8 +185,18 @@ async function doAutoDetect(root: string): Promise<ProjectMeta> {
     backendFramework,
     databaseType,
     monorepoType,
-    frontendDirs: ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'hooks', 'src/hooks', 'lib', 'src/lib', 'features', 'src/features', 'services', 'src/services'],
-    backendDirs: ['server', 'src/server', 'api', 'src/api'],
+    frontendDirs: [
+      ...(fs.existsSync(path.join(root, 'frontend', 'src'))
+        ? [path.join(root, 'frontend', 'src')]
+        : ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'hooks', 'src/hooks', 'lib', 'src/lib', 'features', 'src/features', 'services', 'src/services']),
+      ...workspaceFrontendDirs,
+    ],
+    backendDirs: [
+      ...(fs.existsSync(path.join(root, 'backend', 'src'))
+        ? [path.join(root, 'backend', 'src')]
+        : ['server', 'src/server', 'api', 'src/api']),
+      ...workspaceBackendDirs,
+    ],
     trpcRouterPaths,
     tsrpcServicePaths,
     tsrpcApiDirs: tsrpcPaths.apiDirs,
@@ -146,7 +206,7 @@ async function doAutoDetect(root: string): Promise<ProjectMeta> {
     typeormEntityDirs,
     tsConfigPath: findTsConfig(root) ?? null,
     buildFile: gradleInfo.buildFile,
-    packages: [],
+    packages: workspacePackages,
   }
 }
 
@@ -552,6 +612,13 @@ export function collectScanDirs(root: string, config?: CodeOmniVisConfig): strin
       autoDirs.push(full)
       break
     }
+  }
+
+  // 非 workspace 的双应用仓库没有根 src/，但 frontend/src 与 backend/src
+  // 仍是项目根内的标准源码入口，二者都应进入统一解析管线。
+  for (const c of ['frontend/src', 'backend/src']) {
+    const full = path.join(root, c)
+    if (fs.existsSync(full) && fs.statSync(full).isDirectory()) autoDirs.push(full)
   }
 
   // 标准子目录（在主应用目录下）

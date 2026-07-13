@@ -12,6 +12,8 @@ import { OmniDatabase } from '../storage/db'
 import { GraphBuilder } from './builder'
 import { CrossLayerLinker } from '../resolver/crossLayer'
 import { createDefaultParsers } from './createDefaultParsers'
+import { collectAnalysisFiles } from './collectAnalysisFiles'
+import { AnalysisError } from './analysisError'
 
 export interface RunAnalysisOptions {
   projectRoot: string
@@ -24,6 +26,8 @@ export interface RunAnalysisOptions {
    * 修复 RACE-01:server 用 :memory: 时必须共享同一句柄,否则查询层读不到分析结果。
    */
   db?: OmniDatabase
+  /** Reports the canonical input count without requiring callers to scan a second time. */
+  onFilesCollected?: (count: number) => void
 }
 
 export interface RunAnalysisResult {
@@ -32,22 +36,6 @@ export interface RunAnalysisResult {
   edgesCreated: number
   crossLayerEdges: number
   errors: number
-}
-
-/**
- * 递归扫描目录中的 TS/JS 文件
- */
-function scanDir(dir: string, files: string[]): void {
-  if (!fs.existsSync(dir)) return
-  const entries = fs.readdirSync(dir, { withFileTypes: true })
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name)
-    if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
-      scanDir(fullPath, files)
-    } else if (/\.(ts|tsx|js|jsx|kt)$/.test(entry.name)) {
-      files.push(fullPath)
-    }
-  }
 }
 
 /**
@@ -82,81 +70,75 @@ function detectProjectMeta(projectRoot: string): ProjectMeta {
  * 执行完整的项目分析
  */
 export async function runAnalysis(options: RunAnalysisOptions): Promise<RunAnalysisResult> {
-  const { projectRoot, dbPath, projectMeta: providedMeta, db: injectedDb } = options
+  const { projectRoot, dbPath, projectMeta: providedMeta, db: injectedDb, onFilesCollected } = options
   const projectMeta = providedMeta ?? detectProjectMeta(projectRoot)
+  const files = collectAnalysisFiles(projectRoot, projectMeta)
+  onFilesCollected?.(files.length)
+
+  if (files.length === 0) {
+    throw new AnalysisError(
+      'NO_SUPPORTED_FILES',
+      `No supported source files found under ${path.resolve(projectRoot)}. `
+        + 'Check the project root or configure frontend/backend source directories in .codeomnivis.json.',
+    )
+  }
 
   // 初始化数据库:优先复用调用方注入的实例(共享句柄,修复 RACE-01);
   // 否则按 dbPath 自建并在结束时关闭。
   const ownsDb = injectedDb === undefined
   const db = injectedDb ?? new OmniDatabase(dbPath)
-  await db.ready()
+  try {
+    await db.ready()
 
-  // 创建图构建器
-  const builder = new GraphBuilder(db)
-  builder.registerParsers(createDefaultParsers())
+    // 每次完整重分析都替换整个图，避免已删除或改名文件遗留在可视化中。
+    // 解析失败仍由各 parser 以错误记录降级，不抛出中断本轮分析。
+    db.clearGraph()
 
-  // 扫描文件
-  const files: string[] = []
+    const builder = new GraphBuilder(db)
+    builder.registerParsers(createDefaultParsers())
 
-  // 添加 Prisma schema
-  if (projectMeta.prismaSchemaPath && fs.existsSync(projectMeta.prismaSchemaPath)) {
-    files.push(projectMeta.prismaSchemaPath)
-  }
-
-  // 扫描常见目录
-  const scanDirs = ['app', 'src/app', 'pages', 'src/pages', 'components', 'src/components', 'server', 'src/server']
-
-  // TSRPC 项目：扫描 api/ 和 shared/protocols/ 目录
-  if (projectMeta.backendFramework === 'tsrpc') {
-    scanDirs.push('src/api', 'api', 'src/shared/protocols', 'shared/protocols', 'protocols', 'src/protocols')
-  }
-  for (const dir of scanDirs) {
-    scanDir(path.join(projectRoot, dir), files)
-  }
-
-  let nodesCreated = 0
-  let edgesCreated = 0
-  let errors = 0
-
-  // 执行解析
-  if (files.length > 0) {
     const result = await builder.parseFiles(files, {
       projectRoot,
       projectMeta,
       tsConfig: null,
       pathAliases: {},
     })
-    nodesCreated = result.stats.totalNodes
-    edgesCreated = result.stats.totalEdges
-    errors = result.stats.totalErrors
-  }
+    let nodesCreated = result.stats.totalNodes
+    let edgesCreated = result.stats.totalEdges
 
-  // 跨层连线
-  const tsConfigPath = projectMeta.tsConfigPath ?? undefined
-  const linker = new CrossLayerLinker(tsConfigPath)
-  const graph = builder.loadGraph()
-  const crossLayerResult = await linker.link(graph)
+    const tsConfigPath = projectMeta.tsConfigPath ?? undefined
+    const linker = new CrossLayerLinker(tsConfigPath, projectRoot)
+    const graph = builder.loadGraph()
+    const crossLayerResult = await linker.link(graph)
 
-  // 先落库 synthetic 节点,再写跨层边,避免 dangling edge(E-08)
-  if (crossLayerResult.nodes.length > 0) {
-    db.upsertNodes(crossLayerResult.nodes)
-    nodesCreated += crossLayerResult.nodes.length
-  }
-  if (crossLayerResult.edges.length > 0) {
-    db.upsertEdges(crossLayerResult.edges)
-    edgesCreated += crossLayerResult.edges.length
-  }
+    // 先落库 synthetic 节点,再写跨层边,避免 dangling edge(E-08)
+    if (crossLayerResult.nodes.length > 0) {
+      db.upsertNodes(crossLayerResult.nodes)
+      nodesCreated += crossLayerResult.nodes.length
+    }
+    if (crossLayerResult.edges.length > 0) {
+      db.upsertEdges(crossLayerResult.edges)
+      edgesCreated += crossLayerResult.edges.length
+    }
+    db.removeDanglingEdges()
 
-  // 持久化:仅在自建实例时关闭;注入实例的生命周期由调用方管理。
-  if (ownsDb) {
-    db.close()
-  }
+    if (db.getAllNodes().length === 0) {
+      throw new AnalysisError(
+        'NO_GRAPH_NODES',
+        `Scanned ${files.length} supported file(s) under ${path.resolve(projectRoot)}, `
+          + 'but no supported architecture nodes were recognized.',
+      )
+    }
 
-  return {
-    filesScanned: files.length,
-    nodesCreated,
-    edgesCreated,
-    crossLayerEdges: crossLayerResult.edges.length,
-    errors,
+    return {
+      filesScanned: files.length,
+      nodesCreated,
+      edgesCreated,
+      crossLayerEdges: crossLayerResult.edges.length,
+      errors: result.stats.totalErrors,
+    }
+  } finally {
+    // 持久化:仅在自建实例时关闭;注入实例的生命周期由调用方管理。
+    if (ownsDb) db.close()
   }
 }

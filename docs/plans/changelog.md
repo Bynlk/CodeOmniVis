@@ -5,3 +5,15 @@
 | 日期 | 修改内容 | 原因 | 修改人 |
 |------|---------|------|--------|
 | 2026-06-06 | 初始版本创建 | 项目启动 | AI |
+| 2026-07-13 | 补充双应用仓库自动探测与扫描 | 真实项目验收发现 frontend/ + backend/ 结构会被识别为 0 文件，导致 Web 工作台空白 | Codex |
+| 2026-07-13 | 统一首次分析与 Refresh 的目录、路径和跨层解析语义 | 真实项目交叉验证发现 Refresh 会清空图、软链接重复解析、绝对路径污染模块层级以及相对路径导致 service 链路断开 | Codex |
+| 2026-07-13 | 修正 Architecture Focus 切换与 Overview 搜索的数据流 | 逐组件回归发现切换视图后残留无焦点 Focus，且默认 Overview 只搜索聚合模块而无法找到真实节点 | Codex |
+| 2026-07-13 | 补齐新版工作台的中英文国际化覆盖 | 语言切换实测发现新版 Workbench 组件硬编码英文，导致搜索与设置已切换但视图导航、画布工具栏、状态栏和空状态仍显示英文 | Codex |
+| 2026-07-13 | 记录前端与完整 serve 链路交叉验证结果 | 实测发现 pnpm/Turborepo packages 未进入 serve 扫描、官方 demo 缺少 calls_api/calls_service/queries_db、空或失败分析仍显示 fresh/无问题，以及开发启动命令与 WebSocket Origin 配置不一致 | Codex |
+| 2026-07-13 | 修复 workspace 扫描、空分析误报与首次分析 freshness | 统一 Analyzer 文件收集和 CLI/Server 分析入口；真实仓库验证扫描 171 文件并生成 68 节点/53 边/0 悬空边，状态为 fresh；Analyzer 211、CLI 35、Server 66 项测试通过，typecheck/lint/强制无缓存 build 通过 | Codex |
+| 2026-07-13 | 修复跨层作用域串线与工作台状态误报 | tRPC router identity、handler/service/DB 解析改为按真实函数作用域追踪；修复多方法路由共享行号导致 POST 误连 GET service，并将 DB 边归属到直接调用它的 service，消除 analyze/serve 时序差异；WebSocket loopback Origin、退避重连、首次/空/失败状态、移动抽屉层级和设置路径校验完成交叉验证。官方 demo 的 analyze/serve 均为 49 节点/66 边、0 悬空端点、0 unknown 端点；UI 162、Analyzer 218、CLI 36、Server 67 项测试通过 | Codex |
+| 2026-07-13 | 修正 router、鉴权作用域、页面层级与源码跳转链路 | tRPC router 容器不再生成 resolver/DB 边或一致性假问题；input/output 链式元数据、页面到组件层级和 handler 级鉴权检测已校正；新增 `GET /api/project`，Web inspector 使用绝对且编码安全的 VS Code URI，切换项目会刷新根路径缓存。官方 demo 连续 analyze/serve 均为 47 节点/59 边，6 个显式未鉴权入口，`check` 为 7 个真实未调用 procedure；604 项测试、17 项强制 typecheck/lint 与 6 项强制 build 全部通过，桌面/移动端四视图与 console 完成回归 | Codex |
+| 2026-07-13 | 补齐工作台键盘语义与浏览器降级边界 | 新 Workbench 恢复“跳转到主内容”；节点检查器 aria-label 完成中英文覆盖；Settings 与 Command Palette 共用焦点陷阱，验证初始焦点、Tab 循环、Escape 和焦点归还；HTTPS 页面自动使用 `wss://`；禁用或超额的 localStorage 不再导致 i18n 初始化白屏或切换语言报错。最终整仓 613 项测试、18 项强制 typecheck/lint/build 任务通过，浏览器 console 仍为 0 warning/error | Codex |
+| 2026-07-13 | 修复分析失败契约与跨视图缓存漂移 | `POST /api/analyze` 失败改为标准 `ANALYSIS_FAILED` 响应，统一 API client 会保留服务端错误消息；Refresh 与项目切换统一失效 graph、stats、parser errors 和 freshness，WebSocket 断开时也不会跨项目残留旧 Quality 数据。最终整仓 616 项测试和 18 项强制检查通过，真实 Refresh 完成后仍为 47 节点/59 边且 console 无告警 | Codex |
+| 2026-07-13 | 统一 Web Quality 的解析输出与项目风险语义 | 新增结构化 `GET /api/graph/issues`，复用一致性、鉴权、N+1 与 RSC 检测器并逐检测器降级；Web 合并 parser errors 与 sourced issues，显示严重级别、来源、类型和源码位置，Refresh、项目切换与 WebSocket 统一失效。官方 demo 实测为 13 条问题（6 critical/security、7 warning/consistency），刷新后保持 47 节点/59 边且 0 图噪声；整仓 631 项测试、11 项强制 typecheck、6 项 lint 与 6 项强制 build 通过，桌面/390px 窄屏中英文回归及 console 0 warning/error | Codex |
+| 2026-07-13 | 修复运行时项目切换事务与 Quality 描述国际化 | loopback 绝对路径切换会为目标根重新执行 CLI 完整 metadata 探测，成功后才发布新根；目标探测或分析失败会恢复旧 root、metadata、graph、parse errors、freshness 与 watcher，并返回不泄漏内部详情的标准错误。真实 `demo → 仓库根 → 无效目录 → demo` 验证分别得到 47/59、79/64、原图无损回滚、47/59，最终仍为 13 条 Quality 与 0 图噪声。确定性检测器新增结构化 message key/params，中文 13 条说明不再混入英文，parser 原始诊断保持原文；整仓 646 项测试、11 项强制 typecheck、6 项 lint、6 项 build、390px 无横向溢出与 console 0 warning/error 全部通过 | Codex |

@@ -6,6 +6,26 @@
 import { isJsonObject } from '@codeomnivis/shared'
 import { requestJson, requestOk, jsonPost } from './client'
 
+export interface ProjectInfo {
+  projectRoot: string
+}
+
+export async function getProject(): Promise<ProjectInfo> {
+  const payload = await requestJson('/api/project')
+  const data = isJsonObject(payload) ? payload.data : undefined
+  if (!isJsonObject(data) || typeof data.projectRoot !== 'string') {
+    throw new Error('Invalid project response')
+  }
+  return { projectRoot: data.projectRoot }
+}
+
+export function isAbsoluteProjectPath(projectRoot: string): boolean {
+  const value = projectRoot.trim()
+  return value.startsWith('/')
+    || /^[A-Za-z]:[\\/]/.test(value)
+    || /^\\\\[^\\]+\\[^\\]+/.test(value)
+}
+
 /** 触发重新分析。成功即可，非 2xx 抛 ApiError。 */
 export async function postAnalyze(): Promise<void> {
   await requestOk('/api/analyze', { method: 'POST' })
