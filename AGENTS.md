@@ -180,7 +180,7 @@ pnpm build
 pnpm test
 
 # 启动开发模式
-pnpm --filter @bynlk/CodeOmniVis build
+pnpm --filter @bynlk/codeomnivis build
 node packages/cli/bin/codeomnivis.js serve --project .
 
 # 构建单个包

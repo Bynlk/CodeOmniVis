@@ -1,7 +1,7 @@
 {
-  "name": "@bynlk/CodeOmniVis",
+  "name": "@bynlk/codeomnivis",
   "version": "0.0.1",
-  "description": "CLI for CodeOmniVis",
+  "description": "Zero-config TypeScript full-stack architecture visualizer with a local workbench and MCP server for AI coding agents",
   "license": "LicenseRef-PolyForm-Noncommercial-1.0.0",
   "repository": {
     "type": "git",
@@ -9,18 +9,34 @@
     "directory": "packages/cli"
   },
   "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
+  "bugs": {
+    "url": "https://github.com/Bynlk/CodeOmniVis/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "keywords": [
     "codeomnivis",
-    "architecture",
-    "visualization",
+    "typescript",
+    "architecture-visualization",
+    "full-stack",
+    "dependency-graph",
+    "nextjs",
+    "react",
+    "prisma",
+    "mcp",
+    "ai-coding-agent",
     "cli"
   ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "README.md",
+    "LICENSE"
   ],
   "type": "module",
   "main": "./dist/index.js",
