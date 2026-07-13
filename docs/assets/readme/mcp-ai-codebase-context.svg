@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="760" viewBox="0 0 1600 760" role="img" aria-labelledby="title desc">
+  <title id="title">CodeOmniVis MCP server provides architecture context to AI coding agents</title>
+  <desc id="desc">Cursor, Claude Code, Cline, and other MCP clients query the local CodeOmniVis graph with find callers, get dataflow, and get component tree tools.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b8cff"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="760" rx="24" fill="#090b0f"/>
+  <rect x="36" y="36" width="1528" height="688" rx="18" fill="#0d1016" stroke="#242b36" stroke-width="2"/>
+  <g font-family="Inter, ui-sans-serif, system-ui, sans-serif">
+    <text x="78" y="94" fill="#e7eaf0" font-size="30" font-weight="650">Give AI coding agents verified architecture context</text>
+    <text x="78" y="128" fill="#7f8998" font-size="17">MCP clients query the same local graph you inspect in the workbench—before they change code.</text>
+    <text x="78" y="190" fill="#7f8998" font-size="13" font-weight="650" letter-spacing="2">MCP CLIENTS</text>
+    <rect x="78" y="218" width="328" height="82" rx="12" fill="#12161e" stroke="#343e4d"/>
+    <circle cx="118" cy="259" r="18" fill="#181e28" stroke="#5b8cff"/>
+    <text x="118" y="265" fill="#78a1ff" font-size="16" text-anchor="middle" font-weight="700">C</text>
+    <text x="154" y="266" fill="#e7eaf0" font-size="20" font-weight="620">Cursor</text>
+    <rect x="78" y="322" width="328" height="82" rx="12" fill="#12161e" stroke="#343e4d"/>
+    <circle cx="118" cy="363" r="18" fill="#181e28" stroke="#5b8cff"/>
+    <text x="118" y="369" fill="#78a1ff" font-size="16" text-anchor="middle" font-weight="700">⌘</text>
+    <text x="154" y="370" fill="#e7eaf0" font-size="20" font-weight="620">Claude Code</text>
+    <rect x="78" y="426" width="328" height="82" rx="12" fill="#12161e" stroke="#343e4d"/>
+    <circle cx="118" cy="467" r="18" fill="#181e28" stroke="#5b8cff"/>
+    <text x="118" y="473" fill="#78a1ff" font-size="16" text-anchor="middle" font-weight="700">CL</text>
+    <text x="154" y="474" fill="#e7eaf0" font-size="20" font-weight="620">Cline</text>
+    <rect x="78" y="530" width="328" height="82" rx="12" fill="#12161e" stroke="#343e4d"/>
+    <circle cx="118" cy="571" r="18" fill="#181e28" stroke="#343e4d"/>
+    <text x="118" y="577" fill="#a9b1be" font-size="19" text-anchor="middle">+</text>
+    <text x="154" y="578" fill="#e7eaf0" font-size="20" font-weight="620">Any MCP client</text>
+    <path d="M 406 259 C 480 259, 486 330, 554 344" fill="none" stroke="#5b8cff" stroke-width="3" marker-end="url(#arrow)"/>
+    <path d="M 406 363 L 554 363" fill="none" stroke="#5b8cff" stroke-width="3" marker-end="url(#arrow)"/>
+    <path d="M 406 467 C 480 467, 486 396, 554 382" fill="none" stroke="#5b8cff" stroke-width="3" marker-end="url(#arrow)"/>
+    <path d="M 406 571 C 492 571, 500 432, 554 400" fill="none" stroke="#343e4d" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="554" y="202" width="478" height="390" rx="20" fill="#0b0f14" stroke="#5b8cff" stroke-width="2"/>
+    <rect x="584" y="232" width="418" height="66" rx="10" fill="#12161e" stroke="#242b36"/>
+    <circle cx="620" cy="265" r="12" fill="none" stroke="#78a1ff" stroke-width="3"/>
+    <path d="M614 260h12M614 270h12" stroke="#78a1ff" stroke-width="2" stroke-linecap="round"/>
+    <text x="648" y="273" fill="#e7eaf0" font-size="22" font-weight="650">CodeOmniVis MCP server</text>
+    <text x="584" y="338" fill="#7f8998" font-size="13" font-weight="650" letter-spacing="2">ARCHITECTURE QUERIES</text>
+    <rect x="584" y="362" width="418" height="54" rx="8" fill="#12161e" stroke="#343e4d"/>
+    <text x="608" y="396" fill="#78a1ff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16">find_callers("Booking")</text>
+    <rect x="584" y="430" width="418" height="54" rx="8" fill="#12161e" stroke="#343e4d"/>
+    <text x="608" y="464" fill="#78a1ff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16">get_dataflow("User")</text>
+    <rect x="584" y="498" width="418" height="54" rx="8" fill="#12161e" stroke="#343e4d"/>
+    <text x="608" y="532" fill="#78a1ff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16">get_component_tree("/profile")</text>
+    <text x="584" y="576" fill="#7f8998" font-size="14">stdio transport · structured results · deterministic graph</text>
+    <path d="M 1032 397 L 1122 397" fill="none" stroke="#5b8cff" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="1122" y="202" width="372" height="390" rx="20" fill="#12161e" stroke="#343e4d"/>
+    <text x="1152" y="242" fill="#7f8998" font-size="13" font-weight="650" letter-spacing="2">LOCAL GRAPH</text>
+    <circle cx="1308" cy="330" r="38" fill="#181e28" stroke="#5b8cff" stroke-width="2"/>
+    <circle cx="1204" cy="410" r="28" fill="#181e28" stroke="#d6a84b" stroke-width="2"/>
+    <circle cx="1410" cy="420" r="30" fill="#181e28" stroke="#47b881" stroke-width="2"/>
+    <circle cx="1280" cy="500" r="25" fill="#181e28" stroke="#e06c75" stroke-width="2"/>
+    <path d="M1230 390L1280 352M1339 350L1386 397M1230 430L1258 485M1336 489L1386 440M1232 414L1380 420" fill="none" stroke="#4b5563" stroke-width="2"/>
+    <text x="1308" y="336" fill="#e7eaf0" font-size="15" text-anchor="middle">API</text>
+    <text x="1204" y="416" fill="#e7eaf0" font-size="14" text-anchor="middle">UI</text>
+    <text x="1410" y="426" fill="#e7eaf0" font-size="14" text-anchor="middle">DB</text>
+    <text x="1280" y="506" fill="#e7eaf0" font-size="13" text-anchor="middle">risk</text>
+    <text x="1308" y="558" fill="#a9b1be" font-size="15" text-anchor="middle">Source stays on your machine</text>
+    <rect x="554" y="626" width="940" height="54" rx="10" fill="#12161e" stroke="#242b36"/>
+    <circle cx="584" cy="653" r="7" fill="#47b881"/>
+    <text x="606" y="660" fill="#a9b1be" font-size="16">Ask with evidence: callers, data flow, source locations, confidence, and deterministic quality findings.</text>
+    <text x="1466" y="660" fill="#5b8cff" font-size="14" text-anchor="end" font-weight="650">CodeOmniVis</text>
+  </g>
+</svg>
