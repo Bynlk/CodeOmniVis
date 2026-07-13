@@ -16,7 +16,8 @@
     "lint": "turbo lint",
     "clean": "turbo clean",
     "typecheck": "turbo typecheck",
-    "verify:readme": "node scripts/verifyReadme.mjs"
+    "verify:readme": "node scripts/verifyReadme.mjs",
+    "verify:package": "node scripts/verifyPackedCli.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
