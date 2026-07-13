@@ -53,6 +53,9 @@ yarn.lock
 # Claude Code
 .claude/projects/
 
+# Local Git worktrees
+.worktrees/
+
 # Obsidian
 .obsidian/
 
