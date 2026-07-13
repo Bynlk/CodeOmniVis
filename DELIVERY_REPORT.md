@@ -17,7 +17,7 @@
 | ID | 名称 | Commit | 关键产出 |
 |---|---|---|---|
 | B15 | AI 请求契约修复 + localStorage 配置 | e5e56a4 | shared `types/ai.ts` 契约 + server `registerAiRoutes` (body.config > env > 501) + AiPanel 配置面板 |
-| B16 | 自包含打包 | dd5af11 | tsup 内联 workspace 包 + UI dist + kotlin wasm 随包;`@bynlk/CodeOmniVis` 全局可跑 |
+| B16 | 自包含打包 | dd5af11 | tsup 内联 workspace 包 + UI dist + kotlin wasm 随包;`@bynlk/codeomnivis` 全局可跑 |
 | B17 | 数据新鲜度方案一 | 1bbedc9 | `FreshnessStatus` 契约 + Header 状态徽章 + 智能监听 + 序列化重分析(无丢变更) |
 | B18 | 全链路追踪 tab | 5158b7a | 双向 `traceFromNode` + `/api/graph/trace` + 分层泳道 + 循迹光点 + 静态/AI 解释 |
 | B19 | 图谱噪声治理 + 运行时选目录 | fa8e256 | 纯函数 `sanitizeGraph`(去自环/悬挂/重边) + `POST /api/project` + `setProjectRoot` |

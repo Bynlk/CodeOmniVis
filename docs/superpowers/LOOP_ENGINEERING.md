@@ -81,7 +81,7 @@ pnpm turbo typecheck && pnpm turbo lint && pnpm turbo test && pnpm turbo build
 | server | `pnpm --filter @codeomnivis/server exec tsc --noEmit && pnpm --filter @codeomnivis/server exec vitest run` |
 | mcp | `pnpm --filter @codeomnivis/mcp exec vitest run` |
 | ui | `pnpm --filter @codeomnivis/ui exec tsc --noEmit && pnpm --filter @codeomnivis/ui exec vitest run` |
-| cli | `pnpm --filter @bynlk/CodeOmniVis exec tsc --noEmit` |
+| cli | `pnpm --filter @bynlk/codeomnivis exec tsc --noEmit` |
 
 ## 6. 统一账本文件（两阶段共用同一格式）
 

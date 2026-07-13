@@ -56,7 +56,7 @@ expect(packages.find(pkg => pkg.path === 'packages/ui')?.dependencies).toContain
 Run:
 
 ```bash
-pnpm --filter @bynlk/CodeOmniVis test -- workspacePackages.test.ts autoDetect.test.ts
+pnpm --filter @bynlk/codeomnivis test -- workspacePackages.test.ts autoDetect.test.ts
 ```
 
 Expected: FAIL because `discoverWorkspacePackages` does not exist and `ProjectMeta.packages` is empty.
@@ -227,7 +227,7 @@ For analyze/check, use a temporary empty project and the existing database depen
 Run:
 
 ```bash
-pnpm --filter @bynlk/CodeOmniVis test -- emptyAnalysis.test.ts analyzeCacheDedup.test.ts checkScanDirs.test.ts
+pnpm --filter @bynlk/codeomnivis test -- emptyAnalysis.test.ts analyzeCacheDedup.test.ts checkScanDirs.test.ts
 ```
 
 Expected: at least the empty-project assertions FAIL under current success semantics.
@@ -283,7 +283,7 @@ Run the Task 5 command again. Expected: selected tests PASS.
 Replace the non-matching `@codeomnivis/cli` filter with the real package name and a command that actually executes the built CLI:
 
 ```bash
-pnpm --filter @bynlk/CodeOmniVis build
+pnpm --filter @bynlk/codeomnivis build
 node packages/cli/bin/codeomnivis.js serve --project .
 ```
 
@@ -293,7 +293,7 @@ Run, in order:
 
 ```bash
 pnpm --filter @codeomnivis/analyzer test
-pnpm --filter @bynlk/CodeOmniVis test
+pnpm --filter @bynlk/codeomnivis test
 pnpm --filter @codeomnivis/server test
 pnpm typecheck
 pnpm lint

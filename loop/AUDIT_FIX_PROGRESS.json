@@ -253,7 +253,7 @@
       "audit": "LEAK-05",
       "severity": "medium",
       "packages": [
-        "@bynlk/CodeOmniVis"
+        "@bynlk/codeomnivis"
       ],
       "status": "fixed",
       "commit": "b6b6fe3",
@@ -273,7 +273,7 @@
       "severity": "medium",
       "packages": [
         "@codeomnivis/shared",
-        "@bynlk/CodeOmniVis"
+        "@bynlk/codeomnivis"
       ],
       "status": "fixed",
       "commit": "78d7488",

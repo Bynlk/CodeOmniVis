@@ -234,7 +234,7 @@
       "commit": "dd5af11",
       "gates": {
         "gitDiffCheck": "pass",
-        "turboTypecheck": "pass (@bynlk/CodeOmniVis cli tsc --noEmit clean)",
+        "turboTypecheck": "pass (@bynlk/codeomnivis cli tsc --noEmit clean)",
         "eslintTypeAware": "pass (0 errors, 3 pre-existing unused-var warnings)",
         "astScan": "any=0 assertions=0 doubleCasts=0 unknown=75",
         "functionalSmoke": "pass (--version 0.0.1, --help full list, analyze runs end-to-end with sql.js wasm + DB init)"

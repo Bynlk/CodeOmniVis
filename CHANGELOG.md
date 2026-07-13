@@ -10,7 +10,7 @@ All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 - **AI 对话契约** (`@codeomnivis/shared` `types/ai.ts`): `ChatMessage` / `AiConfig` / `AiChatRequest` / `AiChatResponse` 及守卫 `isChatMessage` / `isAiConfig` / `parseAiChatRequest`,纯函数 `resolveAiConfig`(优先级 body.config > env > null)。
 - **AI 路由** (`server`): `POST /api/ai/chat` 与 `/api/ai/explain`,上游为用户自配置的 OpenAI 兼容 `/chat/completions`(不经任何内部网关);凭据优先级 body.config > 环境变量 > 501。
 - **前端 AI 配置**: `lib/aiConfig.ts`(`codeomnivis.ai.config` localStorage,`parseAiConfig` 守卫);AiPanel 配置面板。
-- **自包含打包** (`@bynlk/CodeOmniVis`): tsup 内联全部 workspace 包,UI dist 与 kotlin wasm 随包发布,全局安装即可运行。
+- **自包含打包** (`@bynlk/codeomnivis`): tsup 内联全部 workspace 包,UI dist 与 kotlin wasm 随包发布,全局安装即可运行。
 - **数据新鲜度** (`shared` `types/freshness.ts`): `FreshnessStatus` (fresh/analyzing/stale) + 守卫;Header `FreshnessBadge` 状态徽章;`GET /api/status`;WS `status_changed` 广播;`useStatus` hook。
 - **智能文件监听**: `incremental.ts` 在未指定 watchDirs 时监听整个 projectRoot(按 IGNORED_PATHS + 源码后缀过滤);序列化重分析,分析中到达的变更触发一次补充重跑(原先被静默丢弃)。
 - **全链路追踪 tab**: `shared` `types/trace.ts` 契约;analyzer `DataFlowTracer.traceFromNode` 双向遍历(上下游,max 64,访问集防环);`GET /api/graph/trace?node=<id>`;UI trace tab + `SelectionContext` + `useTrace`;`TraceStepCard` / `TraceRunner`(cytoscape 循迹光点,1s/站)/ `TracePanel`(静态优先 + AI 兜底解释)。

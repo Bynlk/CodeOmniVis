@@ -205,7 +205,7 @@ Create `packages/cli/__tests__/integration/demoCrossLayer.test.ts`, auto-detect 
 
 ```bash
 pnpm --filter @codeomnivis/analyzer build
-pnpm --filter @bynlk/CodeOmniVis test -- demoCrossLayer.test.ts
+pnpm --filter @bynlk/codeomnivis test -- demoCrossLayer.test.ts
 ```
 
 - [x] **Step 3: Add coherent demo dependencies and services**
@@ -239,7 +239,7 @@ Assert zero dangling edges, no persisted target containing `:unknown:`, at least
 
 ```bash
 pnpm --filter @codeomnivis/analyzer test
-pnpm --filter @bynlk/CodeOmniVis test
+pnpm --filter @bynlk/codeomnivis test
 pnpm --filter @codeomnivis/server test
 ```
 

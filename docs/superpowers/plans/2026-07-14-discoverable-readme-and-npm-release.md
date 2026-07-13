@@ -67,10 +67,10 @@ expect(pkg.keywords).toEqual(
 Run:
 
 ```bash
-pnpm --filter @bynlk/CodeOmniVis test -- packageMetadata.test.ts
+pnpm --filter @bynlk/codeomnivis test -- packageMetadata.test.ts
 ```
 
-Expected: FAIL because the manifest still uses mixed-case `@bynlk/CodeOmniVis` and lacks the release fields.
+Expected: FAIL because the manifest still uses mixed-case `@bynlk/codeomnivis` and lacks the release fields.
 
 - [ ] **Step 3: Normalize and complete the manifest**
 

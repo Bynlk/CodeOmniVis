@@ -1,317 +1,277 @@
 <div align="center">
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="packages/ui/public/brand/logo-mark-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="packages/ui/public/brand/logo-mark-light.svg">
+  <img src="packages/ui/public/brand/logo-mark-light.svg" width="88" alt="CodeOmniVis COV logo">
+</picture>
+
 # CodeOmniVis
 
-**别再让 AI 猜你的架构**
+### See your full-stack architecture. Give AI the context it's missing.
 
-**[English](README.en.md)** | 中文
+**A zero-config TypeScript architecture visualizer that connects Next.js pages, React components, APIs, services, and database models in one local workbench—and exposes the same graph to AI coding agents through MCP.**
 
-[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-PolyForm%20Noncommercial-00d4aa.svg)](LICENSE)
+[![CI](https://github.com/Bynlk/CodeOmniVis/actions/workflows/ci.yml/badge.svg)](https://github.com/Bynlk/CodeOmniVis/actions/workflows/ci.yml)
 [![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A518-339933.svg)](https://nodejs.org/)
-[![pnpm 9](https://img.shields.io/badge/pnpm-9-f69220.svg?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6.svg)](https://www.typescriptlang.org/)
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-6F83FF.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Bynlk/CodeOmniVis?style=social)](https://github.com/Bynlk/CodeOmniVis)
 
-把你的仓库变成 AI 可查询的架构图谱，贯通页面、组件、API / RPC 和数据库。
+![CodeOmniVis TypeScript architecture visualizer showing a focused Next.js dependency graph and React component graph](docs/assets/readme/codeomnivis-workbench-hero.png)
 
-![CodeOmniVis - 别再让 AI 猜你的架构](docs/assets/readme/og-cover.png)
+```bash
+npx @bynlk/codeomnivis serve
+```
+
+Run it at your repository root. CodeOmniVis detects the project, analyzes it locally, opens the workbench, and keeps the graph fresh as files change.
+
+**English** · [简体中文](README.zh-CN.md) · [Documentation](docs/README.md) · [Demo guide](demo/README.md)
 
 </div>
 
-CodeOmniVis 不是另一个 coding agent。它是给 coding agents、IDE assistants 和人工开发者共用的一层架构上下文：扫描仓库、构建统一图谱，再通过浏览器 UI、REST API 和 MCP 把同一份系统地图暴露出来。
+<a id="why-codeomnivis"></a>
 
-把它接到 Claude、Cline、Cursor 或任何支持 MCP 的客户端上，它的价值会更直接。
+## Why CodeOmniVis
 
-Claude、Cline、Cursor 这类工具已经很会改文件、跑命令、调工具。它们真正容易失真的地方，是系统边界和跨层影响：
+Cursor, Claude Code, and Cline are already good at editing files and running commands. What they often lack is durable system context: which page reaches which API, which service queries which model, and what a change can affect across layers.
 
-- 这个页面到底命中了哪条 route / procedure？
-- 改这个 model，会波及哪些 API、组件和数据流？
-- 这个 service 真的是死代码，还是只是没被我搜到？
-- 我到底该把哪些上下文喂给 AI，才不让它瞎猜？
+CodeOmniVis turns a repository into a **full-stack architecture graph** that humans and tools can inspect from the same source of truth. It is not another coding agent and it does not upload your source code. It is the architecture context layer underneath your existing development workflow.
 
-CodeOmniVis 就是为这些问题准备的。
+Use CodeOmniVis when repository-wide search is no longer enough:
 
-![从仓库到图谱：一次扫描，多端消费](docs/assets/readme/repo-to-graph.png)
+- prove how a page, component, route, service, and model are connected;
+- distinguish direct relationships from inferred ones with confidence metadata;
+- locate deterministic consistency and security findings at their source;
+- give an AI agent evidence before it proposes a cross-layer change.
 
-## 5 分钟跑起来
+<a id="workflows"></a>
+
+## Three workflows, one graph
+
+### 1. Understand an unfamiliar repository
+
+Open a large TypeScript project and start from its system shape. Move from the module overview to the full graph, then focus on one node without losing its upstream and downstream context.
+
+### 2. Trace code across layers
+
+Follow a Next.js dependency graph from a page into its React component graph, through an API route or tRPC procedure, into a service and a Prisma model. Source paths and line numbers remain available in the inspector.
+
+### 3. Give AI coding agents architecture context
+
+Run CodeOmniVis as an **MCP server for codebase architecture**. AI clients can query callers, component trees, API routes, database models, and end-to-end data flow instead of guessing from a small prompt window.
+
+<a id="how-it-works"></a>
+
+## How the architecture graph works
+
+![TypeScript full-stack architecture graph connecting Next.js and React to APIs, services, Prisma, CLI, REST, and MCP](docs/assets/readme/typescript-full-stack-architecture-graph.svg)
+
+CodeOmniVis parses source code into typed nodes and relationships, resolves cross-file and cross-layer links, stores the result in a local `sql.js` database, and serves the same model through four surfaces:
+
+- the React + Cytoscape.js workbench;
+- CLI commands for analysis and consistency checks;
+- REST API and WebSocket updates;
+- an MCP server for AI coding agent context.
+
+Every parser degrades to warnings instead of crashing the whole analysis. Every stored edge has existing endpoints and carries `certain` or `inferred` confidence.
+
+<a id="product-evidence"></a>
+
+## Product evidence
+
+### Architecture workbench
+
+The stable dark workbench keeps navigation, explorer, canvas, inspector, freshness, and graph scale visible at the same time. Architecture, Requests, Data model, and Quality are peer views over the same project state.
+
+The hero image above is a real Demo capture: `BookingPage → BookingList → /api/booking`, with the selected component's source location and callers visible in the inspector.
+
+### Deterministic quality findings
+
+![CodeOmniVis deterministic code quality findings with severity, descriptions, and source locations](docs/assets/readme/code-quality-findings.png)
+
+Quality is not an AI summary. It combines parser diagnostics with deterministic project checks such as unguarded routes, dead routes, dead components, RSC boundary risks, and N+1 query patterns. English and Chinese descriptions are derived from structured issue data; literal parser errors remain unchanged.
+
+This is **API and database dependency visualization** plus actionable source evidence—not a decorative dashboard.
+
+### MCP architecture queries
+
+![CodeOmniVis MCP server providing local codebase architecture context to Cursor, Claude Code, and Cline](docs/assets/readme/mcp-ai-codebase-context.svg)
+
+The MCP server reads the same local graph as the workbench. A client can ask:
+
+| Tool | Question it answers |
+| --- | --- |
+| `get_api_routes` | Which API, tRPC, TSRPC, or Express entry points exist, and what do they reach? |
+| `get_component_tree` | What does this page or component render? |
+| `find_callers` | Who calls this node, and which pages can be affected? |
+| `list_db_models` | Which Prisma, TypeORM, or Drizzle models were detected? |
+| `get_dataflow` | How does a model flow through API and service layers into the UI? |
+
+<a id="supported-stack"></a>
+
+## Supported stack
+
+Support is stated by evidence level so parser presence is not confused with equal production depth.
+
+| Evidence level | Current coverage |
+| --- | --- |
+| Demo-verified core path | Next.js App Router, Next.js Pages Router, React components, `fetch` / `axios`, Next.js Route Handlers, tRPC, services, Prisma |
+| Parser and regression coverage | Express, NestJS controllers/modules/services, TSRPC, TypeORM, Drizzle |
+| Experimental | Kotlin syntax, Spring, Ktor, Room, Exposed; registered in the default pipeline with targeted tests, but less real-world breadth |
+| Workspace discovery | pnpm workspaces and Turborepo source-directory discovery; not yet a complete federated multi-package model |
+
+The project also generates a **Prisma ER diagram** through database-model nodes and relation edges. TypeORM and Drizzle use the same `db_model` abstraction where their parsers can resolve a model.
+
+<a id="cli"></a>
+
+## CLI
+
+### Visualize a repository
 
 ```bash
-pnpm install
-pnpm build
-node packages/cli/bin/codeomnivis.js serve --project ./demo --no-open
+npx @bynlk/codeomnivis serve
 ```
 
-打开 `http://localhost:4321`，你会拿到同一份图谱的三种入口：
-
-- 浏览器 UI
-- REST API
-- MCP Server
-
-## 为什么现在就需要它
-
-- **Not another coding agent**：它不和 Claude / Cline / Cursor 抢工作，它给它们补架构上下文
-- **One graph, three surfaces**：同一份图谱同时服务 UI、CLI、REST 和 MCP
-- **Works on existing repos**：不要求迁到新 IDE，也不要求侵入式埋点
-- **Built for repeated queries**：缓存落到 `~/.codeomnivis/projects/{hash}.db`，配合 watcher / WebSocket 形成持续可用的项目地图
-
-## 为什么不直接用 Cursor / Cline / Claude Code？
-
-因为它们擅长**行动**，CodeOmniVis 擅长**证明结构**。
-
-- agent 负责实现、重构、修 bug
-- CodeOmniVis 负责回答“谁调了谁、数据从哪来、改这里会影响哪里”
-- 最好的用法不是二选一，而是把 CodeOmniVis 作为这些工具的架构上下文层
-
-如果你已经在用 MCP 客户端，这个定位会更直接：让 AI 在改代码前，先查图谱，而不是先猜。
-
-## 你能用它做什么
-
-- 接手陌生仓库时，先看清页面、组件、接口、模型和依赖边界
-- 做重构、拆包、迁移前，确认谁在调用谁、哪些页面会受影响
-- 给 Claude、Cline、Cursor 或其他 MCP 客户端提供真实的架构上下文
-- 在日常开发中保留一份可搜索、可过滤、会随文件变更刷新的项目地图
-
-## 当前可用能力
-
-| 模块 | 当前可用内容 |
-| --- | --- |
-| CLI | `serve`、`analyze`、`check`、`mcp`、`init` |
-| UI | 图谱画布、搜索、筛选、节点详情、数据流、问题列表、统计面板 |
-| Server | `GET /api/graph*`、`POST /api/analyze`、`GET /api/health`、`ws://.../ws` |
-| MCP | `get_api_routes`、`get_component_tree`、`find_callers`、`list_db_models`、`get_dataflow` |
-| 缓存 | 使用 `sql.js` 持久化到 `~/.codeomnivis/projects/{hash}.db` |
-
-> 当前仓库更适合“源码运行”场景：先在本仓库构建，再分析你的目标项目。
-
-## 当前主线运行时焦点
-
-| 维度 | 当前主线运行时 |
-| --- | --- |
-| 前端 | Next.js App Router、Next.js Pages Router、React 组件树、`fetch` / `axios` 调用识别 |
-| API / RPC | Next.js Route Handler、tRPC、TSRPC（`serve` / MCP 路径）、Express、NestJS |
-| 数据层 | Prisma、Drizzle、TypeORM |
-| 工程结构 | 对 `pnpm workspace` / Turborepo 做基础路径发现 |
-
-> 仓库里已经包含 Kotlin / Spring / Ktor / Room / Exposed 相关 parser 代码，但它们还没有完整接入当前 README 推荐的主线路径，因此这里不按“已可直接用”宣传。
-
-> Monorepo 目前是“基础路径发现”，不是完整的多包联邦分析；更适合单仓库主应用或边界比较清晰的 workspace。
-
-## 更多运行方式
-
-### 1. 直接分析任意本地仓库
+Analyze a different local path or choose an explicit port:
 
 ```bash
-node /absolute/path/to/CodeOmniVis/packages/cli/bin/codeomnivis.js serve \
-  --project /absolute/path/to/your-repo \
-  --no-open
+npx @bynlk/codeomnivis serve --project /absolute/path/to/repository --port 4321
 ```
 
-如果你已经把 CLI 放进 `PATH`，等价命令就是：
+### Generate a graph or run checks
+
+`analyze` and `check` operate on the current working directory:
 
 ```bash
-codeomnivis serve --project /absolute/path/to/your-repo --no-open
+cd /absolute/path/to/repository
+npx @bynlk/codeomnivis analyze --output codeomnivis-graph.json
+npx @bynlk/codeomnivis check
 ```
 
-### 2. 生成离线图数据或做一致性检查
+### Command reference
 
-```bash
-cd /absolute/path/to/your-repo
-node /absolute/path/to/CodeOmniVis/packages/cli/bin/codeomnivis.js analyze -o codeomnivis-graph.json
-node /absolute/path/to/CodeOmniVis/packages/cli/bin/codeomnivis.js check
-```
-
-`analyze` 和 `check` 当前按“当前工作目录”工作，所以最稳妥的方式是先 `cd` 到目标仓库根目录再执行。
-
-## CLI 命令
-
-| 命令 | 作用 | 说明 |
-| --- | --- | --- |
-| `serve --project <path> [--port 4321] [--host localhost] [--no-open]` | 启动可视化服务并做首轮分析 | 会启动文件监听、REST API 和 WebSocket |
-| `analyze [-o codeomnivis-graph.json]` | 分析当前目录并输出图 JSON | 适合离线检查、存档、CI 产物 |
-| `check` | 运行一致性检查 | 会输出统计、解析错误和一致性问题 |
-| `mcp --project <path>` | 启动 stdio MCP Server | 供 AI 客户端查询架构 |
-| `init` | 生成 `.codeomnivis.json` 起始文件 | 生成后建议按你的仓库结构手动调整 |
-
-## UI / API 能看到什么
-
-| 能力 | 说明 |
+| Command | Purpose |
 | --- | --- |
-| 图谱画布 | 基于 React + Cytoscape.js，可浏览节点、边和整体结构 |
-| 搜索与筛选 | 支持按节点类型、边类型、置信度和是否孤立节点过滤 |
-| 节点详情 | 查看节点元信息、入边、出边以及跳转关系 |
-| 数据流面板 | 以数据库模型为起点，追踪到 API 与消费组件 |
-| 问题面板 | 展示解析错误列表 |
-| 统计面板 | 展示节点/边分布与整体规模 |
-| AI 面板 | 前端壳已接入，后端 `/api/ai/chat` 目前返回 `501`，仍是保留接口 |
+| `serve --project <path> [--port 4321] [--host localhost] [--no-open]` | Analyze, serve the workbench, watch files, and publish graph updates |
+| `analyze [-o codeomnivis-graph.json]` | Write the current repository graph as JSON |
+| `check` | Print parser diagnostics and deterministic consistency findings |
+| `mcp --project <path>` | Start the stdio MCP server |
+| `init` | Generate a starter `.codeomnivis.json` file |
 
-服务端还提供一套直接可调用的接口：
+Binding to a non-loopback host requires a token for mutating endpoints. Local loopback usage remains the recommended default.
 
-- `GET /api/graph`
-- `GET /api/graph/nodes`
-- `GET /api/graph/nodes/:id`
-- `GET /api/graph/edges`
-- `GET /api/graph/stats`
-- `GET /api/graph/errors`
-- `GET /api/graph/dataflow`
-- `POST /api/analyze`
-- `GET /api/health`
-- `ws://<host>:<port>/ws`，在图更新时推送 `graph_updated`
+<a id="mcp"></a>
 
-详细契约见 [docs/api/rest-api.md](docs/api/rest-api.md)。
+## MCP setup
 
-## MCP 集成
-
-CodeOmniVis 内置一个 stdio MCP Server，适合给 Cursor、Claude Desktop 或其他支持 MCP 的客户端补架构上下文。
-
-![通过 MCP 直接向 AI 查询架构上下文](docs/assets/readme/mcp-query-card.png)
-
-### 工具列表
-
-| 工具 | 适合问什么 |
-| --- | --- |
-| `get_api_routes` | 有哪些 API / tRPC / TSRPC 入口，哪些连到了数据库 |
-| `get_component_tree` | 某个页面或组件会渲染出怎样的组件树 |
-| `find_callers` | 谁在调用某个节点，哪些页面会被影响 |
-| `list_db_models` | 当前项目有哪些数据库模型 |
-| `get_dataflow` | 某个模型如何从 DB 走到 API，再走到 UI |
-
-### 客户端配置示例
+Add CodeOmniVis to a compatible client with an absolute project path:
 
 ```json
 {
   "mcpServers": {
     "codeomnivis": {
-      "command": "node",
+      "command": "npx",
       "args": [
-        "/absolute/path/to/CodeOmniVis/packages/cli/bin/codeomnivis.js",
+        "-y",
+        "@bynlk/codeomnivis",
         "mcp",
         "--project",
-        "/absolute/path/to/your-repo"
+        "/absolute/path/to/repository"
       ]
     }
   }
 }
 ```
 
-首次启动时，如果对应项目还没有缓存数据库，MCP 会先跑一轮完整分析；后续查询会复用 `~/.codeomnivis/projects/{hash}.db`。
+If no project cache exists, the MCP process performs an initial analysis and stores its database under `~/.codeomnivis/projects/{hash}.db`. See the [MCP tool contract](docs/api/mcp-tools.md) for inputs and response shapes.
 
-详细参数和返回结构见 [docs/api/mcp-tools.md](docs/api/mcp-tools.md)。
+<a id="api"></a>
 
-## 配置
+## REST API and live updates
 
-项目根目录下可以放 `.codeomnivis.json`。当前运行时对配置的支持还没有在所有命令上完全对齐：`serve` 是最完整的消费方，`check` 和 `init` 仍有不一致之处，所以这里把它当作一个**可选的高级覆盖层**，不是必须依赖的稳定契约。
+`serve` exposes the workbench and a local API on the same origin. Useful entry points include:
 
-下面这份示例更适合当“你希望它最终长成这样”的目标配置，而不是保证所有命令都完整遵守的精确协议：
+- `GET /api/health`
+- `GET /api/graph`
+- `GET /api/graph/nodes`
+- `GET /api/graph/edges`
+- `GET /api/graph/stats`
+- `GET /api/graph/errors`
+- `GET /api/graph/issues`
+- `GET /api/graph/dataflow`
+- `POST /api/analyze`
+- `GET /api/project` and `POST /api/project`
+- `ws://<host>:<port>/ws` for `graph_updated` events
 
-```json
-{
-  "frontend": {
-    "dirs": ["app", "components"],
-    "framework": "auto"
-  },
-  "backend": {
-    "dirs": ["server", "api"],
-    "framework": "trpc"
-  },
-  "database": {
-    "prismaSchema": "prisma/schema.prisma",
-    "typeormDirs": ["src/entities"]
-  },
-  "exclude": ["node_modules", "dist", ".next", "coverage"],
-  "port": 4321,
-  "parser": {
-    "maxTraceDepth": 5,
-    "incremental": true
-  },
-  "ui": {
-    "theme": "dark",
-    "layout": "dagre",
-    "aggregateThreshold": 100
-  }
-}
-```
+See the [REST API documentation](docs/api/rest-api.md). The browser UI uses the same endpoints and invalidates its graph, quality, project, and freshness queries together after an analysis update.
 
-如果你只是想快速起一个模板，可以先执行：
+<a id="limitations"></a>
 
-```bash
-codeomnivis init
-```
+## Known limitations
 
-然后再根据仓库实际目录结构调整。
+- Cross-layer relationships are static-analysis results. Dynamic imports, runtime dependency injection, generated code, and metaprogramming can remain unresolved.
+- Monorepo support currently discovers relevant workspace source directories; it is not a complete federated package graph.
+- Kotlin, Spring, Ktor, Room, and Exposed support is experimental and has less real-project coverage than the TypeScript demo path.
+- `.codeomnivis.json` is an optional override layer, but command coverage is not yet perfectly uniform.
+- The reserved `/api/ai/chat` endpoint returns `501`; the Web UI intentionally focuses on architecture exploration while AI integration lives in MCP.
+- Very large repositories can require more than 60 seconds. The 60-second promise is a target for supported, reasonably sized projects, not a hard timeout.
 
-## 仓库结构
+<a id="development"></a>
 
-| 目录 / 包 | 职责 |
-| --- | --- |
-| [`packages/shared`](packages/shared) | 共享类型、配置、颜色和默认值 |
-| [`packages/analyzer`](packages/analyzer) | 解析器、图构建、数据流追踪、一致性检查 |
-| [`packages/server`](packages/server) | REST API、WebSocket、增量分析 |
-| [`packages/ui`](packages/ui) | React + Cytoscape.js 可视化前端 |
-| [`packages/mcp`](packages/mcp) | stdio MCP Server |
-| [`packages/cli`](packages/cli) | 命令行入口和项目自动检测 |
-| [`demo`](demo) | 一个用来验证图谱质量的全栈样例项目 |
-| [`docs`](docs) | API、架构、状态报告和计划文档 |
+## Development
 
-更细的目录说明见 [docs/project-directory.md](docs/project-directory.md)。
-
-## Demo
-
-[`demo/`](demo) 不是展示页面，而是一份专门为图谱分析准备的样例仓库，包含：
-
-- Next.js App Router 页面
-- Route Handler API
-- tRPC Router 文件
-- React 组件树
-- Prisma schema 与模型关系
-
-跑通方式和可以重点观察的节点，见 [demo/README.md](demo/README.md)。
-
-## 文档
-
-- [文档导航](docs/README.md)
-- [REST API](docs/api/rest-api.md)
-- [MCP 工具说明](docs/api/mcp-tools.md)
-- [项目目录结构](docs/project-directory.md)
-- [项目状态报告](docs/PROJECT_STATUS_REPORT.md)
-- [解析流水线](docs/architecture/parser-pipeline.md)
-- [数据模型](docs/architecture/data-model.md)
-- [可视化设计](docs/architecture/visualization.md)
-
-## 开发
-
-### 环境要求
+### Requirements
 
 - Node.js `>= 18`
-- `pnpm@9`
-
-### 常用命令
+- pnpm `9`
 
 ```bash
 pnpm install
 pnpm build
 pnpm test
-pnpm lint
 pnpm typecheck
+pnpm lint
 ```
 
-根仓库使用 `pnpm workspace` + `turbo` 管理多包构建。
+Run the bundled demo from source:
 
-## 路线图
+```bash
+node packages/cli/bin/codeomnivis.js serve --project ./demo --no-open
+```
 
-- 更稳的多包 / monorepo 分析体验
-- 大图的模块折叠与聚合视图
-- 更完整的 AI 工作流，而不只是暴露 MCP 查询
-- 更多框架和语言生态支持
-- 更完整的示例、截图和发布文档
+| Package | Responsibility |
+| --- | --- |
+| [`packages/shared`](packages/shared) | Shared graph, issue, configuration, and protocol types |
+| [`packages/analyzer`](packages/analyzer) | Parsers, cross-layer resolution, graph building, quality checks, and local storage |
+| [`packages/server`](packages/server) | REST API, WebSocket, project switching, and incremental analysis |
+| [`packages/ui`](packages/ui) | React + Cytoscape.js architecture workbench |
+| [`packages/mcp`](packages/mcp) | stdio MCP server and architecture query tools |
+| [`packages/cli`](packages/cli) | Public command entry point and self-contained distribution |
+| [`demo`](demo) | Deterministic full-stack fixture used for screenshots and integration tests |
 
-## 参与贡献
+More detail: [project directory](docs/project-directory.md), [parser pipeline](docs/architecture/parser-pipeline.md), [graph data model](docs/architecture/data-model.md), and [visualization architecture](docs/architecture/visualization.md).
 
-- 开发说明见 [CONTRIBUTING.md](CONTRIBUTING.md)
-- 社区行为规范见 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- 安全问题提交流程见 [SECURITY.md](SECURITY.md)
+<a id="roadmap"></a>
+
+## Roadmap
+
+- stronger multi-package and monorepo modeling;
+- aggregation and progressive expansion for very large graphs;
+- broader real-project fixtures for experimental parsers;
+- richer impact analysis while keeping findings deterministic;
+- documented public releases and reproducible package provenance.
+
+<a id="contributing"></a>
+
+## Contributing
+
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), follow the [Code of Conduct](CODE_OF_CONDUCT.md), and report vulnerabilities through [SECURITY.md](SECURITY.md).
+
+Please include a focused fixture and normal, malformed, and boundary tests when adding or changing a parser.
+
+<a id="license"></a>
 
 ## License
 
-[PolyForm Noncommercial License 1.0.0](LICENSE)
-
-这意味着仓库默认面向学习、研究、个人和非商业场景。商业使用需要额外授权。
+[PolyForm Noncommercial License 1.0.0](LICENSE). The repository is available for learning, research, personal, and other noncommercial use. Commercial use requires separate permission.
