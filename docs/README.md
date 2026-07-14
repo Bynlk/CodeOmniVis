@@ -8,6 +8,7 @@
 - [Demo 指南](../demo/README.md) — 如何用仓库内样例项目体验图谱
 - [REST API](api/rest-api.md) — `serve` 启动后暴露的 HTTP / WebSocket 接口
 - [MCP 工具说明](api/mcp-tools.md) — MCP tool 的输入、输出和典型问题
+- [测试智能指南](guides/test-intelligence.md) — 支持框架、静态覆盖语义、执行与 XML 导入边界
 
 ## 架构与实现
 

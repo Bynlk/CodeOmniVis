@@ -7,6 +7,8 @@ All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 ### Stage B · 前端能力套件 (#15–#20)
 
 #### Added
+- **跨语言测试智能**：静态发现 Vitest、Jest、Playwright、Cypress、JUnit 4/5 与 Kotest suite/case/fixture；新增 `tests`、`covers`、`uses_fixture` 图关系、Tests 工作台、`GET /api/tests`、MCP `get_test_coverage`、显式有界 `test-run` 与安全 JUnit XML `test-import`。
+- **跨入口快照契约**：混合 TypeScript/Kotlin fixture 验证 Analyzer、CLI JSON、REST 与 MCP 的 `snapshotDigest` 及测试节点/边 ID 完全一致；1000 文件完整分析纳入 60 秒性能门禁。
 - **AI 对话契约** (`@codeomnivis/shared` `types/ai.ts`): `ChatMessage` / `AiConfig` / `AiChatRequest` / `AiChatResponse` 及守卫 `isChatMessage` / `isAiConfig` / `parseAiChatRequest`,纯函数 `resolveAiConfig`(优先级 body.config > env > null)。
 - **AI 路由** (`server`): `POST /api/ai/chat` 与 `/api/ai/explain`,上游为用户自配置的 OpenAI 兼容 `/chat/completions`(不经任何内部网关);凭据优先级 body.config > 环境变量 > 501。
 - **前端 AI 配置**: `lib/aiConfig.ts`(`codeomnivis.ai.config` localStorage,`parseAiConfig` 守卫);AiPanel 配置面板。
@@ -25,6 +27,8 @@ All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 - CLI `package.json`:第三方依赖移入 dependencies,workspace 包改 devDependencies(workspace:*),`main` 指向 `./dist/index.js`,build 使用 tsup。
 
 #### Fixed
+- 构建后的 analyzer 现在携带 Kotlin tree-sitter WASM，ESM 与内联 CLI 均通过 `import.meta.url` 定位资产，不再因缺少 `dist/wasm` 或未定义 `__dirname` 静默失去 Kotlin 分析。
+- Vitest/Jest test adapter 改用轻量 TypeScript 单文件 AST，避免每个测试文件创建完整 `ts-morph Project`；本地 1000 文件基准由超过 95 秒降至约 1.2 秒。
 - AI 请求契约前后端不一致(响应字段、配置缺失时的 501)。
 - 文件变更在分析进行中被静默丢弃 — 现保证最终一致(rerunRequested)。
 - `turbo.json` 增加 `globalPassThroughEnv: ["TMPDIR"]`,使 turbo 下的 vitest 继承沙箱临时目录。

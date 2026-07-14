@@ -40,7 +40,10 @@ CodeOmniVis 在执行 `serve` 后会启动一个 HTTP 服务，默认地址是 `
 | `GET` | `/api/graph/edges` | 获取所有边，可按类型过滤 |
 | `GET` | `/api/graph/stats` | 获取图谱统计信息 |
 | `GET` | `/api/graph/errors` | 获取解析错误列表 |
+| `GET` | `/api/graph/issues` | 获取确定性质量与安全发现 |
+| `GET` | `/api/graph/trace` | 从节点双向追踪调用链 |
 | `GET` | `/api/graph/dataflow` | 获取数据流概览或某个模型的详细路径 |
+| `GET` | `/api/tests` | 获取静态发现的测试结构与覆盖关系 |
 | `DELETE` | `/api/graph` | 清空图数据，需要确认 header |
 
 ## 详细说明
@@ -132,6 +135,9 @@ GET /api/graph/nodes?type=db_model
 - `kotlin_object`
 - `kotlin_function`
 - `kotlin_route`
+- `test_suite`
+- `test_case`
+- `test_fixture`
 
 当 `type` 非法时会返回 `400`。
 
@@ -181,6 +187,9 @@ GET /api/graph/edges?type=renders
 - `kotlin_inherits`
 - `kotlin_implements`
 - `kotlin_uses`
+- `tests`
+- `covers`
+- `uses_fixture`
 
 ### `GET /api/graph/stats`
 
@@ -228,6 +237,42 @@ GET /api/graph/dataflow?model=User
 ```
 
 如果指定模型不存在，会返回 `404`。
+
+### `GET /api/tests`
+
+返回与当前已提交快照一致的静态测试视图。可选 query：
+
+```text
+GET /api/tests?framework=vitest
+GET /api/tests?target=OrdersService
+```
+
+`framework` 接受 `vitest`、`jest`、`playwright`、`cypress`、`junit4`、`junit5` 或 `kotest`；非法值会按未提供过滤器处理。`target` 会匹配生产节点 ID、名称或文件路径。
+
+```json
+{
+  "data": {
+    "suites": [],
+    "cases": [],
+    "fixtures": [],
+    "coverage": [],
+    "summary": {
+      "suites": 0,
+      "cases": 0,
+      "fixtures": 0,
+      "coveredTargets": 0,
+      "uncoveredTargets": 0,
+      "byFramework": {}
+    }
+  },
+  "meta": {
+    "snapshotId": "...",
+    "snapshotDigest": "..."
+  }
+}
+```
+
+`coverage` 中的 `covers` 边表示静态 import、call 或 route-reference 证据，不是运行时行覆盖率。详细语义见[测试智能指南](../guides/test-intelligence.md)。
 
 ### `DELETE /api/graph`
 

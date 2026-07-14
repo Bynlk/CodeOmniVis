@@ -82,7 +82,7 @@ Every parser degrades to warnings instead of crashing the whole analysis. Every 
 
 ### Architecture workbench
 
-The stable dark workbench keeps navigation, explorer, canvas, inspector, freshness, and graph scale visible at the same time. Architecture, Requests, Data model, and Quality are peer views over the same project state.
+The stable dark workbench keeps navigation, explorer, canvas, inspector, freshness, and graph scale visible at the same time. Architecture, Requests, Data model, Tests, and Quality are peer views over the same committed project snapshot.
 
 The hero image above is a real Demo capture: `BookingPage → BookingList → /api/booking`, with the selected component's source location and callers visible in the inspector.
 
@@ -107,6 +107,7 @@ The MCP server reads the same local graph as the workbench. A client can ask:
 | `find_callers` | Who calls this node, and which pages can be affected? |
 | `list_db_models` | Which Prisma, TypeORM, or Drizzle models were detected? |
 | `get_dataflow` | How does a model flow through API and service layers into the UI? |
+| `get_test_coverage` | Which suites, cases, and fixtures were discovered, and what production nodes are they statically linked to? |
 
 <a id="supported-stack"></a>
 
@@ -118,10 +119,13 @@ Support is stated by evidence level so parser presence is not confused with equa
 | --- | --- |
 | Demo-verified core path | Next.js App Router, Next.js Pages Router, React components, `fetch` / `axios`, Next.js Route Handlers, tRPC, services, Prisma |
 | Parser and regression coverage | Express, NestJS controllers/modules/services, TSRPC, TypeORM, Drizzle |
+| Static test intelligence | Vitest, Jest, Playwright, Cypress, JUnit 4/5, and Kotest discovery; shared Web, REST, CLI, and MCP projection |
 | Experimental | Kotlin syntax, Spring, Ktor, Room, Exposed; registered in the default pipeline with targeted tests, but less real-world breadth |
 | Workspace discovery | pnpm workspaces and Turborepo source-directory discovery; not yet a complete federated multi-package model |
 
 The project also generates a **Prisma ER diagram** through database-model nodes and relation edges. TypeORM and Drizzle use the same `db_model` abstraction where their parsers can resolve a model.
+
+See [Test intelligence](docs/guides/test-intelligence.md) for exact discovery semantics, confidence rules, no-execution defaults, and JUnit XML safety limits.
 
 <a id="cli"></a>
 
@@ -157,6 +161,8 @@ npx @bynlk/codeomnivis check
 | `analyze [-o codeomnivis-graph.json]` | Write the current repository graph as JSON |
 | `check` | Print parser diagnostics and deterministic consistency findings |
 | `mcp --project <path>` | Start the stdio MCP server |
+| `test-import --project <path> --junit <file-or-glob>` | Import bounded JUnit XML results without executing tests |
+| `test-run --project <path> --runner <name> [--timeout <ms>]` | Explicitly run one enumerated test runner with shell, path, time, and output bounds |
 | `init` | Generate a starter `.codeomnivis.json` file |
 
 Binding to a non-loopback host requires a token for mutating endpoints. Local loopback usage remains the recommended default.
@@ -200,6 +206,7 @@ If no project cache exists, the MCP process performs an initial analysis and sto
 - `GET /api/graph/errors`
 - `GET /api/graph/issues`
 - `GET /api/graph/dataflow`
+- `GET /api/tests`
 - `POST /api/analyze`
 - `GET /api/project` and `POST /api/project`
 - `ws://<host>:<port>/ws` for `graph_updated` events
@@ -213,6 +220,7 @@ See the [REST API documentation](docs/api/rest-api.md). The browser UI uses the 
 - Cross-layer relationships are static-analysis results. Dynamic imports, runtime dependency injection, generated code, and metaprogramming can remain unresolved.
 - Monorepo support currently discovers relevant workspace source directories; it is not a complete federated package graph.
 - Kotlin, Spring, Ktor, Room, and Exposed support is experimental and has less real-project coverage than the TypeScript demo path.
+- Test `covers` edges are static source evidence, not runtime line coverage; dynamic names, reflection, custom DSL extensions, and runtime parameter rows can remain unresolved.
 - `.codeomnivis.json` is an optional override layer, but command coverage is not yet perfectly uniform.
 - The reserved `/api/ai/chat` endpoint returns `501`; the Web UI intentionally focuses on architecture exploration while AI integration lives in MCP.
 - Very large repositories can require more than 60 seconds. The 60-second promise is a target for supported, reasonably sized projects, not a hard timeout.
