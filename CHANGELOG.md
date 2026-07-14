@@ -2,7 +2,9 @@
 
 All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 
-## [Unreleased] — 2026-06-30
+## [Unreleased]
+
+## [0.1.0] — 2026-07-14
 
 ### Stage B · 前端能力套件 (#15–#20)
 

@@ -1,6 +1,6 @@
 {
   "name": "@bynlk/codeomnivis",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Zero-config TypeScript full-stack architecture visualizer with a local workbench and MCP server for AI coding agents",
   "license": "LicenseRef-PolyForm-Noncommercial-1.0.0",
   "repository": {

@@ -1,6 +1,6 @@
 {
   "name": "codeomnivis",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "description": "Full-stack architecture visualizer for TypeScript projects",
   "private": true,
@@ -27,6 +27,7 @@
     "verify:readme": "node scripts/verifyReadme.mjs",
     "verify:package": "node scripts/verifyPackedCli.mjs",
     "verify:contracts": "node scripts/verifyPublicContracts.mjs && pnpm test:contracts",
+    "verify:registry": "node scripts/verifyRegistryInstall.mjs",
     "quality:gate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test:coverage && node scripts/verifyChangedCoverage.mjs && pnpm test:contracts && pnpm test:e2e && pnpm audit:prod && pnpm verify:readme && pnpm verify:contracts && pnpm verify:package"
   },
   "devDependencies": {
