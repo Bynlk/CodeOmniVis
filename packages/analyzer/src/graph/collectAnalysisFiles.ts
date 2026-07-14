@@ -31,6 +31,8 @@ function isSupportedFile(filePath: string): boolean {
 }
 
 function scanDirectory(
+  projectRoot: string,
+  realProjectRoot: string,
   directory: string,
   visitFile: (filePath: string) => void,
   visitedDirectories: Set<string>,
@@ -41,6 +43,13 @@ function scanDirectory(
   } catch {
     return
   }
+  const lexicalRelative = path.relative(path.resolve(projectRoot), path.resolve(directory))
+  const realRelative = path.relative(realProjectRoot, realDirectory)
+  const lexicalInside = lexicalRelative === '' || (!lexicalRelative.startsWith('..') && !path.isAbsolute(lexicalRelative))
+  const realInside = realRelative === '' || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative))
+  // A path explicitly configured outside root is allowed, but a path that appears inside root
+  // must never escape through a symlink.
+  if (lexicalInside && !realInside) return
   if (visitedDirectories.has(realDirectory)) return
   visitedDirectories.add(realDirectory)
 
@@ -56,7 +65,7 @@ function scanDirectory(
         continue
       }
       if (stats.isDirectory()) {
-        scanDirectory(entryPath, visitFile, visitedDirectories)
+        scanDirectory(projectRoot, realProjectRoot, entryPath, visitFile, visitedDirectories)
       } else if (stats.isFile() && isSupportedFile(entryPath)) {
         visitFile(entryPath)
       }
@@ -130,10 +139,30 @@ export function collectAnalysisFiles(projectRoot: string, projectMeta: ProjectMe
   }
 
   const visitedDirectories = new Set<string>()
+  const realProjectRoot = fs.realpathSync.native(projectRoot)
   for (const directory of collectCandidateDirectories(projectRoot, projectMeta)) {
-    scanDirectory(directory, addFile, visitedDirectories)
+    scanDirectory(projectRoot, realProjectRoot, directory, addFile, visitedDirectories)
   }
   for (const filePath of collectExplicitFiles(projectMeta)) addFile(filePath)
 
+  return [...filesByRealPath.values()].sort()
+}
+
+/** Compatibility scanner for callers that already selected one source directory. */
+export function collectSourceFiles(directory: string, projectRoot: string): string[] {
+  const filesByRealPath = new Map<string, string>()
+  const addFile = (filePath: string): void => {
+    if (!isSupportedFile(filePath)) return
+    try {
+      const realPath = fs.realpathSync.native(filePath)
+      if (!filesByRealPath.has(realPath)) {
+        filesByRealPath.set(realPath, normalizePath(path.relative(projectRoot, filePath)))
+      }
+    } catch {
+      // A file may disappear while its directory is being traversed.
+    }
+  }
+  const realProjectRoot = fs.realpathSync.native(projectRoot)
+  scanDirectory(projectRoot, realProjectRoot, directory, addFile, new Set())
   return [...filesByRealPath.values()].sort()
 }

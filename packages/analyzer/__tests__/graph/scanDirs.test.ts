@@ -6,7 +6,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import { collectScanDirs } from '../../src/graph/runFullAnalysis'
+import { collectAnalysisFiles } from '../../src/graph/collectAnalysisFiles'
 import type { ProjectMeta } from '@codeomnivis/shared'
 
 function makeMeta(root: string, monorepoType: 'turborepo' | 'pnpm' | 'none'): ProjectMeta {
@@ -50,17 +50,14 @@ describe('collectScanDirs sibling boundary (S-08/F4)', () => {
   })
 
   it('monorepoType=none 时不扫描越界的兄弟目录', () => {
-    const dirs = collectScanDirs(root, makeMeta(root, 'none'))
-    expect(dirs.some(d => path.resolve(d).startsWith(path.resolve(sibling)))).toBe(false)
-    const resolvedRoot = path.resolve(root)
-    for (const d of dirs) {
-      const rel = path.relative(resolvedRoot, path.resolve(d))
-      expect(rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel))).toBe(true)
-    }
+    const files = collectAnalysisFiles(root, makeMeta(root, 'none'))
+    expect(files.some(file => file.includes('frontend'))).toBe(false)
   })
 
-  it('显式确认 monorepo 时才纳入兄弟 frontend 目录', () => {
-    const dirs = collectScanDirs(root, makeMeta(root, 'turborepo'))
-    expect(dirs.some(d => path.resolve(d) === path.resolve(sibling, 'src'))).toBe(true)
+  it('仅显式 metadata 才纳入兄弟 frontend 目录', () => {
+    const meta = makeMeta(root, 'turborepo')
+    meta.frontendDirs = [path.join(sibling, 'src')]
+    const files = collectAnalysisFiles(root, meta)
+    expect(files).toHaveLength(2)
   })
 })

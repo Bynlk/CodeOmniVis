@@ -24,11 +24,28 @@ export type { BuildResult } from './graph/builder'
 // 一键分析
 export { runAnalysis } from './graph/runAnalysis'
 export type { RunAnalysisOptions, RunAnalysisResult } from './graph/runAnalysis'
-export { collectAnalysisFiles } from './graph/collectAnalysisFiles'
+export { collectAnalysisFiles, collectSourceFiles } from './graph/collectAnalysisFiles'
 export { AnalysisError } from './graph/analysisError'
 export type { AnalysisErrorCode } from './graph/analysisError'
 export { runFullAnalysis } from './graph/runFullAnalysis'
 export type { FullAnalysisOptions, FullAnalysisResult } from './graph/runFullAnalysis'
+export { analyzeProject } from './graph/analyzeProject'
+export type {
+  AnalysisProgressEvent,
+  AnalysisProgressPhase,
+  AnalysisStore,
+  AnalyzeProjectOptions,
+} from './graph/analyzeProject'
+export {
+  collectConfiguredScanDirs,
+  computeProjectFingerprint,
+  computeSourceDigest,
+  detectProject,
+  discoverWorkspacePackages,
+  ProjectDetectionError,
+  resolveProjectRoot,
+} from './project'
+export type { ProjectDetectionWarning } from './project'
 
 // Resolver
 export { PathAliasResolver } from './resolver/pathAlias'

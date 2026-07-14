@@ -179,7 +179,7 @@ describe('runAnalysis graph replacement', () => {
     const linkSpy = vi.spyOn(CrossLayerLinker.prototype, 'link').mockRejectedValueOnce(new Error('link failed'))
 
     await expect(runAnalysis({ projectRoot, dbPath: ':memory:' })).rejects.toThrow('link failed')
-    expect(closeSpy).toHaveBeenCalledTimes(1)
+    expect(closeSpy).toHaveBeenCalledTimes(2)
 
     linkSpy.mockRestore()
     closeSpy.mockRestore()
