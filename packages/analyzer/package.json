@@ -32,8 +32,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --external ts-morph --external typescript --external @prisma/internals",
-    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "lint": "eslint src/",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

@@ -1,6 +1,6 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { Node, Project, SyntaxKind, type CallExpression, type SourceFile } from 'ts-morph'
+import { ts } from 'ts-morph'
 import {
   createEdgeId,
   type OmniNode,
@@ -8,7 +8,7 @@ import {
   type TestFramework,
 } from '@codeomnivis/shared'
 import type { TestAdapter } from '../types'
-import { callPath, literalTestName, qualifiedTestName, testNodeId } from './astHelpers'
+import { qualifiedTestName, testNodeId } from './astHelpers'
 
 const CASE_NAMES = new Set(['it', 'test', 'xit', 'xtest'])
 const HOOKS: Partial<Record<string, 'before_all' | 'before_each' | 'after_each' | 'after_all'>> = {
@@ -24,26 +24,62 @@ function framework(source: string): TestFramework | null {
   return null
 }
 
-function suiteAncestors(call: CallExpression): string[] {
-  const names: string[] = []
-  for (const ancestor of [...call.getAncestors()].reverse()) {
-    if (!Node.isCallExpression(ancestor)) continue
-    if (callPath(ancestor)[0] !== 'describe') continue
-    const name = literalTestName(ancestor)
-    if (name) names.push(name)
+function expressionPath(expression: ts.Expression): string[] {
+  if (ts.isIdentifier(expression)) return [expression.text]
+  if (ts.isPropertyAccessExpression(expression)) {
+    return [...expressionPath(expression.expression), expression.name.text]
   }
-  return names
+  if (ts.isCallExpression(expression)) return expressionPath(expression.expression)
+  return []
 }
 
-function location(source: SourceFile, call: CallExpression): { line: number; column: number } {
-  return source.getLineAndColumnAtPos(call.getStart())
+function callPath(call: ts.CallExpression): string[] {
+  return expressionPath(call.expression)
+}
+
+function literalTestName(call: ts.CallExpression): string | null {
+  const argument = call.arguments[0]
+  return argument && (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument))
+    ? argument.text
+    : null
+}
+
+function suiteAncestors(call: ts.CallExpression): string[] {
+  const names: string[] = []
+  let ancestor: ts.Node | undefined = call.parent
+  while (ancestor) {
+    if (ts.isCallExpression(ancestor) && callPath(ancestor)[0] === 'describe') {
+      const name = literalTestName(ancestor)
+      if (name) names.push(name)
+    }
+    ancestor = ancestor.parent
+  }
+  return names.reverse()
+}
+
+function location(
+  source: ts.SourceFile,
+  call: ts.CallExpression,
+): { line: number; column: number } {
+  const point = source.getLineAndCharacterOfPosition(call.getStart(source))
+  return { line: point.line + 1, column: point.character + 1 }
+}
+
+function callExpressions(source: ts.SourceFile): ts.CallExpression[] {
+  const calls: ts.CallExpression[] = []
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node)) calls.push(node)
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return calls
 }
 
 function suiteNode(
   filePath: string,
   name: string,
-  call: CallExpression,
-  source: SourceFile,
+  call: ts.CallExpression,
+  source: ts.SourceFile,
   kind: 'file' | 'describe',
   selected: TestFramework,
 ): OmniNode {
@@ -59,7 +95,7 @@ function suiteNode(
 
 function discoverSource(
   filePath: string,
-  source: SourceFile,
+  source: ts.SourceFile,
   selected: TestFramework,
 ): ParseResult {
   const nodes: OmniNode[] = []
@@ -68,14 +104,15 @@ function discoverSource(
   const suites = new Map<string, OmniNode>()
   const fixtures: Array<{ node: OmniNode; scope: string }> = []
   const fileSuiteName = path.basename(filePath)
-  const firstCall = source.getFirstDescendantByKind(SyntaxKind.CallExpression)
+  const calls = callExpressions(source)
+  const firstCall = calls[0]
   if (firstCall) {
     const fileSuite = suiteNode(filePath, fileSuiteName, firstCall, source, 'file', selected)
     suites.set('', fileSuite)
     nodes.push(fileSuite)
   }
 
-  for (const call of source.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+  for (const call of calls) {
     const parts = callPath(call)
     const base = parts[0]
     const ownName = literalTestName(call)
@@ -92,7 +129,7 @@ function discoverSource(
     const hook = HOOKS[base]
     if (hook) {
       const scope = ancestors.join(' > ')
-      const name = qualifiedTestName(ancestors, `${base}@${call.getStartLineNumber()}`)
+      const name = qualifiedTestName(ancestors, `${base}@${location(source, call).line}`)
       const node: OmniNode = {
         id: testNodeId('test_fixture', filePath, name),
         type: 'test_fixture',
@@ -116,7 +153,7 @@ function discoverSource(
       metadata: {
         framework: selected,
         isParameterized: parts.includes('each'),
-        ...(parts.includes('each') ? { parameterSource: call.getExpression().getText() } : {}),
+        ...(parts.includes('each') ? { parameterSource: call.expression.getText(source) } : {}),
         disabled: base.startsWith('x') || parts.includes('skip'),
       },
     }
@@ -144,13 +181,6 @@ function discoverSource(
       })
     }
   }
-  if (source.getPreEmitDiagnostics().some((diagnostic) => diagnostic.getCategory() === 1)) {
-    errors.push({
-      file: filePath,
-      message: 'Test file contains TypeScript syntax errors',
-      severity: 'warning',
-    })
-  }
   return { nodes, edges, errors }
 }
 
@@ -170,12 +200,18 @@ export const VitestJestAdapter: TestAdapter = {
   async discover(filePath, context) {
     try {
       const absolutePath = path.resolve(context.projectRoot, filePath)
-      const selected = framework(fs.readFileSync(absolutePath, 'utf8'))
+      const sourceText = fs.readFileSync(absolutePath, 'utf8')
+      const selected = framework(sourceText)
       if (!selected) return { nodes: [], edges: [], errors: [] }
-      const project = new Project({ skipAddingFilesFromTsConfig: true })
       return discoverSource(
         filePath.replaceAll('\\', '/'),
-        project.addSourceFileAtPath(absolutePath),
+        ts.createSourceFile(
+          absolutePath,
+          sourceText,
+          ts.ScriptTarget.Latest,
+          true,
+          absolutePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+        ),
         selected,
       )
     } catch (error) {

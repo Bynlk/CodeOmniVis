@@ -8,18 +8,17 @@
 import ParserDefault from 'web-tree-sitter'
 import * as webTreeSitter from 'web-tree-sitter'
 import * as path from 'path'
+import { fileURLToPath } from 'node:url'
 
 type ParserConstructor = typeof ParserDefault
 type KotlinParser = InstanceType<ParserConstructor>
 type KotlinTree = ReturnType<KotlinParser['parse']>
 
 function isParserConstructor(value: unknown): value is ParserConstructor {
-  return typeof value === 'function'
-    && 'init' in value
-    && typeof value.init === 'function'
+  return typeof value === 'function' && 'init' in value && typeof value.init === 'function'
 }
 
-function resolveParser(primary: unknown, namespace: unknown): ParserConstructor {
+export function resolveParser(primary: unknown, namespace: unknown): ParserConstructor {
   if (isParserConstructor(primary)) return primary
 
   if (typeof namespace === 'object' && namespace !== null && 'default' in namespace) {
@@ -48,7 +47,8 @@ export async function getKotlinParser(): Promise<KotlinParser> {
     await Parser.init()
     const parser = new Parser()
 
-    const wasmPath = path.join(__dirname, 'wasm', 'tree-sitter-kotlin.wasm')
+    const moduleDirectory = fileURLToPath(new URL('.', import.meta.url))
+    const wasmPath = path.join(moduleDirectory, 'wasm', 'tree-sitter-kotlin.wasm')
     const Language = await Parser.Language.load(wasmPath)
     parser.setLanguage(Language)
 
