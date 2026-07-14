@@ -47,7 +47,7 @@ export {
 } from './project'
 export type { ProjectDetectionWarning } from './project'
 
-export { createDefaultTestAdapters, discoverTests } from './tests'
+export { createDefaultTestAdapters, discoverTests, importJunitXml } from './tests'
 export type { TestAdapter, TestDiscoveryContext } from './tests'
 
 // Resolver

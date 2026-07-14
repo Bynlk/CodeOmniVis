@@ -44,6 +44,7 @@
     "@codeomnivis/shared": "workspace:*",
     "@prisma/internals": "^5.0.0",
     "fast-glob": "^3.3.0",
+    "fast-xml-parser": "^5.10.0",
     "sql.js": "^1.10.0",
     "tree-sitter-wasms": "^0.1.13",
     "ts-morph": "^21.0.0",

@@ -96,6 +96,8 @@ export type {
   GraphSanitizeResult,
 } from './types/graph'
 
+export type { TestRunCaseResult, TestRunImport } from './types/snapshot'
+
 export {
   sanitizeGraph,
   mergeParseResults,

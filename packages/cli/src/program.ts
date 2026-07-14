@@ -6,6 +6,7 @@ import { checkCommand } from './commands/check'
 import { initCommand } from './commands/init'
 import { mcpCommand } from './commands/mcp'
 import { serveCommand } from './commands/serve'
+import { testImportCommand } from './commands/testImport'
 
 function readCliVersion(): string {
   try {
@@ -34,6 +35,7 @@ export function createCliProgram(): Command {
   checkCommand(program)
   mcpCommand(program)
   initCommand(program)
+  testImportCommand(program)
 
   return program
 }

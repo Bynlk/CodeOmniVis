@@ -26,6 +26,21 @@ export interface AnalysisStats {
   parseErrorSeverityCounts: Record<ParseErrorSeverity, number>
 }
 
+export interface TestRunCaseResult {
+  suite: string
+  name: string
+  status: 'passed' | 'failed' | 'skipped'
+  durationMs: number
+  failureMessage?: string
+}
+
+export interface TestRunImport {
+  source: 'junit_xml'
+  importedAt: number
+  cases: TestRunCaseResult[]
+  unmatched: TestRunCaseResult[]
+}
+
 export interface ProjectSnapshot {
   schemaVersion: 1
   snapshotId: string
@@ -45,6 +60,7 @@ export interface ProjectSnapshot {
     analyzerVersion: string
     filesScanned: number
     sourceDigest: string
+    testRuns?: TestRunImport[]
   }
 }
 

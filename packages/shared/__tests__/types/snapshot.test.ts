@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ProjectSnapshot } from '../../src/types/snapshot'
+import type { ProjectSnapshot, TestRunImport } from '../../src/types/snapshot'
 import { computeSnapshotDigest } from '../../src/node/stableDigest'
 
 function snapshot(): ProjectSnapshot {
@@ -163,6 +163,17 @@ describe('computeSnapshotDigest', () => {
     const second = snapshot()
     second.graph.nodes[0].name = 'ChangedHome'
 
+    expect(computeSnapshotDigest(first)).not.toBe(computeSnapshotDigest(second))
+  })
+
+  it('includes imported test results but excludes import time', () => {
+    const first = snapshot()
+    const second = snapshot()
+    const run: TestRunImport = { source: 'junit_xml', importedAt: 1, cases: [{ suite: 'Checkout', name: 'works', status: 'passed', durationMs: 2 }], unmatched: [] }
+    first.provenance.testRuns = [run]
+    second.provenance.testRuns = [{ ...run, importedAt: 999, cases: run.cases.map(result => ({ ...result })) }]
+    expect(computeSnapshotDigest(first)).toBe(computeSnapshotDigest(second))
+    second.provenance.testRuns[0].cases[0].status = 'failed'
     expect(computeSnapshotDigest(first)).not.toBe(computeSnapshotDigest(second))
   })
 })

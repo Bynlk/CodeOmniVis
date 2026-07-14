@@ -132,6 +132,11 @@ export function computeSnapshotDigest(snapshot: ProjectSnapshot): string {
       analyzerVersion: snapshot.provenance.analyzerVersion,
       filesScanned: snapshot.provenance.filesScanned,
       sourceDigest: snapshot.provenance.sourceDigest,
+      testRuns: snapshot.provenance.testRuns?.map(run => ({
+        source: run.source,
+        cases: sortByCanonical(run.cases),
+        unmatched: sortByCanonical(run.unmatched),
+      })),
     },
   })
 }

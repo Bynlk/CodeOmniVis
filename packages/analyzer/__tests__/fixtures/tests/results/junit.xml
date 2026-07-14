@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="CheckoutTest" tests="3">
+  <testcase classname="CheckoutTest" name="accepts valid card" time="0.012" />
+  <testcase classname="CheckoutTest" name="rejects expired card" time="0.004">
+    <failure message="expected decline" />
+  </testcase>
+  <testcase classname="CheckoutTest" name="skips blocked card" time="0">
+    <skipped />
+  </testcase>
+</testsuite>
