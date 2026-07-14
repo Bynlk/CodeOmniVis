@@ -140,7 +140,9 @@ describe('analyzeProject', () => {
       metadata: { props: [], hasState: false, isPage: false, jsxChildCount: 0 },
     }
     db.upsertNode(previous)
-    vi.spyOn(db, 'saveGraph').mockReturnValueOnce({ nodesSaved: 0, edgesSaved: 0 })
+    vi.spyOn(db, 'replaceSnapshot').mockImplementationOnce(() => {
+      throw new Error('injected storage failure')
+    })
 
     await expect(analyzeProject({ projectRoot: root, db })).rejects.toMatchObject({
       code: 'STORAGE_FAILURE',

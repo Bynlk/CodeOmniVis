@@ -1,1113 +1,276 @@
-/**
- * SQLite 数据库封装
- *
- * 使用 sql.js 提供纯 JavaScript 的 SQLite 实现。
- * 所有写操作使用事务提高性能。
- * 遵循"降级而非崩溃"原则，操作失败返回错误而非抛出异常。
- */
+import type {
+  EdgeType,
+  NodeType,
+  OmniEdge,
+  OmniGraph,
+  OmniNode,
+  ProjectSnapshot,
+  WriteReport,
+} from '@codeomnivis/shared'
+import { openSqlDatabase, type SqlDatabase } from './database'
+import { EdgeRepository } from './edgeRepository'
+import { ErrorRepository, type DbError } from './errorRepository'
+import { GraphRepository, type GraphSubtree } from './graphRepository'
+import { NodeRepository } from './nodeRepository'
+import { replaceSnapshot, type Repositories } from './persistence'
+import { StatsRepository, type DbStats } from './statsRepository'
 
-import initSqlJs, { type Database as SqlJsDatabase, type SqlValue } from 'sql.js'
-import * as fs from 'fs'
-import type { OmniNode, OmniEdge, OmniGraph, NodeType, EdgeType, JsonObject } from '@codeomnivis/shared'
-import { jsonObjectOrEmpty, isNodeType } from '@codeomnivis/shared'
-import { parseStoredNode, parseStoredEdge } from './metadataGuards'
-import { CREATE_TABLES_SQL, SQL } from './schema'
+export type { DbError } from './errorRepository'
+export type { DbStats } from './statsRepository'
+export type { GraphSubtree } from './graphRepository'
 
-// ============================================================
-// 类型定义
-// ============================================================
-
-export interface DbError {
-  file: string
-  message: string
-  severity: 'error' | 'warning' | 'info'
-  originalError?: string
+export interface AnalysisStore {
+  ready(): Promise<void>
+  replaceSnapshot(snapshot: ProjectSnapshot): WriteReport
+  loadSnapshot(): ProjectSnapshot | null
+  loadGraph(): OmniGraph
+  getAllErrors(): DbError[]
+  close(): void
 }
 
-export interface DbStats {
-  nodeCount: number
-  edgeCount: number
-  errorCount: number
-  nodeTypeCounts: Record<string, number>
-  edgeTypeCounts: Record<string, number>
-}
-
-/** 子树节点：getSubtree 的递归返回结构。 */
-export interface GraphSubtree {
-  id: string
-  name: string
-  type: NodeType
-  children: GraphSubtree[]
-}
-
-const EDGE_TYPES = new Set<string>([
-  'renders',
-  'navigates_to',
-  'calls_api',
-  'handles',
-  'calls_service',
-  'queries_db',
-  'db_relation',
-  'imports',
-  'contains',
-  'kotlin_inherits',
-  'kotlin_implements',
-  'kotlin_uses',
-  'data_flows_to',
-  'sends_msg',
-  'listens_msg',
-])
-
-const EDGE_CONFIDENCES = new Set<string>(['certain', 'inferred'])
-/** BOUND-04:getSubtree 递归深度硬上限,防止超大 depth / 环形图导致 DoS。 */
-const GETSUBTREE_MAX_DEPTH = 1000
-const DB_ERROR_SEVERITIES = new Set<string>(['error', 'warning', 'info'])
-
-function isEdgeType(value: string): value is EdgeType {
-  return EDGE_TYPES.has(value)
-}
-
-function isEdgeConfidence(value: string): value is OmniEdge['confidence'] {
-  return EDGE_CONFIDENCES.has(value)
-}
-
-function isDbErrorSeverity(value: string): value is DbError['severity'] {
-  return DB_ERROR_SEVERITIES.has(value)
-}
-
-function sqlString(value: SqlValue | undefined): string {
-  return typeof value === 'string' ? value : String(value ?? '')
-}
-
-function sqlOptionalString(value: SqlValue | undefined): string | undefined {
-  return typeof value === 'string' ? value : undefined
-}
-
-function sqlNumber(value: SqlValue | undefined): number {
-  return typeof value === 'number' ? value : Number(value ?? 0)
-}
-
-function sqlNodeType(value: SqlValue | undefined): NodeType {
-  const type = sqlString(value)
-  return isNodeType(type) ? type : 'module'
-}
-
-function sqlEdgeType(value: SqlValue | undefined): EdgeType {
-  const type = sqlString(value)
-  return isEdgeType(type) ? type : 'imports'
-}
-
-function sqlEdgeConfidence(value: SqlValue | undefined): OmniEdge['confidence'] {
-  const confidence = sqlString(value)
-  return isEdgeConfidence(confidence) ? confidence : 'inferred'
-}
-
-function sqlDbErrorSeverity(value: SqlValue | undefined): DbError['severity'] {
-  const severity = sqlString(value)
-  return isDbErrorSeverity(severity) ? severity : 'warning'
-}
-
-
-// ============================================================
-// 数据库类
-// ============================================================
-
-export class OmniDatabase {
-  private db: SqlJsDatabase | null = null
-  private dbPath: string
-  private initPromise: Promise<void>
+export class OmniDatabase implements AnalysisStore {
+  private database: SqlDatabase | null = null
+  private repositories: Repositories | null = null
+  private readonly initPromise: Promise<void>
 
   constructor(dbPath = ':memory:') {
-    this.dbPath = dbPath
-    this.initPromise = this.initialize()
+    this.initPromise = this.initialize(dbPath)
   }
 
-  /**
-   * 初始化数据库：加载 WASM 并创建表
-   * 如果 dbPath 是文件路径且文件存在，则从文件加载
-   */
-  private async initialize(): Promise<void> {
-    try {
-      const SQL_WASM = await initSqlJs()
-
-      if (this.dbPath !== ':memory:' && fs.existsSync(this.dbPath)) {
-        // 从已有文件加载
-        const buffer = fs.readFileSync(this.dbPath)
-        this.db = new SQL_WASM.Database(buffer)
-      } else {
-        // 创建新数据库
-        this.db = new SQL_WASM.Database()
-        // 执行建表语句
-        this.db.run(CREATE_TABLES_SQL)
-      }
-    } catch (err) {
-      console.error(`Failed to initialize database at ${this.dbPath}:`, err)
-      throw err
+  private async initialize(dbPath: string): Promise<void> {
+    const database = await openSqlDatabase(dbPath)
+    const nodes = new NodeRepository(database)
+    const edges = new EdgeRepository(database)
+    const errors = new ErrorRepository(database)
+    this.database = database
+    this.repositories = {
+      database,
+      nodes,
+      edges,
+      errors,
+      graph: new GraphRepository(database, nodes, edges, errors),
+      stats: new StatsRepository(database),
     }
   }
 
-  /**
-   * 等待数据库初始化完成
-   */
   async ready(): Promise<void> {
     await this.initPromise
   }
 
-  /**
-   * 关闭数据库连接（持久化到文件）
-   */
   close(): void {
-    if (this.db) {
-      // 持久化到文件
-      if (this.dbPath !== ':memory:') {
-        try {
-          const data = this.db.export()
-          const buffer = Buffer.from(data)
-          fs.writeFileSync(this.dbPath, buffer)
-        } catch (err) {
-          console.error(`Failed to persist database to ${this.dbPath}:`, err)
-        }
-      }
-      this.db.close()
-      this.db = null
-    }
+    this.database?.close()
+    this.database = null
+    this.repositories = null
   }
 
-  /**
-   * 检查数据库是否已初始化
-   */
-  private ensureReady(): SqlJsDatabase {
-    if (!this.db) {
-      throw new Error('Database not initialized. Call ready() first.')
-    }
-    return this.db
+  replaceSnapshot(snapshot: ProjectSnapshot): WriteReport {
+    return replaceSnapshot(snapshot, this.requireRepositories())
   }
 
-  // ============================================================
-  // 节点操作
-  // ============================================================
+  loadSnapshot(): ProjectSnapshot | null {
+    return this.attempt('load snapshot', null, repositories => repositories.graph.loadSnapshot())
+  }
 
-  /**
-   * 插入或更新节点
-   * @returns 成功返回 true，失败返回 false
-   */
   upsertNode(node: OmniNode): boolean {
-    try {
-      this.ensureReady()
-      this.ensureReady().run(SQL.insertNode, [
-        node.id,
-        node.type,
-        node.name,
-        node.filePath,
-        node.line,
-        node.column,
-        JSON.stringify(node.metadata) ?? null,
-      ])
+    return this.attempt(`upsert node ${node.id}`, false, repositories => {
+      repositories.nodes.upsert(node)
       return true
-    } catch (err) {
-      console.error(`Failed to upsert node ${node.id}:`, err)
-      return false
-    }
+    })
   }
 
-  /**
-   * 批量插入或更新节点（使用事务）
-   * @returns 成功插入的数量
-   */
   upsertNodes(nodes: OmniNode[]): number {
     if (nodes.length === 0) return 0
-
-    try {
-      this.ensureReady()
-      let count = 0
-
-      this.ensureReady().run('BEGIN TRANSACTION')
-      for (const node of nodes) {
-        try {
-          this.ensureReady().run(SQL.insertNode, [
-            node.id,
-            node.type,
-            node.name,
-            node.filePath,
-            node.line,
-            node.column,
-            JSON.stringify(node.metadata) ?? null,
-          ])
-          count++
-        } catch (err) {
-          console.error(`Failed to upsert node ${node.id}:`, err)
-        }
-      }
-      this.ensureReady().run('COMMIT')
-
-      return count
-    } catch (err) {
-      console.error('Failed to upsert nodes:', err)
-      try {
-        this.ensureReady().run('ROLLBACK')
-      } catch (rollbackErr) {
-        console.error('ROLLBACK failed after upsertNodes error:', rollbackErr)
-      }
-      return 0
-    }
+    return this.attempt('upsert nodes', 0, repositories =>
+      repositories.database.transaction(() => repositories.nodes.replaceAll(nodes)))
   }
 
-  /**
-   * 获取单个节点
-   */
   getNode(id: string): OmniNode | null {
-    try {
-      this.ensureReady()
-      const stmt = this.ensureReady().prepare(SQL.selectNode)
-      stmt.bind([id])
-      if (stmt.step()) {
-        const row = stmt.getAsObject()
-        stmt.free()
-        return this.rowToNode(row)
-      }
-      stmt.free()
-      return null
-    } catch (err) {
-      console.error(`Failed to get node ${id}:`, err)
-      return null
-    }
+    return this.attempt(`get node ${id}`, null, repositories => repositories.nodes.get(id))
   }
 
-  /**
-   * 获取所有节点
-   */
   getAllNodes(): OmniNode[] {
-    try {
-      this.ensureReady()
-      const results = this.ensureReady().exec(SQL.selectAllNodes)
-      if (results.length === 0) return []
-      return results[0].values.map(row => this.arrayToNode(row))
-    } catch (err) {
-      console.error('Failed to get all nodes:', err)
-      return []
-    }
+    return this.attempt('get all nodes', [], repositories => repositories.nodes.all())
   }
 
-  /**
-   * 按类型获取节点
-   */
   getNodesByType(type: NodeType): OmniNode[] {
-    try {
-      this.ensureReady()
-      const stmt = this.ensureReady().prepare(SQL.selectNodesByType)
-      stmt.bind([type])
-      const nodes: OmniNode[] = []
-      while (stmt.step()) {
-        const row = stmt.getAsObject()
-        nodes.push(this.rowToNode(row))
-      }
-      stmt.free()
-      return nodes
-    } catch (err) {
-      console.error(`Failed to get nodes by type ${type}:`, err)
-      return []
-    }
+    return this.attempt(`get nodes by type ${type}`, [], repositories => repositories.nodes.byType(type))
   }
 
-  /**
-   * 按文件路径获取节点
-   */
   getNodesByFile(filePath: string): OmniNode[] {
-    try {
-      this.ensureReady()
-      const stmt = this.ensureReady().prepare(SQL.selectNodesByFile)
-      stmt.bind([filePath])
-      const nodes: OmniNode[] = []
-      while (stmt.step()) {
-        const row = stmt.getAsObject()
-        nodes.push(this.rowToNode(row))
-      }
-      stmt.free()
-      return nodes
-    } catch (err) {
-      console.error(`Failed to get nodes by file ${filePath}:`, err)
-      return []
-    }
+    return this.attempt(`get nodes by file ${filePath}`, [], repositories => repositories.nodes.byFile(filePath))
   }
 
-  /**
-   * 删除节点
-   */
   deleteNode(id: string): boolean {
-    try {
-      this.ensureReady()
-      this.ensureReady().run(SQL.deleteNode, [id])
+    return this.attempt(`delete node ${id}`, false, repositories => {
+      repositories.nodes.delete(id)
       return true
-    } catch (err) {
-      console.error(`Failed to delete node ${id}:`, err)
-      return false
-    }
+    })
   }
 
-  /**
-   * 删除所有节点
-   */
   deleteAllNodes(): boolean {
-    try {
-      this.ensureReady()
-      this.ensureReady().run(SQL.deleteAllNodes)
+    return this.attempt('delete all nodes', false, repositories => {
+      repositories.nodes.clear()
       return true
-    } catch (err) {
-      console.error('Failed to delete all nodes:', err)
-      return false
-    }
+    })
   }
 
-  // ============================================================
-  // 边操作
-  // ============================================================
-
-  /**
-   * 插入或更新边（暂时禁用 FK 检查）
-   * @returns 成功返回 true，失败返回 false
-   */
   upsertEdge(edge: OmniEdge): boolean {
-    try {
-      this.ensureReady()
-      this.ensureReady().run('PRAGMA foreign_keys = OFF')
-      this.ensureReady().run(SQL.insertEdge, [
-        edge.id,
-        edge.source,
-        edge.target,
-        edge.type,
-        edge.confidence,
-        JSON.stringify(edge.metadata) ?? null,
-      ])
-      this.ensureReady().run('PRAGMA foreign_keys = ON')
+    return this.attempt(`upsert edge ${edge.id}`, false, repositories => {
+      repositories.edges.replaceAll([edge])
       return true
-    } catch (err) {
-      console.error(`Failed to upsert edge ${edge.id}:`, err)
-      try { this.ensureReady().run('PRAGMA foreign_keys = ON') } catch { /* ignore */ }
-      return false
-    }
+    })
   }
 
-  /**
-   * 批量插入或更新边（使用事务，暂时禁用 FK 检查避免跨层边写入失败）
-   * @returns 成功插入的数量
-   */
   upsertEdges(edges: OmniEdge[]): number {
     if (edges.length === 0) return 0
-
-    try {
-      this.ensureReady()
-      let count = 0
-
-      // 暂时禁用 FK 检查，允许引用尚未存在的节点的边写入
-      this.ensureReady().run('PRAGMA foreign_keys = OFF')
-      this.ensureReady().run('BEGIN TRANSACTION')
-      for (const edge of edges) {
-        try {
-          this.ensureReady().run(SQL.insertEdge, [
-            edge.id,
-            edge.source,
-            edge.target,
-            edge.type,
-            edge.confidence,
-            JSON.stringify(edge.metadata) ?? null,
-          ])
-          count++
-        } catch (err) {
-          console.error(`Failed to upsert edge ${edge.id}:`, err)
-        }
-      }
-      this.ensureReady().run('COMMIT')
-      this.ensureReady().run('PRAGMA foreign_keys = ON')
-
-      return count
-    } catch (err) {
-      console.error('Failed to upsert edges:', err)
-      try {
-        this.ensureReady().run('ROLLBACK')
-        this.ensureReady().run('PRAGMA foreign_keys = ON')
-      } catch (rollbackErr) {
-        console.error('ROLLBACK failed after upsertEdges error:', rollbackErr)
-      }
-      return 0
-    }
+    return this.attempt('upsert edges', 0, repositories =>
+      repositories.database.transaction(() => repositories.edges.replaceAll(edges)))
   }
 
-  /**
-   * 获取单个边
-   */
   getEdge(id: string): OmniEdge | null {
-    try {
-      this.ensureReady()
-      const stmt = this.ensureReady().prepare(SQL.selectEdge)
-      stmt.bind([id])
-      if (stmt.step()) {
-        const row = stmt.getAsObject()
-        stmt.free()
-        return this.rowToEdge(row)
-      }
-      stmt.free()
-      return null
-    } catch (err) {
-      console.error(`Failed to get edge ${id}:`, err)
-      return null
-    }
+    return this.attempt(`get edge ${id}`, null, repositories =>
+      repositories.edges instanceof EdgeRepository ? repositories.edges.get(id) : null)
   }
 
-  /**
-   * 获取所有边
-   */
   getAllEdges(): OmniEdge[] {
-    try {
-      this.ensureReady()
-      const results = this.ensureReady().exec(SQL.selectAllEdges)
-      if (results.length === 0) return []
-      return results[0].values.map(row => this.arrayToEdge(row))
-    } catch (err) {
-      console.error('Failed to get all edges:', err)
-      return []
-    }
+    return this.attempt('get all edges', [], repositories => this.edgeRepository(repositories).all())
   }
 
-  /**
-   * 按类型获取边
-   */
   getEdgesByType(type: EdgeType): OmniEdge[] {
-    try {
-      this.ensureReady()
-      const stmt = this.ensureReady().prepare(SQL.selectEdgesByType)
-      stmt.bind([type])
-      const edges: OmniEdge[] = []
-      while (stmt.step()) {
-        const row = stmt.getAsObject()
-        edges.push(this.rowToEdge(row))
-      }
-      stmt.free()
-      return edges
-    } catch (err) {
-      console.error(`Failed to get edges by type ${type}:`, err)
-      return []
-    }
+    return this.attempt(`get edges by type ${type}`, [], repositories => this.edgeRepository(repositories).byType(type))
   }
 
-  /**
-   * 获取节点的出边
-   */
   getOutEdges(nodeId: string): OmniEdge[] {
-    try {
-      this.ensureReady()
-      const stmt = this.ensureReady().prepare(SQL.selectEdgesBySource)
-      stmt.bind([nodeId])
-      const edges: OmniEdge[] = []
-      while (stmt.step()) {
-        const row = stmt.getAsObject()
-        edges.push(this.rowToEdge(row))
-      }
-      stmt.free()
-      return edges
-    } catch (err) {
-      console.error(`Failed to get out edges for ${nodeId}:`, err)
-      return []
-    }
+    return this.attempt(`get outgoing edges ${nodeId}`, [], repositories => this.edgeRepository(repositories).outgoing(nodeId))
   }
 
-  /**
-   * 获取节点的入边
-   */
   getInEdges(nodeId: string): OmniEdge[] {
-    try {
-      this.ensureReady()
-      const stmt = this.ensureReady().prepare(SQL.selectEdgesByTarget)
-      stmt.bind([nodeId])
-      const edges: OmniEdge[] = []
-      while (stmt.step()) {
-        const row = stmt.getAsObject()
-        edges.push(this.rowToEdge(row))
-      }
-      stmt.free()
-      return edges
-    } catch (err) {
-      console.error(`Failed to get in edges for ${nodeId}:`, err)
-      return []
-    }
+    return this.attempt(`get incoming edges ${nodeId}`, [], repositories => this.edgeRepository(repositories).incoming(nodeId))
   }
 
-  /**
-   * 删除边
-   */
   deleteEdge(id: string): boolean {
-    try {
-      this.ensureReady()
-      this.ensureReady().run(SQL.deleteEdge, [id])
+    return this.attempt(`delete edge ${id}`, false, repositories => {
+      this.edgeRepository(repositories).delete(id)
       return true
-    } catch (err) {
-      console.error(`Failed to delete edge ${id}:`, err)
-      return false
-    }
+    })
   }
 
-  /**
-   * 删除所有边
-   */
   deleteAllEdges(): boolean {
-    try {
-      this.ensureReady()
-      this.ensureReady().run(SQL.deleteAllEdges)
+    return this.attempt('delete all edges', false, repositories => {
+      this.edgeRepository(repositories).clear()
       return true
-    } catch (err) {
-      console.error('Failed to delete all edges:', err)
-      return false
-    }
+    })
   }
 
-  // ============================================================
-  // 解析错误操作
-  // ============================================================
-
-  /**
-   * 插入解析错误
-   */
   insertError(error: DbError): boolean {
-    try {
-      this.ensureReady()
-      this.ensureReady().run(SQL.insertError, [
-        error.file,
-        error.message,
-        error.severity,
-        error.originalError || null,
-      ])
+    return this.attempt('insert error', false, repositories => {
+      repositories.errors.insert(error)
       return true
-    } catch (err) {
-      console.error('Failed to insert error:', err)
-      return false
-    }
+    })
   }
 
-  /**
-   * 批量插入解析错误
-   */
   insertErrors(errors: DbError[]): number {
     if (errors.length === 0) return 0
-
-    try {
-      this.ensureReady()
-      let count = 0
-
-      this.ensureReady().run('BEGIN TRANSACTION')
-      for (const error of errors) {
-        try {
-          this.ensureReady().run(SQL.insertError, [
-            error.file,
-            error.message,
-            error.severity,
-            error.originalError || null,
-          ])
-          count++
-        } catch (err) {
-          console.error('Failed to insert error:', err)
-        }
-      }
-      this.ensureReady().run('COMMIT')
-
-      return count
-    } catch (err) {
-      console.error('Failed to insert errors:', err)
-      try {
-        this.ensureReady().run('ROLLBACK')
-      } catch (rollbackErr) {
-        console.error('ROLLBACK failed after insertErrors error:', rollbackErr)
-      }
-      return 0
-    }
+    return this.attempt('insert errors', 0, repositories =>
+      repositories.database.transaction(() => repositories.errors.replaceAll(errors)))
   }
 
-  /**
-   * 获取所有解析错误
-   */
   getAllErrors(): DbError[] {
-    try {
-      this.ensureReady()
-      const results = this.ensureReady().exec(SQL.selectAllErrors)
-      if (results.length === 0) return []
-      // 列顺序: id, file, message, severity, original_error, created_at
-      return results[0].values.map(row => ({
-          file: sqlString(row[1]),
-          message: sqlString(row[2]),
-          severity: sqlDbErrorSeverity(row[3]),
-          originalError: sqlOptionalString(row[4]),
-      }))
-    } catch (err) {
-      console.error('Failed to get all errors:', err)
-      return []
-    }
+    return this.attempt('get all errors', [], repositories => repositories.errors.all())
   }
 
-  /**
-   * 删除所有解析错误
-   */
   deleteAllErrors(): boolean {
-    try {
-      this.ensureReady()
-      this.ensureReady().run(SQL.deleteAllErrors)
+    return this.attempt('delete all errors', false, repositories => {
+      repositories.errors.clear()
       return true
-    } catch (err) {
-      console.error('Failed to delete all errors:', err)
-      return false
-    }
+    })
   }
 
-  // ============================================================
-  // 项目元数据操作
-  // ============================================================
-
-  /**
-   * 设置项目元数据
-   */
   setMeta(key: string, value: string): boolean {
-    try {
-      this.ensureReady()
-      this.ensureReady().run(SQL.setMeta, [key, value])
+    return this.attempt(`set metadata ${key}`, false, repositories => {
+      repositories.graph.setMeta(key, value)
       return true
-    } catch (err) {
-      console.error(`Failed to set meta ${key}:`, err)
-      return false
-    }
+    })
   }
 
-  /**
-   * 获取项目元数据
-   */
   getMeta(key: string): string | null {
-    try {
-      this.ensureReady()
-      const stmt = this.ensureReady().prepare(SQL.getMeta)
-      stmt.bind([key])
-      if (stmt.step()) {
-        const row = stmt.getAsObject()
-        stmt.free()
-          return sqlString(row.value)
-      }
-      stmt.free()
-      return null
-    } catch (err) {
-      console.error(`Failed to get meta ${key}:`, err)
-      return null
-    }
+    return this.attempt(`get metadata ${key}`, null, repositories => repositories.graph.getMeta(key))
   }
 
-  // ============================================================
-  // 图操作
-  // ============================================================
-
-  /**
-   * 将完整的图写入数据库
-   */
   saveGraph(graph: OmniGraph): { nodesSaved: number; edgesSaved: number } {
-    const nodesSaved = this.upsertNodes(graph.nodes)
-    const edgesSaved = this.upsertEdges(graph.edges)
-    return { nodesSaved, edgesSaved }
+    return this.attempt('save graph', { nodesSaved: 0, edgesSaved: 0 }, repositories =>
+      repositories.database.transaction(() => repositories.graph.save(graph)))
   }
 
-  /**
-   * 从数据库加载完整的图
-   */
   loadGraph(): OmniGraph {
-    return {
-      nodes: this.getAllNodes(),
-      edges: this.getAllEdges(),
-    }
+    return this.attempt('load graph', { nodes: [], edges: [] }, repositories => repositories.graph.load())
   }
 
-  /**
-   * 清空整个图
-   */
   clearGraph(): boolean {
-    try {
-      this.ensureReady()
-      this.ensureReady().run('DELETE FROM edges')
-      this.ensureReady().run('DELETE FROM nodes')
-      this.ensureReady().run('DELETE FROM parse_errors')
+    return this.attempt('clear graph', false, repositories => {
+      repositories.database.transaction(() => repositories.graph.clear())
       return true
-    } catch (err) {
-      console.error('Failed to clear graph:', err)
-      return false
-    }
+    })
   }
 
-  /** Remove edges whose endpoints are absent after cross-layer resolution. */
   removeDanglingEdges(): number {
-    try {
-      this.ensureReady()
-      const before = this.getAllEdges().length
-      this.ensureReady().run(
-        'DELETE FROM edges WHERE source NOT IN (SELECT id FROM nodes) OR target NOT IN (SELECT id FROM nodes)',
-      )
-      return before - this.getAllEdges().length
-    } catch (err) {
-      console.error('Failed to remove dangling edges:', err)
-      return 0
-    }
+    return this.attempt('remove dangling edges', 0, repositories => this.edgeRepository(repositories).removeDangling())
   }
 
-  // ============================================================
-  // 统计查询
-  // ============================================================
-
-  /**
-   * 获取数据库统计信息
-   */
   getStats(): DbStats {
-    try {
-      this.ensureReady()
-
-      const nodeCountResult = this.ensureReady().exec(SQL.countNodes)
-      const nodeCount = nodeCountResult.length > 0 ? sqlNumber(nodeCountResult[0].values[0][0]) : 0
-
-      const edgeCountResult = this.ensureReady().exec(SQL.countEdges)
-      const edgeCount = edgeCountResult.length > 0 ? sqlNumber(edgeCountResult[0].values[0][0]) : 0
-
-      const errorCountResult = this.ensureReady().exec(SQL.countErrors)
-      const errorCount = errorCountResult.length > 0 ? sqlNumber(errorCountResult[0].values[0][0]) : 0
-
-      const nodeTypeCounts: Record<string, number> = {}
-      const nodeTypeResult = this.ensureReady().exec(SQL.nodeTypeCounts)
-      if (nodeTypeResult.length > 0) {
-        for (const row of nodeTypeResult[0].values) {
-            nodeTypeCounts[sqlString(row[0])] = sqlNumber(row[1])
-        }
-      }
-
-      const edgeTypeCounts: Record<string, number> = {}
-      const edgeTypeResult = this.ensureReady().exec(SQL.edgeTypeCounts)
-      if (edgeTypeResult.length > 0) {
-        for (const row of edgeTypeResult[0].values) {
-            edgeTypeCounts[sqlString(row[0])] = sqlNumber(row[1])
-        }
-      }
-
-      return { nodeCount, edgeCount, errorCount, nodeTypeCounts, edgeTypeCounts }
-    } catch (err) {
-      console.error('Failed to get stats:', err)
-      return { nodeCount: 0, edgeCount: 0, errorCount: 0, nodeTypeCounts: {}, edgeTypeCounts: {} }
-    }
+    const empty = { nodeCount: 0, edgeCount: 0, errorCount: 0, nodeTypeCounts: {}, edgeTypeCounts: {} }
+    return this.attempt('get stats', empty, repositories => repositories.stats.get())
   }
 
-  // ============================================================
-  // MCP 工具查询方法
-  // ============================================================
-
-  /**
-   * 按多个类型获取节点
-   */
   getNodesByTypes(types: NodeType[]): OmniNode[] {
-    try {
-      this.ensureReady()
-      if (types.length === 0) return []
-      const placeholders = types.map(() => '?').join(',')
-      const stmt = this.ensureReady().prepare(`SELECT * FROM nodes WHERE type IN (${placeholders})`)
-      stmt.bind(types)
-      const nodes: OmniNode[] = []
-      while (stmt.step()) {
-        const row = stmt.getAsObject()
-        nodes.push(this.rowToNode(row))
-      }
-      stmt.free()
-      return nodes
-    } catch (err) {
-      console.error(`Failed to get nodes by types:`, err)
-      return []
-    }
+    return this.attempt('get nodes by types', [], repositories => repositories.nodes.byTypes(types))
   }
 
-  /**
-   * 获取下游节点（通过出边连接的节点）
-   */
   getDownstreamNodes(nodeId: string, edgeTypes?: EdgeType[]): OmniNode[] {
-    try {
-      this.ensureReady()
-      const edgeFilter = edgeTypes && edgeTypes.length > 0
-        ? `AND e.type IN (${edgeTypes.map(() => '?').join(',')})`
-        : ''
-      const sql = `
-        SELECT n.* FROM nodes n
-        JOIN edges e ON e.target = n.id
-        WHERE e.source = ? ${edgeFilter}
-      `
-      const params = edgeTypes && edgeTypes.length > 0
-        ? [nodeId, ...edgeTypes]
-        : [nodeId]
-      const stmt = this.ensureReady().prepare(sql)
-      stmt.bind(params)
-      const nodes: OmniNode[] = []
-      while (stmt.step()) {
-        const row = stmt.getAsObject()
-        nodes.push(this.rowToNode(row))
-      }
-      stmt.free()
-      return nodes
-    } catch (err) {
-      console.error(`Failed to get downstream nodes for ${nodeId}:`, err)
-      return []
-    }
+    return this.attempt('get downstream nodes', [], repositories => repositories.graph.downstream(nodeId, edgeTypes))
   }
 
-  /**
-   * 获取上游节点（通过入边连接的节点）
-   */
   getUpstreamNodes(nodeId: string, edgeTypes?: EdgeType[]): OmniNode[] {
-    try {
-      this.ensureReady()
-      const edgeFilter = edgeTypes && edgeTypes.length > 0
-        ? `AND e.type IN (${edgeTypes.map(() => '?').join(',')})`
-        : ''
-      const sql = `
-        SELECT n.* FROM nodes n
-        JOIN edges e ON e.source = n.id
-        WHERE e.target = ? ${edgeFilter}
-      `
-      const params = edgeTypes && edgeTypes.length > 0
-        ? [nodeId, ...edgeTypes]
-        : [nodeId]
-      const stmt = this.ensureReady().prepare(sql)
-      stmt.bind(params)
-      const nodes: OmniNode[] = []
-      while (stmt.step()) {
-        const row = stmt.getAsObject()
-        nodes.push(this.rowToNode(row))
-      }
-      stmt.free()
-      return nodes
-    } catch (err) {
-      console.error(`Failed to get upstream nodes for ${nodeId}:`, err)
-      return []
-    }
+    return this.attempt('get upstream nodes', [], repositories => repositories.graph.upstream(nodeId, edgeTypes))
   }
 
-  /**
-   * 按路由查找节点
-   */
   findNodeByRoute(route: string): OmniNode | null {
-    try {
-      this.ensureReady()
-      const stmt = this.ensureReady().prepare(
-        `SELECT * FROM nodes WHERE json_extract(metadata, '$.route') = ? LIMIT 1`
-      )
-      stmt.bind([route])
-      if (stmt.step()) {
-        const row = stmt.getAsObject()
-        stmt.free()
-        return this.rowToNode(row)
-      }
-      stmt.free()
-      return null
-    } catch (err) {
-      console.error(`Failed to find node by route ${route}:`, err)
-      return null
-    }
+    return this.attempt('find node by route', null, repositories => repositories.nodes.findByRoute(route))
   }
 
-  /**
-   * 按文件路径查找节点
-   */
   findNodeByFilePath(filePath: string): OmniNode | null {
-    try {
-      this.ensureReady()
-      const stmt = this.ensureReady().prepare(`SELECT * FROM nodes WHERE file_path = ? LIMIT 1`)
-      stmt.bind([filePath])
-      if (stmt.step()) {
-        const row = stmt.getAsObject()
-        stmt.free()
-        return this.rowToNode(row)
-      }
-      stmt.free()
-      return null
-    } catch (err) {
-      console.error(`Failed to find node by file path ${filePath}:`, err)
-      return null
-    }
+    return this.attempt('find node by file', null, repositories => repositories.nodes.findByFilePath(filePath))
   }
 
-  /**
-   * 按任意标识查找节点（路由 → 名称）
-   */
   findNodeByAny(query: string): OmniNode | null {
-    return this.findNodeByRoute(query)
-      ?? this.findNodeByFilePath(query)
-      ?? (() => {
-        try {
-          this.ensureReady()
-          const stmt = this.ensureReady().prepare(`SELECT * FROM nodes WHERE name = ? LIMIT 1`)
-          stmt.bind([query])
-          if (stmt.step()) {
-            const row = stmt.getAsObject()
-            stmt.free()
-            return this.rowToNode(row)
-          }
-          stmt.free()
-          return null
-        } catch (err) {
-          console.error(`Failed to find node by name ${query}:`, err)
-          return null
-        }
-      })()
+    return this.findNodeByRoute(query) ?? this.findNodeByFilePath(query)
+      ?? this.attempt('find node by name', null, repositories => repositories.nodes.findByName(query))
   }
 
-  /**
-   * 获取受影响的页面（BFS 向上追溯到 page 节点）
-   */
   getAffectedPages(nodeId: string, maxDepth = 10): OmniNode[] {
-    const visited = new Set<string>()
-    const queue: { id: string; depth: number }[] = [{ id: nodeId, depth: 0 }]
-    const pages: OmniNode[] = []
-
-    // 只沿有意义的调用链向上追溯，不走 renders/imports/contains
-    const callEdgeTypes: EdgeType[] = ['calls_api', 'handles', 'calls_service', 'queries_db']
-
-    while (queue.length > 0) {
-      const current = queue.shift()
-      if (!current) break
-
-      const { id, depth } = current
-      if (visited.has(id) || depth > maxDepth) continue
-      visited.add(id)
-
-      const upstreams = this.getUpstreamNodes(id, callEdgeTypes)
-      for (const up of upstreams) {
-        if (up.type === 'page') {
-          if (!pages.find(p => p.id === up.id)) pages.push(up)
-        } else {
-          queue.push({ id: up.id, depth: depth + 1 })
-        }
-      }
-    }
-    return pages
+    return this.attempt('get affected pages', [], repositories => repositories.graph.affectedPages(nodeId, maxDepth))
   }
 
-  /**
-   * 获取子树（递归获取下游节点）。
-   * 根节点不存在时返回 null（由调用方区分「无此节点」与「无子节点」）。
-   */
   getSubtree(rootId: string, edgeType: EdgeType, maxDepth: number): GraphSubtree | null {
-    const root = this.getNode(rootId)
-    if (!root) return null
-
-    // BOUND-04:对深度做硬上限并维护 visited,防止环形 renders 图无限递归 / 栈溢出 DoS。
-    // 非法 maxDepth(NaN/负数/非整数)被收敛到 [0, GETSUBTREE_MAX_DEPTH]。
-    const cap = Number.isFinite(maxDepth)
-      ? Math.min(Math.max(Math.trunc(maxDepth), 0), GETSUBTREE_MAX_DEPTH)
-      : 0
-    const visited = new Set<string>()
-    return this.buildSubtree(root, edgeType, cap, visited)
+    return this.attempt('get subtree', null, repositories => repositories.graph.subtree(rootId, edgeType, maxDepth))
   }
 
-  /** getSubtree 的内部递归实现,带 visited 去环。 */
-  private buildSubtree(
-    root: OmniNode,
-    edgeType: EdgeType,
-    remainingDepth: number,
-    visited: Set<string>
-  ): GraphSubtree {
-    visited.add(root.id)
-    const childTrees: GraphSubtree[] = []
-    if (remainingDepth > 0) {
-      const children = this.getDownstreamNodes(root.id, [edgeType])
-      for (const c of children) {
-        // 已访问节点(成环或 DAG 汇聚)直接跳过,保证终止性。
-        if (visited.has(c.id)) continue
-        childTrees.push(this.buildSubtree(c, edgeType, remainingDepth - 1, visited))
-      }
-    }
-    return {
-      id: root.id,
-      name: root.name,
-      type: root.type,
-      children: childTrees,
-    }
+  private requireRepositories(): Repositories {
+    if (!this.repositories) throw new Error('Database not initialized. Call ready() first.')
+    return this.repositories
   }
 
-  // ============================================================
-  // 辅助方法
-  // ============================================================
+  private edgeRepository(repositories: Repositories): EdgeRepository {
+    if (!(repositories.edges instanceof EdgeRepository)) throw new Error('Edge repository is unavailable')
+    return repositories.edges
+  }
 
-  /**
-   * 安全解析 JSON 字符串，失败返回空对象
-   */
-  private safeJsonParse(jsonStr: SqlValue | undefined, context: string): JsonObject {
-    if (typeof jsonStr !== 'string') {
-      return {}
-    }
-
+  private attempt<T>(label: string, fallback: T, operation: (repositories: Repositories) => T): T {
     try {
-      const parsed: unknown = JSON.parse(jsonStr)
-      return jsonObjectOrEmpty(parsed)
-    } catch (err) {
-      console.warn(`Failed to parse JSON for ${context}, using empty object:`, err)
-      return {}
+      return operation(this.requireRepositories())
+    } catch (error) {
+      console.error(`Failed to ${label}:`, error)
+      return fallback
     }
-  }
-
-  /**
-   * 将数据库行对象转换为 OmniNode
-   */
-  private rowToNode(row: Record<string, SqlValue>): OmniNode {
-    return parseStoredNode(
-      {
-        id: sqlString(row.id),
-        name: sqlString(row.name),
-        filePath: sqlString(row.file_path),
-        line: sqlNumber(row.line),
-        column: sqlNumber(row.column),
-      },
-      sqlNodeType(row.type),
-      this.safeJsonParse(row.metadata, `node ${row.id}`)
-    )
-  }
-
-  /**
-   * 将数组形式的行转换为 OmniNode
-   */
-  private arrayToNode(row: SqlValue[]): OmniNode {
-    return parseStoredNode(
-      {
-        id: sqlString(row[0]),
-        name: sqlString(row[2]),
-        filePath: sqlString(row[3]),
-        line: sqlNumber(row[4]),
-        column: sqlNumber(row[5]),
-      },
-      sqlNodeType(row[1]),
-      this.safeJsonParse(row[6], `node ${row[0]}`)
-    )
-  }
-
-  /**
-   * 将数据库行对象转换为 OmniEdge
-   */
-  private rowToEdge(row: Record<string, SqlValue>): OmniEdge {
-    return parseStoredEdge(
-      {
-        id: sqlString(row.id),
-        source: sqlString(row.source),
-        target: sqlString(row.target),
-        confidence: sqlEdgeConfidence(row.confidence),
-      },
-      sqlEdgeType(row.type),
-      this.safeJsonParse(row.metadata, `edge ${row.id}`)
-    )
-  }
-
-  /**
-   * 将数组形式的行转换为 OmniEdge
-   */
-  private arrayToEdge(row: SqlValue[]): OmniEdge {
-    return parseStoredEdge(
-      {
-        id: sqlString(row[0]),
-        source: sqlString(row[1]),
-        target: sqlString(row[2]),
-        confidence: sqlEdgeConfidence(row[4]),
-      },
-      sqlEdgeType(row[3]),
-      this.safeJsonParse(row[5], `edge ${row[0]}`)
-    )
   }
 }

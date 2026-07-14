@@ -8,8 +8,7 @@ import type {
 } from '@codeomnivis/shared'
 import { computeSnapshotDigest } from '@codeomnivis/shared/node'
 import { CrossLayerLinker } from '../resolver/crossLayer'
-import { OmniDatabase, type DbError } from '../storage/db'
-import { replaceLegacySnapshot, type AnalysisStore } from '../storage/legacySnapshotStore'
+import { OmniDatabase, type AnalysisStore, type DbError } from '../storage/db'
 import { computeProjectFingerprint, computeSourceDigest } from '../project/fingerprint'
 import {
   detectProject,
@@ -24,7 +23,7 @@ import { sanitizeGraph } from '@codeomnivis/shared'
 import { detectAnalysisIssues } from './analysisIssues'
 import { createAnalysisStats } from './analysisStats'
 
-export type { AnalysisStore } from '../storage/legacySnapshotStore'
+export type { AnalysisStore } from '../storage/db'
 
 export type AnalysisProgressPhase =
   | 'detecting_project'
@@ -134,7 +133,7 @@ export async function analyzeProject(options: AnalyzeProjectOptions): Promise<im
     report(options, 'parsing_files', files.length)
     const builder = new GraphBuilder(scratch)
     builder.registerParsers(createDefaultParsers())
-    await builder.parseFiles(files, {
+    const buildResult = await builder.parseFiles(files, {
       projectRoot,
       projectMeta,
       tsConfig: null,
@@ -143,13 +142,13 @@ export async function analyzeProject(options: AnalyzeProjectOptions): Promise<im
 
     report(options, 'linking_graph', files.length)
     const linker = new CrossLayerLinker(projectMeta.tsConfigPath ?? undefined, projectRoot)
-    const linked = await linker.link(scratch.loadGraph())
-    if (linked.nodes.length > 0) scratch.upsertNodes(linked.nodes)
-    if (linked.edges.length > 0) scratch.upsertEdges(linked.edges)
-    scratch.removeDanglingEdges()
+    const linked = await linker.link(buildResult.graph)
 
     report(options, 'validating_graph', files.length)
-    const graph = sanitizeGraph(scratch.loadGraph()).graph
+    const graph = sanitizeGraph({
+      nodes: buildResult.graph.nodes,
+      edges: [...buildResult.graph.edges, ...linked.edges],
+    }).graph
     if (graph.nodes.length === 0) {
       throw new AnalysisError('NO_GRAPH_NODES', 'Supported files were found, but no architecture nodes were recognized')
     }
@@ -181,7 +180,16 @@ export async function analyzeProject(options: AnalyzeProjectOptions): Promise<im
     snapshot.snapshotDigest = computeSnapshotDigest(snapshot)
 
     report(options, 'committing_snapshot', files.length)
-    const writeReport = replaceLegacySnapshot(store, snapshot)
+    let writeReport
+    try {
+      writeReport = store.replaceSnapshot(snapshot)
+    } catch (cause) {
+      throw new AnalysisError(
+        'STORAGE_FAILURE',
+        'Snapshot persistence failed; the previous snapshot remains available',
+        { cause },
+      )
+    }
     report(options, 'analysis_complete', files.length)
     return { snapshot, writeReport }
   } finally {

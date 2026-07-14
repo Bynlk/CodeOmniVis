@@ -17,6 +17,11 @@ PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
 
+-- Schema version for CodeOmniVis-owned cache tables.
+CREATE TABLE IF NOT EXISTS schema_meta (
+  version INTEGER NOT NULL
+);
+
 -- 节点表
 CREATE TABLE IF NOT EXISTS nodes (
   id TEXT PRIMARY KEY,
@@ -61,6 +66,14 @@ CREATE TABLE IF NOT EXISTS project_meta (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Only the latest committed snapshot is retained; replacement happens in one transaction.
+CREATE TABLE IF NOT EXISTS snapshots (
+  snapshot_id TEXT PRIMARY KEY,
+  snapshot_digest TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 索引
 CREATE INDEX IF NOT EXISTS idx_nodes_type ON nodes(type);
 CREATE INDEX IF NOT EXISTS idx_nodes_file_path ON nodes(file_path);
@@ -70,6 +83,17 @@ CREATE INDEX IF NOT EXISTS idx_edges_type ON edges(type);
 CREATE INDEX IF NOT EXISTS idx_parse_errors_file ON parse_errors(file);
 CREATE INDEX IF NOT EXISTS idx_parse_errors_severity ON parse_errors(severity);
 `;
+
+export const CURRENT_SCHEMA_VERSION = 1
+
+export const DROP_CACHE_TABLES_SQL = `
+DROP TABLE IF EXISTS edges;
+DROP TABLE IF EXISTS nodes;
+DROP TABLE IF EXISTS parse_errors;
+DROP TABLE IF EXISTS project_meta;
+DROP TABLE IF EXISTS snapshots;
+DROP TABLE IF EXISTS schema_meta;
+`
 
 // ============================================================
 // 预编译 SQL 语句
@@ -119,6 +143,16 @@ export const SQL = {
   getMeta: `SELECT value FROM project_meta WHERE key = ?`,
   getAllMeta: `SELECT * FROM project_meta`,
   deleteMeta: `DELETE FROM project_meta WHERE key = ?`,
+
+  // Snapshot operations
+  insertSnapshot: `
+    INSERT INTO snapshots (snapshot_id, snapshot_digest, payload)
+    VALUES (?, ?, ?)
+  `,
+  selectLatestSnapshot: `
+    SELECT payload FROM snapshots ORDER BY created_at DESC, rowid DESC LIMIT 1
+  `,
+  deleteSnapshots: `DELETE FROM snapshots`,
 
   // 统计查询
   countNodes: `SELECT COUNT(*) as count FROM nodes`,

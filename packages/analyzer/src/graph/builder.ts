@@ -97,9 +97,14 @@ export class GraphBuilder {
     // 验证边的 source/target 存在，并去重
     const { validEdges, skippedEdges } = this.validateAndDeduplicateEdges(allEdges, uniqueNodes)
 
+    // Unresolved API placeholders stay in the in-memory build result for the linker,
+    // but the storage boundary never accepts an edge without both endpoints.
+    const nodeIds = new Set(uniqueNodes.map(node => node.id))
+    const persistableEdges = validEdges.filter(edge => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+
     // 写入数据库
     this.db.upsertNodes(uniqueNodes)
-    this.db.upsertEdges(validEdges)
+    this.db.upsertEdges(persistableEdges)
     // 转换 ParseError 为 DbError 格式
     const dbErrors = allErrors.map(e => ({
       file: e.file,
