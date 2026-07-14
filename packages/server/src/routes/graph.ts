@@ -49,6 +49,7 @@ export function createGraphRouter(
       const rawGraph = db.loadGraph()
       const { graph, stats: sanitizeStats } = sanitizeGraph(rawGraph)
       const stats = db.getStats()
+      const snapshot = db.loadSnapshot()
 
       res.json({
         data: graph,
@@ -58,6 +59,8 @@ export function createGraphRouter(
           nodesByType: stats.nodeTypeCounts,
           edgesByType: stats.edgeTypeCounts,
           sanitize: sanitizeStats,
+          snapshotId: snapshot?.snapshotId ?? null,
+          snapshotDigest: snapshot?.snapshotDigest ?? null,
         },
       })
     } catch (err) {

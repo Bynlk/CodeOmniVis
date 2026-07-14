@@ -12,11 +12,12 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { autoDetectProject } from '../utils/autoDetect'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
-import { OmniDatabase, NPlusOneDetector, AuthDetector, RSCBoundaryDetector, runAnalysis } from '@codeomnivis/analyzer'
+import { OmniDatabase, NPlusOneDetector, AuthDetector, RSCBoundaryDetector, analyzeProject } from '@codeomnivis/analyzer'
 
 interface AnalyzeOptions {
   project?: string
   output: string
+  json?: boolean
 }
 
 /**
@@ -53,14 +54,27 @@ export async function runAnalyze(options: AnalyzeOptions, deps: AnalyzeDeps = de
 
   try {
     await db.ready()
-    const result = await runAnalysis({
+    const result = await analyzeProject({
       projectRoot,
       dbPath,
       projectMeta,
       db,
-      onFilesCollected: count => report(`Parsing ${count} files...`),
+      onProgress: event => {
+        if (event.filesScanned !== undefined) report(`Parsing ${event.filesScanned} files...`)
+      },
     })
-    const graph = db.loadGraph()
+    const graph = result.snapshot.graph
+
+    if (options.json) {
+      process.stdout.write(`${JSON.stringify({
+        data: result.snapshot,
+        meta: {
+          snapshotId: result.snapshot.snapshotId,
+          snapshotDigest: result.snapshot.snapshotDigest,
+        },
+      })}\n`)
+      return
+    }
 
     // 6. 深度分析检测器
     const nPlusOneDetector = new NPlusOneDetector()
@@ -78,10 +92,11 @@ export async function runAnalyze(options: AnalyzeOptions, deps: AnalyzeDeps = de
     console.log(chalk.blue('Statistics:'))
     console.log(`  Nodes: ${graph.nodes.length}`)
     console.log(`  Edges: ${graph.edges.length}`)
-    console.log(`  Errors: ${result.errors}`)
+    console.log(`  Errors: ${result.snapshot.parseErrors.length}`)
 
     // 跨层连线统计
-    if (result.crossLayerEdges > 0) {
+    const crossLayerTypes = new Set(['calls_api', 'handles', 'calls_service', 'queries_db'])
+    if (graph.edges.some(edge => crossLayerTypes.has(edge.type))) {
       const countEdge = (type: string): number => graph.edges.filter(edge => edge.type === type).length
       console.log('')
       console.log(chalk.blue('Cross-layer links:'))
@@ -140,7 +155,9 @@ export function analyzeCommand(program: Command): void {
   program
     .command('analyze')
     .description('Analyze project and output graph as JSON')
+    .option('-p, --project <path>', 'Project root', '.')
     .option('-o, --output <file>', 'Output file path', 'codeomnivis-graph.json')
+    .option('--json', 'Write the versioned snapshot envelope to stdout')
     .action(async (options: AnalyzeOptions) => {
       const spinner = ora('Analyzing project...').start()
 

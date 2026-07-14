@@ -2,6 +2,7 @@ import { OmniDatabase, runFullAnalysis } from '@codeomnivis/analyzer'
 import { getDbPath, hasDbCache } from '@codeomnivis/shared/node'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import {
   errorResponse,
   handleFindCallers,
@@ -85,6 +86,45 @@ export interface McpServerRuntime {
   close: () => Promise<void>
 }
 
+function attachSnapshot(result: CallToolResult, db: OmniDatabase): CallToolResult {
+  const snapshot = db.loadSnapshot()
+  const first = result.content[0]
+  if (!snapshot || first?.type !== 'text') return result
+  try {
+    const parsed: unknown = JSON.parse(first.text)
+    const body = parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? { ...parsed, snapshot }
+      : { data: parsed, snapshot }
+    return { ...result, content: [{ type: 'text', text: JSON.stringify(body, null, 2) }] }
+  } catch {
+    return result
+  }
+}
+
+export function executeMcpTool(db: OmniDatabase, name: string, args: unknown): CallToolResult {
+  let result: CallToolResult
+  switch (name) {
+    case MCP_TOOL_NAMES.getApiRoutes:
+      result = handleGetApiRoutes(db, args)
+      break
+    case MCP_TOOL_NAMES.getComponentTree:
+      result = handleGetComponentTree(db, args)
+      break
+    case MCP_TOOL_NAMES.findCallers:
+      result = handleFindCallers(db, args)
+      break
+    case MCP_TOOL_NAMES.listDbModels:
+      result = handleListDbModels(db)
+      break
+    case MCP_TOOL_NAMES.getDataflow:
+      result = handleGetDataFlow(db, args)
+      break
+    default:
+      result = errorResponse(`Unknown tool: ${name}`)
+  }
+  return attachSnapshot(result, db)
+}
+
 export function createMcpServer(options: McpServerOptions): McpServerRuntime {
   const log = options.log ?? (() => {})
   const server = new Server(
@@ -125,20 +165,7 @@ export function createMcpServer(options: McpServerOptions): McpServerRuntime {
     const { name, arguments: args } = request.params
     try {
       const db = await getDb()
-      switch (name) {
-        case MCP_TOOL_NAMES.getApiRoutes:
-          return handleGetApiRoutes(db, args)
-        case MCP_TOOL_NAMES.getComponentTree:
-          return handleGetComponentTree(db, args)
-        case MCP_TOOL_NAMES.findCallers:
-          return handleFindCallers(db, args)
-        case MCP_TOOL_NAMES.listDbModels:
-          return handleListDbModels(db)
-        case MCP_TOOL_NAMES.getDataflow:
-          return handleGetDataFlow(db, args)
-        default:
-          return errorResponse(`Unknown tool: ${name}`)
-      }
+      return executeMcpTool(db, name, args)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       log(`Tool "${name}" failed: ${message}`)
