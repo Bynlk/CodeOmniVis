@@ -19,6 +19,8 @@
 
 ## 状态与报告
 
+- [质量 90 复评报告](reports/2026-07-14-quality-90-reassessment.md) — 0.1.0 发布后的七维评分、证据、扣分项与改进建议
+- [质量工程基线](reports/2026-07-14-quality-baseline.md) — 90 分工程启动前的冻结事实与缺口
 - [项目状态报告](PROJECT_STATUS_REPORT.md) — 当前代码基线与阶段性评估
 - [补充状态报告](reports/codeomnivis-status-report.md) — 另一份阶段报告快照
 - [已验证计划](VERIFIED_PLAN.md) — 计划校验记录
