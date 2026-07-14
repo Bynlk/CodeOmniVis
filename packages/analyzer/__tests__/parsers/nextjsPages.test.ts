@@ -96,23 +96,30 @@ describe('NextjsPagesParser', () => {
       const explicit = await parser.parse('pages/api/orders.ts', context)
       const defaultHandler = await parser.parse('pages/api/users.ts', context)
 
-      expect(explicit.nodes[0]).toEqual(expect.objectContaining({
-        type: 'api_route',
-        name: '/api/orders',
-        metadata: expect.objectContaining({ method: 'GET,POST' }),
-      }))
-      expect(defaultHandler.nodes[0]).toEqual(expect.objectContaining({
-        type: 'api_route',
-        name: '/api/users',
-        metadata: expect.objectContaining({ method: 'POST,DELETE' }),
-      }))
+      expect(explicit.nodes[0]).toEqual(
+        expect.objectContaining({
+          type: 'api_route',
+          name: '/api/orders',
+          metadata: expect.objectContaining({ method: 'GET,POST' }),
+        }),
+      )
+      expect(defaultHandler.nodes[0]).toEqual(
+        expect.objectContaining({
+          type: 'api_route',
+          name: '/api/users',
+          metadata: expect.objectContaining({ method: 'POST,DELETE' }),
+        }),
+      )
     })
 
     it('degrades a missing page to a warning', async () => {
       const result = await parser.parse('pages/missing.tsx', context)
       expect(result.nodes).toEqual([])
       expect(result.errors).toEqual([
-        expect.objectContaining({ severity: 'warning', message: expect.stringContaining('File not found') }),
+        expect.objectContaining({
+          severity: 'warning',
+          message: expect.stringContaining('File not found'),
+        }),
       ])
     })
   })

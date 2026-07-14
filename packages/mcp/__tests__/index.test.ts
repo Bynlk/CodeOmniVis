@@ -15,8 +15,15 @@ function createRuntime() {
       once: (event: 'SIGINT' | 'SIGTERM', listener: () => void) => {
         listeners.set(event, listener)
       },
-      exit: (code: number) => { exits.push(code) },
-      stderr: { write: (message: string) => { errors.push(message); return true } },
+      exit: (code: number) => {
+        exits.push(code)
+      },
+      stderr: {
+        write: (message: string) => {
+          errors.push(message)
+          return true
+        },
+      },
     },
   }
 }
@@ -40,7 +47,9 @@ describe('MCP direct process lifecycle', () => {
   it('preserves an early stop request until startup completes', async () => {
     const state = createRuntime()
     let resolveStart: ((handle: { close: () => Promise<void> }) => void) | undefined
-    const started = new Promise<{ close: () => Promise<void> }>(resolve => { resolveStart = resolve })
+    const started = new Promise<{ close: () => Promise<void> }>((resolve) => {
+      resolveStart = resolve
+    })
     const close = vi.fn(async () => {})
     runMcpProcess(state.runtime, () => started)
     state.listeners.get('SIGINT')?.()
@@ -52,7 +61,9 @@ describe('MCP direct process lifecycle', () => {
 
   it('reports startup failures without leaking them to stdout', async () => {
     const state = createRuntime()
-    runMcpProcess(state.runtime, async () => { throw new Error('startup failed') })
+    runMcpProcess(state.runtime, async () => {
+      throw new Error('startup failed')
+    })
     await Promise.resolve()
     await Promise.resolve()
     expect(state.errors.join('')).toContain('[codeomnivis-mcp] Fatal: Error: startup failed')
@@ -61,10 +72,16 @@ describe('MCP direct process lifecycle', () => {
 
   it('reports shutdown failures and exits non-zero', async () => {
     const state = createRuntime()
-    runMcpProcess(state.runtime, async () => ({ close: async () => { throw new Error('close failed') } }))
+    runMcpProcess(state.runtime, async () => ({
+      close: async () => {
+        throw new Error('close failed')
+      },
+    }))
     await Promise.resolve()
     state.listeners.get('SIGTERM')?.()
     await vi.waitFor(() => expect(state.exits).toEqual([1]))
-    expect(state.errors.join('')).toContain('[codeomnivis-mcp] Shutdown failed: Error: close failed')
+    expect(state.errors.join('')).toContain(
+      '[codeomnivis-mcp] Shutdown failed: Error: close failed',
+    )
   })
 })

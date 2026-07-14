@@ -56,7 +56,7 @@ export class GraphRepository {
       if (typeof payload !== 'string') return null
       try {
         const parsed: unknown = JSON.parse(payload)
-        return parsed && typeof parsed === 'object' ? parsed as ProjectSnapshot : null
+        return parsed && typeof parsed === 'object' ? (parsed as ProjectSnapshot) : null
       } catch {
         return null
       }
@@ -83,17 +83,19 @@ export class GraphRepository {
 
   downstream(nodeId: string, edgeTypes?: EdgeType[]): OmniNode[] {
     const allowed = edgeTypes ? new Set<EdgeType>(edgeTypes) : null
-    return this.edges.outgoing(nodeId)
-      .filter(edge => !allowed || allowed.has(edge.type))
-      .map(edge => this.nodes.get(edge.target))
+    return this.edges
+      .outgoing(nodeId)
+      .filter((edge) => !allowed || allowed.has(edge.type))
+      .map((edge) => this.nodes.get(edge.target))
       .filter((node): node is OmniNode => node !== null)
   }
 
   upstream(nodeId: string, edgeTypes?: EdgeType[]): OmniNode[] {
     const allowed = edgeTypes ? new Set<EdgeType>(edgeTypes) : null
-    return this.edges.incoming(nodeId)
-      .filter(edge => !allowed || allowed.has(edge.type))
-      .map(edge => this.nodes.get(edge.source))
+    return this.edges
+      .incoming(nodeId)
+      .filter((edge) => !allowed || allowed.has(edge.type))
+      .map((edge) => this.nodes.get(edge.source))
       .filter((node): node is OmniNode => node !== null)
   }
 
@@ -133,7 +135,8 @@ export class GraphRepository {
     const children: GraphSubtree[] = []
     if (depth > 0) {
       for (const node of this.downstream(root.id, [edgeType])) {
-        if (!visited.has(node.id)) children.push(this.buildSubtree(node, edgeType, depth - 1, visited))
+        if (!visited.has(node.id))
+          children.push(this.buildSubtree(node, edgeType, depth - 1, visited))
       }
     }
     return { id: root.id, name: root.name, type: root.type, children }

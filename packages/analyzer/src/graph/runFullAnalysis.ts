@@ -23,7 +23,7 @@ export async function runFullAnalysis(options: FullAnalysisOptions): Promise<Ful
     filesScanned: result.snapshot.stats.filesScanned,
     nodesCreated: graph.nodes.length,
     edgesCreated: graph.edges.length,
-    crossLayerEdges: graph.edges.filter(edge => crossLayerTypes.has(edge.type)).length,
+    crossLayerEdges: graph.edges.filter((edge) => crossLayerTypes.has(edge.type)).length,
     errors: result.snapshot.parseErrors.length,
     projectMeta: result.snapshot.project.meta,
   }

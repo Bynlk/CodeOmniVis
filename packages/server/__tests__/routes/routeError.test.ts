@@ -8,7 +8,12 @@ describe('sendInternalError', () => {
     const error = new Error('private path and stack')
     const log = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    sendInternalError({ status } as never, 'Failed to get graph', 'Failed to load graph data', error)
+    sendInternalError(
+      { status } as never,
+      'Failed to get graph',
+      'Failed to load graph data',
+      error,
+    )
 
     expect(log).toHaveBeenCalledWith('Failed to get graph:', error)
     expect(status).toHaveBeenCalledWith(500)

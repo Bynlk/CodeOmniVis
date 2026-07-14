@@ -1,13 +1,12 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { Node, Project, SyntaxKind, type CallExpression, type SourceFile } from 'ts-morph'
 import {
-  Node,
-  Project,
-  SyntaxKind,
-  type CallExpression,
-  type SourceFile,
-} from 'ts-morph'
-import { createEdgeId, type OmniNode, type ParseResult, type TestFramework } from '@codeomnivis/shared'
+  createEdgeId,
+  type OmniNode,
+  type ParseResult,
+  type TestFramework,
+} from '@codeomnivis/shared'
 import type { TestAdapter } from '../types'
 import { callPath, literalTestName, qualifiedTestName, testNodeId } from './astHelpers'
 
@@ -40,14 +39,29 @@ function location(source: SourceFile, call: CallExpression): { line: number; col
   return source.getLineAndColumnAtPos(call.getStart())
 }
 
-function suiteNode(filePath: string, name: string, call: CallExpression, source: SourceFile, kind: 'file' | 'describe', selected: TestFramework): OmniNode {
+function suiteNode(
+  filePath: string,
+  name: string,
+  call: CallExpression,
+  source: SourceFile,
+  kind: 'file' | 'describe',
+  selected: TestFramework,
+): OmniNode {
   return {
-    id: testNodeId('test_suite', filePath, name), type: 'test_suite', name, filePath,
-    ...location(source, call), metadata: { framework: selected, kind },
+    id: testNodeId('test_suite', filePath, name),
+    type: 'test_suite',
+    name,
+    filePath,
+    ...location(source, call),
+    metadata: { framework: selected, kind },
   }
 }
 
-function discoverSource(filePath: string, source: SourceFile, selected: TestFramework): ParseResult {
+function discoverSource(
+  filePath: string,
+  source: SourceFile,
+  selected: TestFramework,
+): ParseResult {
   const nodes: OmniNode[] = []
   const edges: ParseResult['edges'] = []
   const errors: ParseResult['errors'] = []
@@ -80,8 +94,12 @@ function discoverSource(filePath: string, source: SourceFile, selected: TestFram
       const scope = ancestors.join(' > ')
       const name = qualifiedTestName(ancestors, `${base}@${call.getStartLineNumber()}`)
       const node: OmniNode = {
-        id: testNodeId('test_fixture', filePath, name), type: 'test_fixture', name, filePath,
-        ...location(source, call), metadata: { framework: selected, lifecycle: hook },
+        id: testNodeId('test_fixture', filePath, name),
+        type: 'test_fixture',
+        name,
+        filePath,
+        ...location(source, call),
+        metadata: { framework: selected, lifecycle: hook },
       }
       nodes.push(node)
       fixtures.push({ node, scope })
@@ -90,7 +108,10 @@ function discoverSource(filePath: string, source: SourceFile, selected: TestFram
     if (!CASE_NAMES.has(base) || !ownName) continue
     const name = qualifiedTestName(ancestors, ownName)
     const node: OmniNode = {
-      id: testNodeId('test_case', filePath, name), type: 'test_case', name, filePath,
+      id: testNodeId('test_case', filePath, name),
+      type: 'test_case',
+      name,
+      filePath,
       ...location(source, call),
       metadata: {
         framework: selected,
@@ -102,20 +123,33 @@ function discoverSource(filePath: string, source: SourceFile, selected: TestFram
     nodes.push(node)
     const scope = ancestors.join(' > ')
     const owner = suites.get(scope) ?? suites.get('')
-    if (owner) edges.push({
-      id: createEdgeId(owner.id, 'tests', node.id), source: owner.id, target: node.id,
-      type: 'tests', confidence: 'certain', metadata: { relation: 'contains_case' },
-    })
+    if (owner)
+      edges.push({
+        id: createEdgeId(owner.id, 'tests', node.id),
+        source: owner.id,
+        target: node.id,
+        type: 'tests',
+        confidence: 'certain',
+        metadata: { relation: 'contains_case' },
+      })
     for (const fixture of fixtures) {
       if (fixture.scope && !scope.startsWith(fixture.scope)) continue
       edges.push({
-        id: createEdgeId(node.id, 'uses_fixture', fixture.node.id), source: node.id, target: fixture.node.id,
-        type: 'uses_fixture', confidence: 'certain', metadata: { usage: 'lexical_scope' },
+        id: createEdgeId(node.id, 'uses_fixture', fixture.node.id),
+        source: node.id,
+        target: fixture.node.id,
+        type: 'uses_fixture',
+        confidence: 'certain',
+        metadata: { usage: 'lexical_scope' },
       })
     }
   }
-  if (source.getPreEmitDiagnostics().some(diagnostic => diagnostic.getCategory() === 1)) {
-    errors.push({ file: filePath, message: 'Test file contains TypeScript syntax errors', severity: 'warning' })
+  if (source.getPreEmitDiagnostics().some((diagnostic) => diagnostic.getCategory() === 1)) {
+    errors.push({
+      file: filePath,
+      message: 'Test file contains TypeScript syntax errors',
+      severity: 'warning',
+    })
   }
   return { nodes, edges, errors }
 }
@@ -123,9 +157,12 @@ function discoverSource(filePath: string, source: SourceFile, selected: TestFram
 export const VitestJestAdapter: TestAdapter = {
   name: 'vitest-jest',
   canHandle(filePath, context) {
-    if (!/\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(filePath) && !filePath.includes('__tests__')) return false
+    if (!/\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(filePath) && !filePath.includes('__tests__'))
+      return false
     try {
-      return framework(fs.readFileSync(path.resolve(context.projectRoot, filePath), 'utf8')) !== null
+      return (
+        framework(fs.readFileSync(path.resolve(context.projectRoot, filePath), 'utf8')) !== null
+      )
     } catch {
       return false
     }
@@ -136,11 +173,22 @@ export const VitestJestAdapter: TestAdapter = {
       const selected = framework(fs.readFileSync(absolutePath, 'utf8'))
       if (!selected) return { nodes: [], edges: [], errors: [] }
       const project = new Project({ skipAddingFilesFromTsConfig: true })
-      return discoverSource(filePath.replaceAll('\\', '/'), project.addSourceFileAtPath(absolutePath), selected)
+      return discoverSource(
+        filePath.replaceAll('\\', '/'),
+        project.addSourceFileAtPath(absolutePath),
+        selected,
+      )
     } catch (error) {
       return {
-        nodes: [], edges: [],
-        errors: [{ file: filePath, message: `Vitest/Jest discovery failed: ${error instanceof Error ? error.message : String(error)}`, severity: 'warning' }],
+        nodes: [],
+        edges: [],
+        errors: [
+          {
+            file: filePath,
+            message: `Vitest/Jest discovery failed: ${error instanceof Error ? error.message : String(error)}`,
+            severity: 'warning',
+          },
+        ],
       }
     }
   },

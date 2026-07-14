@@ -69,15 +69,20 @@ describe('collectAnalysisFiles', () => {
     const externalPackage = path.join(base, 'external-package')
     fs.mkdirSync(path.join(root, 'packages'), { recursive: true })
     fs.mkdirSync(path.join(externalPackage, 'src'), { recursive: true })
-    fs.writeFileSync(path.join(externalPackage, 'src', 'External.ts'), 'export const external = true')
+    fs.writeFileSync(
+      path.join(externalPackage, 'src', 'External.ts'),
+      'export const external = true',
+    )
     fs.symlinkSync(externalPackage, path.join(root, 'packages', 'external'), 'dir')
     const meta = makeMeta(root)
-    meta.packages = [{
-      name: 'external',
-      path: 'packages/external',
-      dependencies: [],
-      devDependencies: [],
-    }]
+    meta.packages = [
+      {
+        name: 'external',
+        path: 'packages/external',
+        dependencies: [],
+        devDependencies: [],
+      },
+    ]
 
     expect(collectAnalysisFiles(root, meta)).toEqual([])
   })

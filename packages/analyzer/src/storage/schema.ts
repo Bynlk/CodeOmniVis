@@ -82,7 +82,7 @@ CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target);
 CREATE INDEX IF NOT EXISTS idx_edges_type ON edges(type);
 CREATE INDEX IF NOT EXISTS idx_parse_errors_file ON parse_errors(file);
 CREATE INDEX IF NOT EXISTS idx_parse_errors_severity ON parse_errors(severity);
-`;
+`
 
 export const CURRENT_SCHEMA_VERSION = 1
 

@@ -12,7 +12,13 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { autoDetectProject } from '../utils/autoDetect'
 import { getDbPath, loadConfig } from '@codeomnivis/shared/node'
-import { OmniDatabase, NPlusOneDetector, AuthDetector, RSCBoundaryDetector, analyzeProject } from '@codeomnivis/analyzer'
+import {
+  OmniDatabase,
+  NPlusOneDetector,
+  AuthDetector,
+  RSCBoundaryDetector,
+  analyzeProject,
+} from '@codeomnivis/analyzer'
 
 interface AnalyzeOptions {
   project?: string
@@ -39,7 +45,10 @@ const defaultAnalyzeDeps: AnalyzeDeps = {
  * LEAK-05 · F13:数据库句柄在 try 之外打开,无论解析 / 连线 / 检测过程是否抛错,
  * 都在 finally 中 close(),避免异常路径泄漏 sql.js 句柄与未持久化数据。
  */
-export async function runAnalyze(options: AnalyzeOptions, deps: AnalyzeDeps = defaultAnalyzeDeps): Promise<void> {
+export async function runAnalyze(
+  options: AnalyzeOptions,
+  deps: AnalyzeDeps = defaultAnalyzeDeps,
+): Promise<void> {
   const report = deps.onProgress ?? ((): void => {})
 
   // 加载配置 + 自动检测项目
@@ -59,20 +68,22 @@ export async function runAnalyze(options: AnalyzeOptions, deps: AnalyzeDeps = de
       dbPath,
       projectMeta,
       db,
-      onProgress: event => {
+      onProgress: (event) => {
         if (event.filesScanned !== undefined) report(`Parsing ${event.filesScanned} files...`)
       },
     })
     const graph = result.snapshot.graph
 
     if (options.json) {
-      process.stdout.write(`${JSON.stringify({
-        data: result.snapshot,
-        meta: {
-          snapshotId: result.snapshot.snapshotId,
-          snapshotDigest: result.snapshot.snapshotDigest,
-        },
-      })}\n`)
+      process.stdout.write(
+        `${JSON.stringify({
+          data: result.snapshot,
+          meta: {
+            snapshotId: result.snapshot.snapshotId,
+            snapshotDigest: result.snapshot.snapshotDigest,
+          },
+        })}\n`,
+      )
       return
     }
 
@@ -96,8 +107,9 @@ export async function runAnalyze(options: AnalyzeOptions, deps: AnalyzeDeps = de
 
     // 跨层连线统计
     const crossLayerTypes = new Set(['calls_api', 'handles', 'calls_service', 'queries_db'])
-    if (graph.edges.some(edge => crossLayerTypes.has(edge.type))) {
-      const countEdge = (type: string): number => graph.edges.filter(edge => edge.type === type).length
+    if (graph.edges.some((edge) => crossLayerTypes.has(edge.type))) {
+      const countEdge = (type: string): number =>
+        graph.edges.filter((edge) => edge.type === type).length
       console.log('')
       console.log(chalk.blue('Cross-layer links:'))
       console.log(`  calls_api:      ${countEdge('calls_api')}`)
@@ -115,12 +127,13 @@ export async function runAnalyze(options: AnalyzeOptions, deps: AnalyzeDeps = de
         byType[issue.type] = (byType[issue.type] || 0) + 1
       }
       for (const [type, count] of Object.entries(byType)) {
-        const severity = allIssues.find(i => i.type === type)?.severity || 'info'
-        const color = severity === 'critical' ? chalk.red : severity === 'warning' ? chalk.yellow : chalk.gray
+        const severity = allIssues.find((i) => i.type === type)?.severity || 'info'
+        const color =
+          severity === 'critical' ? chalk.red : severity === 'warning' ? chalk.yellow : chalk.gray
         console.log(color(`  ${type}: ${count}`))
       }
       // 显示 critical issues 详情
-      const criticals = allIssues.filter(i => i.severity === 'critical')
+      const criticals = allIssues.filter((i) => i.severity === 'critical')
       if (criticals.length > 0) {
         console.log('')
         console.log(chalk.red('Critical issues:'))

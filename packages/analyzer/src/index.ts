@@ -10,7 +10,21 @@ export { OmniDatabase } from './storage'
 export type { DbError, DbStats } from './storage'
 
 // 解析器
-export { PrismaParser, NextjsAppParser, NextjsPagesParser, TrpcParser, TsRpcParser, ExpressParser, TypeormParser, ApiCallsParser, ReactComponentParser, NestjsControllerParser, NestjsModuleParser, NestjsServiceParser, DrizzleParser } from './parsers'
+export {
+  PrismaParser,
+  NextjsAppParser,
+  NextjsPagesParser,
+  TrpcParser,
+  TsRpcParser,
+  ExpressParser,
+  TypeormParser,
+  ApiCallsParser,
+  ReactComponentParser,
+  NestjsControllerParser,
+  NestjsModuleParser,
+  NestjsServiceParser,
+  DrizzleParser,
+} from './parsers'
 
 // 文件分类器
 export { classifyFile } from './classifier'

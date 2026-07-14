@@ -57,7 +57,9 @@ describe('mcp command lifecycle', () => {
     })
     let stdout = ''
     child.stdout.setEncoding('utf8')
-    child.stdout.on('data', chunk => { stdout += chunk })
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk
+    })
 
     await waitForStderr(child, 'MCP Server running on stdio', 30_000)
     expect(child.exitCode).toBeNull()

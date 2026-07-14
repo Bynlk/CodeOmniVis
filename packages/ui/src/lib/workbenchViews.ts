@@ -3,37 +3,46 @@ import type { WorkbenchGraphOptions } from '../types/workbench'
 import { selectTestGraph } from './testView'
 
 const REQUEST_EDGES = new Set<EdgeType>([
-  'renders', 'navigates_to', 'calls_api', 'handles', 'calls_service', 'queries_db',
-  'data_flows_to', 'sends_msg', 'listens_msg',
+  'renders',
+  'navigates_to',
+  'calls_api',
+  'handles',
+  'calls_service',
+  'queries_db',
+  'data_flows_to',
+  'sends_msg',
+  'listens_msg',
 ])
 
 const DATA_EDGES = new Set<EdgeType>(['queries_db', 'db_relation', 'data_flows_to'])
 const WORKBENCH_MODULE_PREFIX = 'module:workbench/'
 
 function graphFromEdges(graph: OmniGraph, edgeTypes: Set<EdgeType>): OmniGraph {
-  const edges = graph.edges.filter(edge => edgeTypes.has(edge.type))
-  const nodeIds = new Set(edges.flatMap(edge => [edge.source, edge.target]))
-  return { nodes: graph.nodes.filter(node => nodeIds.has(node.id)), edges }
+  const edges = graph.edges.filter((edge) => edgeTypes.has(edge.type))
+  const nodeIds = new Set(edges.flatMap((edge) => [edge.source, edge.target]))
+  return { nodes: graph.nodes.filter((node) => nodeIds.has(node.id)), edges }
 }
 
 function focusGraph(graph: OmniGraph, focusNodeId: string | null | undefined): OmniGraph {
   if (focusNodeId?.startsWith(WORKBENCH_MODULE_PREFIX)) {
     const scopeWithName = focusNodeId.slice(WORKBENCH_MODULE_PREFIX.length)
     const scope = scopeWithName.slice(0, scopeWithName.lastIndexOf(':'))
-    const nodes = graph.nodes.filter(node => {
+    const nodes = graph.nodes.filter((node) => {
       const nodeScope = scopeForFile(node.filePath)
       return scope.includes('/') ? nodeScope.leaf === scope : nodeScope.root === scope
     })
-    const nodeIds = new Set(nodes.map(node => node.id))
+    const nodeIds = new Set(nodes.map((node) => node.id))
     return {
       nodes,
-      edges: graph.edges.filter(edge => nodeIds.has(edge.source) && nodeIds.has(edge.target)),
+      edges: graph.edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)),
     }
   }
-  if (!focusNodeId || !graph.nodes.some(node => node.id === focusNodeId)) return graph
-  const edges = graph.edges.filter(edge => edge.source === focusNodeId || edge.target === focusNodeId)
-  const nodeIds = new Set([focusNodeId, ...edges.flatMap(edge => [edge.source, edge.target])])
-  return { nodes: graph.nodes.filter(node => nodeIds.has(node.id)), edges }
+  if (!focusNodeId || !graph.nodes.some((node) => node.id === focusNodeId)) return graph
+  const edges = graph.edges.filter(
+    (edge) => edge.source === focusNodeId || edge.target === focusNodeId,
+  )
+  const nodeIds = new Set([focusNodeId, ...edges.flatMap((edge) => [edge.source, edge.target])])
+  return { nodes: graph.nodes.filter((node) => nodeIds.has(node.id)), edges }
 }
 
 function scopeForFile(filePath: string): { root: string; leaf: string } {
@@ -49,7 +58,7 @@ function scopeForFile(filePath: string): { root: string; leaf: string } {
 }
 
 function createModuleNode(scope: string, children: OmniNode[]): OmniNode {
-  const childTypes = [...new Set(children.map(node => node.type))] as NodeType[]
+  const childTypes = [...new Set(children.map((node) => node.type))] as NodeType[]
   return {
     id: `${WORKBENCH_MODULE_PREFIX}${scope}:${scope.split('/').at(-1) ?? scope}`,
     type: 'module',
@@ -73,8 +82,8 @@ function architectureOverview(graph: OmniGraph): OmniGraph {
   }
 
   const scopes = [...scopeNodes.keys()].sort((a, b) => a.localeCompare(b))
-  const nodes = scopes.map(scope => {
-    const descendants = graph.nodes.filter(node => {
+  const nodes = scopes.map((scope) => {
+    const descendants = graph.nodes.filter((node) => {
       const normalized = node.filePath.replaceAll('\\', '/')
       return normalized === scope || normalized.startsWith(`${scope}/`)
     })

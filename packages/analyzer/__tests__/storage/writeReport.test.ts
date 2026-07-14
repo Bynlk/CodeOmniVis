@@ -79,9 +79,7 @@ describe('snapshot write report', () => {
 
     expect(report.committed).toBe(true)
     expect(report.edges).toEqual({ attempted: 1, written: 0, rejected: 1 })
-    expect(report.rejectedEdges).toEqual([
-      expect.objectContaining({ reason: 'missing_target' }),
-    ])
+    expect(report.rejectedEdges).toEqual([expect.objectContaining({ reason: 'missing_target' })])
     expect(db.loadGraph().edges).toEqual([])
     db.close()
   })

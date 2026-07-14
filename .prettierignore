@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+playwright-report
+test-results
+.turbo
+.codex
+.Codex
+.planning
+.superpowers
+.worktrees

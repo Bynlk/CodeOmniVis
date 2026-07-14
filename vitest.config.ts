@@ -6,13 +6,7 @@ export default defineConfig({
       provider: 'v8',
       all: true,
       include: ['packages/*/src/**/*.{ts,tsx}'],
-      exclude: [
-        '**/*.d.ts',
-        '**/dist/**',
-        '**/__tests__/**',
-        '**/fixtures/**',
-        '**/wasm/**',
-      ],
+      exclude: ['**/*.d.ts', '**/dist/**', '**/__tests__/**', '**/fixtures/**', '**/wasm/**'],
       reporter: ['text', 'json', 'json-summary', 'html'],
       reportsDirectory: 'coverage',
       thresholds: {

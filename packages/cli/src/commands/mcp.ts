@@ -26,15 +26,25 @@ export interface McpCommandDeps {
 }
 
 const defaultDeps: McpCommandDeps = {
-  start: async projectRoot => {
+  start: async (projectRoot) => {
     const { startMcpServer } = await import('@codeomnivis/mcp')
     return startMcpServer({ projectRoot })
   },
-  once: (signal, listener) => { process.once(signal, listener) },
-  remove: (signal, listener) => { process.removeListener(signal, listener) },
-  stderr: message => { process.stderr.write(message) },
-  exit: code => { process.exit(code) },
-  setExitCode: code => { process.exitCode = code },
+  once: (signal, listener) => {
+    process.once(signal, listener)
+  },
+  remove: (signal, listener) => {
+    process.removeListener(signal, listener)
+  },
+  stderr: (message) => {
+    process.stderr.write(message)
+  },
+  exit: (code) => {
+    process.exit(code)
+  },
+  setExitCode: (code) => {
+    process.exitCode = code
+  },
 }
 
 export async function runMcpCommand(
@@ -48,7 +58,8 @@ export async function runMcpCommand(
     stopRequested = true
     if (!handle || stopping) return
     stopping = true
-    void handle.close()
+    void handle
+      .close()
       .then(() => deps.exit(0))
       .catch((err: unknown) => {
         deps.stderr(`Failed to stop MCP Server: ${String(err)}\n`)

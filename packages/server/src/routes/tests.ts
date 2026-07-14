@@ -6,9 +6,10 @@ import { isTestFramework } from '@codeomnivis/shared'
 export function createTestsRouter(db: OmniDatabase): Router {
   const router = Router()
   router.get('/', (req, res) => {
-    const framework = typeof req.query.framework === 'string' && isTestFramework(req.query.framework)
-      ? req.query.framework
-      : undefined
+    const framework =
+      typeof req.query.framework === 'string' && isTestFramework(req.query.framework)
+        ? req.query.framework
+        : undefined
     const target = typeof req.query.target === 'string' ? req.query.target : undefined
     const snapshot = db.loadSnapshot()
     res.json({

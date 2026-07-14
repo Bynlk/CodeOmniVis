@@ -33,11 +33,24 @@ export function detectAnalysisIssues(
   parseErrors: SerializableParseError[],
 ): Issue[] {
   const issues = [
-    ...runIssueDetector('consistency', () => new ConsistencyChecker().check(graph).issues, parseErrors),
-    ...runIssueDetector('n_plus_one', () => new NPlusOneDetector().detect(graph, projectRoot), parseErrors),
+    ...runIssueDetector(
+      'consistency',
+      () => new ConsistencyChecker().check(graph).issues,
+      parseErrors,
+    ),
+    ...runIssueDetector(
+      'n_plus_one',
+      () => new NPlusOneDetector().detect(graph, projectRoot),
+      parseErrors,
+    ),
     ...runIssueDetector('auth', () => new AuthDetector().detect(graph, projectRoot), parseErrors),
-    ...runIssueDetector('rsc', () => new RSCBoundaryDetector().detect(graph, projectRoot), parseErrors),
+    ...runIssueDetector(
+      'rsc',
+      () => new RSCBoundaryDetector().detect(graph, projectRoot),
+      parseErrors,
+    ),
   ]
-  return [...new Map(issues.map(issue => [issue.id, issue])).values()]
-    .sort((left, right) => left.id.localeCompare(right.id))
+  return [...new Map(issues.map((issue) => [issue.id, issue])).values()].sort((left, right) =>
+    left.id.localeCompare(right.id),
+  )
 }

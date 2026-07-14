@@ -1,9 +1,4 @@
-import type {
-  AnalysisStats,
-  Issue,
-  OmniGraph,
-  SerializableParseError,
-} from '@codeomnivis/shared'
+import type { AnalysisStats, Issue, OmniGraph, SerializableParseError } from '@codeomnivis/shared'
 
 export function createAnalysisStats(
   filesScanned: number,
@@ -24,14 +19,14 @@ export function createAnalysisStats(
     nodeTypeCounts,
     edgeTypeCounts,
     issueSeverityCounts: {
-      critical: issues.filter(issue => issue.severity === 'critical').length,
-      warning: issues.filter(issue => issue.severity === 'warning').length,
-      info: issues.filter(issue => issue.severity === 'info').length,
+      critical: issues.filter((issue) => issue.severity === 'critical').length,
+      warning: issues.filter((issue) => issue.severity === 'warning').length,
+      info: issues.filter((issue) => issue.severity === 'info').length,
     },
     parseErrorSeverityCounts: {
-      error: parseErrors.filter(error => error.severity === 'error').length,
-      warning: parseErrors.filter(error => error.severity === 'warning').length,
-      info: parseErrors.filter(error => error.severity === 'info').length,
+      error: parseErrors.filter((error) => error.severity === 'error').length,
+      warning: parseErrors.filter((error) => error.severity === 'warning').length,
+      info: parseErrors.filter((error) => error.severity === 'info').length,
     },
   }
 }

@@ -23,7 +23,7 @@ export class User {
   @OneToOne(() => Profile)
   profile!: Profile
 
-  @OneToMany(() => Post, post => post.author)
+  @OneToMany(() => Post, (post) => post.author)
   posts!: Post[]
 
   @ManyToOne(() => Team)
@@ -34,6 +34,8 @@ export class User {
 }
 
 class Profile {}
-class Post { author!: User }
+class Post {
+  author!: User
+}
 class Team {}
 class Role {}

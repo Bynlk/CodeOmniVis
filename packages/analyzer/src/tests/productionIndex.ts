@@ -17,11 +17,13 @@ export function buildProductionIndex(nodes: readonly OmniNode[]): ProductionInde
   const byExportName = new Map<string, OmniNode[]>()
   const byRoute = new Map<string, OmniNode[]>()
   for (const node of nodes) {
-    if (node.type === 'test_suite' || node.type === 'test_case' || node.type === 'test_fixture') continue
+    if (node.type === 'test_suite' || node.type === 'test_case' || node.type === 'test_fixture')
+      continue
     add(byFile, node.filePath.replaceAll('\\', '/'), node)
     add(byExportName, node.name, node)
     if ('methodName' in node.metadata) add(byExportName, node.metadata.methodName, node)
-    if ('route' in node.metadata && typeof node.metadata.route === 'string') add(byRoute, node.metadata.route, node)
+    if ('route' in node.metadata && typeof node.metadata.route === 'string')
+      add(byRoute, node.metadata.route, node)
   }
   return { byFile, byExportName, byRoute }
 }

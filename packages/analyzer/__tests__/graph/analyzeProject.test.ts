@@ -42,7 +42,7 @@ describe('analyzeProject', () => {
     const result = await analyzeProject({
       projectRoot: root,
       db,
-      onProgress: event => phases.push(event.phase),
+      onProgress: (event) => phases.push(event.phase),
     })
 
     expect(result.snapshot.schemaVersion).toBe(1)
@@ -74,9 +74,9 @@ describe('analyzeProject', () => {
 
     const result = await analyzeProject({ projectRoot: root })
 
-    expect(result.snapshot.graph.nodes.some(node => node.name === 'App')).toBe(true)
+    expect(result.snapshot.graph.nodes.some((node) => node.name === 'App')).toBe(true)
     expect(result.snapshot.parseErrors.length).toBeGreaterThan(0)
-    expect(result.snapshot.parseErrors.every(error => !('originalError' in error))).toBe(true)
+    expect(result.snapshot.parseErrors.every((error) => !('originalError' in error))).toBe(true)
   })
 
   it('records a malformed optional manifest as a controlled parse warning', async () => {
@@ -90,9 +90,11 @@ describe('analyzeProject', () => {
 
     const result = await analyzeProject({ projectRoot: root })
 
-    expect(result.snapshot.parseErrors).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: 'PROJECT_MANIFEST_INVALID', severity: 'warning' }),
-    ]))
+    expect(result.snapshot.parseErrors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'PROJECT_MANIFEST_INVALID', severity: 'warning' }),
+      ]),
+    )
   })
 
   it('does not follow a source-directory symlink outside the project root', async () => {
@@ -111,7 +113,7 @@ describe('analyzeProject', () => {
 
     const result = await analyzeProject({ projectRoot: root })
 
-    expect(result.snapshot.graph.nodes.some(node => node.name === 'Outside')).toBe(false)
+    expect(result.snapshot.graph.nodes.some((node) => node.name === 'Outside')).toBe(false)
   })
 
   it('rejects an empty project with a typed unsupported-input error', async () => {

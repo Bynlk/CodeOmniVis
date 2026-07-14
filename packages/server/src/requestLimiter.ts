@@ -6,8 +6,7 @@ export interface RequestLimiterOptions {
 }
 
 export type AcquireResult =
-  | { ok: true; release: () => void }
-  | { ok: false; reason: 'concurrency' | 'rate' }
+  { ok: true; release: () => void } | { ok: false; reason: 'concurrency' | 'rate' }
 
 interface IdentityState {
   windowStartedAt: number

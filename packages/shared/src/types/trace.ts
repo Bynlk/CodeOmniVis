@@ -98,7 +98,8 @@ export function isTraceLayer(value: unknown): value is TraceLayer {
 /** unknown → TraceStep 收敛。 */
 export function isTraceStep(value: unknown): value is TraceStep {
   if (!isJsonObject(value)) return false
-  const { index, nodeId, nodeName, nodeType, layer, filePath, line, edgeFromPrev, explanation } = value
+  const { index, nodeId, nodeName, nodeType, layer, filePath, line, edgeFromPrev, explanation } =
+    value
   if (typeof index !== 'number') return false
   if (typeof nodeId !== 'string') return false
   if (typeof nodeName !== 'string') return false
@@ -106,7 +107,8 @@ export function isTraceStep(value: unknown): value is TraceStep {
   if (!isTraceLayer(layer)) return false
   if (typeof filePath !== 'string') return false
   if (typeof line !== 'number') return false
-  if (!(edgeFromPrev === null || (typeof edgeFromPrev === 'string' && isEdgeType(edgeFromPrev)))) return false
+  if (!(edgeFromPrev === null || (typeof edgeFromPrev === 'string' && isEdgeType(edgeFromPrev))))
+    return false
   if (typeof explanation !== 'string') return false
   return true
 }

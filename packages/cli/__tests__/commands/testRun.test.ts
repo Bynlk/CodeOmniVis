@@ -7,15 +7,62 @@ import { runTestCommand } from '../../src/commands/testRun'
 
 describe('bounded test runner', () => {
   it('builds an argv-only Vitest plan with no shell', () => {
-    const plan = createTestRunPlan({ projectRoot: process.cwd(), runner: 'vitest', timeoutMs: 1_000, extraArgs: ['src/a.test.ts'] })
+    const plan = createTestRunPlan({
+      projectRoot: process.cwd(),
+      runner: 'vitest',
+      timeoutMs: 1_000,
+      extraArgs: ['src/a.test.ts'],
+    })
     expect(plan.command).toBe('pnpm')
     expect(plan.args).toEqual(['exec', 'vitest', '--run', 'src/a.test.ts'])
     expect(plan.options).toMatchObject({ shell: false, cwd: process.cwd() })
   })
 
+  it.each([
+    ['jest', ['exec', 'jest', '--runInBand']],
+    ['playwright', ['exec', 'playwright', 'test']],
+    ['cypress', ['exec', 'cypress', 'run']],
+  ] as const)('builds the fixed %s runner command', (runner, expectedArgs) => {
+    const plan = createTestRunPlan({
+      projectRoot: process.cwd(),
+      runner,
+      timeoutMs: 1_000,
+      extraArgs: [],
+    })
+
+    expect(plan.command).toBe('pnpm')
+    expect(plan.args).toEqual(expectedArgs)
+    expect(plan.options.shell).toBe(false)
+  })
+
+  it('rejects timeouts outside the bounded execution window', () => {
+    expect(() =>
+      createTestRunPlan({
+        projectRoot: process.cwd(),
+        runner: 'vitest',
+        timeoutMs: 999,
+        extraArgs: [],
+      }),
+    ).toThrow('between 1000 and 1800000')
+  })
+
   it('rejects unsafe arguments before spawning', () => {
-    expect(() => createTestRunPlan({ projectRoot: process.cwd(), runner: 'jest', timeoutMs: 1_000, extraArgs: ['bad\0arg'] })).toThrow('NUL')
-    expect(() => createTestRunPlan({ projectRoot: process.cwd(), runner: 'jest', timeoutMs: 1_000, extraArgs: ['/outside.test.ts'] })).toThrow('outside')
+    expect(() =>
+      createTestRunPlan({
+        projectRoot: process.cwd(),
+        runner: 'jest',
+        timeoutMs: 1_000,
+        extraArgs: ['bad\0arg'],
+      }),
+    ).toThrow('NUL')
+    expect(() =>
+      createTestRunPlan({
+        projectRoot: process.cwd(),
+        runner: 'jest',
+        timeoutMs: 1_000,
+        extraArgs: ['/outside.test.ts'],
+      }),
+    ).toThrow('outside')
   })
 
   it('runs only an explicit validated Gradle wrapper', async () => {
@@ -24,7 +71,12 @@ describe('bounded test runner', () => {
       const wrapper = path.join(root, 'gradlew')
       fs.writeFileSync(wrapper, '#!/bin/sh\nprintf "ok"\n')
       fs.chmodSync(wrapper, 0o700)
-      const result = await runTestRunner({ projectRoot: root, runner: 'gradle', timeoutMs: 2_000, extraArgs: [] })
+      const result = await runTestRunner({
+        projectRoot: root,
+        runner: 'gradle',
+        timeoutMs: 2_000,
+        extraArgs: [],
+      })
       expect(result).toMatchObject({ exitCode: 0, timedOut: false, stdout: 'ok', truncated: false })
     } finally {
       fs.rmSync(root, { recursive: true, force: true })
@@ -32,20 +84,38 @@ describe('bounded test runner', () => {
   })
 
   it('reports the explicit plan, imports requested JUnit, and preserves a failing exit code', async () => {
-    const run = vi.fn(async () => ({ exitCode: 2, signal: null, timedOut: false, stdout: 'out', stderr: 'err', truncated: false }))
+    const run = vi.fn(async () => ({
+      exitCode: 2,
+      signal: null,
+      timedOut: false,
+      stdout: 'out',
+      stderr: 'err',
+      truncated: false,
+    }))
     const importResults = vi.fn(async () => ({ importedFiles: 1, cases: 1, unmatched: 0 }))
     const stdout = vi.fn()
     const stderr = vi.fn()
     process.exitCode = undefined
 
-    await runTestCommand(['tests/order.test.ts'], {
-      project: process.cwd(), runner: 'vitest', timeout: '1000', junit: 'results.xml',
-    }, { run, importResults, stdout, stderr })
+    await runTestCommand(
+      ['tests/order.test.ts'],
+      {
+        project: process.cwd(),
+        runner: 'vitest',
+        timeout: '1000',
+        junit: 'results.xml',
+      },
+      { run, importResults, stdout, stderr },
+    )
 
-    expect(run).toHaveBeenCalledWith(expect.objectContaining({
-      projectRoot: process.cwd(), runner: 'vitest', timeoutMs: 1000,
-      extraArgs: ['tests/order.test.ts'],
-    }))
+    expect(run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectRoot: process.cwd(),
+        runner: 'vitest',
+        timeoutMs: 1000,
+        extraArgs: ['tests/order.test.ts'],
+      }),
+    )
     expect(importResults).toHaveBeenCalledWith({ project: process.cwd(), junit: 'results.xml' })
     expect(stdout).toHaveBeenCalledWith('out')
     expect(stderr.mock.calls.flat().join('')).toContain('test-run')

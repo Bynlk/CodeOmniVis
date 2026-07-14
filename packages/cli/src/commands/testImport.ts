@@ -24,11 +24,18 @@ function inside(root: string, candidate: string): boolean {
 
 function resolveInputs(projectRoot: string, pattern: string): string[] {
   const resolvedPattern = path.resolve(projectRoot, pattern)
-  if (!inside(projectRoot, resolvedPattern)) throw new Error('JUnit XML inputs must be inside the project')
-  const files = fg.sync(pattern, { cwd: projectRoot, absolute: true, onlyFiles: true, followSymbolicLinks: false })
+  if (!inside(projectRoot, resolvedPattern))
+    throw new Error('JUnit XML inputs must be inside the project')
+  const files = fg.sync(pattern, {
+    cwd: projectRoot,
+    absolute: true,
+    onlyFiles: true,
+    followSymbolicLinks: false,
+  })
   const realRoot = fs.realpathSync.native(projectRoot)
   for (const file of files) {
-    if (!inside(realRoot, fs.realpathSync.native(file))) throw new Error('JUnit XML inputs must be inside the project')
+    if (!inside(realRoot, fs.realpathSync.native(file)))
+      throw new Error('JUnit XML inputs must be inside the project')
   }
   if (files.length === 0) throw new Error('No JUnit XML files matched')
   return files.sort()
@@ -43,7 +50,7 @@ export async function runTestImport(options: TestImportOptions): Promise<TestImp
     await db.ready()
     const snapshot = db.loadSnapshot()
     if (!snapshot) throw new Error('No committed project snapshot found; run analyze first')
-    const imports = files.map(file => importJunitXml(file, snapshot))
+    const imports = files.map((file) => importJunitXml(file, snapshot))
     const updated = {
       ...snapshot,
       snapshotId: randomUUID(),
@@ -74,6 +81,8 @@ export function testImportCommand(program: Command): void {
     .requiredOption('--junit <file-or-glob>', 'JUnit XML file or glob inside the project')
     .action(async (options: TestImportOptions) => {
       const result = await runTestImport(options)
-      process.stdout.write(`Imported ${result.cases} case result(s) from ${result.importedFiles} file(s); ${result.unmatched} unmatched.\n`)
+      process.stdout.write(
+        `Imported ${result.cases} case result(s) from ${result.importedFiles} file(s); ${result.unmatched} unmatched.\n`,
+      )
     })
 }

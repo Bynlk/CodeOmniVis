@@ -24,12 +24,18 @@ test('fails a high production advisory and reports its dependency path', () => {
 })
 
 test('accepts only an exact unexpired advisory-path exception', () => {
-  const result = evaluateAuditReport(REPORT, [{
-    advisoryId: 'GHSA-test-1234',
-    path: '.@example-package>transitive-package',
-    rationale: 'No fixed transitive release is available; the path is not invoked by the CLI.',
-    expiresOn: '2026-08-01',
-  }], new Date('2026-07-14T00:00:00Z'))
+  const result = evaluateAuditReport(
+    REPORT,
+    [
+      {
+        advisoryId: 'GHSA-test-1234',
+        path: '.@example-package>transitive-package',
+        rationale: 'No fixed transitive release is available; the path is not invoked by the CLI.',
+        expiresOn: '2026-08-01',
+      },
+    ],
+    new Date('2026-07-14T00:00:00Z'),
+  )
 
   assert.equal(result.unhandled.length, 0)
   assert.equal(result.exempted.length, 1)
@@ -37,24 +43,28 @@ test('accepts only an exact unexpired advisory-path exception', () => {
 })
 
 test('rejects expired and path-mismatched exceptions', () => {
-  const result = evaluateAuditReport(REPORT, [
-    {
-      advisoryId: 'GHSA-test-1234',
-      path: '.@example-package>transitive-package',
-      rationale: 'Temporary exception pending an upstream patch.',
-      expiresOn: '2026-07-13',
-    },
-    {
-      advisoryId: 'GHSA-test-1234',
-      path: 'unrelated>path',
-      rationale: 'This path should not match the report.',
-      expiresOn: '2026-08-01',
-    },
-  ], new Date('2026-07-14T00:00:00Z'))
-
-  assert.deepEqual(
-    result.invalidExceptions.map(exception => exception.reason).sort(),
-    ['expired', 'path_mismatch'],
+  const result = evaluateAuditReport(
+    REPORT,
+    [
+      {
+        advisoryId: 'GHSA-test-1234',
+        path: '.@example-package>transitive-package',
+        rationale: 'Temporary exception pending an upstream patch.',
+        expiresOn: '2026-07-13',
+      },
+      {
+        advisoryId: 'GHSA-test-1234',
+        path: 'unrelated>path',
+        rationale: 'This path should not match the report.',
+        expiresOn: '2026-08-01',
+      },
+    ],
+    new Date('2026-07-14T00:00:00Z'),
   )
+
+  assert.deepEqual(result.invalidExceptions.map((exception) => exception.reason).sort(), [
+    'expired',
+    'path_mismatch',
+  ])
   assert.equal(result.unhandled.length, 1)
 })

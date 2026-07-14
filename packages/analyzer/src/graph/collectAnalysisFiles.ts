@@ -45,8 +45,11 @@ function scanDirectory(
   }
   const lexicalRelative = path.relative(path.resolve(projectRoot), path.resolve(directory))
   const realRelative = path.relative(realProjectRoot, realDirectory)
-  const lexicalInside = lexicalRelative === '' || (!lexicalRelative.startsWith('..') && !path.isAbsolute(lexicalRelative))
-  const realInside = realRelative === '' || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative))
+  const lexicalInside =
+    lexicalRelative === '' ||
+    (!lexicalRelative.startsWith('..') && !path.isAbsolute(lexicalRelative))
+  const realInside =
+    realRelative === '' || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative))
   // A path explicitly configured outside root is allowed, but a path that appears inside root
   // must never escape through a symlink.
   if (lexicalInside && !realInside) return
@@ -110,14 +113,24 @@ function collectCandidateDirectories(projectRoot: string, projectMeta: ProjectMe
     }
     if (!isWithinRoot(realProjectRoot, realPackageRoot)) continue
     for (const child of [
-      'src', 'app', 'pages', 'components', 'server', 'api', 'prisma',
-      'test', 'tests', '__tests__', 'e2e', 'cypress/e2e',
+      'src',
+      'app',
+      'pages',
+      'components',
+      'server',
+      'api',
+      'prisma',
+      'test',
+      'tests',
+      '__tests__',
+      'e2e',
+      'cypress/e2e',
     ]) {
       candidates.add(path.join(packageRoot, child))
     }
   }
 
-  return [...candidates].map(candidate => resolveCandidate(projectRoot, candidate))
+  return [...candidates].map((candidate) => resolveCandidate(projectRoot, candidate))
 }
 
 function collectExplicitFiles(projectMeta: ProjectMeta): string[] {

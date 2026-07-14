@@ -18,13 +18,20 @@ describe('runAnalysis graph replacement', () => {
     const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-reanalysis-'))
     roots.push(projectRoot)
     fs.mkdirSync(path.join(projectRoot, 'app'))
-    fs.writeFileSync(path.join(projectRoot, 'app', 'page.tsx'), 'export default function Page() { return null }')
+    fs.writeFileSync(
+      path.join(projectRoot, 'app', 'page.tsx'),
+      'export default function Page() { return null }',
+    )
 
     const db = new OmniDatabase(':memory:')
     await db.ready()
     const stale: OmniNode = {
-      id: 'component:components/Deleted.tsx:Deleted', type: 'component', name: 'Deleted',
-      filePath: 'components/Deleted.tsx', line: 1, column: 1,
+      id: 'component:components/Deleted.tsx:Deleted',
+      type: 'component',
+      name: 'Deleted',
+      filePath: 'components/Deleted.tsx',
+      line: 1,
+      column: 1,
       metadata: { props: [], hasState: false, isPage: false, jsxChildCount: 0 },
     }
     db.upsertNode(stale)
@@ -32,7 +39,7 @@ describe('runAnalysis graph replacement', () => {
     await runAnalysis({ projectRoot, dbPath: ':memory:', db })
 
     expect(db.getNode(stale.id)).toBeNull()
-    expect(db.getAllNodes().some(node => node.type === 'page')).toBe(true)
+    expect(db.getAllNodes().some((node) => node.type === 'page')).toBe(true)
   })
 
   it('does not retain unresolved API placeholder edges in the persisted graph', async () => {
@@ -48,8 +55,10 @@ describe('runAnalysis graph replacement', () => {
     await db.ready()
     await runAnalysis({ projectRoot, dbPath: ':memory:', db })
 
-    const nodeIds = new Set(db.getAllNodes().map(node => node.id))
-    expect(db.getAllEdges().every(edge => nodeIds.has(edge.source) && nodeIds.has(edge.target))).toBe(true)
+    const nodeIds = new Set(db.getAllNodes().map((node) => node.id))
+    expect(
+      db.getAllEdges().every((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)),
+    ).toBe(true)
   })
 
   it('re-analyzes source directories supplied by detected project metadata', async () => {
@@ -86,7 +95,7 @@ describe('runAnalysis graph replacement', () => {
     const result = await runAnalysis({ projectRoot, dbPath: ':memory:', db, projectMeta })
 
     expect(result.filesScanned).toBe(1)
-    const appNode = db.getAllNodes().find(node => node.name === 'App')
+    const appNode = db.getAllNodes().find((node) => node.name === 'App')
     expect(appNode).toBeDefined()
     expect(appNode?.filePath).toBe('frontend/src/App.tsx')
   })
@@ -117,12 +126,14 @@ describe('runAnalysis graph replacement', () => {
       typeormEntityDirs: [],
       tsConfigPath: null,
       buildFile: null,
-      packages: [{
-        name: '@fixture/ui',
-        path: 'packages/ui',
-        dependencies: ['react'],
-        devDependencies: [],
-      }],
+      packages: [
+        {
+          name: '@fixture/ui',
+          path: 'packages/ui',
+          dependencies: ['react'],
+          devDependencies: [],
+        },
+      ],
     }
 
     const db = new OmniDatabase(':memory:')
@@ -130,7 +141,7 @@ describe('runAnalysis graph replacement', () => {
     const result = await runAnalysis({ projectRoot, dbPath: ':memory:', db, projectMeta })
 
     expect(result.filesScanned).toBe(1)
-    expect(db.getAllNodes().some(node => node.name === 'WorkspacePanel')).toBe(true)
+    expect(db.getAllNodes().some((node) => node.name === 'WorkspacePanel')).toBe(true)
   })
 
   it('rejects an analysis with no supported source files', async () => {
@@ -174,9 +185,14 @@ describe('runAnalysis graph replacement', () => {
     const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-analysis-cleanup-'))
     roots.push(projectRoot)
     fs.mkdirSync(path.join(projectRoot, 'app'))
-    fs.writeFileSync(path.join(projectRoot, 'app', 'page.tsx'), 'export default function Page() { return null }')
+    fs.writeFileSync(
+      path.join(projectRoot, 'app', 'page.tsx'),
+      'export default function Page() { return null }',
+    )
     const closeSpy = vi.spyOn(OmniDatabase.prototype, 'close')
-    const linkSpy = vi.spyOn(CrossLayerLinker.prototype, 'link').mockRejectedValueOnce(new Error('link failed'))
+    const linkSpy = vi
+      .spyOn(CrossLayerLinker.prototype, 'link')
+      .mockRejectedValueOnce(new Error('link failed'))
 
     await expect(runAnalysis({ projectRoot, dbPath: ':memory:' })).rejects.toThrow('link failed')
     expect(closeSpy).toHaveBeenCalledTimes(2)

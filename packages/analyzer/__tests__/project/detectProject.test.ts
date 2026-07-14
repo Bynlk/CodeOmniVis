@@ -19,13 +19,16 @@ describe('detectProject', () => {
 
   it('detects a Next.js, tRPC and Prisma project from one canonical entry', async () => {
     const root = project()
-    fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
-      dependencies: {
-        next: '15.5.20',
-        '@trpc/server': '11.0.0',
-        '@prisma/client': '6.0.0',
-      },
-    }))
+    fs.writeFileSync(
+      path.join(root, 'package.json'),
+      JSON.stringify({
+        dependencies: {
+          next: '15.5.20',
+          '@trpc/server': '11.0.0',
+          '@prisma/client': '6.0.0',
+        },
+      }),
+    )
     fs.mkdirSync(path.join(root, 'prisma'))
     fs.writeFileSync(path.join(root, 'prisma', 'schema.prisma'), 'model User { id Int @id }')
 
@@ -42,13 +45,16 @@ describe('detectProject', () => {
 
   it('detects Spring and Exposed from a Kotlin Gradle build', async () => {
     const root = project()
-    fs.writeFileSync(path.join(root, 'build.gradle.kts'), `
+    fs.writeFileSync(
+      path.join(root, 'build.gradle.kts'),
+      `
       plugins { id("org.springframework.boot") version "3.5.0" }
       dependencies {
         implementation("org.springframework.boot:spring-boot-starter-web")
         implementation("org.jetbrains.exposed:exposed-core:0.61.0")
       }
-    `)
+    `,
+    )
 
     const meta = await detectProject(root)
 
@@ -62,7 +68,7 @@ describe('detectProject', () => {
     fs.writeFileSync(path.join(root, 'package.json'), '{ invalid json')
     const warnings: string[] = []
 
-    const meta = await detectProject(root, undefined, warning => warnings.push(warning.code))
+    const meta = await detectProject(root, undefined, (warning) => warnings.push(warning.code))
 
     expect(meta.frontendFramework).toBe('unknown')
     expect(meta.backendFramework).toBe('unknown')

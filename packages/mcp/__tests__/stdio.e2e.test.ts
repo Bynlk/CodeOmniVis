@@ -30,7 +30,7 @@ describe('MCP stdio protocol', () => {
     const result = await client.listTools()
 
     expect(transport.pid).not.toBeNull()
-    expect(result.tools.map(tool => tool.name)).toEqual(
+    expect(result.tools.map((tool) => tool.name)).toEqual(
       expect.arrayContaining([...PUBLIC_TOOL_NAMES]),
     )
   }, 30_000)

@@ -12,7 +12,10 @@ import type { StatsRepository } from './statsRepository'
 export function persistDatabaseAtomically(filePath: string, data: Uint8Array): void {
   const directory = path.dirname(filePath)
   fs.mkdirSync(directory, { recursive: true })
-  const temporary = path.join(directory, `.${path.basename(filePath)}.${process.pid}.${randomUUID()}.tmp`)
+  const temporary = path.join(
+    directory,
+    `.${path.basename(filePath)}.${process.pid}.${randomUUID()}.tmp`,
+  )
   try {
     fs.writeFileSync(temporary, Buffer.from(data), { mode: 0o600 })
     const file = fs.openSync(temporary, 'r')
@@ -49,7 +52,7 @@ function classifyEdges(snapshot: ProjectSnapshot): {
   accepted: OmniEdge[]
   rejected: RejectedEdge[]
 } {
-  const nodeIds = new Set(snapshot.graph.nodes.map(node => node.id))
+  const nodeIds = new Set(snapshot.graph.nodes.map((node) => node.id))
   const accepted: OmniEdge[] = []
   const rejected: RejectedEdge[] = []
   for (const edge of snapshot.graph.edges) {

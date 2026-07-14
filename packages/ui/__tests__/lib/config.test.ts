@@ -10,19 +10,47 @@ import type cytoscape from 'cytoscape'
 import { getCytoscapeStyle } from '../../src/utils/cytoscapeConfig'
 
 const ALL_NODE_TYPES: NodeType[] = [
-  'page', 'component', 'api_route', 'trpc_procedure',
-  'tsrpc_service', 'tsrpc_api', 'tsrpc_msg',
-  'express_route', 'handler', 'service', 'db_model', 'module',
-  'kotlin_class', 'kotlin_interface', 'kotlin_object', 'kotlin_function', 'kotlin_route',
-  'test_suite', 'test_case', 'test_fixture',
+  'page',
+  'component',
+  'api_route',
+  'trpc_procedure',
+  'tsrpc_service',
+  'tsrpc_api',
+  'tsrpc_msg',
+  'express_route',
+  'handler',
+  'service',
+  'db_model',
+  'module',
+  'kotlin_class',
+  'kotlin_interface',
+  'kotlin_object',
+  'kotlin_function',
+  'kotlin_route',
+  'test_suite',
+  'test_case',
+  'test_fixture',
 ]
 
 const ALL_EDGE_TYPES: EdgeType[] = [
-  'renders', 'navigates_to', 'calls_api', 'handles',
-  'calls_service', 'queries_db', 'db_relation', 'imports', 'contains',
-  'kotlin_inherits', 'kotlin_implements', 'kotlin_uses', 'data_flows_to',
-  'sends_msg', 'listens_msg',
-  'tests', 'covers', 'uses_fixture',
+  'renders',
+  'navigates_to',
+  'calls_api',
+  'handles',
+  'calls_service',
+  'queries_db',
+  'db_relation',
+  'imports',
+  'contains',
+  'kotlin_inherits',
+  'kotlin_implements',
+  'kotlin_uses',
+  'data_flows_to',
+  'sends_msg',
+  'listens_msg',
+  'tests',
+  'covers',
+  'uses_fixture',
 ]
 
 describe('NODE_EMOJI', () => {
@@ -68,23 +96,27 @@ describe('getCytoscapeStyle', () => {
     for (const type of ALL_EDGE_TYPES) {
       expect(styles).toContainEqual(expect.objectContaining({ selector: `edge[type="${type}"]` }))
     }
-    expect(styles).toContainEqual(expect.objectContaining({ selector: 'edge[confidence="inferred"]' }))
+    expect(styles).toContainEqual(
+      expect.objectContaining({ selector: 'edge[confidence="inferred"]' }),
+    )
   })
 
   it('derives safe node colors and compact labels from runtime data', () => {
-    const nodeBlock = getCytoscapeStyle().find(style => style.selector === 'node')
-    const nodeStyle = nodeBlock && 'style' in nodeBlock
-      ? nodeBlock.style as cytoscape.Css.Node
-      : undefined
+    const nodeBlock = getCytoscapeStyle().find((style) => style.selector === 'node')
+    const nodeStyle =
+      nodeBlock && 'style' in nodeBlock ? (nodeBlock.style as cytoscape.Css.Node) : undefined
     const borderColor = nodeStyle?.['border-color'] as (node: cytoscape.NodeSingular) => string
     const label = nodeStyle?.label as (node: cytoscape.NodeSingular) => string
-    const node = (data: Record<string, unknown>) => ({
-      data: (key: string) => data[key],
-    }) as unknown as cytoscape.NodeSingular
+    const node = (data: Record<string, unknown>) =>
+      ({
+        data: (key: string) => data[key],
+      }) as unknown as cytoscape.NodeSingular
 
     expect(borderColor(node({ type: 'test_case' }))).toBe(NODE_COLORS.test_case)
     expect(borderColor(node({ type: 'unknown' }))).toBe('#343e4d')
-    expect(label(node({ label: 'A very long architecture node label' }))).toBe('A very long archit…')
+    expect(label(node({ label: 'A very long architecture node label' }))).toBe(
+      'A very long archit…',
+    )
     expect(label(node({ label: 'Short' }))).toBe('Short')
     expect(label(node({}))).toBe('?')
   })

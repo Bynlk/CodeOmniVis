@@ -56,30 +56,36 @@ function snapshot(): ProjectSnapshot {
           metadata: { props: [], hasState: false, isPage: false, jsxChildCount: 0 },
         },
       ],
-      edges: [{
-        id: 'page:app/page.tsx:Home--renders--component:components/Hero.tsx:Hero',
-        source: 'page:app/page.tsx:Home',
-        target: 'component:components/Hero.tsx:Hero',
-        type: 'renders',
-        confidence: 'certain',
-        metadata: { jsxLine: 3 },
-      }],
+      edges: [
+        {
+          id: 'page:app/page.tsx:Home--renders--component:components/Hero.tsx:Hero',
+          source: 'page:app/page.tsx:Home',
+          target: 'component:components/Hero.tsx:Hero',
+          type: 'renders',
+          confidence: 'certain',
+          metadata: { jsxLine: 3 },
+        },
+      ],
     },
-    issues: [{
-      id: 'issue-b',
-      severity: 'info',
-      type: 'dead_component',
-      description: 'Example issue',
-      locations: [{ file: '/Users/example/project/components/Hero.tsx', line: 2 }],
-      relatedNodeIds: ['component:components/Hero.tsx:Hero'],
-      relatedEdgeIds: [],
-    }],
-    parseErrors: [{
-      file: '/Users/example/project/app/broken.tsx',
-      message: 'Parser could not read this file',
-      severity: 'warning',
-      parser: 'react-component',
-    }],
+    issues: [
+      {
+        id: 'issue-b',
+        severity: 'info',
+        type: 'dead_component',
+        description: 'Example issue',
+        locations: [{ file: '/Users/example/project/components/Hero.tsx', line: 2 }],
+        relatedNodeIds: ['component:components/Hero.tsx:Hero'],
+        relatedEdgeIds: [],
+      },
+    ],
+    parseErrors: [
+      {
+        file: '/Users/example/project/app/broken.tsx',
+        message: 'Parser could not read this file',
+        severity: 'warning',
+        parser: 'react-component',
+      },
+    ],
     stats: {
       filesScanned: 3,
       nodeCount: 2,
@@ -169,9 +175,16 @@ describe('computeSnapshotDigest', () => {
   it('includes imported test results but excludes import time', () => {
     const first = snapshot()
     const second = snapshot()
-    const run: TestRunImport = { source: 'junit_xml', importedAt: 1, cases: [{ suite: 'Checkout', name: 'works', status: 'passed', durationMs: 2 }], unmatched: [] }
+    const run: TestRunImport = {
+      source: 'junit_xml',
+      importedAt: 1,
+      cases: [{ suite: 'Checkout', name: 'works', status: 'passed', durationMs: 2 }],
+      unmatched: [],
+    }
     first.provenance.testRuns = [run]
-    second.provenance.testRuns = [{ ...run, importedAt: 999, cases: run.cases.map(result => ({ ...result })) }]
+    second.provenance.testRuns = [
+      { ...run, importedAt: 999, cases: run.cases.map((result) => ({ ...result })) },
+    ]
     expect(computeSnapshotDigest(first)).toBe(computeSnapshotDigest(second))
     second.provenance.testRuns[0].cases[0].status = 'failed'
     expect(computeSnapshotDigest(first)).not.toBe(computeSnapshotDigest(second))

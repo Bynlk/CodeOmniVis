@@ -32,7 +32,8 @@ export function runMcpProcess(
     stopRequested = true
     if (!handle || stopping) return
     stopping = true
-    void handle.close()
+    void handle
+      .close()
       .then(() => runtime.exit(0))
       .catch((err: unknown) => {
         runtime.stderr.write(`[codeomnivis-mcp] Shutdown failed: ${String(err)}\n`)
@@ -44,7 +45,7 @@ export function runMcpProcess(
   runtime.once('SIGTERM', stop)
 
   void start({ projectRoot: runtime.env.CODEOMNIVIS_PROJECT ?? runtime.cwd() })
-    .then(started => {
+    .then((started) => {
       handle = started
       if (stopRequested) stop()
     })

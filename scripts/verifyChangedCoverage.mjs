@@ -20,17 +20,25 @@ export function lineCoverage(fileCoverage) {
     lineHits.set(line, Math.max(lineHits.get(line) ?? 0, hits))
   }
   const total = lineHits.size
-  const covered = [...lineHits.values()].filter(hits => hits > 0).length
-  return { covered, total, pct: total === 0 ? 100 : covered / total * 100 }
+  const covered = [...lineHits.values()].filter((hits) => hits > 0).length
+  return { covered, total, pct: total === 0 ? 100 : (covered / total) * 100 }
 }
 
 function hasDeclareModifier(statement) {
-  return statement.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword) ?? false
+  return (
+    statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword) ?? false
+  )
 }
 
 export function hasRuntimeCode(source) {
-  const sourceFile = ts.createSourceFile('source.ts', source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
-  return sourceFile.statements.some(statement => {
+  const sourceFile = ts.createSourceFile(
+    'source.ts',
+    source,
+    ts.ScriptTarget.Latest,
+    false,
+    ts.ScriptKind.TSX,
+  )
+  return sourceFile.statements.some((statement) => {
     if (ts.isInterfaceDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) return false
     if (hasDeclareModifier(statement)) return false
     if (ts.isImportDeclaration(statement)) {
@@ -39,14 +47,20 @@ export function hasRuntimeCode(source) {
       if (clause.isTypeOnly) return false
       if (clause.name) return true
       const bindings = clause.namedBindings
-      return !bindings || ts.isNamespaceImport(bindings)
-        || bindings.elements.some(element => !element.isTypeOnly)
+      return (
+        !bindings ||
+        ts.isNamespaceImport(bindings) ||
+        bindings.elements.some((element) => !element.isTypeOnly)
+      )
     }
     if (ts.isExportDeclaration(statement)) {
       if (statement.isTypeOnly) return false
       const exports = statement.exportClause
-      return !exports || ts.isNamespaceExport(exports)
-        || exports.elements.some(element => !element.isTypeOnly)
+      return (
+        !exports ||
+        ts.isNamespaceExport(exports) ||
+        exports.elements.some((element) => !element.isTypeOnly)
+      )
     }
     return true
   })
@@ -64,12 +78,7 @@ export function validateGlobalCoverage(summary) {
   return errors
 }
 
-export function validatePackageLineCoverage(
-  coverage,
-  projectRoot,
-  packageName,
-  threshold,
-) {
+export function validatePackageLineCoverage(coverage, projectRoot, packageName, threshold) {
   const sourceRoot = `${resolve(projectRoot, 'packages', packageName, 'src')}${sep}`
   let covered = 0
   let total = 0
@@ -79,10 +88,8 @@ export function validatePackageLineCoverage(
     covered += lines.covered
     total += lines.total
   }
-  const pct = total === 0 ? 0 : covered / total * 100
-  return pct < threshold
-    ? [`${packageName} lines ${pct.toFixed(2)}% is below ${threshold}%`]
-    : []
+  const pct = total === 0 ? 0 : (covered / total) * 100
+  return pct < threshold ? [`${packageName} lines ${pct.toFixed(2)}% is below ${threshold}%`] : []
 }
 
 export function validateChangedCoverage(coverage, changedFiles, projectRoot) {
@@ -125,10 +132,10 @@ function changedProductionFiles(projectRoot) {
   return output
     .split('\n')
     .filter(Boolean)
-    .filter(filePath => /^packages\/[^/]+\/src\/.*\.(?:ts|tsx)$/u.test(filePath))
-    .filter(filePath => !filePath.endsWith('.d.ts'))
-    .filter(filePath => existsSync(resolve(projectRoot, filePath)))
-    .filter(filePath => hasRuntimeCode(readFileSync(resolve(projectRoot, filePath), 'utf8')))
+    .filter((filePath) => /^packages\/[^/]+\/src\/.*\.(?:ts|tsx)$/u.test(filePath))
+    .filter((filePath) => !filePath.endsWith('.d.ts'))
+    .filter((filePath) => existsSync(resolve(projectRoot, filePath)))
+    .filter((filePath) => hasRuntimeCode(readFileSync(resolve(projectRoot, filePath), 'utf8')))
     .sort()
 }
 
@@ -148,7 +155,9 @@ export function main(projectRoot = process.cwd()) {
   ]
 
   if (errors.length > 0) {
-    process.stderr.write(`Coverage gate failed:\n${errors.map(error => `- ${error}`).join('\n')}\n`)
+    process.stderr.write(
+      `Coverage gate failed:\n${errors.map((error) => `- ${error}`).join('\n')}\n`,
+    )
     process.exitCode = 1
     return
   }

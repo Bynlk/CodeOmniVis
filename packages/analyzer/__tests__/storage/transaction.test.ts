@@ -93,14 +93,16 @@ describe('transactional snapshot replacement', () => {
 
     replaceSnapshot(snapshotA, repositories)
 
-    expect(() => replaceSnapshot(snapshotB, {
-      ...repositories,
-      edges: {
-        replaceAll(): number {
-          throw new Error('injected failure after nodes')
+    expect(() =>
+      replaceSnapshot(snapshotB, {
+        ...repositories,
+        edges: {
+          replaceAll(): number {
+            throw new Error('injected failure after nodes')
+          },
         },
-      },
-    })).toThrow('injected failure after nodes')
+      }),
+    ).toThrow('injected failure after nodes')
 
     expect(graph.loadSnapshot()).toEqual(snapshotA)
     expect(graph.load()).toEqual(snapshotA.graph)

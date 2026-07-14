@@ -8,7 +8,7 @@
  */
 
 import('../dist/index.js')
-  .then(module => {
+  .then((module) => {
     // Development tests may intentionally execute against an older dist build,
     // whose import side effect already starts the CLI and has no runCli export.
     if (typeof module.runCli === 'function') return module.runCli()

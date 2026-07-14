@@ -10,13 +10,19 @@ describe('test discovery pipeline', () => {
     try {
       fs.mkdirSync(path.join(root, 'src'))
       fs.mkdirSync(path.join(root, 'tests'))
-      fs.writeFileSync(path.join(root, 'src', 'Checkout.tsx'), 'export function Checkout() { return <main /> }')
-      fs.writeFileSync(path.join(root, 'tests', 'checkout.test.ts'), "import { describe, it } from 'vitest'\nimport { Checkout } from '../src/Checkout'\ndescribe('checkout', () => it('renders', () => Checkout()))")
+      fs.writeFileSync(
+        path.join(root, 'src', 'Checkout.tsx'),
+        'export function Checkout() { return <main /> }',
+      )
+      fs.writeFileSync(
+        path.join(root, 'tests', 'checkout.test.ts'),
+        "import { describe, it } from 'vitest'\nimport { Checkout } from '../src/Checkout'\ndescribe('checkout', () => it('renders', () => Checkout()))",
+      )
 
       const result = await analyzeProject({ projectRoot: root })
 
-      expect(result.snapshot.graph.nodes.some(node => node.type === 'test_case')).toBe(true)
-      expect(result.snapshot.graph.edges.some(edge => edge.type === 'covers')).toBe(true)
+      expect(result.snapshot.graph.nodes.some((node) => node.type === 'test_case')).toBe(true)
+      expect(result.snapshot.graph.edges.some((edge) => edge.type === 'covers')).toBe(true)
     } finally {
       fs.rmSync(root, { recursive: true, force: true })
     }

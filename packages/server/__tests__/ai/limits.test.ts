@@ -20,13 +20,16 @@ function response(status: number, value: string): AiHttpResponse {
   return { status, body: body(value), close: async () => {} }
 }
 
-function makeApp(client: AiHttpClient, limits: Partial<{
-  timeoutMs: number
-  maxRequestBytes: number
-  maxResponseBytes: number
-  maxConcurrentPerIdentity: number
-  requestsPerMinute: number
-}> = {}) {
+function makeApp(
+  client: AiHttpClient,
+  limits: Partial<{
+    timeoutMs: number
+    maxRequestBytes: number
+    maxResponseBytes: number
+    maxConcurrentPerIdentity: number
+    requestsPerMinute: number
+  }> = {},
+) {
   const app = express()
   app.use(express.json())
   registerAiRoutes(app, PUBLIC_RESOLVER, undefined, { client, limits })
@@ -36,7 +39,7 @@ function makeApp(client: AiHttpClient, limits: Partial<{
 describe('AI route resource policy', () => {
   it('passes the validated DNS address to the HTTP client', async () => {
     let connectedAddress: string | undefined
-    const client: AiHttpClient = async requestOptions => {
+    const client: AiHttpClient = async (requestOptions) => {
       connectedAddress = requestOptions.destination.address
       return response(200, '{"choices":[{"message":{"content":"ok"}}]}')
     }
@@ -65,11 +68,16 @@ describe('AI route resource policy', () => {
   })
 
   it('returns 504 when the upstream exceeds the total timeout', async () => {
-    const client: AiHttpClient = requestOptions => new Promise((_resolve, reject) => {
-      requestOptions.signal.addEventListener('abort', () => reject(requestOptions.signal.reason), {
-        once: true,
+    const client: AiHttpClient = (requestOptions) =>
+      new Promise((_resolve, reject) => {
+        requestOptions.signal.addEventListener(
+          'abort',
+          () => reject(requestOptions.signal.reason),
+          {
+            once: true,
+          },
+        )
       })
-    })
 
     const result = await request(makeApp(client, { timeoutMs: 20 }))
       .post('/api/ai/chat')
@@ -80,7 +88,7 @@ describe('AI route resource policy', () => {
   })
 
   it('returns 504 when the timeout occurs while streaming the response body', async () => {
-    const client: AiHttpClient = async requestOptions => ({
+    const client: AiHttpClient = async (requestOptions) => ({
       status: 200,
       body: (async function* waitForAbort(): AsyncGenerator<Uint8Array> {
         await new Promise<void>((_resolve, reject) => {
@@ -143,17 +151,21 @@ describe('AI route resource policy', () => {
   it('rejects a second concurrent request from the same identity', async () => {
     let releaseFirst: (() => void) | undefined
     let markStarted: (() => void) | undefined
-    const started = new Promise<void>(resolveStarted => { markStarted = resolveStarted })
+    const started = new Promise<void>((resolveStarted) => {
+      markStarted = resolveStarted
+    })
     const client: AiHttpClient = async () => {
       markStarted?.()
-      await new Promise<void>(resolveRelease => { releaseFirst = resolveRelease })
+      await new Promise<void>((resolveRelease) => {
+        releaseFirst = resolveRelease
+      })
       return response(200, '{"choices":[{"message":{"content":"ok"}}]}')
     }
     const app = makeApp(client, { maxConcurrentPerIdentity: 1 })
     const first = request(app)
       .post('/api/ai/chat')
       .send({ messages: MESSAGES, config: CONFIG })
-      .then(result => result)
+      .then((result) => result)
     await started
 
     const second = await request(app)

@@ -1,14 +1,14 @@
 export type TestFramework =
-  | 'vitest'
-  | 'jest'
-  | 'playwright'
-  | 'cypress'
-  | 'junit4'
-  | 'junit5'
-  | 'kotest'
+  'vitest' | 'jest' | 'playwright' | 'cypress' | 'junit4' | 'junit5' | 'kotest'
 
 const TEST_FRAMEWORKS = new Set<string>([
-  'vitest', 'jest', 'playwright', 'cypress', 'junit4', 'junit5', 'kotest',
+  'vitest',
+  'jest',
+  'playwright',
+  'cypress',
+  'junit4',
+  'junit5',
+  'kotest',
 ])
 
 export function isTestFramework(value: string): value is TestFramework {

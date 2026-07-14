@@ -99,14 +99,16 @@ export class GraphBuilder {
 
     // Unresolved API placeholders stay in the in-memory build result for the linker,
     // but the storage boundary never accepts an edge without both endpoints.
-    const nodeIds = new Set(uniqueNodes.map(node => node.id))
-    const persistableEdges = validEdges.filter(edge => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+    const nodeIds = new Set(uniqueNodes.map((node) => node.id))
+    const persistableEdges = validEdges.filter(
+      (edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target),
+    )
 
     // 写入数据库
     this.db.upsertNodes(uniqueNodes)
     this.db.upsertEdges(persistableEdges)
     // 转换 ParseError 为 DbError 格式
-    const dbErrors = allErrors.map(e => ({
+    const dbErrors = allErrors.map((e) => ({
       file: e.file,
       message: e.message,
       severity: e.severity,
@@ -163,9 +165,9 @@ export class GraphBuilder {
    */
   private validateAndDeduplicateEdges(
     edges: OmniEdge[],
-    nodes: OmniNode[]
+    nodes: OmniNode[],
   ): { validEdges: OmniEdge[]; skippedEdges: number } {
-    const nodeIds = new Set(nodes.map(n => n.id))
+    const nodeIds = new Set(nodes.map((n) => n.id))
     const seen = new Map<string, OmniEdge>()
     let skippedEdges = 0
 
@@ -240,9 +242,8 @@ export class GraphBuilder {
 
     // 需要扫描的节点类型
     const scanTypes = new Set(['page', 'component', 'handler'])
-    const scanNodes = nodes.filter(n =>
-      scanTypes.has(n.type)
-      && !(n.type === 'page' && pageComponentsByFile.has(n.filePath))
+    const scanNodes = nodes.filter(
+      (n) => scanTypes.has(n.type) && !(n.type === 'page' && pageComponentsByFile.has(n.filePath)),
     )
 
     for (const node of scanNodes) {
@@ -262,7 +263,12 @@ export class GraphBuilder {
           const named = m[1]
           const def = m[2]
           if (named) {
-            for (const n of named.split(',').map(s => s.trim().split(/\s+as\s+/)[0].trim())) {
+            for (const n of named.split(',').map((s) =>
+              s
+                .trim()
+                .split(/\s+as\s+/)[0]
+                .trim(),
+            )) {
               if (n && /^[A-Z]/.test(n)) importedNames.add(n)
             }
           }
@@ -286,7 +292,7 @@ export class GraphBuilder {
           if (!candidates || candidates.length === 0) continue
 
           // 优先选择同目录或相近路径的组件
-          const compNode = candidates.find(c => c.filePath !== node.filePath) || candidates[0]
+          const compNode = candidates.find((c) => c.filePath !== node.filePath) || candidates[0]
           if (compNode.id === node.id) continue
 
           const edgeId = `${node.id}--renders--${compNode.id}`

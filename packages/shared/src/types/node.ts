@@ -13,23 +13,23 @@ import type { TestCaseMetadata, TestFixtureMetadata, TestSuiteMetadata } from '.
 // ============================================================
 
 export type NodeType =
-  | 'page'            // Next.js 页面路由 (/app/booking/page.tsx → /booking)
-  | 'component'       // React 组件
-  | 'api_route'       // Next.js API Route (/app/api/booking/route.ts)
-  | 'trpc_procedure'  // tRPC procedure (booking.create)
-  | 'tsrpc_service'   // TSRPC service API (xxx/login)
-  | 'tsrpc_api'       // TSRPC API 接口（ApiCall 模式）
-  | 'tsrpc_msg'       // TSRPC 消息服务（Msg 模式，发布/订阅）
-  | 'express_route'   // Express 路由 (POST /api/booking)
-  | 'handler'         // 路由 handler 函数
-  | 'service'         // Service 层函数/类方法
-  | 'db_model'        // Prisma Model / TypeORM Entity
-  | 'module'          // 聚合节点（代表一组路由/组件的折叠视图）
-  | 'kotlin_class'    // Kotlin class / data class / sealed class
+  | 'page' // Next.js 页面路由 (/app/booking/page.tsx → /booking)
+  | 'component' // React 组件
+  | 'api_route' // Next.js API Route (/app/api/booking/route.ts)
+  | 'trpc_procedure' // tRPC procedure (booking.create)
+  | 'tsrpc_service' // TSRPC service API (xxx/login)
+  | 'tsrpc_api' // TSRPC API 接口（ApiCall 模式）
+  | 'tsrpc_msg' // TSRPC 消息服务（Msg 模式，发布/订阅）
+  | 'express_route' // Express 路由 (POST /api/booking)
+  | 'handler' // 路由 handler 函数
+  | 'service' // Service 层函数/类方法
+  | 'db_model' // Prisma Model / TypeORM Entity
+  | 'module' // 聚合节点（代表一组路由/组件的折叠视图）
+  | 'kotlin_class' // Kotlin class / data class / sealed class
   | 'kotlin_interface' // Kotlin interface
-  | 'kotlin_object'   // Kotlin object 声明（含 companion object）
+  | 'kotlin_object' // Kotlin object 声明（含 companion object）
   | 'kotlin_function' // Kotlin 顶级函数 / 扩展函数
-  | 'kotlin_route'    // Kotlin 路由端点（Spring @RequestMapping / Ktor routing）
+  | 'kotlin_route' // Kotlin 路由端点（Spring @RequestMapping / Ktor routing）
   | 'test_suite'
   | 'test_case'
   | 'test_fixture'
@@ -144,16 +144,16 @@ export interface ExpressRouteMetadata {
 
 export interface HandlerMetadata {
   functionName: string
-  routeId: string | null  // 关联的路由节点 ID
-  isSynthetic?: boolean   // 跨层连线器合成的 handler 节点
+  routeId: string | null // 关联的路由节点 ID
+  isSynthetic?: boolean // 跨层连线器合成的 handler 节点
 }
 
 export interface ServiceMetadata {
   className: string | null
   methodName: string
-  isSynthetic?: boolean              // 跨层连线器合成的 service 节点
-  importedFrom?: string              // 合成来源文件路径
-  discoveredBySymbolResolver?: boolean  // 由符号追踪发现的调用链中间节点
+  isSynthetic?: boolean // 跨层连线器合成的 service 节点
+  importedFrom?: string // 合成来源文件路径
+  discoveredBySymbolResolver?: boolean // 由符号追踪发现的调用链中间节点
 }
 
 export interface DbFieldInfo {
@@ -173,8 +173,8 @@ export interface DbModelMetadata {
 export interface ModuleMetadata {
   childCount: number
   childTypes: NodeType[]
-  routePrefix?: string    // 对于 API 路由模块
-  dirPath?: string        // 对于组件模块
+  routePrefix?: string // 对于 API 路由模块
+  dirPath?: string // 对于组件模块
 }
 
 // ============================================================
@@ -294,15 +294,13 @@ export function isNodeType(value: string): value is NodeType {
 
 export function isNodeOfType<T extends NodeType>(
   node: OmniNode,
-  type: T
+  type: T,
 ): node is Extract<OmniNode, { type: T }> {
   return node.type === type
 }
 
 /** 类型安全的节点工厂：`type` 与 `metadata` 由编译器强制对应。 */
-export function createTypedNode<T extends NodeType>(
-  node: TypedOmniNode<T>
-): TypedOmniNode<T> {
+export function createTypedNode<T extends NodeType>(node: TypedOmniNode<T>): TypedOmniNode<T> {
   return node
 }
 
@@ -323,6 +321,6 @@ export function parseNodeId(id: string): { type: NodeType; filePath: string; nam
   return {
     type: parts[0],
     filePath: parts[1],
-    name: parts.slice(2).join(':'),  // name 可能包含 ':'
+    name: parts.slice(2).join(':'), // name 可能包含 ':'
   }
 }

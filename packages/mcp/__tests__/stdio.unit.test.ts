@@ -37,8 +37,9 @@ describe('MCP stdio startup', () => {
   it('closes the runtime when transport connection fails', async () => {
     state.connect.mockRejectedValue(new Error('transport failed'))
     state.close.mockRejectedValue(new Error('close also failed'))
-    await expect(startMcpServer({ projectRoot: '/project', log: vi.fn() }))
-      .rejects.toThrow('transport failed')
+    await expect(startMcpServer({ projectRoot: '/project', log: vi.fn() })).rejects.toThrow(
+      'transport failed',
+    )
     expect(state.close).toHaveBeenCalledOnce()
   })
 

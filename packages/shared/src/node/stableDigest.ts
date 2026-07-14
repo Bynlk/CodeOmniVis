@@ -16,7 +16,7 @@ function canonicalValue(value: unknown, seen: WeakSet<object>): unknown | typeof
   seen.add(value)
   try {
     if (Array.isArray(value)) {
-      return value.map(item => {
+      return value.map((item) => {
         const normalized = canonicalValue(item, seen)
         return normalized === OMIT ? null : normalized
       })
@@ -54,7 +54,7 @@ function normalizeRootedString(value: string, root: string): string {
 
 function normalizeStrings(value: unknown, root: string): unknown {
   if (typeof value === 'string') return normalizeRootedString(value, root)
-  if (Array.isArray(value)) return value.map(item => normalizeStrings(item, root))
+  if (Array.isArray(value)) return value.map((item) => normalizeStrings(item, root))
   if (value === null || typeof value !== 'object') return value
   return Object.fromEntries(
     Object.entries(value).map(([key, item]) => [key, normalizeStrings(item, root)]),
@@ -77,13 +77,15 @@ function normalizeProjectMeta(meta: ProjectMeta, root: string): ProjectMeta {
     tsrpcProtocolDirs: sorted(normalized.tsrpcProtocolDirs),
     typeormEntityDirs: sorted(normalized.typeormEntityDirs),
     packages: normalized.packages
-      .map(pkg => ({
+      .map((pkg) => ({
         ...pkg,
         path: normalizePath(pkg.path),
         dependencies: [...pkg.dependencies].sort(),
         devDependencies: [...pkg.devDependencies].sort(),
       }))
-      .sort((left, right) => `${left.path}\0${left.name}`.localeCompare(`${right.path}\0${right.name}`)),
+      .sort((left, right) =>
+        `${left.path}\0${left.name}`.localeCompare(`${right.path}\0${right.name}`),
+      ),
   }
 }
 
@@ -94,13 +96,13 @@ function sortByCanonical<T>(values: readonly T[]): T[] {
 export function computeSnapshotDigest(snapshot: ProjectSnapshot): string {
   const root = normalizePath(snapshot.project.root).replace(/\/+$/u, '')
   const nodes = snapshot.graph.nodes
-    .map(node => normalizeStrings(node, root) as typeof node)
+    .map((node) => normalizeStrings(node, root) as typeof node)
     .sort((left, right) => left.id.localeCompare(right.id))
   const edges = snapshot.graph.edges
-    .map(edge => normalizeStrings(edge, root) as typeof edge)
+    .map((edge) => normalizeStrings(edge, root) as typeof edge)
     .sort((left, right) => left.id.localeCompare(right.id))
   const issues = snapshot.issues
-    .map(issue => {
+    .map((issue) => {
       const normalized = normalizeStrings(issue, root) as typeof issue
       return {
         ...normalized,
@@ -111,7 +113,7 @@ export function computeSnapshotDigest(snapshot: ProjectSnapshot): string {
     })
     .sort((left, right) => left.id.localeCompare(right.id))
   const parseErrors = sortByCanonical(
-    snapshot.parseErrors.map(error => normalizeStrings(error, root) as typeof error),
+    snapshot.parseErrors.map((error) => normalizeStrings(error, root) as typeof error),
   )
 
   return stableDigest({
@@ -132,7 +134,7 @@ export function computeSnapshotDigest(snapshot: ProjectSnapshot): string {
       analyzerVersion: snapshot.provenance.analyzerVersion,
       filesScanned: snapshot.provenance.filesScanned,
       sourceDigest: snapshot.provenance.sourceDigest,
-      testRuns: snapshot.provenance.testRuns?.map(run => ({
+      testRuns: snapshot.provenance.testRuns?.map((run) => ({
         source: run.source,
         cases: sortByCanonical(run.cases),
         unmatched: sortByCanonical(run.unmatched),

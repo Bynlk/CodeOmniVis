@@ -19,6 +19,7 @@ import {
   handleFindCallers,
   handleListDbModels,
   handleGetDataFlow,
+  validateDepth,
 } from '../src/index'
 import { executeMcpTool, MCP_TOOL_NAMES } from '../src/server'
 
@@ -43,7 +44,13 @@ describe('MCP Tools — real handler integration (TEST-BUG-04/F19)', () => {
       filePath: 'app/users/page.tsx',
       line: 1,
       column: 1,
-      metadata: { route: '/users', isDynamic: false, params: [], isGroupLayout: false, layoutFile: null },
+      metadata: {
+        route: '/users',
+        isDynamic: false,
+        params: [],
+        isGroupLayout: false,
+        layoutFile: null,
+      },
     })
 
     db.upsertNode({
@@ -73,7 +80,13 @@ describe('MCP Tools — real handler integration (TEST-BUG-04/F19)', () => {
       filePath: 'server/routers/user.ts',
       line: 10,
       column: 1,
-      metadata: { procedureType: 'query', routerName: 'user', procedureName: 'getById', hasInput: true, hasOutput: true },
+      metadata: {
+        procedureType: 'query',
+        routerName: 'user',
+        procedureName: 'getById',
+        hasInput: true,
+        hasOutput: true,
+      },
     })
 
     db.upsertNode({
@@ -127,6 +140,15 @@ describe('MCP Tools — real handler integration (TEST-BUG-04/F19)', () => {
 
   afterAll(() => {
     db.close()
+  })
+
+  describe('validateDepth', () => {
+    it('rejects non-numeric depth values with a controlled error', () => {
+      expect(validateDepth({ depth: true }, 3)).toEqual({
+        ok: false,
+        message: 'depth must be a non-negative integer, got: true',
+      })
+    })
   })
 
   describe('handleGetApiRoutes', () => {

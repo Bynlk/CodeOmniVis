@@ -7,30 +7,41 @@ export interface TestsResponse {
   cases: OmniNode[]
   fixtures: OmniNode[]
   coverage: OmniEdge[]
-  summary: { suites: number; cases: number; fixtures: number; coveredTargets: number; uncoveredTargets: number; byFramework: Record<string, number> }
+  summary: {
+    suites: number
+    cases: number
+    fixtures: number
+    coveredTargets: number
+    uncoveredTargets: number
+    byFramework: Record<string, number>
+  }
 }
 
 function isNode(value: unknown): value is OmniNode {
-  return isJsonObject(value)
-    && typeof value.id === 'string'
-    && typeof value.type === 'string'
-    && isNodeType(value.type)
-    && typeof value.name === 'string'
-    && typeof value.filePath === 'string'
-    && typeof value.line === 'number'
-    && typeof value.column === 'number'
-    && isJsonObject(value.metadata)
+  return (
+    isJsonObject(value) &&
+    typeof value.id === 'string' &&
+    typeof value.type === 'string' &&
+    isNodeType(value.type) &&
+    typeof value.name === 'string' &&
+    typeof value.filePath === 'string' &&
+    typeof value.line === 'number' &&
+    typeof value.column === 'number' &&
+    isJsonObject(value.metadata)
+  )
 }
 
 function isEdge(value: unknown): value is OmniEdge {
-  return isJsonObject(value)
-    && typeof value.id === 'string'
-    && typeof value.source === 'string'
-    && typeof value.target === 'string'
-    && typeof value.type === 'string'
-    && isEdgeType(value.type)
-    && (value.confidence === 'certain' || value.confidence === 'inferred')
-    && isJsonObject(value.metadata)
+  return (
+    isJsonObject(value) &&
+    typeof value.id === 'string' &&
+    typeof value.source === 'string' &&
+    typeof value.target === 'string' &&
+    typeof value.type === 'string' &&
+    isEdgeType(value.type) &&
+    (value.confidence === 'certain' || value.confidence === 'inferred') &&
+    isJsonObject(value.metadata)
+  )
 }
 
 function nodeArray(value: unknown): OmniNode[] | null {
@@ -72,10 +83,16 @@ export async function getTests(): Promise<TestsResponse> {
       suites: typeof data.summary.suites === 'number' ? data.summary.suites : 0,
       cases: typeof data.summary.cases === 'number' ? data.summary.cases : 0,
       fixtures: typeof data.summary.fixtures === 'number' ? data.summary.fixtures : 0,
-      coveredTargets: typeof data.summary.coveredTargets === 'number' ? data.summary.coveredTargets : 0,
-      uncoveredTargets: typeof data.summary.uncoveredTargets === 'number' ? data.summary.uncoveredTargets : 0,
+      coveredTargets:
+        typeof data.summary.coveredTargets === 'number' ? data.summary.coveredTargets : 0,
+      uncoveredTargets:
+        typeof data.summary.uncoveredTargets === 'number' ? data.summary.uncoveredTargets : 0,
       byFramework: isJsonObject(data.summary.byFramework)
-        ? Object.fromEntries(Object.entries(data.summary.byFramework).filter((entry): entry is [string, number] => typeof entry[1] === 'number'))
+        ? Object.fromEntries(
+            Object.entries(data.summary.byFramework).filter(
+              (entry): entry is [string, number] => typeof entry[1] === 'number',
+            ),
+          )
         : {},
     },
   }

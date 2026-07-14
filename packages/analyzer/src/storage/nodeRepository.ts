@@ -82,7 +82,9 @@ export class NodeRepository {
   }
 
   findByRoute(route: string): OmniNode | null {
-    return this.first(`SELECT * FROM nodes WHERE json_extract(metadata, '$.route') = ? LIMIT 1`, [route])
+    return this.first(`SELECT * FROM nodes WHERE json_extract(metadata, '$.route') = ? LIMIT 1`, [
+      route,
+    ])
   }
 
   findByFilePath(filePath: string): OmniNode | null {

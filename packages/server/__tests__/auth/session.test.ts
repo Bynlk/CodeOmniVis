@@ -5,7 +5,7 @@ import { SessionStore } from '../../src/sessionStore'
 
 function readSetCookies(value: unknown): string[] {
   if (typeof value === 'string') return [value]
-  if (Array.isArray(value) && value.every(item => typeof item === 'string')) return value
+  if (Array.isArray(value) && value.every((item) => typeof item === 'string')) return value
   throw new Error('expected one or more Set-Cookie headers')
 }
 
@@ -26,9 +26,7 @@ describe('remote browser sessions', () => {
     })
     await server.db.ready()
 
-    const response = await request(server.app)
-      .post('/api/session')
-      .send({ accessToken })
+    const response = await request(server.app).post('/api/session').send({ accessToken })
 
     expect(response.status).toBe(200)
     const cookies = readSetCookies(response.headers['set-cookie'])

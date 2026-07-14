@@ -21,7 +21,7 @@ describe('non-loopback access policy', () => {
     '/api/graph/issues',
     '/api/graph/trace',
     '/api/graph/dataflow',
-  ])('rejects anonymous remote read %s', async path => {
+  ])('rejects anonymous remote read %s', async (path) => {
     server = createOmniServer({ host: '0.0.0.0', accessToken: 'remote-secret' })
     await server.db.ready()
 
@@ -31,7 +31,7 @@ describe('non-loopback access policy', () => {
     expect(response.body.error.code).toBe('UNAUTHORIZED')
   })
 
-  it.each(['/api/ai/chat', '/api/ai/explain'])('protects remote AI route %s', async path => {
+  it.each(['/api/ai/chat', '/api/ai/explain'])('protects remote AI route %s', async (path) => {
     server = createOmniServer({ host: '0.0.0.0', accessToken: 'remote-secret' })
     await server.db.ready()
 

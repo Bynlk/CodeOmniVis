@@ -21,8 +21,7 @@ export interface AccessPolicy {
 }
 
 export type AccessDecision =
-  | { ok: true }
-  | { ok: false; status: 401 | 403; code: 'AUTH_NOT_CONFIGURED' | 'UNAUTHORIZED' }
+  { ok: true } | { ok: false; status: 401 | 403; code: 'AUTH_NOT_CONFIGURED' | 'UNAUTHORIZED' }
 
 export function isLoopbackHost(host: string): boolean {
   const normalized = host.replace(/^\[|\]$/g, '').toLowerCase()
@@ -88,9 +87,10 @@ export function authenticateHeaders(
 }
 
 function sendAccessError(res: Response, decision: Exclude<AccessDecision, { ok: true }>): void {
-  const message = decision.code === 'AUTH_NOT_CONFIGURED'
-    ? 'Remote access is disabled because no access token is configured'
-    : 'A valid access token or session is required for this operation'
+  const message =
+    decision.code === 'AUTH_NOT_CONFIGURED'
+      ? 'Remote access is disabled because no access token is configured'
+      : 'A valid access token or session is required for this operation'
   res.status(decision.status).json({ error: { code: decision.code, message } })
 }
 

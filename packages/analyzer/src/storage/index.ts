@@ -16,9 +16,4 @@ export { GraphRepository } from './graphRepository'
 export { StatsRepository } from './statsRepository'
 export { persistDatabaseAtomically, replaceSnapshot } from './persistence'
 export type { Repositories } from './persistence'
-export {
-  SQL,
-  CREATE_TABLES_SQL,
-  CURRENT_SCHEMA_VERSION,
-  DROP_CACHE_TABLES_SQL,
-} from './schema'
+export { SQL, CREATE_TABLES_SQL, CURRENT_SCHEMA_VERSION, DROP_CACHE_TABLES_SQL } from './schema'

@@ -64,32 +64,37 @@ export function handleWorkbenchShortcut(
 function GraphLoadingState() {
   const { t } = useTranslation()
   return (
-    <div className="h-full p-5" aria-label={t('workbench.loadingGraph', 'Building architecture index…')}>
+    <div
+      className="h-full p-5"
+      aria-label={t('workbench.loadingGraph', 'Building architecture index…')}
+    >
       <div className="relative h-full overflow-hidden rounded-md border border-border-subtle bg-[#090b0f]">
         <div className="absolute left-[18%] top-[22%] h-10 w-28 animate-pulse rounded-md border border-border-subtle bg-surface" />
         <div className="absolute left-[46%] top-[43%] h-10 w-32 animate-pulse rounded-md border border-border-subtle bg-surface" />
         <div className="absolute bottom-[20%] right-[16%] h-10 w-28 animate-pulse rounded-md border border-border-subtle bg-surface" />
-        <p className="absolute bottom-4 left-4 font-mono text-[10px] text-content-muted">{t('workbench.loadingGraph', 'Building architecture index…')}</p>
+        <p className="absolute bottom-4 left-4 font-mono text-[10px] text-content-muted">
+          {t('workbench.loadingGraph', 'Building architecture index…')}
+        </p>
       </div>
     </div>
   )
 }
 
 function App() {
-  const selectedNodeId = useUiStore(state => state.selectedNodeId)
-  const searchQuery = useUiStore(state => state.searchQuery)
-  const activeView = useUiStore(state => state.activeView)
-  const architectureDepth = useUiStore(state => state.architectureDepth)
-  const isCommandPaletteOpen = useUiStore(state => state.isCommandPaletteOpen)
-  const isSettingsOpen = useUiStore(state => state.isSettingsOpen)
-  const isMobileDrawerOpen = useUiStore(state => state.isMobileDrawerOpen)
-  const selectNode = useUiStore(state => state.selectNode)
-  const setSearchQuery = useUiStore(state => state.setSearchQuery)
-  const setActiveView = useUiStore(state => state.setActiveView)
-  const setArchitectureDepth = useUiStore(state => state.setArchitectureDepth)
-  const toggleCommandPalette = useUiStore(state => state.toggleCommandPalette)
-  const toggleSettings = useUiStore(state => state.toggleSettings)
-  const toggleMobileDrawer = useUiStore(state => state.toggleMobileDrawer)
+  const selectedNodeId = useUiStore((state) => state.selectedNodeId)
+  const searchQuery = useUiStore((state) => state.searchQuery)
+  const activeView = useUiStore((state) => state.activeView)
+  const architectureDepth = useUiStore((state) => state.architectureDepth)
+  const isCommandPaletteOpen = useUiStore((state) => state.isCommandPaletteOpen)
+  const isSettingsOpen = useUiStore((state) => state.isSettingsOpen)
+  const isMobileDrawerOpen = useUiStore((state) => state.isMobileDrawerOpen)
+  const selectNode = useUiStore((state) => state.selectNode)
+  const setSearchQuery = useUiStore((state) => state.setSearchQuery)
+  const setActiveView = useUiStore((state) => state.setActiveView)
+  const setArchitectureDepth = useUiStore((state) => state.setArchitectureDepth)
+  const toggleCommandPalette = useUiStore((state) => state.toggleCommandPalette)
+  const toggleSettings = useUiStore((state) => state.toggleSettings)
+  const toggleMobileDrawer = useUiStore((state) => state.toggleMobileDrawer)
 
   const cyRef = useRef<cytoscape.Core | null>(null)
   const { data: graph, isLoading, error } = useGraph()
@@ -125,54 +130,80 @@ function App() {
   )
 
   const selectedNode = useMemo(
-    () => graph?.nodes.find(node => node.id === selectedNodeId) ?? null,
+    () => graph?.nodes.find((node) => node.id === selectedNodeId) ?? null,
     [graph, selectedNodeId],
   )
   const inEdges = useMemo(
-    () => graph?.edges.filter(edge => edge.target === selectedNodeId) ?? [],
+    () => graph?.edges.filter((edge) => edge.target === selectedNodeId) ?? [],
     [graph, selectedNodeId],
   )
   const outEdges = useMemo(
-    () => graph?.edges.filter(edge => edge.source === selectedNodeId) ?? [],
+    () => graph?.edges.filter((edge) => edge.source === selectedNodeId) ?? [],
     [graph, selectedNodeId],
   )
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => handleWorkbenchShortcut(
-      event,
-      { setActiveView, toggleCommandPalette },
-    )
+    const onKeyDown = (event: KeyboardEvent) =>
+      handleWorkbenchShortcut(event, { setActiveView, toggleCommandPalette })
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [setActiveView, toggleCommandPalette])
 
-  const handleCyInit = useCallback((cy: cytoscape.Core) => { cyRef.current = cy }, [])
-  const handleFit = useCallback(() => { cyRef.current?.fit(undefined, 48) }, [])
-  const handleCommandSelect = useCallback((nodeId: string) => {
-    selectNode(nodeId)
-    const node = cyRef.current?.getElementById(nodeId)
-    if (node?.length) cyRef.current?.animate({ center: { eles: node }, zoom: 1.35, duration: 180 })
-  }, [selectNode])
-  const handleDepthChange = useCallback((depth: ArchitectureDepth) => {
-    if (depth === 'focus' && !selectedNodeId) return
-    setArchitectureDepth(depth)
-  }, [selectedNodeId, setArchitectureDepth])
-  const handleNodeFocus = useCallback((nodeId: string) => {
-    selectNode(nodeId)
-    setArchitectureDepth('focus')
-  }, [selectNode, setArchitectureDepth])
-  const handleCanvasNodeSelect = useCallback((nodeId: string | null) => {
-    selectNode(nodeId)
-    if (!nodeId && architectureDepth === 'focus') setArchitectureDepth('full')
-  }, [architectureDepth, selectNode, setArchitectureDepth])
-  const handleExplorerNodeSelect = useCallback((nodeId: string) => {
-    selectNode(nodeId)
-    toggleMobileDrawer(false)
-  }, [selectNode, toggleMobileDrawer])
+  const handleCyInit = useCallback((cy: cytoscape.Core) => {
+    cyRef.current = cy
+  }, [])
+  const handleFit = useCallback(() => {
+    cyRef.current?.fit(undefined, 48)
+  }, [])
+  const handleCommandSelect = useCallback(
+    (nodeId: string) => {
+      selectNode(nodeId)
+      const node = cyRef.current?.getElementById(nodeId)
+      if (node?.length)
+        cyRef.current?.animate({ center: { eles: node }, zoom: 1.35, duration: 180 })
+    },
+    [selectNode],
+  )
+  const handleDepthChange = useCallback(
+    (depth: ArchitectureDepth) => {
+      if (depth === 'focus' && !selectedNodeId) return
+      setArchitectureDepth(depth)
+    },
+    [selectedNodeId, setArchitectureDepth],
+  )
+  const handleNodeFocus = useCallback(
+    (nodeId: string) => {
+      selectNode(nodeId)
+      setArchitectureDepth('focus')
+    },
+    [selectNode, setArchitectureDepth],
+  )
+  const handleCanvasNodeSelect = useCallback(
+    (nodeId: string | null) => {
+      selectNode(nodeId)
+      if (!nodeId && architectureDepth === 'focus') setArchitectureDepth('full')
+    },
+    [architectureDepth, selectNode, setArchitectureDepth],
+  )
+  const handleExplorerNodeSelect = useCallback(
+    (nodeId: string) => {
+      selectNode(nodeId)
+      toggleMobileDrawer(false)
+    },
+    [selectNode, toggleMobileDrawer],
+  )
 
   const canvas = (
     <div className="flex h-full min-h-0 flex-col">
-      <CanvasHeader view={activeView} graph={visibleGraph} depth={architectureDepth} focusAvailable={Boolean(selectedNodeId)} findingCount={qualityFindings.length} onDepthChange={handleDepthChange} onFit={handleFit} />
+      <CanvasHeader
+        view={activeView}
+        graph={visibleGraph}
+        depth={architectureDepth}
+        focusAvailable={Boolean(selectedNodeId)}
+        findingCount={qualityFindings.length}
+        onDepthChange={handleDepthChange}
+        onFit={handleFit}
+      />
       <div className="relative min-h-0 flex-1">
         {activeView === 'quality' ? (
           <QualityCanvas
@@ -188,11 +219,31 @@ function App() {
         ) : error ? (
           <CanvasErrorState view={activeView} error={error} />
         ) : visibleGraph && visibleGraph.nodes.length > 0 ? (
-          activeView === 'tests'
-            ? <TestCanvas graph={visibleGraph}><GraphCanvas graph={visibleGraph} selectedNode={selectedNodeId} onNodeSelect={handleCanvasNodeSelect} onNodeFocus={handleNodeFocus} onCyInit={handleCyInit} /></TestCanvas>
-            : <GraphCanvas graph={visibleGraph} selectedNode={selectedNodeId} onNodeSelect={handleCanvasNodeSelect} onNodeFocus={handleNodeFocus} onCyInit={handleCyInit} />
+          activeView === 'tests' ? (
+            <TestCanvas graph={visibleGraph}>
+              <GraphCanvas
+                graph={visibleGraph}
+                selectedNode={selectedNodeId}
+                onNodeSelect={handleCanvasNodeSelect}
+                onNodeFocus={handleNodeFocus}
+                onCyInit={handleCyInit}
+              />
+            </TestCanvas>
+          ) : (
+            <GraphCanvas
+              graph={visibleGraph}
+              selectedNode={selectedNodeId}
+              onNodeSelect={handleCanvasNodeSelect}
+              onNodeFocus={handleNodeFocus}
+              onCyInit={handleCyInit}
+            />
+          )
         ) : (
-          <CanvasEmptyState view={activeView} hasSearchQuery={Boolean(searchQuery.trim())} isAnalyzed={isAnalyzed} />
+          <CanvasEmptyState
+            view={activeView}
+            hasSearchQuery={Boolean(searchQuery.trim())}
+            isAnalyzed={isAnalyzed}
+          />
         )}
       </div>
     </div>
@@ -202,25 +253,73 @@ function App() {
     <ErrorBoundary>
       <CytoscapeContext.Provider value={cyRef}>
         <SelectionContext.Provider value={selectedNodeId}>
-          <CommandPalette graph={graph} isOpen={isCommandPaletteOpen} onClose={() => toggleCommandPalette(false)} onNodeSelect={handleCommandSelect} />
+          <CommandPalette
+            graph={graph}
+            isOpen={isCommandPaletteOpen}
+            onClose={() => toggleCommandPalette(false)}
+            onNodeSelect={handleCommandSelect}
+          />
           <SettingsDrawer open={isSettingsOpen} onClose={() => toggleSettings(false)} />
           <WorkbenchShell
-            commandBar={<Header query={searchQuery} onQueryChange={setSearchQuery} onOpenSettings={() => toggleSettings(true)} />}
-            viewRail={<ViewRail activeView={activeView} onViewChange={setActiveView} issueCount={qualityFindings.length} />}
-            explorer={activeView === 'quality'
-              ? <QualityExplorer
+            commandBar={
+              <Header
+                query={searchQuery}
+                onQueryChange={setSearchQuery}
+                onOpenSettings={() => toggleSettings(true)}
+              />
+            }
+            viewRail={
+              <ViewRail
+                activeView={activeView}
+                onViewChange={setActiveView}
+                issueCount={qualityFindings.length}
+              />
+            }
+            explorer={
+              activeView === 'quality' ? (
+                <QualityExplorer
                   findings={qualityFindings}
                   isLoading={errorsLoading || issuesLoading}
                   detectors={graphIssues?.detectors}
                   parserError={errorsError}
                   issuesError={issuesError}
                 />
-              : activeView === 'tests'
-                ? <TestExplorer graph={graph} selectedNodeId={selectedNodeId} onNodeSelect={handleExplorerNodeSelect} />
-                : <ExplorerPanel graph={visibleGraph} view={activeView} isAnalyzed={isAnalyzed} selectedNodeId={selectedNodeId} onNodeSelect={handleExplorerNodeSelect} />}
+              ) : activeView === 'tests' ? (
+                <TestExplorer
+                  graph={graph}
+                  selectedNodeId={selectedNodeId}
+                  onNodeSelect={handleExplorerNodeSelect}
+                />
+              ) : (
+                <ExplorerPanel
+                  graph={visibleGraph}
+                  view={activeView}
+                  isAnalyzed={isAnalyzed}
+                  selectedNodeId={selectedNodeId}
+                  onNodeSelect={handleExplorerNodeSelect}
+                />
+              )
+            }
             main={canvas}
-            inspector={selectedNode ? <NodeDetailPanel node={selectedNode} projectRoot={project?.projectRoot} inEdges={inEdges} outEdges={outEdges} onClose={() => handleCanvasNodeSelect(null)} onNodeSelect={selectNode} /> : undefined}
-            statusBar={<StatusBar status={status} nodeCount={graph?.nodes.length ?? 0} edgeCount={graph?.edges.length ?? 0} />}
+            inspector={
+              selectedNode ? (
+                <NodeDetailPanel
+                  node={selectedNode}
+                  projectRoot={project?.projectRoot}
+                  inEdges={inEdges}
+                  outEdges={outEdges}
+                  onClose={() => handleCanvasNodeSelect(null)}
+                  onNodeSelect={selectNode}
+                />
+              ) : undefined
+            }
+            statusBar={
+              <StatusBar
+                status={status}
+                nodeCount={graph?.nodes.length ?? 0}
+                edgeCount={graph?.edges.length ?? 0}
+              />
+            }
             mobileExplorerOpen={isMobileDrawerOpen}
             onCloseMobileExplorer={() => toggleMobileDrawer(false)}
           />

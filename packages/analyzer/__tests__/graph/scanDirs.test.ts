@@ -51,7 +51,7 @@ describe('collectScanDirs sibling boundary (S-08/F4)', () => {
 
   it('monorepoType=none 时不扫描越界的兄弟目录', () => {
     const files = collectAnalysisFiles(root, makeMeta(root, 'none'))
-    expect(files.some(file => file.includes('frontend'))).toBe(false)
+    expect(files.some((file) => file.includes('frontend'))).toBe(false)
   })
 
   it('仅显式 metadata 才纳入兄弟 frontend 目录', () => {

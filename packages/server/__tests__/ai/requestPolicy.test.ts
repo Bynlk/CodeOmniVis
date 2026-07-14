@@ -17,10 +17,9 @@ async function* chunks(...values: string[]): AsyncGenerator<Uint8Array> {
 
 describe('AI request destination policy', () => {
   it('pins a validated public DNS answer for the eventual connection', async () => {
-    const destination = await resolveUpstreamDestination(
-      'https://api.example.com/v1',
-      async () => ['93.184.216.34'],
-    )
+    const destination = await resolveUpstreamDestination('https://api.example.com/v1', async () => [
+      '93.184.216.34',
+    ])
 
     expect(destination.hostname).toBe('api.example.com')
     expect(destination.address).toBe('93.184.216.34')
@@ -28,28 +27,35 @@ describe('AI request destination policy', () => {
   })
 
   it('rejects a public-looking host that resolves to a private address', async () => {
-    await expect(resolveUpstreamDestination(
-      'https://api.example.com/v1',
-      async () => ['169.254.169.254'],
-    )).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED', status: 400 })
+    await expect(
+      resolveUpstreamDestination('https://api.example.com/v1', async () => ['169.254.169.254']),
+    ).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED', status: 400 })
   })
 
   it('handles literal loopback and IP destinations without DNS drift', async () => {
-    await expect(resolveUpstreamDestination('http://127.0.0.1:4321/v1', async () => []))
-      .resolves.toMatchObject({ hostname: '127.0.0.1', address: '127.0.0.1', family: 4 })
-    await expect(resolveUpstreamDestination('http://localhost:4321/v1', async () => []))
-      .resolves.toMatchObject({ hostname: 'localhost' })
-    await expect(resolveUpstreamDestination('http://localhost:4321/v1', async () => [], false))
-      .rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
+    await expect(
+      resolveUpstreamDestination('http://127.0.0.1:4321/v1', async () => []),
+    ).resolves.toMatchObject({ hostname: '127.0.0.1', address: '127.0.0.1', family: 4 })
+    await expect(
+      resolveUpstreamDestination('http://localhost:4321/v1', async () => []),
+    ).resolves.toMatchObject({ hostname: 'localhost' })
+    await expect(
+      resolveUpstreamDestination('http://localhost:4321/v1', async () => [], false),
+    ).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
   })
 
   it('rejects invalid URLs, DNS failures, and invalid public DNS answers', async () => {
-    await expect(resolveUpstreamDestination('file:///tmp/provider', async () => []))
-      .rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
-    await expect(resolveUpstreamDestination('https://api.example.com', async () => { throw new Error('dns') }))
-      .rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
-    await expect(resolveUpstreamDestination('https://api.example.com', async () => ['not-an-ip']))
-      .rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
+    await expect(
+      resolveUpstreamDestination('file:///tmp/provider', async () => []),
+    ).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
+    await expect(
+      resolveUpstreamDestination('https://api.example.com', async () => {
+        throw new Error('dns')
+      }),
+    ).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
+    await expect(
+      resolveUpstreamDestination('https://api.example.com', async () => ['not-an-ip']),
+    ).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
   })
 
   it('rejects a response once its cumulative bytes exceed the limit', async () => {
@@ -129,12 +135,17 @@ describe('AI request destination policy', () => {
   })
 
   it('exposes controlled DNS checks and environment configuration', async () => {
-    expect(readAiEnv({ AI_BASE_URL: 'https://api.example.com', AI_API_KEY: 'key', AI_MODEL: 'model' }))
-      .toEqual({ baseUrl: 'https://api.example.com', apiKey: 'key', model: 'model' })
-    await expect(checkUpstreamDnsSafety('https://api.example.com', async () => ['93.184.216.34']))
-      .resolves.toEqual({ ok: true })
-    await expect(checkUpstreamDnsSafety('https://api.example.com', async () => { throw new Error('dns') }))
-      .resolves.toEqual({ ok: false, reason: 'AI hostname could not be resolved' })
+    expect(
+      readAiEnv({ AI_BASE_URL: 'https://api.example.com', AI_API_KEY: 'key', AI_MODEL: 'model' }),
+    ).toEqual({ baseUrl: 'https://api.example.com', apiKey: 'key', model: 'model' })
+    await expect(
+      checkUpstreamDnsSafety('https://api.example.com', async () => ['93.184.216.34']),
+    ).resolves.toEqual({ ok: true })
+    await expect(
+      checkUpstreamDnsSafety('https://api.example.com', async () => {
+        throw new Error('dns')
+      }),
+    ).resolves.toEqual({ ok: false, reason: 'AI hostname could not be resolved' })
   })
 
   it('exposes only a controlled public policy error', () => {
@@ -150,7 +161,11 @@ describe('AI request destination policy', () => {
 
 describe('RequestLimiter', () => {
   it('enforces concurrent requests per identity and releases capacity', () => {
-    const limiter = new RequestLimiter({ maxConcurrent: 1, requestsPerWindow: 10, windowMs: 60_000 })
+    const limiter = new RequestLimiter({
+      maxConcurrent: 1,
+      requestsPerWindow: 10,
+      windowMs: 60_000,
+    })
     const first = limiter.acquire('session-a', 1_000)
     const blocked = limiter.acquire('session-a', 1_001)
 

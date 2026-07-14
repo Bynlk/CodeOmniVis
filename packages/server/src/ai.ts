@@ -25,9 +25,9 @@ import { RequestLimiter } from './requestLimiter'
 
 export type { HostnameResolver } from './aiRequestPolicy'
 
-const defaultResolver: HostnameResolver = async hostname => {
+const defaultResolver: HostnameResolver = async (hostname) => {
   const records = await dns.lookup(hostname, { all: true })
-  return records.map(record => record.address)
+  return records.map((record) => record.address)
 }
 
 export function readAiEnv(env: NodeJS.ProcessEnv): AiEnvConfig {
@@ -109,9 +109,9 @@ export async function callAiChat(
 
   try {
     if (
-      destination.address
-      && upstream.peerAddress
-      && !matchesValidatedAddress(upstream.peerAddress, destination.address)
+      destination.address &&
+      upstream.peerAddress &&
+      !matchesValidatedAddress(upstream.peerAddress, destination.address)
     ) {
       throw new AiPolicyError(
         'AI_UPSTREAM_PEER_MISMATCH',
@@ -148,10 +148,8 @@ export async function callAiChat(
 }
 
 function requestIdentity(req: Request): string {
-  const source = req.headers.authorization
-    ?? req.headers.cookie
-    ?? req.socket.remoteAddress
-    ?? 'local'
+  const source =
+    req.headers.authorization ?? req.headers.cookie ?? req.socket.remoteAddress ?? 'local'
   return createHash('sha256').update(source).digest('hex')
 }
 
@@ -192,11 +190,14 @@ async function handleChat(
   const acquired = options.limiter.acquire(requestIdentity(req))
   if (!acquired.ok) {
     const concurrency = acquired.reason === 'concurrency'
-    sendError(res, new AiPolicyError(
-      concurrency ? 'AI_CONCURRENCY_LIMIT' : 'AI_RATE_LIMIT',
-      429,
-      concurrency ? 'Too many concurrent AI requests' : 'AI request rate limit exceeded',
-    ))
+    sendError(
+      res,
+      new AiPolicyError(
+        concurrency ? 'AI_CONCURRENCY_LIMIT' : 'AI_RATE_LIMIT',
+        429,
+        concurrency ? 'Too many concurrent AI requests' : 'AI request rate limit exceeded',
+      ),
+    )
     return
   }
 

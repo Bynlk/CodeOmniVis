@@ -75,10 +75,14 @@ describe('ExpressParser', () => {
       const result = await parser.parse('src/routes/orders.ts', context)
 
       expect(result.errors).toEqual([])
-      expect(result.nodes.filter(node => isNodeOfType(node, 'api_route')).map(node => ({
-        name: node.name,
-        method: node.metadata.method,
-      }))).toEqual([
+      expect(
+        result.nodes
+          .filter((node) => isNodeOfType(node, 'api_route'))
+          .map((node) => ({
+            name: node.name,
+            method: node.metadata.method,
+          })),
+      ).toEqual([
         { name: '/v1', method: 'GET' },
         { name: '/v1/orders', method: 'POST' },
         { name: '/health', method: 'PATCH' },
@@ -89,7 +93,10 @@ describe('ExpressParser', () => {
       const result = await parser.parse('src/routes/missing.ts', context)
       expect(result.nodes).toEqual([])
       expect(result.errors).toEqual([
-        expect.objectContaining({ severity: 'warning', message: expect.stringContaining('Express parser failed') }),
+        expect.objectContaining({
+          severity: 'warning',
+          message: expect.stringContaining('Express parser failed'),
+        }),
       ])
     })
 

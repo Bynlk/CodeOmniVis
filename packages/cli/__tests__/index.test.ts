@@ -9,7 +9,11 @@ describe('CLI entrypoint', () => {
 
   it('awaits a successful command program', async () => {
     let parsed = false
-    await runCli({ parseAsync: async () => { parsed = true } })
+    await runCli({
+      parseAsync: async () => {
+        parsed = true
+      },
+    })
     expect(parsed).toBe(true)
   })
 
@@ -17,9 +21,13 @@ describe('CLI entrypoint', () => {
     const runtime = { exitCode: 0 }
     const errors: string[] = []
     await runCli(
-      { parseAsync: async () => { throw new Error('invalid command') } },
+      {
+        parseAsync: async () => {
+          throw new Error('invalid command')
+        },
+      },
       runtime,
-      message => errors.push(message),
+      (message) => errors.push(message),
     )
     expect(errors).toEqual(['invalid command'])
     expect(runtime.exitCode).toBe(1)

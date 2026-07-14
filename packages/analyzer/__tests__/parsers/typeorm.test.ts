@@ -86,12 +86,11 @@ describe('TypeormParser', () => {
           metadata: expect.objectContaining({ tableName: 'users', fieldCount: 3 }),
         }),
       ])
-      expect(result.edges.filter(edge => isEdgeOfType(edge, 'db_relation')).map(edge => edge.metadata.relationType)).toEqual([
-        'one_to_one',
-        'one_to_many',
-        'many_to_one',
-        'many_to_many',
-      ])
+      expect(
+        result.edges
+          .filter((edge) => isEdgeOfType(edge, 'db_relation'))
+          .map((edge) => edge.metadata.relationType),
+      ).toEqual(['one_to_one', 'one_to_many', 'many_to_one', 'many_to_many'])
     })
 
     it('degrades a missing entity file to a warning', async () => {
@@ -100,7 +99,10 @@ describe('TypeormParser', () => {
       expect(result.nodes).toEqual([])
       expect(result.edges).toEqual([])
       expect(result.errors).toEqual([
-        expect.objectContaining({ severity: 'warning', message: expect.stringContaining('TypeORM parser failed') }),
+        expect.objectContaining({
+          severity: 'warning',
+          message: expect.stringContaining('TypeORM parser failed'),
+        }),
       ])
     })
 

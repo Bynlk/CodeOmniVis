@@ -7,7 +7,14 @@
  * 遵循"降级而非崩溃"原则。
  */
 
-import type { OmniEdge, OmniGraph, OmniNode, EdgeType, TraceResult, TraceStep } from '@codeomnivis/shared'
+import type {
+  OmniEdge,
+  OmniGraph,
+  OmniNode,
+  EdgeType,
+  TraceResult,
+  TraceStep,
+} from '@codeomnivis/shared'
 import { createEdgeId, traceLayerForNodeType } from '@codeomnivis/shared'
 
 function getOrCreateEdges(map: Map<string, OmniEdge[]>, key: string): OmniEdge[] {
@@ -71,7 +78,7 @@ export class DataFlowTracer {
 
   constructor(graph: OmniGraph) {
     this.graph = graph
-    this.nodeMap = new Map(graph.nodes.map(n => [n.id, n]))
+    this.nodeMap = new Map(graph.nodes.map((n) => [n.id, n]))
 
     // 预构建边索引
     this.incomingEdges = new Map()
@@ -126,7 +133,7 @@ export class DataFlowTracer {
     // Service/Handler → API Route
     for (const apiNode of uniqueApiNodes) {
       // 找连接到这个 API 的 service/handler
-      const handles = this.outgoingEdges.get(apiNode.id)?.filter(e => e.type === 'handles') ?? []
+      const handles = this.outgoingEdges.get(apiNode.id)?.filter((e) => e.type === 'handles') ?? []
       for (const handle of handles) {
         edges.push({
           from: handle.target,
@@ -166,8 +173,8 @@ export class DataFlowTracer {
    * 追踪所有 Model 的数据流
    */
   traceAllModels(): DataFlowResult[] {
-    const modelNodes = this.graph.nodes.filter(n => n.type === 'db_model')
-    return modelNodes.map(model => {
+    const modelNodes = this.graph.nodes.filter((n) => n.type === 'db_model')
+    return modelNodes.map((model) => {
       const path = this.traceModelFlow(model)
       return {
         modelId: model.id,
@@ -183,7 +190,7 @@ export class DataFlowTracer {
    * 将数据流路径转为 OmniEdge（存入数据库）
    */
   pathToEdges(path: DataFlowPath): OmniEdge[] {
-    return path.edges.map(e => {
+    return path.edges.map((e) => {
       const edgeId = createEdgeId(e.from, 'data_flows_to', `${e.to}:${e.typeName}`)
       const edge: OmniEdge = {
         id: edgeId,
@@ -235,7 +242,11 @@ export class DataFlowTracer {
     if (depth >= MAX_PARENT_ROUTE_DEPTH) return routes
 
     // 如果自己就是 API 路由
-    if (node.type === 'api_route' || node.type === 'trpc_procedure' || node.type === 'express_route') {
+    if (
+      node.type === 'api_route' ||
+      node.type === 'trpc_procedure' ||
+      node.type === 'express_route'
+    ) {
       routes.push(node)
       return routes
     }
@@ -245,7 +256,12 @@ export class DataFlowTracer {
     for (const edge of inEdges) {
       if (edge.type === 'handles') {
         const source = this.nodeMap.get(edge.source)
-        if (source && (source.type === 'api_route' || source.type === 'trpc_procedure' || source.type === 'express_route')) {
+        if (
+          source &&
+          (source.type === 'api_route' ||
+            source.type === 'trpc_procedure' ||
+            source.type === 'express_route')
+        ) {
           routes.push(source)
         }
       }
@@ -290,7 +306,7 @@ export class DataFlowTracer {
    */
   private deduplicateNodes(nodes: OmniNode[]): OmniNode[] {
     const seen = new Set<string>()
-    return nodes.filter(n => {
+    return nodes.filter((n) => {
       if (seen.has(n.id)) return false
       seen.add(n.id)
       return true
@@ -373,8 +389,15 @@ export class DataFlowTracer {
 
   /** 链路遍历采用的边类型(结构 + 数据流)。 */
   private static readonly LINK_EDGE_TYPES: ReadonlySet<EdgeType> = new Set<EdgeType>([
-    'renders', 'navigates_to', 'calls_api', 'handles', 'calls_service',
-    'queries_db', 'data_flows_to', 'sends_msg', 'listens_msg',
+    'renders',
+    'navigates_to',
+    'calls_api',
+    'handles',
+    'calls_service',
+    'queries_db',
+    'data_flows_to',
+    'sends_msg',
+    'listens_msg',
   ])
 
   /** 从候选边里挑一条链路边,返回相连节点与边。dir 指定取边的哪一端为下一站。 */
@@ -409,7 +432,6 @@ export class DataFlowTracer {
     }
   }
 }
-
 
 // ============================================================
 // 静态节点说明(AI-fallback 之前的"静态优先"层)

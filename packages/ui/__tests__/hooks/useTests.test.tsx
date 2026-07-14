@@ -12,7 +12,9 @@ describe('useTests', () => {
   it('registers the shared tests query without executing during SSR', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const html = renderToStaticMarkup(
-      <QueryClientProvider client={client}><Probe /></QueryClientProvider>,
+      <QueryClientProvider client={client}>
+        <Probe />
+      </QueryClientProvider>,
     )
     expect(html).toContain('pending')
     expect(client.getQueryCache().find({ queryKey: ['tests'] })).toBeDefined()

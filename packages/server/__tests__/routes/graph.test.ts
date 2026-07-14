@@ -261,14 +261,19 @@ describe('GET /api/graph/issues', () => {
     })
 
     const issueApp = express()
-    issueApp.use('/api/graph', createGraphRouter(issueDb, undefined, () => '/project'))
+    issueApp.use(
+      '/api/graph',
+      createGraphRouter(issueDb, undefined, () => '/project'),
+    )
     const res = await request(issueApp).get('/api/graph/issues')
     issueDb.close()
 
     expect(res.status).toBe(200)
-    expect(res.body.data).toEqual(expect.arrayContaining([
-      expect.objectContaining({ source: 'consistency', type: 'dead_route' }),
-    ]))
+    expect(res.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ source: 'consistency', type: 'dead_route' }),
+      ]),
+    )
     expect(res.body.meta).toMatchObject({ count: 1, warning: 1 })
     expect(res.body.meta.detectors).toHaveLength(4)
   })
@@ -309,7 +314,9 @@ describe('Graph trace routes', () => {
     const traceApp = express()
     traceApp.use('/api/graph', createGraphRouter(traceDb))
 
-    const trace = await request(traceApp).get(`/api/graph/trace?node=${encodeURIComponent(model.id)}`)
+    const trace = await request(traceApp).get(
+      `/api/graph/trace?node=${encodeURIComponent(model.id)}`,
+    )
     const flow = await request(traceApp).get('/api/graph/dataflow?model=User')
     traceDb.close()
 

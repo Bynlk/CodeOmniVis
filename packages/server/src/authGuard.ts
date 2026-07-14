@@ -47,11 +47,9 @@ export interface MutatingGuardConfig {
  * - 非 loopback 且未配置 token:服务器配置缺陷,一律 403。
  * - 非 loopback 且配置了 token:校验请求 token,缺失/不匹配 401。
  */
-export function createMutatingGuard(config: MutatingGuardConfig): (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => void {
+export function createMutatingGuard(
+  config: MutatingGuardConfig,
+): (req: Request, res: Response, next: NextFunction) => void {
   const loopback = isLoopbackHost(config.host)
   const token = config.token
   return (req: Request, res: Response, next: NextFunction): void => {

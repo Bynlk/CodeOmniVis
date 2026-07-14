@@ -23,7 +23,7 @@ export function isCliMainModule(entry: string | undefined, moduleUrl: string): b
 export async function runCli(
   program: CliProgram = createCliProgram(),
   runtime: CliRuntime = process,
-  reportError: (message: string) => void = message => console.error(message),
+  reportError: (message: string) => void = (message) => console.error(message),
 ): Promise<void> {
   try {
     await program.parseAsync()

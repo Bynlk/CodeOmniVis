@@ -27,9 +27,7 @@ const testNode: OmniNode = {
   metadata: {
     tableName: 'users',
     fieldCount: 5,
-    fields: [
-      { name: 'id', type: 'String', isRequired: true, isId: true, isRelation: false },
-    ],
+    fields: [{ name: 'id', type: 'String', isRequired: true, isId: true, isRelation: false }],
   },
 }
 
@@ -298,8 +296,10 @@ describe('OmniDatabase', () => {
       expect(db.findNodeByFilePath(testNode.filePath)?.id).toBe(testNode.id)
       expect(db.findNodeByAny('/booking')?.id).toBe(testNode2.id)
       expect(db.findNodeByAny('User')?.id).toBe(testNode.id)
-      expect(db.getDownstreamNodes(testNode.id, ['queries_db']).map(node => node.id)).toEqual([testNode2.id])
-      expect(db.getUpstreamNodes(testNode2.id).map(node => node.id)).toEqual([testNode.id])
+      expect(db.getDownstreamNodes(testNode.id, ['queries_db']).map((node) => node.id)).toEqual([
+        testNode2.id,
+      ])
+      expect(db.getUpstreamNodes(testNode2.id).map((node) => node.id)).toEqual([testNode.id])
       expect(db.getSubtree(testNode.id, 'queries_db', 2)?.children[0]?.id).toBe(testNode2.id)
       expect(db.getAffectedPages(testNode2.id)).toEqual([])
       expect(db.removeDanglingEdges()).toBe(0)

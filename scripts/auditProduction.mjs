@@ -15,24 +15,28 @@ function advisoryIdentity(advisory) {
 
 function advisoryPaths(advisory) {
   if (!Array.isArray(advisory.findings)) return []
-  return [...new Set(advisory.findings.flatMap(finding => {
-    const object = asObject(finding)
-    return object && Array.isArray(object.paths)
-      ? object.paths.filter(path => typeof path === 'string')
-      : []
-  }))].sort()
+  return [
+    ...new Set(
+      advisory.findings.flatMap((finding) => {
+        const object = asObject(finding)
+        return object && Array.isArray(object.paths)
+          ? object.paths.filter((path) => typeof path === 'string')
+          : []
+      }),
+    ),
+  ].sort()
 }
 
 function validateException(exception, advisories, now) {
   const object = asObject(exception)
   if (
-    !object
-    || typeof object.advisoryId !== 'string'
-    || typeof object.path !== 'string'
-    || typeof object.rationale !== 'string'
-    || typeof object.expiresOn !== 'string'
-    || object.rationale.trim().length < 10
-    || !/^\d{4}-\d{2}-\d{2}$/u.test(object.expiresOn)
+    !object ||
+    typeof object.advisoryId !== 'string' ||
+    typeof object.path !== 'string' ||
+    typeof object.rationale !== 'string' ||
+    typeof object.expiresOn !== 'string' ||
+    object.rationale.trim().length < 10 ||
+    !/^\d{4}-\d{2}-\d{2}$/u.test(object.expiresOn)
   ) {
     return { exception, reason: 'invalid_shape' }
   }
@@ -40,7 +44,7 @@ function validateException(exception, advisories, now) {
   if (!Number.isFinite(expiresAt)) return { exception, reason: 'invalid_expiry' }
   if (expiresAt < now.getTime()) return { exception, reason: 'expired' }
 
-  const advisory = advisories.find(candidate => advisoryIdentity(candidate) === object.advisoryId)
+  const advisory = advisories.find((candidate) => advisoryIdentity(candidate) === object.advisoryId)
   if (!advisory) return { exception, reason: 'advisory_missing' }
   if (!advisoryPaths(advisory).includes(object.path)) {
     return { exception, reason: 'path_mismatch' }
@@ -52,30 +56,33 @@ export function evaluateAuditReport(report, exceptions = AUDIT_EXCEPTIONS, now =
   const object = asObject(report)
   const advisoryMap = object ? asObject(object.advisories) : null
   const advisories = advisoryMap
-    ? Object.values(advisoryMap).filter(value => asObject(value) !== null)
+    ? Object.values(advisoryMap).filter((value) => asObject(value) !== null)
     : []
-  const severe = advisories.filter(advisory => (
-    advisory.severity === 'high' || advisory.severity === 'critical'
-  ))
+  const severe = advisories.filter(
+    (advisory) => advisory.severity === 'high' || advisory.severity === 'critical',
+  )
   const invalidExceptions = exceptions
-    .map(exception => validateException(exception, severe, now))
-    .filter(result => result !== null)
-  const validExceptions = exceptions.filter(exception => (
-    !invalidExceptions.some(invalid => invalid.exception === exception)
-  ))
+    .map((exception) => validateException(exception, severe, now))
+    .filter((result) => result !== null)
+  const validExceptions = exceptions.filter(
+    (exception) => !invalidExceptions.some((invalid) => invalid.exception === exception),
+  )
 
   const unhandled = []
   const exempted = []
   for (const advisory of severe) {
     const advisoryId = advisoryIdentity(advisory)
     const paths = advisoryPaths(advisory)
-    const exemptedPaths = paths.filter(path => validExceptions.some(exception => (
-      exception.advisoryId === advisoryId && exception.path === path
-    )))
-    const remainingPaths = paths.filter(path => !exemptedPaths.includes(path))
+    const exemptedPaths = paths.filter((path) =>
+      validExceptions.some(
+        (exception) => exception.advisoryId === advisoryId && exception.path === path,
+      ),
+    )
+    const remainingPaths = paths.filter((path) => !exemptedPaths.includes(path))
     const item = {
       advisoryId,
-      packageName: typeof advisory.module_name === 'string' ? advisory.module_name : 'unknown-package',
+      packageName:
+        typeof advisory.module_name === 'string' ? advisory.module_name : 'unknown-package',
       severity: advisory.severity,
       title: typeof advisory.title === 'string' ? advisory.title : 'Untitled advisory',
       paths: remainingPaths.length > 0 ? remainingPaths : paths,

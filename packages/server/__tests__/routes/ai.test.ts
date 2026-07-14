@@ -158,7 +158,11 @@ describe('POST /api/ai/chat', () => {
       .post('/api/ai/chat')
       .send({
         messages: [{ role: 'user', content: 'hi' }],
-        config: { baseUrl: 'https://evil-but-public-looking.example.com/v1', apiKey: 'k', model: 'm' },
+        config: {
+          baseUrl: 'https://evil-but-public-looking.example.com/v1',
+          apiKey: 'k',
+          model: 'm',
+        },
       })
 
     expect(res.status).toBe(400)

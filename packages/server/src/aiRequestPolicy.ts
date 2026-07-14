@@ -109,7 +109,11 @@ export async function resolveUpstreamDestination(
   }
   const resolvedCheck = validateResolvedAddresses(addresses)
   if (!resolvedCheck.ok) {
-    throw new AiPolicyError('AI_DESTINATION_REJECTED', 400, 'AI hostname resolved to a blocked address')
+    throw new AiPolicyError(
+      'AI_DESTINATION_REJECTED',
+      400,
+      'AI hostname resolved to a blocked address',
+    )
   }
   const address = addresses[0]
   const family = isIP(address)
@@ -180,7 +184,7 @@ function createPinnedAgent(destination: UpstreamDestination): PinnedAgent {
   }
 }
 
-export const defaultAiHttpClient: AiHttpClient = async request => {
+export const defaultAiHttpClient: AiHttpClient = async (request) => {
   const pinnedAgent = createPinnedAgent(request.destination)
   try {
     const response = await undiciRequest(request.destination.url, {

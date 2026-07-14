@@ -46,10 +46,12 @@ describe('project configuration', () => {
     fs.mkdirSync(path.join(root, 'client'), { recursive: true })
     fs.mkdirSync(path.join(root, 'server'), { recursive: true })
 
-    expect(collectConfiguredScanDirs(root, {
-      frontend: { dirs: ['client', 'client'] },
-      backend: { dirs: ['server', 'missing'] },
-    })).toEqual([path.join(root, 'client'), path.join(root, 'server')])
+    expect(
+      collectConfiguredScanDirs(root, {
+        frontend: { dirs: ['client', 'client'] },
+        backend: { dirs: ['server', 'missing'] },
+      }),
+    ).toEqual([path.join(root, 'client'), path.join(root, 'server')])
   })
 
   it('discovers conventional and workspace source roots without following escaping symlinks', () => {
@@ -60,7 +62,10 @@ describe('project configuration', () => {
     fs.mkdirSync(path.join(root, 'packages', 'web', 'src'), { recursive: true })
     fs.mkdirSync(outside)
     fs.writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n")
-    fs.writeFileSync(path.join(root, 'packages', 'web', 'package.json'), JSON.stringify({ name: 'web' }))
+    fs.writeFileSync(
+      path.join(root, 'packages', 'web', 'package.json'),
+      JSON.stringify({ name: 'web' }),
+    )
     fs.symlinkSync(outside, path.join(root, 'components'), 'dir')
 
     expect(collectConfiguredScanDirs(root)).toEqual([
@@ -82,11 +87,13 @@ describe('project configuration', () => {
     const meta = projectMeta(root)
     const realRoot = fs.realpathSync.native(root)
 
-    expect(applyProjectConfig(meta, {
-      frontend: { framework: 'next', dirs: ['web'] },
-      backend: { framework: 'express', dirs: ['api'] },
-      database: { prismaSchema: 'prisma/schema.prisma', typeormDirs: ['entities'] },
-    })).toMatchObject({
+    expect(
+      applyProjectConfig(meta, {
+        frontend: { framework: 'next', dirs: ['web'] },
+        backend: { framework: 'express', dirs: ['api'] },
+        database: { prismaSchema: 'prisma/schema.prisma', typeormDirs: ['entities'] },
+      }),
+    ).toMatchObject({
       frontendFramework: 'next',
       backendFramework: 'express',
       frontendDirs: [path.join(realRoot, 'web')],
@@ -100,10 +107,12 @@ describe('project configuration', () => {
     const root = temporaryProject('covis-project-config-empty-')
     const meta = projectMeta(root)
     expect(applyProjectConfig(meta, undefined)).toBe(meta)
-    expect(applyProjectConfig(meta, {
-      frontend: { framework: 'react' },
-      backend: { framework: 'fastify' },
-    })).toMatchObject({ frontendFramework: 'unknown', backendFramework: 'unknown' })
+    expect(
+      applyProjectConfig(meta, {
+        frontend: { framework: 'react' },
+        backend: { framework: 'fastify' },
+      }),
+    ).toMatchObject({ frontendFramework: 'unknown', backendFramework: 'unknown' })
   })
 })
 
@@ -111,11 +120,21 @@ describe('workspace package discovery', () => {
   it('merges pnpm and package workspaces and normalizes dependency names', () => {
     const root = temporaryProject('covis-workspaces-')
     fs.writeFileSync(path.join(root, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
-    fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
-      workspaces: { packages: ['apps/*'] },
-    }))
+    fs.writeFileSync(
+      path.join(root, 'package.json'),
+      JSON.stringify({
+        workspaces: { packages: ['apps/*'] },
+      }),
+    )
     for (const [relative, manifest] of [
-      ['packages/api', { name: '@demo/api', dependencies: { zod: '*', express: '*' }, devDependencies: { vitest: '*' } }],
+      [
+        'packages/api',
+        {
+          name: '@demo/api',
+          dependencies: { zod: '*', express: '*' },
+          devDependencies: { vitest: '*' },
+        },
+      ],
       ['apps/web', { dependencies: ['invalid'] }],
     ] as const) {
       fs.mkdirSync(path.join(root, relative), { recursive: true })
@@ -124,7 +143,12 @@ describe('workspace package discovery', () => {
 
     expect(discoverWorkspacePackages(root)).toEqual([
       { name: 'apps/web', path: 'apps/web', dependencies: [], devDependencies: [] },
-      { name: '@demo/api', path: 'packages/api', dependencies: ['express', 'zod'], devDependencies: ['vitest'] },
+      {
+        name: '@demo/api',
+        path: 'packages/api',
+        dependencies: ['express', 'zod'],
+        devDependencies: ['vitest'],
+      },
     ])
   })
 
@@ -133,10 +157,13 @@ describe('workspace package discovery', () => {
     fs.writeFileSync(path.join(root, 'turbo.json'), '{}')
     fs.mkdirSync(path.join(root, 'packages', 'valid'), { recursive: true })
     fs.mkdirSync(path.join(root, 'packages', 'broken'), { recursive: true })
-    fs.writeFileSync(path.join(root, 'packages', 'valid', 'package.json'), JSON.stringify({ name: 'valid' }))
+    fs.writeFileSync(
+      path.join(root, 'packages', 'valid', 'package.json'),
+      JSON.stringify({ name: 'valid' }),
+    )
     fs.writeFileSync(path.join(root, 'packages', 'broken', 'package.json'), '{broken')
 
-    expect(discoverWorkspacePackages(root).map(item => item.name)).toEqual(['valid'])
+    expect(discoverWorkspacePackages(root).map((item) => item.name)).toEqual(['valid'])
   })
 
   it('returns an empty list when no workspace contract exists', () => {

@@ -9,7 +9,10 @@ import {
 } from './verifyChangedCoverage.mjs'
 
 test('hasRuntimeCode skips erased TypeScript contracts but keeps executable modules', () => {
-  assert.equal(hasRuntimeCode('export interface Shape { id: string }\nexport type Id = string'), false)
+  assert.equal(
+    hasRuntimeCode('export interface Shape { id: string }\nexport type Id = string'),
+    false,
+  )
   assert.equal(hasRuntimeCode("import type { Shape } from './types'\nexport type { Shape }"), false)
   assert.equal(hasRuntimeCode('export const value = 1'), true)
   assert.equal(hasRuntimeCode("export * from './runtime'"), true)
@@ -88,8 +91,7 @@ test('package line coverage aggregates every source file without changing the gl
     },
   }
 
-  assert.deepEqual(
-    validatePackageLineCoverage(coverage, '/repo', 'analyzer', 85),
-    ['analyzer lines 66.67% is below 85%'],
-  )
+  assert.deepEqual(validatePackageLineCoverage(coverage, '/repo', 'analyzer', 85), [
+    'analyzer lines 66.67% is below 85%',
+  ])
 })

@@ -10,9 +10,15 @@ const roots: string[] = []
 function fixture(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-analyze-output-'))
   roots.push(root)
-  fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ dependencies: { next: '14.0.0' } }))
+  fs.writeFileSync(
+    path.join(root, 'package.json'),
+    JSON.stringify({ dependencies: { next: '14.0.0' } }),
+  )
   fs.mkdirSync(path.join(root, 'app'), { recursive: true })
-  fs.writeFileSync(path.join(root, 'app', 'page.tsx'), 'export default function Page() { return null }')
+  fs.writeFileSync(
+    path.join(root, 'app', 'page.tsx'),
+    'export default function Page() { return null }',
+  )
   return root
 }
 
@@ -25,7 +31,7 @@ describe('analyze output modes', () => {
   it('writes a machine-readable snapshot envelope only to stdout', async () => {
     const root = fixture()
     let stdout = ''
-    const write = vi.spyOn(process.stdout, 'write').mockImplementation(chunk => {
+    const write = vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
       stdout += String(chunk)
       return true
     })
@@ -35,7 +41,7 @@ describe('analyze output modes', () => {
       { project: root, output: '-', json: true },
       {
         openDatabase: () => new OmniDatabase(path.join(root, 'graph.db')),
-        onProgress: message => progress.push(message),
+        onProgress: (message) => progress.push(message),
       },
     )
 
@@ -43,7 +49,7 @@ describe('analyze output modes', () => {
     const body = JSON.parse(stdout)
     expect(body.meta.snapshotDigest).toBe(body.data.snapshotDigest)
     expect(progress).toContain('Detecting project structure...')
-    expect(progress.some(message => message.startsWith('Parsing '))).toBe(true)
+    expect(progress.some((message) => message.startsWith('Parsing '))).toBe(true)
   })
 
   it('prints the graph when output is a dash', async () => {
@@ -53,6 +59,8 @@ describe('analyze output modes', () => {
       { project: root, output: '-' },
       { openDatabase: () => new OmniDatabase(path.join(root, 'graph.db')) },
     )
-    expect(log.mock.calls.some(call => typeof call[0] === 'string' && call[0].includes('"nodes"'))).toBe(true)
+    expect(
+      log.mock.calls.some((call) => typeof call[0] === 'string' && call[0].includes('"nodes"')),
+    ).toBe(true)
   })
 })

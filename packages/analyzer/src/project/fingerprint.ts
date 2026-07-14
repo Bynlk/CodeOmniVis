@@ -22,8 +22,8 @@ export function computeProjectFingerprint(
   config?: CodeOmniVisConfig,
 ): string {
   const locks = ['pnpm-lock.yaml', 'package-lock.json', 'yarn.lock', 'bun.lock', 'bun.lockb']
-    .map(file => ({ file, digest: fileDigest(path.join(projectRoot, file)) }))
-    .filter(item => item.digest !== null)
+    .map((file) => ({ file, digest: fileDigest(path.join(projectRoot, file)) }))
+    .filter((item) => item.digest !== null)
   return stableDigest({
     root: normalizePath(fs.realpathSync.native(projectRoot)),
     frameworks: {
@@ -38,11 +38,15 @@ export function computeProjectFingerprint(
 }
 
 export function computeSourceDigest(projectRoot: string, files: readonly string[]): string {
-  return stableDigest(files.map(file => {
-    const normalized = normalizePath(file)
-    return {
-      path: normalized,
-      digest: fileDigest(path.resolve(projectRoot, file)) ?? 'missing',
-    }
-  }).sort((left, right) => left.path.localeCompare(right.path)))
+  return stableDigest(
+    files
+      .map((file) => {
+        const normalized = normalizePath(file)
+        return {
+          path: normalized,
+          digest: fileDigest(path.resolve(projectRoot, file)) ?? 'missing',
+        }
+      })
+      .sort((left, right) => left.path.localeCompare(right.path)),
+  )
 }

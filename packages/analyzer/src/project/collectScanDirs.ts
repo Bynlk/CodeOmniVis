@@ -27,19 +27,40 @@ function safeAutomaticDirectory(root: string, directory: string): string | null 
 
 export function collectConfiguredScanDirs(root: string, config?: CodeOmniVisConfig): string[] {
   const resolvedRoot = path.resolve(root)
-  const explicit = [
-    ...(config?.frontend?.dirs ?? []),
-    ...(config?.backend?.dirs ?? []),
-  ].map(directory => path.resolve(resolvedRoot, directory)).filter(isDirectory)
+  const explicit = [...(config?.frontend?.dirs ?? []), ...(config?.backend?.dirs ?? [])]
+    .map((directory) => path.resolve(resolvedRoot, directory))
+    .filter(isDirectory)
   if (explicit.length > 0) return [...new Set(explicit)]
 
   const candidates = [
-    'apps/web/src', 'apps/web', 'src', 'app', 'pages', 'components', 'hooks', 'lib',
-    'features', 'services', 'server', 'api', 'src/components', 'src/hooks', 'src/lib',
-    'src/features', 'src/services', 'frontend/src', 'backend/src',
-    ...discoverWorkspacePackages(resolvedRoot).map(pkg => `${pkg.path}/src`),
+    'apps/web/src',
+    'apps/web',
+    'src',
+    'app',
+    'pages',
+    'components',
+    'hooks',
+    'lib',
+    'features',
+    'services',
+    'server',
+    'api',
+    'src/components',
+    'src/hooks',
+    'src/lib',
+    'src/features',
+    'src/services',
+    'frontend/src',
+    'backend/src',
+    ...discoverWorkspacePackages(resolvedRoot).map((pkg) => `${pkg.path}/src`),
   ]
-  return [...new Set(candidates
-    .map(directory => safeAutomaticDirectory(resolvedRoot, path.resolve(resolvedRoot, directory)))
-    .filter((directory): directory is string => directory !== null))]
+  return [
+    ...new Set(
+      candidates
+        .map((directory) =>
+          safeAutomaticDirectory(resolvedRoot, path.resolve(resolvedRoot, directory)),
+        )
+        .filter((directory): directory is string => directory !== null),
+    ),
+  ]
 }

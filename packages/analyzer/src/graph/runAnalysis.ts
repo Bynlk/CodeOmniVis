@@ -25,7 +25,7 @@ export async function runAnalysis(options: RunAnalysisOptions): Promise<RunAnaly
     dbPath: options.dbPath,
     db: options.db,
     projectMeta: options.projectMeta,
-    onProgress: event => {
+    onProgress: (event) => {
       if (!filesReported && event.filesScanned !== undefined) {
         filesReported = true
         options.onFilesCollected?.(event.filesScanned)
@@ -38,7 +38,7 @@ export async function runAnalysis(options: RunAnalysisOptions): Promise<RunAnaly
     filesScanned: result.snapshot.stats.filesScanned,
     nodesCreated: graph.nodes.length,
     edgesCreated: graph.edges.length,
-    crossLayerEdges: graph.edges.filter(edge => crossLayerTypes.has(edge.type)).length,
+    crossLayerEdges: graph.edges.filter((edge) => crossLayerTypes.has(edge.type)).length,
     errors: result.snapshot.parseErrors.length,
   }
 }

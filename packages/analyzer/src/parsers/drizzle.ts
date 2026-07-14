@@ -37,15 +37,34 @@ const DIALECT_MAP: Record<string, string> = {
 
 // Drizzle 列类型函数名
 const COLUMN_TYPES = [
-  'serial', 'bigserial', 'smallserial',
-  'integer', 'bigint', 'smallint', 'tinyint',
-  'text', 'varchar', 'char', 'mediumtext', 'longtext',
+  'serial',
+  'bigserial',
+  'smallserial',
+  'integer',
+  'bigint',
+  'smallint',
+  'tinyint',
+  'text',
+  'varchar',
+  'char',
+  'mediumtext',
+  'longtext',
   'boolean',
-  'date', 'datetime', 'timestamp', 'time',
-  'real', 'float', 'double', 'decimal', 'numeric',
-  'json', 'jsonb',
+  'date',
+  'datetime',
+  'timestamp',
+  'time',
+  'real',
+  'float',
+  'double',
+  'decimal',
+  'numeric',
+  'json',
+  'jsonb',
   'uuid',
-  'blob', 'mediumblob', 'longblob',
+  'blob',
+  'mediumblob',
+  'longblob',
   'enum',
   'custom',
 ]
@@ -79,9 +98,9 @@ export class DrizzleParser implements Parser {
 
     try {
       if (!this.project) {
-          const configFilePath = context.tsConfig?.options?.configFilePath
+        const configFilePath = context.tsConfig?.options?.configFilePath
         this.project = new Project({
-            tsConfigFilePath: typeof configFilePath === 'string' ? configFilePath : undefined,
+          tsConfigFilePath: typeof configFilePath === 'string' ? configFilePath : undefined,
           skipAddingFilesFromTsConfig: true,
         })
       }
@@ -113,7 +132,10 @@ export class DrizzleParser implements Parser {
   /**
    * 解析表定义：const xxxTable = pgTable('xxx', { ... })
    */
-  private parseTableDefinitions(sourceFile: SourceFile, filePath: string): { nodes: OmniNode[]; tableMap: Map<string, string> } {
+  private parseTableDefinitions(
+    sourceFile: SourceFile,
+    filePath: string,
+  ): { nodes: OmniNode[]; tableMap: Map<string, string> } {
     const nodes: OmniNode[] = []
     const tableMap = new Map<string, string>() // constName → nodeId
 
@@ -226,7 +248,11 @@ export class DrizzleParser implements Parser {
   /**
    * 解析关系定义：relations(xxxTable, ({ one, many }) => ({ ... }))
    */
-  private parseRelationDefinitions(sourceFile: SourceFile, filePath: string, tableMap: Map<string, string>): OmniEdge[] {
+  private parseRelationDefinitions(
+    sourceFile: SourceFile,
+    filePath: string,
+    tableMap: Map<string, string>,
+  ): OmniEdge[] {
     const edges: OmniEdge[] = []
 
     sourceFile.forEachDescendant((node: Node) => {

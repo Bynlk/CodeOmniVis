@@ -22,7 +22,7 @@ export class ErrorRepository {
       error.file,
       error.message,
       error.severity,
-      'originalError' in error ? error.originalError ?? null : null,
+      'originalError' in error ? (error.originalError ?? null) : null,
     ])
   }
 
@@ -38,7 +38,8 @@ export class ErrorRepository {
       while (statement.step()) {
         const row = statement.getAsObject()
         const severity = stringValue(row.severity)
-        const originalError = typeof row.original_error === 'string' ? row.original_error : undefined
+        const originalError =
+          typeof row.original_error === 'string' ? row.original_error : undefined
         errors.push({
           file: stringValue(row.file),
           message: stringValue(row.message),

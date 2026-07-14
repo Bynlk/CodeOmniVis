@@ -5,11 +5,7 @@ import initSqlJs, {
   type SqlValue,
   type Statement,
 } from 'sql.js'
-import {
-  CREATE_TABLES_SQL,
-  CURRENT_SCHEMA_VERSION,
-  DROP_CACHE_TABLES_SQL,
-} from './schema'
+import { CREATE_TABLES_SQL, CURRENT_SCHEMA_VERSION, DROP_CACHE_TABLES_SQL } from './schema'
 import { persistDatabaseAtomically } from './persistence'
 
 export interface SqlDatabase {
@@ -114,9 +110,8 @@ class SqlJsConnection implements SqlDatabase {
 
 export async function openSqlDatabase(filePath = ':memory:'): Promise<SqlDatabase> {
   const SQL = await initSqlJs()
-  const data = filePath !== ':memory:' && fs.existsSync(filePath)
-    ? fs.readFileSync(filePath)
-    : undefined
+  const data =
+    filePath !== ':memory:' && fs.existsSync(filePath) ? fs.readFileSync(filePath) : undefined
   const handle = new SQL.Database(data)
   initializeSchema(handle)
   return new SqlJsConnection(SQL, filePath, handle)

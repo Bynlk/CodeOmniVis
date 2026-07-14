@@ -11,8 +11,12 @@ import { createMcpServer, PUBLIC_TOOL_NAMES } from '../src/server'
 
 function snapshot(root: string): ProjectSnapshot {
   const model = {
-    id: 'db_model:schema.ts:Order', type: 'db_model' as const, name: 'Order',
-    filePath: 'schema.ts', line: 1, column: 1,
+    id: 'db_model:schema.ts:Order',
+    type: 'db_model' as const,
+    name: 'Order',
+    filePath: 'schema.ts',
+    line: 1,
+    column: 1,
     metadata: { tableName: 'orders', fieldCount: 0, fields: [] },
   }
   return {
@@ -23,23 +27,45 @@ function snapshot(root: string): ProjectSnapshot {
       root,
       fingerprint: 'protocol-fixture',
       meta: {
-        root, frontendFramework: 'unknown', backendFramework: 'unknown', databaseType: 'unknown',
-        monorepoType: 'none', frontendDirs: [], backendDirs: [], trpcRouterPaths: [],
-        tsrpcServicePaths: [], tsrpcApiDirs: [], tsrpcProtocolDirs: [], prismaSchemaPath: null,
-        typeormEntityDirs: [], tsConfigPath: null, buildFile: null, packages: [],
+        root,
+        frontendFramework: 'unknown',
+        backendFramework: 'unknown',
+        databaseType: 'unknown',
+        monorepoType: 'none',
+        frontendDirs: [],
+        backendDirs: [],
+        trpcRouterPaths: [],
+        tsrpcServicePaths: [],
+        tsrpcApiDirs: [],
+        tsrpcProtocolDirs: [],
+        prismaSchemaPath: null,
+        typeormEntityDirs: [],
+        tsConfigPath: null,
+        buildFile: null,
+        packages: [],
       },
     },
     graph: { nodes: [model], edges: [] },
     issues: [],
     parseErrors: [],
     stats: {
-      filesScanned: 1, nodeCount: 1, edgeCount: 0, issueCount: 0, parseErrorCount: 0,
-      nodeTypeCounts: { db_model: 1 }, edgeTypeCounts: {},
+      filesScanned: 1,
+      nodeCount: 1,
+      edgeCount: 0,
+      issueCount: 0,
+      parseErrorCount: 0,
+      nodeTypeCounts: { db_model: 1 },
+      edgeTypeCounts: {},
       issueSeverityCounts: { critical: 0, warning: 0, info: 0 },
       parseErrorSeverityCounts: { error: 0, warning: 0, info: 0 },
     },
     freshness: { state: 'fresh', lastAnalyzedAt: 1, pendingChanges: 0 },
-    provenance: { generatedAt: 1, analyzerVersion: 'test', filesScanned: 1, sourceDigest: 'source' },
+    provenance: {
+      generatedAt: 1,
+      analyzerVersion: 'test',
+      filesScanned: 1,
+      sourceDigest: 'source',
+    },
   }
 }
 
@@ -47,8 +73,14 @@ function textBody(result: Awaited<ReturnType<Client['callTool']>>) {
   const content: unknown = 'content' in result ? result.content : undefined
   if (!Array.isArray(content)) throw new Error('Expected tool content')
   const first: unknown = content[0]
-  if (!first || typeof first !== 'object' || !('type' in first) || first.type !== 'text'
-    || !('text' in first) || typeof first.text !== 'string') {
+  if (
+    !first ||
+    typeof first !== 'object' ||
+    !('type' in first) ||
+    first.type !== 'text' ||
+    !('text' in first) ||
+    typeof first.text !== 'string'
+  ) {
     throw new Error('Expected text tool response')
   }
   return JSON.parse(first.text)
@@ -82,7 +114,7 @@ describe('in-process MCP protocol', () => {
 
   it('lists and executes every public tool against one cached snapshot', async () => {
     const tools = await client.listTools()
-    expect(tools.tools.map(tool => tool.name)).toEqual([...PUBLIC_TOOL_NAMES])
+    expect(tools.tools.map((tool) => tool.name)).toEqual([...PUBLIC_TOOL_NAMES])
 
     const models = textBody(await client.callTool({ name: 'list_db_models', arguments: {} }))
     expect(models.models[0].name).toBe('Order')

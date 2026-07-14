@@ -12,21 +12,21 @@ import type { CoversMetadata, TestsMetadata, UsesFixtureMetadata } from './test'
 // ============================================================
 
 export type EdgeType =
-  | 'renders'         // 组件渲染关系：Parent → Child
-  | 'navigates_to'    // 页面导航：Page A → Page B（通过 Link/router.push）
-  | 'calls_api'       // 前端 API 调用：Component → API Route / tRPC Procedure
-  | 'handles'         // 路由处理：API Route → Handler Function
-  | 'calls_service'   // Handler → Service 调用
-  | 'queries_db'      // Service/Handler → DB Model 查询
-  | 'db_relation'     // DB 关系：Model A → Model B（一对多/多对多）
-  | 'imports'         // 模块导入（用于解析但通常不直接显示）
-  | 'contains'        // 聚合关系：Module → 其内部节点
+  | 'renders' // 组件渲染关系：Parent → Child
+  | 'navigates_to' // 页面导航：Page A → Page B（通过 Link/router.push）
+  | 'calls_api' // 前端 API 调用：Component → API Route / tRPC Procedure
+  | 'handles' // 路由处理：API Route → Handler Function
+  | 'calls_service' // Handler → Service 调用
+  | 'queries_db' // Service/Handler → DB Model 查询
+  | 'db_relation' // DB 关系：Model A → Model B（一对多/多对多）
+  | 'imports' // 模块导入（用于解析但通常不直接显示）
+  | 'contains' // 聚合关系：Module → 其内部节点
   | 'kotlin_inherits' // Kotlin 类继承：Child → Parent
   | 'kotlin_implements' // Kotlin 接口实现：Class → Interface
-  | 'kotlin_uses'     // Kotlin 依赖关系：Class → Class（字段/参数/返回值类型）
-  | 'data_flows_to'   // 数据流：Model → API → Component 类型传播路径
-  | 'sends_msg'       // client.sendMsg() / server.broadcast()
-  | 'listens_msg'     // client.listenMsg() / server.addMsgListener()
+  | 'kotlin_uses' // Kotlin 依赖关系：Class → Class（字段/参数/返回值类型）
+  | 'data_flows_to' // 数据流：Model → API → Component 类型传播路径
+  | 'sends_msg' // client.sendMsg() / server.broadcast()
+  | 'listens_msg' // client.listenMsg() / server.addMsgListener()
   | 'tests'
   | 'covers'
   | 'uses_fixture'
@@ -229,7 +229,6 @@ export type EdgeTypeMetadataMap = {
   uses_fixture: UsesFixtureMetadata
 }
 
-
 // ============================================================
 // 工具函数
 // ============================================================
@@ -240,15 +239,13 @@ export function isEdgeType(value: string): value is EdgeType {
 
 export function isEdgeOfType<T extends EdgeType>(
   edge: OmniEdge,
-  type: T
+  type: T,
 ): edge is Extract<OmniEdge, { type: T }> {
   return edge.type === type
 }
 
 /** 类型安全的边工厂：`type` 与 `metadata` 由编译器强制对应。 */
-export function createTypedEdge<T extends EdgeType>(
-  edge: TypedOmniEdge<T>
-): TypedOmniEdge<T> {
+export function createTypedEdge<T extends EdgeType>(edge: TypedOmniEdge<T>): TypedOmniEdge<T> {
   return edge
 }
 

@@ -8,11 +8,8 @@ import { createOmniServer } from '../../src/index'
 const ALLOWED_ORIGIN = 'http://localhost:5173'
 const ACCESS_TOKEN = 'remote-websocket-secret'
 
-function connect(
-  url: string,
-  headers: Record<string, string> = {},
-): Promise<'open' | 'rejected'> {
-  return new Promise(resolveConnection => {
+function connect(url: string, headers: Record<string, string> = {}): Promise<'open' | 'rejected'> {
+  return new Promise((resolveConnection) => {
     const ws = new WebSocket(url, { origin: ALLOWED_ORIGIN, headers })
     ws.on('open', () => {
       ws.close()

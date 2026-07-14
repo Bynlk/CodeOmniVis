@@ -4,10 +4,18 @@ import { createCliProgram } from '../../src/program'
 
 describe('public CLI contract', () => {
   it('keeps every existing public command', () => {
-    const commandNames = createCliProgram().commands.map(command => command.name())
+    const commandNames = createCliProgram().commands.map((command) => command.name())
 
     expect(commandNames).toEqual(
-      expect.arrayContaining(['analyze', 'check', 'init', 'mcp', 'serve', 'test-import', 'test-run']),
+      expect.arrayContaining([
+        'analyze',
+        'check',
+        'init',
+        'mcp',
+        'serve',
+        'test-import',
+        'test-run',
+      ]),
     )
   })
 
@@ -16,10 +24,10 @@ describe('public CLI contract', () => {
       readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
     )
     if (
-      typeof manifest !== 'object'
-      || manifest === null
-      || !('version' in manifest)
-      || typeof manifest.version !== 'string'
+      typeof manifest !== 'object' ||
+      manifest === null ||
+      !('version' in manifest) ||
+      typeof manifest.version !== 'string'
     ) {
       throw new Error('packages/cli/package.json must contain a string version')
     }

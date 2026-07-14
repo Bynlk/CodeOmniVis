@@ -30,10 +30,13 @@ describe('Gradle project detection', () => {
     const root = project()
     fs.mkdirSync(path.join(root, 'app'), { recursive: true })
     fs.writeFileSync(path.join(root, 'app', 'build.gradle'), 'implementation "io.ktor:ktor-server"')
-    fs.writeFileSync(path.join(root, 'build.gradle.kts'), `
+    fs.writeFileSync(
+      path.join(root, 'build.gradle.kts'),
+      `
       plugins { id("org.springframework.boot") }
       implementation("org.jetbrains:exposed-core")
-    `)
+    `,
+    )
 
     expect(findBuildFile(root)).toBe(path.join(root, 'build.gradle.kts'))
     expect(detectGradleFrameworks(root)).toEqual({
@@ -46,10 +49,13 @@ describe('Gradle project detection', () => {
   it('detects Ktor and Room from an app build', () => {
     const root = project()
     fs.mkdirSync(path.join(root, 'app'), { recursive: true })
-    fs.writeFileSync(path.join(root, 'app', 'build.gradle.kts'), `
+    fs.writeFileSync(
+      path.join(root, 'app', 'build.gradle.kts'),
+      `
       implementation("io.ktor:ktor-server-core")
       implementation("androidx.room:room-runtime")
-    `)
+    `,
+    )
 
     expect(detectGradleFrameworks(root)).toMatchObject({
       backendFramework: 'ktor',
@@ -60,19 +66,23 @@ describe('Gradle project detection', () => {
   it('returns conservative unknown values for absent, unrelated, or unreadable builds', () => {
     const absent = project()
     expect(detectGradleFrameworks(absent)).toEqual({
-      backendFramework: 'unknown', databaseType: 'unknown', buildFile: null,
+      backendFramework: 'unknown',
+      databaseType: 'unknown',
+      buildFile: null,
     })
 
     const unrelated = project()
     fs.writeFileSync(path.join(unrelated, 'build.gradle'), 'plugins { kotlin("jvm") }')
     expect(detectGradleFrameworks(unrelated)).toMatchObject({
-      backendFramework: 'unknown', databaseType: 'unknown',
+      backendFramework: 'unknown',
+      databaseType: 'unknown',
     })
 
     const unreadable = project()
     fs.mkdirSync(path.join(unreadable, 'build.gradle.kts'))
     expect(detectGradleFrameworks(unreadable)).toMatchObject({
-      backendFramework: 'unknown', databaseType: 'unknown',
+      backendFramework: 'unknown',
+      databaseType: 'unknown',
       buildFile: path.join(unreadable, 'build.gradle.kts'),
     })
   })

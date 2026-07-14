@@ -105,9 +105,10 @@ function attachSnapshot(result: CallToolResult, db: OmniDatabase): CallToolResul
   if (!snapshot || first?.type !== 'text') return result
   try {
     const parsed: unknown = JSON.parse(first.text)
-    const body = parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? { ...parsed, snapshot }
-      : { data: parsed, snapshot }
+    const body =
+      parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? { ...parsed, snapshot }
+        : { data: parsed, snapshot }
     return { ...result, content: [{ type: 'text', text: JSON.stringify(body, null, 2) }] }
   } catch {
     return result
@@ -177,7 +178,7 @@ export function createMcpServer(options: McpServerOptions): McpServerRuntime {
   }
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOL_DEFINITIONS }))
-  server.setRequestHandler(CallToolRequestSchema, async request => {
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params
     try {
       const db = await getDb()

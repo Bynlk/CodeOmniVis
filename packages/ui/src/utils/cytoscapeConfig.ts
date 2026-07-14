@@ -27,20 +27,20 @@ function getNodeLabel(node: cytoscape.NodeSingular): string | undefined {
  */
 /** 各边类型在颜色之外的专属视觉(线宽/线型/透明度);颜色统一由 EDGE_COLORS 提供。 */
 const EDGE_TYPE_EXTRAS: Partial<Record<EdgeType, cytoscape.Css.Edge>> = {
-  renders:           { 'width': 1.5 },
-  calls_api:         { 'width': 2 },
-  queries_db:        { 'width': 2 },
-  kotlin_inherits:   { 'line-style': 'dashed' },
+  renders: { width: 1.5 },
+  calls_api: { width: 2 },
+  queries_db: { width: 2 },
+  kotlin_inherits: { 'line-style': 'dashed' },
   kotlin_implements: { 'line-style': 'dashed' },
-  kotlin_uses:       { 'opacity': 0.5 },
-  sends_msg:         { 'line-style': 'dashed', 'width': 2 },
-  listens_msg:       { 'line-style': 'dashed', 'width': 2 },
-  contains:          { 'line-style': 'dotted' },
-  data_flows_to:     { 'width': 2 },
-  imports:           { 'opacity': 0.3 },
-  tests:             { 'line-style': 'dotted' },
-  covers:            { 'width': 2 },
-  uses_fixture:      { 'line-style': 'dashed' },
+  kotlin_uses: { opacity: 0.5 },
+  sends_msg: { 'line-style': 'dashed', width: 2 },
+  listens_msg: { 'line-style': 'dashed', width: 2 },
+  contains: { 'line-style': 'dotted' },
+  data_flows_to: { width: 2 },
+  imports: { opacity: 0.3 },
+  tests: { 'line-style': 'dotted' },
+  covers: { width: 2 },
+  uses_fixture: { 'line-style': 'dashed' },
 }
 
 export function getCytoscapeStyle(): cytoscape.StylesheetJson {
@@ -55,22 +55,22 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
           const type = getNodeType(node)
           return type ? NODE_COLORS[type] : '#343e4d'
         },
-        'label': (node: cytoscape.NodeSingular) => {
+        label: (node: cytoscape.NodeSingular) => {
           const label = getNodeLabel(node)
-          return label && label.length > 20 ? label.slice(0, 18) + '…' : label ?? '?'
+          return label && label.length > 20 ? label.slice(0, 18) + '…' : (label ?? '?')
         },
         'text-valign': 'center',
         'text-halign': 'center',
         'font-size': '10px',
         'font-weight': 500,
-        'color': '#e7eaf0',
+        color: '#e7eaf0',
         'text-outline-width': 0,
         'text-wrap': 'wrap',
         'text-max-width': '100px',
-        'width': 104,
-        'height': 34,
-        'padding': '6px',
-        'shape': 'roundrectangle',
+        width: 104,
+        height: 34,
+        padding: '6px',
+        shape: 'roundrectangle',
         'corner-radius': '6',
       } satisfies cytoscape.Css.Node,
     },
@@ -79,7 +79,7 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
     {
       selector: 'node[type="db_model"]',
       style: {
-        'shape': 'roundrectangle',
+        shape: 'roundrectangle',
       } satisfies cytoscape.Css.Node,
     },
 
@@ -87,14 +87,14 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
     {
       selector: 'edge',
       style: {
-        'width': 1.5,
+        width: 1.5,
         'line-color': '#4b5565',
         'target-arrow-color': '#4b5565',
         'target-arrow-shape': 'triangle',
         'curve-style': 'bezier',
         'control-point-step-size': 40,
         'arrow-scale': 0.7,
-        'opacity': 0.62,
+        opacity: 0.62,
       } satisfies cytoscape.Css.Edge,
     },
 
@@ -117,7 +117,7 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
       style: {
         'line-style': 'dashed',
         'line-dash-pattern': [6, 3],
-        'opacity': 0.6,
+        opacity: 0.6,
       } satisfies cytoscape.Css.Edge,
     },
 
@@ -136,7 +136,7 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
     {
       selector: '.highlighted',
       style: {
-        'opacity': 1,
+        opacity: 1,
       } satisfies cytoscape.Css.Node,
     },
 
@@ -166,8 +166,8 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
       style: {
         'line-color': '#fbbf24',
         'target-arrow-color': '#fbbf24',
-        'width': 3,
-        'opacity': 1,
+        width: 3,
+        opacity: 1,
         'z-index': 19,
       } satisfies cytoscape.Css.Edge,
     },
@@ -178,7 +178,7 @@ export function getCytoscapeStyle(): cytoscape.StylesheetJson {
       style: {
         'border-width': 3,
         'border-color': '#f59e0b',
-        'opacity': 1,
+        opacity: 1,
       } satisfies cytoscape.Css.Node,
     },
   ]

@@ -8,7 +8,10 @@ export interface KotlinTestSource {
   close(): void
 }
 
-export async function loadKotlinTestSource(projectRoot: string, filePath: string): Promise<KotlinTestSource> {
+export async function loadKotlinTestSource(
+  projectRoot: string,
+  filePath: string,
+): Promise<KotlinTestSource> {
   const source = fs.readFileSync(path.resolve(projectRoot, filePath), 'utf8')
   const tree = await parseKotlinSource(source)
   return {

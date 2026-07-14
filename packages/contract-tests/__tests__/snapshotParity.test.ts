@@ -12,7 +12,7 @@ import { createGraphRouter } from '@codeomnivis/server'
 import { getDbPath } from '@codeomnivis/shared/node'
 
 function ids(values: Array<{ id: string }>): string[] {
-  return values.map(value => value.id).sort()
+  return values.map((value) => value.id).sort()
 }
 
 function toolBody(result: ReturnType<typeof executeMcpTool>) {
@@ -39,7 +39,13 @@ describe('ProjectSnapshot parity', () => {
     const direct = await analyzeProject({ projectRoot, dbPath })
     const cli = spawnSync(
       process.execPath,
-      [path.join(workspaceRoot, 'packages/cli/dist/index.js'), 'analyze', '--project', projectRoot, '--json'],
+      [
+        path.join(workspaceRoot, 'packages/cli/dist/index.js'),
+        'analyze',
+        '--project',
+        projectRoot,
+        '--json',
+      ],
       { cwd: workspaceRoot, encoding: 'utf8', env: { ...process.env, NO_COLOR: '1' } },
     )
     expect(cli.status, cli.stderr).toBe(0)
@@ -48,7 +54,10 @@ describe('ProjectSnapshot parity', () => {
     const db = new OmniDatabase(dbPath)
     await db.ready()
     const app = express()
-    app.use('/api/graph', createGraphRouter(db, undefined, () => projectRoot))
+    app.use(
+      '/api/graph',
+      createGraphRouter(db, undefined, () => projectRoot),
+    )
     const [restGraph, restIssues] = await Promise.all([
       request(app).get('/api/graph'),
       request(app).get('/api/graph/issues'),

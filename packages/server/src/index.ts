@@ -129,11 +129,11 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     host,
     accessToken,
     sessions,
-    secureCookies: secureCookies ?? (
-      Array.isArray(corsOrigin)
-        ? corsOrigin.some(origin => origin.startsWith('https://'))
-        : corsOrigin.startsWith('https://')
-    ),
+    secureCookies:
+      secureCookies ??
+      (Array.isArray(corsOrigin)
+        ? corsOrigin.some((origin) => origin.startsWith('https://'))
+        : corsOrigin.startsWith('https://')),
   })
   const accessGuard = createAccessGuard(accessPolicy)
   const allowArbitraryAbsoluteProjectRoots = isLoopbackHost(host)
@@ -199,7 +199,10 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     )
     if (!ok) {
       res.status(400).json({
-        error: { code: 'PATH_TRAVERSAL', message: `projectRoot escapes the allowed boundary: ${boundaryRoot}` },
+        error: {
+          code: 'PATH_TRAVERSAL',
+          message: `projectRoot escapes the allowed boundary: ${boundaryRoot}`,
+        },
       })
       return
     }

@@ -22,7 +22,15 @@ function renderWithQuery(el: ReactElement): string {
 
 const graph: OmniGraph = {
   nodes: [
-    { id: 'page:/a.tsx:Home', type: 'page', name: 'Home', filePath: 'a.tsx', line: 1, column: 1, metadata: {} as never },
+    {
+      id: 'page:/a.tsx:Home',
+      type: 'page',
+      name: 'Home',
+      filePath: 'a.tsx',
+      line: 1,
+      column: 1,
+      metadata: {} as never,
+    },
   ],
   edges: [],
 }

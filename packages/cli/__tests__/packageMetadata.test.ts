@@ -30,13 +30,15 @@ describe('public CLI package metadata', () => {
       registry: 'https://registry.npmjs.org',
     })
     expect(manifest.files).toEqual(expect.arrayContaining(['dist', 'bin', 'README.md', 'LICENSE']))
-    expect(manifest.keywords).toEqual(expect.arrayContaining([
-      'typescript',
-      'architecture-visualization',
-      'nextjs',
-      'react',
-      'prisma',
-      'mcp',
-    ]))
+    expect(manifest.keywords).toEqual(
+      expect.arrayContaining([
+        'typescript',
+        'architecture-visualization',
+        'nextjs',
+        'react',
+        'prisma',
+        'mcp',
+      ]),
+    )
   })
 })

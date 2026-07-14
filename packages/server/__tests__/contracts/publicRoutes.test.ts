@@ -56,7 +56,7 @@ describe('public REST contract', () => {
     rmSync(projectRoot, { recursive: true, force: true })
   })
 
-  it.each(PUBLIC_ROUTES)('keeps $method $path registered', async route => {
+  it.each(PUBLIC_ROUTES)('keeps $method $path registered', async (route) => {
     let pending = request(instance.app)[route.method](route.path)
     for (const [name, value] of Object.entries(route.headers ?? {})) {
       pending = pending.set(name, value)

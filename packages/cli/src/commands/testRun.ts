@@ -20,8 +20,12 @@ export interface TestRunCommandDeps {
 const defaultDeps: TestRunCommandDeps = {
   run: runTestRunner,
   importResults: runTestImport,
-  stdout: value => { process.stdout.write(value) },
-  stderr: value => { process.stderr.write(value) },
+  stdout: (value) => {
+    process.stdout.write(value)
+  },
+  stderr: (value) => {
+    process.stderr.write(value)
+  },
 }
 
 export async function runTestCommand(
@@ -30,7 +34,12 @@ export async function runTestCommand(
   deps: TestRunCommandDeps = defaultDeps,
 ): Promise<void> {
   const projectRoot = path.resolve(options.project)
-  const request = { projectRoot, runner: options.runner, timeoutMs: Number(options.timeout), extraArgs: runnerArgs }
+  const request = {
+    projectRoot,
+    runner: options.runner,
+    timeoutMs: Number(options.timeout),
+    extraArgs: runnerArgs,
+  }
   const plan = { cwd: projectRoot, runner: options.runner, args: runnerArgs }
   deps.stderr(`[codeomnivis] test-run ${JSON.stringify(plan)}\n`)
   const result = await deps.run(request)

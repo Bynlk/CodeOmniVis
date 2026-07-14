@@ -9,10 +9,11 @@ function safeConfiguredPath(root: string, candidate: string): string | null {
     const real = fs.realpathSync.native(resolved)
     const lexicalRelative = path.relative(root, resolved)
     const realRelative = path.relative(realRoot, real)
-    const lexicalInside = lexicalRelative === ''
-      || (!lexicalRelative.startsWith('..') && !path.isAbsolute(lexicalRelative))
-    const realInside = realRelative === ''
-      || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative))
+    const lexicalInside =
+      lexicalRelative === '' ||
+      (!lexicalRelative.startsWith('..') && !path.isAbsolute(lexicalRelative))
+    const realInside =
+      realRelative === '' || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative))
     if (lexicalInside && !realInside) return null
     return real
   } catch {
@@ -22,7 +23,7 @@ function safeConfiguredPath(root: string, candidate: string): string | null {
 
 function configuredPaths(root: string, values: string[]): string[] {
   return values
-    .map(value => safeConfiguredPath(root, value))
+    .map((value) => safeConfiguredPath(root, value))
     .filter((value): value is string => value !== null)
 }
 

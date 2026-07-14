@@ -6,7 +6,15 @@ describe('get_test_coverage', () => {
   const db = new OmniDatabase(':memory:')
   beforeAll(async () => {
     await db.ready()
-    db.upsertNode({ id: 'test_case:a.test.ts:works', type: 'test_case', name: 'works', filePath: 'a.test.ts', line: 1, column: 1, metadata: { framework: 'jest', isParameterized: false, disabled: false } })
+    db.upsertNode({
+      id: 'test_case:a.test.ts:works',
+      type: 'test_case',
+      name: 'works',
+      filePath: 'a.test.ts',
+      line: 1,
+      column: 1,
+      metadata: { framework: 'jest', isParameterized: false, disabled: false },
+    })
   })
   afterAll(() => db.close())
   it('returns the shared summary with framework filtering', () => {

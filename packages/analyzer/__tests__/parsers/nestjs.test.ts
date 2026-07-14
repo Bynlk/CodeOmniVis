@@ -40,7 +40,7 @@ describe('NestJS parser contracts', () => {
     const service = await new NestjsServiceParser().parse('src/orders.service.ts', context)
 
     expect(controller.errors).toEqual([])
-    expect(controller.nodes.map(node => node.name)).toEqual([
+    expect(controller.nodes.map((node) => node.name)).toEqual([
       'GET api/orders/:id',
       'findOne',
       'POST api/orders',

@@ -80,10 +80,9 @@ function manifestPattern(pattern: string): string {
 }
 
 export function discoverWorkspacePackages(root: string): PackageInfo[] {
-  const patterns = [...new Set([
-    ...pnpmWorkspacePatterns(root),
-    ...packageJsonWorkspacePatterns(root),
-  ])]
+  const patterns = [
+    ...new Set([...pnpmWorkspacePatterns(root), ...packageJsonWorkspacePatterns(root)]),
+  ]
   if (patterns.length === 0 && fs.existsSync(path.join(root, 'turbo.json'))) {
     patterns.push('packages/*')
   }

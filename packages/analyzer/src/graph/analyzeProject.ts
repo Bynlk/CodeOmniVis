@@ -63,7 +63,8 @@ function rebasePath(value: string, fromRoot: string, toRoot: string): string {
 
 function canonicalizeProvidedMeta(meta: ProjectMeta, projectRoot: string): ProjectMeta {
   const fromRoot = path.resolve(meta.root)
-  const mapPaths = (values: string[]): string[] => values.map(value => rebasePath(value, fromRoot, projectRoot))
+  const mapPaths = (values: string[]): string[] =>
+    values.map((value) => rebasePath(value, fromRoot, projectRoot))
   return {
     ...meta,
     root: projectRoot,
@@ -92,12 +93,18 @@ function throwIfAborted(signal: AbortSignal | undefined): void {
   throw error
 }
 
-function report(options: AnalyzeProjectOptions, phase: AnalysisProgressPhase, filesScanned?: number): void {
+function report(
+  options: AnalyzeProjectOptions,
+  phase: AnalysisProgressPhase,
+  filesScanned?: number,
+): void {
   throwIfAborted(options.signal)
   options.onProgress?.({ phase, ...(filesScanned === undefined ? {} : { filesScanned }) })
 }
 
-function serializableError(error: DbError | ProjectDetectionWarning | ParseError): SerializableParseError {
+function serializableError(
+  error: DbError | ProjectDetectionWarning | ParseError,
+): SerializableParseError {
   return {
     file: error.file,
     message: error.message,
@@ -107,22 +114,23 @@ function serializableError(error: DbError | ProjectDetectionWarning | ParseError
   }
 }
 
-export async function analyzeProject(options: AnalyzeProjectOptions): Promise<import('@codeomnivis/shared').AnalyzeProjectResult> {
+export async function analyzeProject(
+  options: AnalyzeProjectOptions,
+): Promise<import('@codeomnivis/shared').AnalyzeProjectResult> {
   report(options, 'detecting_project')
   const detectionWarnings: ProjectDetectionWarning[] = []
   const projectRoot = resolveProjectRoot(options.projectRoot)
   const projectMeta = options.projectMeta
     ? canonicalizeProvidedMeta(options.projectMeta, projectRoot)
-    : await detectProject(
-      projectRoot,
-      options.config,
-      warning => detectionWarnings.push(warning),
-    )
+    : await detectProject(projectRoot, options.config, (warning) => detectionWarnings.push(warning))
 
   report(options, 'collecting_files')
   const files = collectAnalysisFiles(projectRoot, projectMeta)
   if (files.length === 0) {
-    throw new AnalysisError('NO_SUPPORTED_FILES', 'No supported source files were found in the project')
+    throw new AnalysisError(
+      'NO_SUPPORTED_FILES',
+      'No supported source files were found in the project',
+    )
   }
   const sourceDigest = computeSourceDigest(projectRoot, files)
   const fingerprint = computeProjectFingerprint(projectRoot, projectMeta, options.config)
@@ -179,7 +187,10 @@ export async function analyzeProject(options: AnalyzeProjectOptions): Promise<im
       edges: [...graphWithTests.edges, ...linked.edges],
     }).graph
     if (graph.nodes.length === 0) {
-      throw new AnalysisError('NO_GRAPH_NODES', 'Supported files were found, but no architecture nodes were recognized')
+      throw new AnalysisError(
+        'NO_GRAPH_NODES',
+        'Supported files were found, but no architecture nodes were recognized',
+      )
     }
     const parseErrors = [
       ...detectionWarnings.map(serializableError),

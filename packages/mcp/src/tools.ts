@@ -35,7 +35,10 @@ export function validateDepth(args: unknown, fallback: number): DepthResult {
   } else if (typeof raw === 'string' && raw.trim() !== '') {
     value = Number(raw)
   } else {
-    return { ok: false, message: `depth must be a non-negative integer, got: ${JSON.stringify(raw)}` }
+    return {
+      ok: false,
+      message: `depth must be a non-negative integer, got: ${JSON.stringify(raw)}`,
+    }
   }
 
   if (!Number.isFinite(value) || !Number.isInteger(value)) {
@@ -92,13 +95,13 @@ export function handleGetApiRoutes(db: OmniDatabase, args: unknown): CallToolRes
   const filter = stringArg(args, 'filter')?.toLowerCase()
   const apiNodes = db.getNodesByTypes(API_NODE_TYPES)
   const filtered = filter
-    ? apiNodes.filter(node => {
+    ? apiNodes.filter((node) => {
         if (node.name.toLowerCase().includes(filter)) return true
         return getRouteDisplay(node).path.toLowerCase().includes(filter)
       })
     : apiNodes
 
-  const routes = filtered.map(node => {
+  const routes = filtered.map((node) => {
     const { method, path } = getRouteDisplay(node)
     const downstream = db.getDownstreamNodes(node.id, API_DOWNSTREAM_EDGE_TYPES)
     const callers = db.getUpstreamNodes(node.id, API_CALLER_EDGE_TYPES)
@@ -108,10 +111,10 @@ export function handleGetApiRoutes(db: OmniDatabase, args: unknown): CallToolRes
       path,
       file: node.filePath,
       line: node.line,
-      calledBy: callers.map(caller => ({ id: caller.id, name: caller.name, type: caller.type })),
+      calledBy: callers.map((caller) => ({ id: caller.id, name: caller.name, type: caller.type })),
       dbOperations: downstream
-        .filter(candidate => candidate.type === 'db_model')
-        .map(model => ({ model: model.name, file: model.filePath })),
+        .filter((candidate) => candidate.type === 'db_model')
+        .map((model) => ({ model: model.name, file: model.filePath })),
     }
   })
 
@@ -164,13 +167,13 @@ export function handleFindCallers(db: OmniDatabase, args: unknown): CallToolResu
     target: targetNode.name,
     targetType: targetNode.type,
     file: targetNode.filePath,
-    callers: callers.map(caller => ({
+    callers: callers.map((caller) => ({
       id: caller.id,
       type: caller.type,
       name: caller.name,
       file: caller.filePath,
     })),
-    affectedFrontendPages: affectedPages.map(page => ({
+    affectedFrontendPages: affectedPages.map((page) => ({
       name: page.name,
       route: getNodeRoute(page),
       file: page.filePath,
@@ -181,7 +184,7 @@ export function handleFindCallers(db: OmniDatabase, args: unknown): CallToolResu
 export function handleListDbModels(db: OmniDatabase): CallToolResult {
   const models = db.getNodesByType(DB_MODEL_NODE_TYPE)
   return success({
-    models: models.map(model => ({
+    models: models.map((model) => ({
       id: model.id,
       name: model.name,
       file: model.filePath,
@@ -198,30 +201,30 @@ export function handleGetDataFlow(db: OmniDatabase, args: unknown): CallToolResu
   const modelName = stringArg(args, 'model')
 
   if (modelName) {
-    const modelNode = graph.nodes.find(node => (
-      node.type === 'db_model' && node.name.toLowerCase() === modelName.toLowerCase()
-    ))
+    const modelNode = graph.nodes.find(
+      (node) => node.type === 'db_model' && node.name.toLowerCase() === modelName.toLowerCase(),
+    )
     if (!modelNode) {
       return success({
         error: `Model not found: ${modelName}`,
         availableModels: graph.nodes
-          .filter(node => node.type === 'db_model')
-          .map(node => node.name),
+          .filter((node) => node.type === 'db_model')
+          .map((node) => node.name),
       })
     }
 
     const path = tracer.traceModelFlow(modelNode)
     return success({
       model: modelNode.name,
-      routes: path.apiNodes.map(node => ({ name: node.name, file: node.filePath })),
-      components: path.componentNodes.map(node => ({ name: node.name, file: node.filePath })),
+      routes: path.apiNodes.map((node) => ({ name: node.name, file: node.filePath })),
+      components: path.componentNodes.map((node) => ({ name: node.name, file: node.filePath })),
       summary: `${modelNode.name} → ${path.apiNodes.length} routes → ${path.componentNodes.length} components`,
     })
   }
 
   const results = tracer.traceAllModels()
   return success({
-    models: results.map(result => ({
+    models: results.map((result) => ({
       name: result.modelName,
       routes: result.totalRoutes,
       components: result.totalComponents,

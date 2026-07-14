@@ -18,39 +18,75 @@ const dbId = createNodeId('db_model', 'prisma/schema.prisma', 'User')
 
 const nodes: OmniNode[] = [
   {
-    id: compId, type: 'component', name: 'Page', filePath: 'src/Page.tsx', line: 1, column: 0,
+    id: compId,
+    type: 'component',
+    name: 'Page',
+    filePath: 'src/Page.tsx',
+    line: 1,
+    column: 0,
     metadata: { props: [], hasState: false, isPage: true, jsxChildCount: 0 },
   },
   {
-    id: apiId, type: 'api_route', name: 'getUser', filePath: 'src/api/user.ts', line: 5, column: 0,
+    id: apiId,
+    type: 'api_route',
+    name: 'getUser',
+    filePath: 'src/api/user.ts',
+    line: 5,
+    column: 0,
     metadata: { method: 'GET', route: '/api/user', isNextApiRoute: true },
   },
   {
-    id: svcId, type: 'service', name: 'findUser', filePath: 'src/services/user.ts', line: 9, column: 0,
+    id: svcId,
+    type: 'service',
+    name: 'findUser',
+    filePath: 'src/services/user.ts',
+    line: 9,
+    column: 0,
     metadata: { className: null, methodName: 'findUser' },
   },
   {
-    id: dbId, type: 'db_model', name: 'User', filePath: 'prisma/schema.prisma', line: 2, column: 0,
+    id: dbId,
+    type: 'db_model',
+    name: 'User',
+    filePath: 'prisma/schema.prisma',
+    line: 2,
+    column: 0,
     metadata: { tableName: 'User', fieldCount: 1, fields: [] },
   },
 ]
 
 const edges: OmniEdge[] = [
   {
-    id: createEdgeId(compId, 'calls_api', apiId), source: compId, target: apiId,
-    type: 'calls_api', confidence: 'certain', metadata: { callType: 'fetch', callLine: 3 },
+    id: createEdgeId(compId, 'calls_api', apiId),
+    source: compId,
+    target: apiId,
+    type: 'calls_api',
+    confidence: 'certain',
+    metadata: { callType: 'fetch', callLine: 3 },
   },
   {
-    id: createEdgeId(apiId, 'calls_service', svcId), source: apiId, target: svcId,
-    type: 'calls_service', confidence: 'certain', metadata: { serviceName: 'findUser' },
+    id: createEdgeId(apiId, 'calls_service', svcId),
+    source: apiId,
+    target: svcId,
+    type: 'calls_service',
+    confidence: 'certain',
+    metadata: { serviceName: 'findUser' },
   },
   {
-    id: createEdgeId(apiId, 'handles', svcId), source: apiId, target: svcId,
-    type: 'handles', confidence: 'certain', metadata: { handlerName: 'findUser' },
+    id: createEdgeId(apiId, 'handles', svcId),
+    source: apiId,
+    target: svcId,
+    type: 'handles',
+    confidence: 'certain',
+    metadata: { handlerName: 'findUser' },
   },
   {
-    id: createEdgeId(svcId, 'queries_db', dbId), source: svcId, target: dbId,
-    type: 'queries_db', confidence: 'certain', metadata: { operation: 'findUnique' },
+    id: createEdgeId(svcId, 'queries_db', dbId),
+    source: svcId,
+    target: dbId,
+    type: 'queries_db',
+    confidence: 'certain',
+    metadata: { operation: 'findUnique' },
   },
 ]
 
@@ -61,19 +97,30 @@ describe('DataFlowTracer.traceFromNode', () => {
     const tracer = new DataFlowTracer(graph)
     const path = tracer.traceModelFlow(nodes[3])
 
-    expect(path.apiNodes.map(node => node.id)).toEqual([apiId])
-    expect(path.componentNodes.map(node => node.id)).toEqual([compId])
-    expect(path.edges.map(edge => edge.transferMethod)).toEqual([
-      'prisma_result', 'return_type', 'hook_data',
+    expect(path.apiNodes.map((node) => node.id)).toEqual([apiId])
+    expect(path.componentNodes.map((node) => node.id)).toEqual([compId])
+    expect(path.edges.map((edge) => edge.transferMethod)).toEqual([
+      'prisma_result',
+      'return_type',
+      'hook_data',
     ])
-    expect(tracer.pathToEdges(path)).toEqual(path.edges.map(edge => expect.objectContaining({
-      source: edge.from,
-      target: edge.to,
-      type: 'data_flows_to',
-      confidence: 'inferred',
-    })))
+    expect(tracer.pathToEdges(path)).toEqual(
+      path.edges.map((edge) =>
+        expect.objectContaining({
+          source: edge.from,
+          target: edge.to,
+          type: 'data_flows_to',
+          confidence: 'inferred',
+        }),
+      ),
+    )
     expect(tracer.traceAllModels()).toEqual([
-      expect.objectContaining({ modelId: dbId, modelName: 'User', totalRoutes: 1, totalComponents: 1 }),
+      expect.objectContaining({
+        modelId: dbId,
+        modelName: 'User',
+        totalRoutes: 1,
+        totalComponents: 1,
+      }),
     ])
   })
 
@@ -91,16 +138,21 @@ describe('DataFlowTracer.traceFromNode', () => {
   it('collects upstream + root + downstream as one ordered chain', () => {
     const result = new DataFlowTracer(graph).traceFromNode(apiId)
     // Page -> getUser -> findUser -> User
-    expect(result.steps.map(s => s.nodeId)).toEqual([compId, apiId, svcId, dbId])
-    expect(result.steps.map(s => s.index)).toEqual([1, 2, 3, 4])
+    expect(result.steps.map((s) => s.nodeId)).toEqual([compId, apiId, svcId, dbId])
+    expect(result.steps.map((s) => s.index)).toEqual([1, 2, 3, 4])
     expect(result.totalSteps).toBe(4)
   })
 
   it('assigns correct swimlanes and prev-edge types', () => {
     const result = new DataFlowTracer(graph).traceFromNode(apiId)
-    expect(result.steps.map(s => s.layer)).toEqual(['frontend', 'api', 'logic', 'data'])
+    expect(result.steps.map((s) => s.layer)).toEqual(['frontend', 'api', 'logic', 'data'])
     // first station has no prev edge; subsequent ones carry the link edge
-    expect(result.steps.map(s => s.edgeFromPrev)).toEqual([null, 'calls_api', 'calls_service', 'queries_db'])
+    expect(result.steps.map((s) => s.edgeFromPrev)).toEqual([
+      null,
+      'calls_api',
+      'calls_service',
+      'queries_db',
+    ])
   })
 
   it('every step carries a non-empty static explanation', () => {
@@ -119,7 +171,12 @@ describe('DataFlowTracer.traceFromNode', () => {
     for (let i = 0; i < N; i++) {
       const id = createNodeId('service', `src/s${i}.ts`, `fn${i}`)
       chainNodes.push({
-        id, type: 'service', name: `fn${i}`, filePath: `src/s${i}.ts`, line: 1, column: 0,
+        id,
+        type: 'service',
+        name: `fn${i}`,
+        filePath: `src/s${i}.ts`,
+        line: 1,
+        column: 0,
         metadata: { className: null, methodName: `fn${i}` },
       })
     }
@@ -127,8 +184,12 @@ describe('DataFlowTracer.traceFromNode', () => {
       const a = chainNodes[i].id
       const b = chainNodes[i + 1].id
       chainEdges.push({
-        id: createEdgeId(a, 'data_flows_to', b), source: a, target: b,
-        type: 'data_flows_to', confidence: 'certain', metadata: { typeName: 'T', transferMethod: 'return_type' },
+        id: createEdgeId(a, 'data_flows_to', b),
+        source: a,
+        target: b,
+        type: 'data_flows_to',
+        confidence: 'certain',
+        metadata: { typeName: 'T', transferMethod: 'return_type' },
       })
     }
     const longGraph: OmniGraph = { nodes: chainNodes, edges: chainEdges }
@@ -149,25 +210,77 @@ describe('DataFlowTracer.traceFromNode', () => {
     const cId = createNodeId('service', 'src/c.ts', 'C')
 
     const cycleNodes: OmniNode[] = [
-      { id: mId, type: 'db_model', name: 'M', filePath: 'prisma/schema.prisma', line: 1, column: 0,
-        metadata: { tableName: 'M', fieldCount: 0, fields: [] } },
-      { id: aId, type: 'service', name: 'A', filePath: 'src/a.ts', line: 1, column: 0,
-        metadata: { className: null, methodName: 'A' } },
-      { id: bId, type: 'service', name: 'B', filePath: 'src/b.ts', line: 1, column: 0,
-        metadata: { className: null, methodName: 'B' } },
-      { id: cId, type: 'service', name: 'C', filePath: 'src/c.ts', line: 1, column: 0,
-        metadata: { className: null, methodName: 'C' } },
+      {
+        id: mId,
+        type: 'db_model',
+        name: 'M',
+        filePath: 'prisma/schema.prisma',
+        line: 1,
+        column: 0,
+        metadata: { tableName: 'M', fieldCount: 0, fields: [] },
+      },
+      {
+        id: aId,
+        type: 'service',
+        name: 'A',
+        filePath: 'src/a.ts',
+        line: 1,
+        column: 0,
+        metadata: { className: null, methodName: 'A' },
+      },
+      {
+        id: bId,
+        type: 'service',
+        name: 'B',
+        filePath: 'src/b.ts',
+        line: 1,
+        column: 0,
+        metadata: { className: null, methodName: 'B' },
+      },
+      {
+        id: cId,
+        type: 'service',
+        name: 'C',
+        filePath: 'src/c.ts',
+        line: 1,
+        column: 0,
+        metadata: { className: null, methodName: 'C' },
+      },
     ]
     const cycleEdges: OmniEdge[] = [
-      { id: createEdgeId(aId, 'queries_db', mId), source: aId, target: mId,
-        type: 'queries_db', confidence: 'certain', metadata: { operation: 'findMany' } },
+      {
+        id: createEdgeId(aId, 'queries_db', mId),
+        source: aId,
+        target: mId,
+        type: 'queries_db',
+        confidence: 'certain',
+        metadata: { operation: 'findMany' },
+      },
       // calls_service 环:A->B->C->A(source 调用 target)
-      { id: createEdgeId(aId, 'calls_service', bId), source: aId, target: bId,
-        type: 'calls_service', confidence: 'certain', metadata: { serviceName: 'B' } },
-      { id: createEdgeId(bId, 'calls_service', cId), source: bId, target: cId,
-        type: 'calls_service', confidence: 'certain', metadata: { serviceName: 'C' } },
-      { id: createEdgeId(cId, 'calls_service', aId), source: cId, target: aId,
-        type: 'calls_service', confidence: 'certain', metadata: { serviceName: 'A' } },
+      {
+        id: createEdgeId(aId, 'calls_service', bId),
+        source: aId,
+        target: bId,
+        type: 'calls_service',
+        confidence: 'certain',
+        metadata: { serviceName: 'B' },
+      },
+      {
+        id: createEdgeId(bId, 'calls_service', cId),
+        source: bId,
+        target: cId,
+        type: 'calls_service',
+        confidence: 'certain',
+        metadata: { serviceName: 'C' },
+      },
+      {
+        id: createEdgeId(cId, 'calls_service', aId),
+        source: cId,
+        target: aId,
+        type: 'calls_service',
+        confidence: 'certain',
+        metadata: { serviceName: 'A' },
+      },
     ]
     const cycleGraph: OmniGraph = { nodes: cycleNodes, edges: cycleEdges }
     const tracer = new DataFlowTracer(cycleGraph)
