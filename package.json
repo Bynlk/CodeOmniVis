@@ -12,10 +12,12 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "test": "turbo test",
+    "test": "pnpm test:audit && turbo test",
     "lint": "turbo lint",
     "clean": "turbo clean",
     "typecheck": "turbo typecheck",
+    "audit:prod": "node scripts/auditProduction.mjs",
+    "test:audit": "node --test scripts/auditProduction.test.mjs",
     "verify:readme": "node scripts/verifyReadme.mjs",
     "verify:package": "node scripts/verifyPackedCli.mjs"
   },

@@ -33,9 +33,9 @@
     "typecheck": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
     "@codeomnivis/analyzer": "workspace:*",
-    "@codeomnivis/shared": "workspace:*"
+    "@codeomnivis/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

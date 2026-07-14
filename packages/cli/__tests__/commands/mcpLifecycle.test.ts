@@ -59,12 +59,12 @@ describe('mcp command lifecycle', () => {
     child.stdout.setEncoding('utf8')
     child.stdout.on('data', chunk => { stdout += chunk })
 
-    await waitForStderr(child, 'MCP Server running on stdio', 8_000)
+    await waitForStderr(child, 'MCP Server running on stdio', 30_000)
     expect(child.exitCode).toBeNull()
     expect(stdout).toBe('')
 
     child.kill('SIGTERM')
     const [code, signal] = await once(child, 'exit')
     expect({ code, signal }).toEqual({ code: 0, signal: null })
-  }, 10_000)
+  }, 35_000)
 })

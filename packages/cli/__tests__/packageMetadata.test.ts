@@ -22,7 +22,7 @@ describe('public CLI package metadata', () => {
 
     expect(manifest.name).toBe('@bynlk/codeomnivis')
     expect(manifest.description).toContain('TypeScript')
-    expect(manifest.engines).toEqual({ node: '>=18.0.0' })
+    expect(manifest.engines).toEqual({ node: '>=18.17.0' })
     expect(manifest.bugs).toEqual({ url: 'https://github.com/Bynlk/CodeOmniVis/issues' })
     expect(manifest.publishConfig).toEqual({
       access: 'public',
