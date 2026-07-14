@@ -32,6 +32,17 @@ node packages/cli/bin/codeomnivis.js mcp --project /absolute/path/to/your-repo
 | `get_dataflow` | `model?: string` | 模型到 API、组件的数据流摘要 |
 | `get_test_coverage` | `target?: string`, `framework?: string` | 测试 suite/case/fixture、静态覆盖边与快照身份 |
 
+以下 fenced block 由 `verifyPublicContracts.mjs` 与 `PUBLIC_TOOL_NAMES` 的实际注册值逐项校验：
+
+```codeomnivis-mcp-contract
+find_callers
+get_api_routes
+get_component_tree
+get_dataflow
+get_test_coverage
+list_db_models
+```
+
 ## 工具详情
 
 ### `get_api_routes`

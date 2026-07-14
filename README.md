@@ -67,11 +67,10 @@ Run CodeOmniVis as an **MCP server for codebase architecture**. AI clients can q
 
 ![TypeScript full-stack architecture graph connecting Next.js and React to APIs, services, Prisma, CLI, REST, and MCP](docs/assets/readme/typescript-full-stack-architecture-graph.svg)
 
-CodeOmniVis parses source code into typed nodes and relationships, resolves cross-file and cross-layer links, stores the result in a local `sql.js` database, and serves the same model through four surfaces:
+CodeOmniVis parses source code into typed nodes and relationships, resolves cross-file and cross-layer links, and transactionally stores one versioned `ProjectSnapshot` in a local `sql.js` database. The same IDs and digest are projected through three public surfaces:
 
-- the React + Cytoscape.js workbench;
-- CLI commands for analysis and consistency checks;
-- REST API and WebSocket updates;
+- CLI commands for analysis, consistency checks, and bounded test operations;
+- the React + Cytoscape.js workbench backed by REST API and WebSocket updates;
 - an MCP server for AI coding agent context.
 
 Every parser degrades to warnings instead of crashing the whole analysis. Every stored edge has existing endpoints and carries `certain` or `inferred` confidence.
@@ -165,7 +164,7 @@ npx @bynlk/codeomnivis check
 | `test-run --project <path> --runner <name> [--timeout <ms>]` | Explicitly run one enumerated test runner with shell, path, time, and output bounds |
 | `init` | Generate a starter `.codeomnivis.json` file |
 
-Binding to a non-loopback host requires a token for mutating endpoints. Local loopback usage remains the recommended default.
+Binding to a non-loopback host requires a token for every REST/WebSocket surface except health. Bearer clients may use the token directly; browsers exchange it once for a short-lived HttpOnly, SameSite=Strict session. Local loopback usage remains the recommended default.
 
 <a id="mcp"></a>
 
@@ -209,9 +208,12 @@ If no project cache exists, the MCP process performs an initial analysis and sto
 - `GET /api/tests`
 - `POST /api/analyze`
 - `GET /api/project` and `POST /api/project`
+- `POST /api/ai/chat` and `POST /api/ai/explain`
 - `ws://<host>:<port>/ws` for `graph_updated` events
 
 See the [REST API documentation](docs/api/rest-api.md). The browser UI uses the same endpoints and invalidates its graph, quality, project, and freshness queries together after an analysis update.
+
+AI routes use an OpenAI-compatible `/chat/completions` upstream only when the request supplies `config` or the server has `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL`. Without configuration they return `AI_NOT_CONFIGURED` (`501`). Destination validation, response limits, timeouts, and per-identity rate/concurrency limits apply; MCP remains the recommended AI integration for architecture queries.
 
 <a id="limitations"></a>
 
@@ -222,7 +224,7 @@ See the [REST API documentation](docs/api/rest-api.md). The browser UI uses the 
 - Kotlin, Spring, Ktor, Room, and Exposed support is experimental and has less real-project coverage than the TypeScript demo path.
 - Test `covers` edges are static source evidence, not runtime line coverage; dynamic names, reflection, custom DSL extensions, and runtime parameter rows can remain unresolved.
 - `.codeomnivis.json` is an optional override layer, but command coverage is not yet perfectly uniform.
-- The reserved `/api/ai/chat` endpoint returns `501`; the Web UI intentionally focuses on architecture exploration while AI integration lives in MCP.
+- AI proxy routes are optional and require explicit credentials; the Web UI remains focused on architecture exploration while MCP supplies the primary AI-agent context surface.
 - Very large repositories can require more than 60 seconds. The 60-second promise is a target for supported, reasonably sized projects, not a hard timeout.
 
 <a id="development"></a>

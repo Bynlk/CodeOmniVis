@@ -31,8 +31,13 @@ CodeOmniVis 在执行 `serve` 后会启动一个 HTTP 服务，默认地址是 `
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | `GET` | `/api/health` | 健康检查 |
+| `GET` | `/api/status` | 获取分析新鲜度 |
+| `GET` | `/api/project` | 获取当前绝对项目根路径 |
+| `POST` | `/api/session` | 用 access token 换取短期浏览器 session |
 | `POST` | `/api/analyze` | 触发重新分析 |
-| `POST` | `/api/ai/chat` | 预留 AI 聊天接口，当前返回 `501` |
+| `POST` | `/api/project` | 切换项目并重新分析 |
+| `POST` | `/api/ai/chat` | 调用显式配置的 OpenAI 兼容上游 |
+| `POST` | `/api/ai/explain` | 使用同一安全策略生成解释 |
 | `GET` | `/api/graph` | 获取完整图谱 |
 | `GET` | `/api/graph/nodes` | 获取所有节点，可按类型过滤 |
 | `GET` | `/api/graph/nodes/:id` | 获取单个节点 |
@@ -45,6 +50,43 @@ CodeOmniVis 在执行 `serve` 后会启动一个 HTTP 服务，默认地址是 `
 | `GET` | `/api/graph/dataflow` | 获取数据流概览或某个模型的详细路径 |
 | `GET` | `/api/tests` | 获取静态发现的测试结构与覆盖关系 |
 | `DELETE` | `/api/graph` | 清空图数据，需要确认 header |
+
+以下 fenced block 由 `verifyPublicContracts.mjs` 与实际 Express 注册表逐项校验：
+
+```codeomnivis-rest-contract
+DELETE /api/graph
+GET /api/graph
+GET /api/graph/dataflow
+GET /api/graph/edges
+GET /api/graph/errors
+GET /api/graph/issues
+GET /api/graph/nodes
+GET /api/graph/nodes/:id
+GET /api/graph/nodes/:id/edges
+GET /api/graph/stats
+GET /api/graph/trace
+GET /api/health
+GET /api/project
+GET /api/status
+GET /api/tests
+POST /api/ai/chat
+POST /api/ai/explain
+POST /api/analyze
+POST /api/project
+POST /api/session
+```
+
+## 访问控制
+
+默认绑定 `localhost`/`127.0.0.1`/`::1` 时，REST 与 WebSocket 保持零配置访问。
+
+绑定非 loopback host 时必须通过 `--token <token>` 或 `CODEOMNIVIS_TOKEN` 配置 access token，否则 CLI 拒绝启动。除 `/api/health` 外，REST 读取、写入、AI 与 WebSocket 都要求以下任一凭据：
+
+- `Authorization: Bearer <token>`；
+- 兼容 header `X-Access-Token: <token>`；
+- 由 `POST /api/session` 签发且未过期的 `codeomnivis_session` cookie。
+
+浏览器可向 `/api/session` 提交 `{ "accessToken": "..." }`。成功响应只返回 `expiresAt`，token 不会回显；cookie 使用 `HttpOnly`、`SameSite=Strict`、`Path=/`，默认 15 分钟过期，HTTPS origin 还会添加 `Secure`。未配置远程 token 返回 `403 AUTH_NOT_CONFIGURED`，凭据错误或缺失返回 `401 UNAUTHORIZED`。
 
 ## 详细说明
 
@@ -61,6 +103,27 @@ CodeOmniVis 在执行 `serve` 后会启动一个 HTTP 服务，默认地址是 `
 }
 ```
 
+### `GET /api/status`
+
+返回 `fresh`、`analyzing` 或 `stale` 状态，以及 `lastAnalyzedAt` 和 `pendingChanges`。UI 用它区分已提交快照、正在分析与待刷新状态。
+
+### `GET /api/project` 与 `POST /api/project`
+
+`GET` 返回当前绝对项目根路径。`POST` 接受 `{ "projectRoot": "..." }`，检测目标 metadata，并在成功分析后才切换活动项目；目标检测或分析失败时，旧 root、metadata、graph、diagnostics、freshness 与 watcher 保持不变。
+
+Loopback 服务允许切换到任意现有绝对目录；远程服务把目标限制在启动项目边界内。
+
+### `POST /api/session`
+
+仅用于非 loopback 浏览器。请求体 `{ "accessToken": "..." }` 成功后签发访问控制章节描述的 session cookie，并返回：
+
+```json
+{
+  "data": { "expiresAt": 1760000000000 },
+  "meta": {}
+}
+```
+
 ### `POST /api/analyze`
 
 触发一次完整重新分析。UI 顶栏的“刷新”按钮就是调用这个接口。
@@ -71,23 +134,41 @@ CodeOmniVis 在执行 `serve` 后会启动一个 HTTP 服务，默认地址是 `
 {
   "data": {
     "success": true,
-    "message": "Analysis completed",
-    "filesScanned": 123
+    "status": {
+      "state": "fresh",
+      "lastAnalyzedAt": 1760000000000,
+      "pendingChanges": 0
+    }
   },
   "meta": {}
 }
 ```
 
-### `POST /api/ai/chat`
+### `POST /api/ai/chat` 与 `POST /api/ai/explain`
 
-当前是保留接口，服务端会返回 `501`：
+两个端点使用相同的请求与安全策略。配置优先级是请求体 `config`，其次为服务端环境变量 `AI_BASE_URL`、`AI_API_KEY`、`AI_MODEL`：
 
 ```json
 {
-  "error": "AI chat not yet implemented",
-  "message": "Connect your API key in settings to enable AI features"
+  "messages": [{ "role": "user", "content": "Explain this route" }],
+  "config": {
+    "baseUrl": "https://api.openai.com/v1",
+    "apiKey": "...",
+    "model": "gpt-5-mini"
+  }
 }
 ```
+
+成功响应：
+
+```json
+{
+  "data": { "content": "..." },
+  "meta": {}
+}
+```
+
+没有任何配置时返回 `501 AI_NOT_CONFIGURED`。服务端只调用解析后的 `/chat/completions` 目标，并执行协议、DNS/IP、重定向、连接 peer、请求/响应大小、超时、按身份速率和并发限制。非 loopback CodeOmniVis 服务默认不允许 AI 上游指向 loopback 地址。
 
 ### `GET /api/graph`
 
@@ -103,7 +184,10 @@ CodeOmniVis 在执行 `serve` 后会启动一个 HTTP 服务，默认地址是 `
     "nodeCount": 0,
     "edgeCount": 0,
     "nodesByType": {},
-    "edgesByType": {}
+    "edgesByType": {},
+    "sanitize": {},
+    "snapshotId": "...",
+    "snapshotDigest": "..."
   }
 }
 ```
@@ -292,7 +376,7 @@ X-Confirm: true
 ws://localhost:4321/ws
 ```
 
-当服务端完成重新分析或监听到文件变更后，会广播：
+远程 WebSocket upgrade 使用与 REST 相同的 bearer/session 认证，并校验浏览器 `Origin`。服务端完成重新分析或监听到文件变更后，会广播：
 
 ```json
 {
@@ -305,7 +389,21 @@ ws://localhost:4321/ws
 }
 ```
 
-前端收到该事件后，会刷新图谱、统计和错误列表。
+分析状态变化还会广播：
+
+```json
+{
+  "type": "status_changed",
+  "payload": {
+    "state": "analyzing",
+    "lastAnalyzedAt": 1760000000000,
+    "pendingChanges": 0
+  },
+  "timestamp": 1760000000000
+}
+```
+
+前端收到事件后会统一刷新图谱、统计、测试、质量与 freshness 查询。
 
 ## 代码位置
 

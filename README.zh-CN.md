@@ -67,11 +67,10 @@ CodeOmniVis 把仓库变成一张供人和工具共同查询的**全栈架构图
 
 ![TypeScript 全栈架构图：连接 Next.js、React、API、服务、Prisma、CLI、REST 与 MCP](docs/assets/readme/typescript-full-stack-architecture-graph.svg)
 
-CodeOmniVis 把源码解析为带类型的节点和关系，解析跨文件与跨层连接，将结果保存到本地 `sql.js` 数据库，再通过四个入口提供同一份模型：
+CodeOmniVis 把源码解析为带类型的节点和关系，解析跨文件与跨层连接，再把一个带版本的 `ProjectSnapshot` 事务性保存到本地 `sql.js` 数据库。相同的 ID 与摘要通过三个公开入口投影：
 
-- React + Cytoscape.js 工作台；
-- 用于分析和一致性检查的 CLI；
-- REST API 与 WebSocket 更新；
+- 用于分析、一致性检查与有界测试操作的 CLI；
+- 由 REST API 与 WebSocket 驱动的 React + Cytoscape.js 工作台；
 - 面向 AI 编程助手的 MCP Server。
 
 每个 parser 都会在失败时降级为 warning，而不是让整个分析崩溃。所有写入图谱的边都具有存在的端点，并标记 `certain` 或 `inferred` 置信度。
@@ -165,7 +164,7 @@ npx @bynlk/codeomnivis check
 | `test-run --project <path> --runner <name> [--timeout <ms>]` | 显式运行一个枚举内的 test runner，并限制 shell、路径、时间与输出 |
 | `init` | 生成 `.codeomnivis.json` 起始配置 |
 
-绑定非 loopback host 时，修改类端点需要 token。推荐默认使用本机 loopback。
+绑定非 loopback host 时，除 health 外的 REST/WebSocket 入口都需要 token。Bearer 客户端可直接使用，浏览器则一次性交换为短期 HttpOnly、SameSite=Strict session。推荐默认使用本机 loopback。
 
 <a id="mcp"></a>
 
@@ -209,9 +208,12 @@ npx @bynlk/codeomnivis check
 - `GET /api/tests`
 - `POST /api/analyze`
 - `GET /api/project` 与 `POST /api/project`
+- `POST /api/ai/chat` 与 `POST /api/ai/explain`
 - `ws://<host>:<port>/ws` 的 `graph_updated` 事件
 
 详情见 [REST API 文档](docs/api/rest-api.md)。浏览器 UI 使用相同的端点，并在分析更新后一起失效 graph、quality、project 和 freshness 查询。
+
+AI 路由只会在请求显式提供 `config`，或服务端设置 `AI_BASE_URL`、`AI_API_KEY`、`AI_MODEL` 时调用 OpenAI 兼容的 `/chat/completions` 上游。未配置时返回 `AI_NOT_CONFIGURED`（`501`）；已配置请求仍受目标地址校验、响应大小、超时、按身份限流与并发限制保护。架构查询的推荐 AI 集成仍是 MCP。
 
 <a id="limitations"></a>
 
@@ -222,7 +224,7 @@ npx @bynlk/codeomnivis check
 - Kotlin、Spring、Ktor、Room 与 Exposed 属于实验性支持，真实项目覆盖少于 TypeScript Demo 主路径。
 - 测试 `covers` 边表示静态源码证据，不是运行时行覆盖率；动态名称、反射、自定义 DSL 扩展与运行时参数行仍可能无法解析。
 - `.codeomnivis.json` 是可选覆盖层，但不同命令的配置消费还没有完全统一。
-- 预留的 `/api/ai/chat` 返回 `501`；Web UI 专注架构探索，AI 集成放在 MCP。
+- AI 代理路由是可选能力并要求显式凭据；Web UI 继续专注架构探索，MCP 是 AI agent 获取架构上下文的主要入口。
 - 超大型仓库可能超过 60 秒。60 秒是支持范围内、合理规模项目的目标，而不是强制超时。
 
 <a id="development"></a>

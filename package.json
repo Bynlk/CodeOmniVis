@@ -26,7 +26,7 @@
     "test:audit": "node --test scripts/auditProduction.test.mjs",
     "verify:readme": "node scripts/verifyReadme.mjs",
     "verify:package": "node scripts/verifyPackedCli.mjs",
-    "verify:contracts": "pnpm test:contracts",
+    "verify:contracts": "node scripts/verifyPublicContracts.mjs && pnpm test:contracts",
     "quality:gate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test:coverage && node scripts/verifyChangedCoverage.mjs && pnpm test:contracts && pnpm test:e2e && pnpm audit:prod && pnpm verify:readme && pnpm verify:contracts && pnpm verify:package"
   },
   "devDependencies": {

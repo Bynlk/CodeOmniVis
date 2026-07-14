@@ -9,6 +9,7 @@ All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 #### Added
 - **跨语言测试智能**：静态发现 Vitest、Jest、Playwright、Cypress、JUnit 4/5 与 Kotest suite/case/fixture；新增 `tests`、`covers`、`uses_fixture` 图关系、Tests 工作台、`GET /api/tests`、MCP `get_test_coverage`、显式有界 `test-run` 与安全 JUnit XML `test-import`。
 - **跨入口快照契约**：混合 TypeScript/Kotlin fixture 验证 Analyzer、CLI JSON、REST 与 MCP 的 `snapshotDigest` 及测试节点/边 ID 完全一致；1000 文件完整分析纳入 60 秒性能门禁。
+- **可执行公共文档契约**：CLI、REST 与 MCP 文档中的 fenced inventory 会与实际注册表逐项比对，同时校验 workspace filters、AI 配置描述与 cal.com 实测证据；固定 cal.com revision `f00434927386c9ecdcbd7e6c5f82d22044a245bc` 完成 2,243 文件、3,223 节点、4,413 边、0 parse error 的 50.15 秒静态分析。
 - **AI 对话契约** (`@codeomnivis/shared` `types/ai.ts`): `ChatMessage` / `AiConfig` / `AiChatRequest` / `AiChatResponse` 及守卫 `isChatMessage` / `isAiConfig` / `parseAiChatRequest`,纯函数 `resolveAiConfig`(优先级 body.config > env > null)。
 - **AI 路由** (`server`): `POST /api/ai/chat` 与 `/api/ai/explain`,上游为用户自配置的 OpenAI 兼容 `/chat/completions`(不经任何内部网关);凭据优先级 body.config > 环境变量 > 501。
 - **前端 AI 配置**: `lib/aiConfig.ts`(`codeomnivis.ai.config` localStorage,`parseAiConfig` 守卫);AiPanel 配置面板。
