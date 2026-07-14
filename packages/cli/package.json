@@ -5,7 +5,7 @@
   "license": "LicenseRef-PolyForm-Noncommercial-1.0.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Bynlk/CodeOmniVis.git",
+    "url": "git+https://github.com/Bynlk/CodeOmniVis.git",
     "directory": "packages/cli"
   },
   "homepage": "https://github.com/Bynlk/CodeOmniVis#readme",
@@ -41,7 +41,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "codeomnivis": "./bin/codeomnivis.js"
+    "codeomnivis": "bin/codeomnivis.js"
   },
   "scripts": {
     "build": "tsup",

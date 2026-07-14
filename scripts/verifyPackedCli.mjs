@@ -89,7 +89,12 @@ let tarballPath
 let serverProcess
 
 try {
-  run('pnpm', ['build'], repoRoot)
+  await Promise.all([
+    rm(resolve(cliRoot, 'dist'), { recursive: true, force: true }),
+    rm(resolve(repoRoot, 'packages/ui/dist'), { recursive: true, force: true }),
+    rm(resolve(repoRoot, 'packages/analyzer/dist'), { recursive: true, force: true }),
+  ])
+  run('pnpm', ['exec', 'turbo', 'build', '--force'], repoRoot)
 
   const packOutput = run('npm', ['pack', '--json', `--registry=${OFFICIAL_REGISTRY}`], cliRoot)
   const [packResult] = JSON.parse(packOutput)
