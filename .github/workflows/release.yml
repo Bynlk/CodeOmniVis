@@ -28,7 +28,7 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm quality:gate
       - name: Use npm with trusted publishing support
-        run: npm install --global npm@latest
+        run: npm install --global npm@11.18.0
       - name: Publish with provenance
         working-directory: packages/cli
         run: npm publish --provenance --access public --registry=https://registry.npmjs.org
