@@ -30,6 +30,8 @@ pnpm-debug.log*
 
 # Test coverage
 coverage/
+playwright-report/
+test-results/
 
 # Next.js
 .next/

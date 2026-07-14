@@ -15,7 +15,7 @@ interface WorkbenchShellProps {
 export function WorkbenchShell({ commandBar, viewRail, explorer, main, inspector, statusBar, mobileExplorerOpen = false, onCloseMobileExplorer }: WorkbenchShellProps) {
   const { t } = useTranslation()
   return (
-    <div className="grid h-screen min-h-0 grid-rows-[48px_minmax(0,1fr)_24px] overflow-hidden bg-[#090b0f] text-content">
+    <div data-testid="workbench" className="grid h-screen min-h-0 grid-rows-[48px_minmax(0,1fr)_24px] overflow-hidden bg-[#090b0f] text-content">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-modal focus:rounded-md focus:bg-primary-600 focus:px-3 focus:py-2 focus:text-xs focus:font-medium focus:text-white"

@@ -76,6 +76,7 @@ export default function Header({ query, onQueryChange, onOpenSettings }: HeaderP
             <WorkbenchIcon name="search" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-content-muted" />
             <input
               ref={inputRef}
+              data-testid="search-input"
               type="text"
               value={query || ''}
               onChange={(e) => onQueryChange(e.target.value)}

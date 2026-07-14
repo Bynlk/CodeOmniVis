@@ -26,7 +26,7 @@ export function CanvasErrorState({ view, error }: CanvasErrorStateProps) {
   const { t } = useTranslation()
   const copy = ERROR_COPY[view]
   return (
-    <div className="m-5 border-l-2 border-rose-400 bg-rose-500/5 px-4 py-3 text-xs text-rose-200" role="alert">
+    <div data-testid="canvas-error" className="m-5 border-l-2 border-rose-400 bg-rose-500/5 px-4 py-3 text-xs text-rose-200" role="alert">
       <p className="font-medium">{t(copy.key, copy.value)}</p>
       <p className="mt-1 break-all font-mono text-[10px] text-rose-300/80">{error.message}</p>
     </div>

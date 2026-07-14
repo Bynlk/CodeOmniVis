@@ -211,6 +211,7 @@ export default function GraphCanvas({ graph, selectedNode, onNodeSelect, onNodeF
     <>
       <div
         ref={containerRef}
+        data-testid="graph-canvas"
         className="h-full w-full bg-[#090b0f]"
         aria-label={t('graph.canvasLabel')}
         role="application"

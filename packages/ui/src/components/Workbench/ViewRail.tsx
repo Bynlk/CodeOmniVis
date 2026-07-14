@@ -29,6 +29,7 @@ export function ViewRail({ activeView, onViewChange, issueCount = 0 }: ViewRailP
           return (
             <button
               key={view.id}
+              data-testid={`view-${view.id}`}
               type="button"
               aria-label={label}
               title={label}
