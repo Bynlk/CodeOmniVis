@@ -114,6 +114,16 @@ export type {
   CodeOmniVisConfig,
 } from './types/config'
 
+export type {
+  AnalysisStats,
+  AnalyzeProjectResult,
+  ParseErrorSeverity,
+  ProjectSnapshot,
+  RejectedEdge,
+  SerializableParseError,
+  WriteReport,
+} from './types/snapshot'
+
 // AI 请求/响应契约导出
 export type {
   ChatRole,
