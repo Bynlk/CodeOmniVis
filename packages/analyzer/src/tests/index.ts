@@ -1,3 +1,5 @@
 export { createDefaultTestAdapters } from './createDefaultTestAdapters'
 export { discoverTests } from './registry'
+export { buildProductionIndex } from './productionIndex'
+export { linkTestsToProduction } from './testLinker'
 export type { TestAdapter, TestDiscoveryContext } from './types'

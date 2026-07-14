@@ -5,6 +5,7 @@ import type {
   ProjectSnapshot,
   ProjectMeta,
   SerializableParseError,
+  ParseError,
 } from '@codeomnivis/shared'
 import { computeSnapshotDigest } from '@codeomnivis/shared/node'
 import { CrossLayerLinker } from '../resolver/crossLayer'
@@ -22,6 +23,7 @@ import { GraphBuilder } from './builder'
 import { sanitizeGraph } from '@codeomnivis/shared'
 import { detectAnalysisIssues } from './analysisIssues'
 import { createAnalysisStats } from './analysisStats'
+import { createDefaultTestAdapters, discoverTests, linkTestsToProduction } from '../tests'
 
 export type { AnalysisStore } from '../storage/db'
 
@@ -95,7 +97,7 @@ function report(options: AnalyzeProjectOptions, phase: AnalysisProgressPhase, fi
   options.onProgress?.({ phase, ...(filesScanned === undefined ? {} : { filesScanned }) })
 }
 
-function serializableError(error: DbError | ProjectDetectionWarning): SerializableParseError {
+function serializableError(error: DbError | ProjectDetectionWarning | ParseError): SerializableParseError {
   return {
     file: error.file,
     message: error.message,
@@ -141,13 +143,40 @@ export async function analyzeProject(options: AnalyzeProjectOptions): Promise<im
     })
 
     report(options, 'linking_graph', files.length)
+    const testNodes = new Map<string, ProjectSnapshot['graph']['nodes'][number]>()
+    const testEdges = new Map<string, ProjectSnapshot['graph']['edges'][number]>()
+    const testErrors: import('@codeomnivis/shared').ParseError[] = []
+    const testContext = {
+      projectRoot,
+      projectMeta,
+      tsConfig: null,
+      pathAliases: {},
+      knownProductionNodes: buildResult.graph.nodes,
+    }
+    const adapters = createDefaultTestAdapters()
+    for (const file of files) {
+      const discovered = await discoverTests(file, testContext, adapters)
+      for (const node of discovered.nodes) testNodes.set(node.id, node)
+      for (const edge of discovered.edges) testEdges.set(edge.id, edge)
+      testErrors.push(...discovered.errors)
+    }
+    const testGraph = linkTestsToProduction(
+      { nodes: [...testNodes.values()], edges: [...testEdges.values()], errors: testErrors },
+      buildResult.graph.nodes,
+      projectRoot,
+    )
+    const graphWithTests = {
+      nodes: [...buildResult.graph.nodes, ...testGraph.nodes],
+      edges: [...buildResult.graph.edges, ...testGraph.edges],
+    }
+
     const linker = new CrossLayerLinker(projectMeta.tsConfigPath ?? undefined, projectRoot)
-    const linked = await linker.link(buildResult.graph)
+    const linked = await linker.link(graphWithTests)
 
     report(options, 'validating_graph', files.length)
     const graph = sanitizeGraph({
-      nodes: buildResult.graph.nodes,
-      edges: [...buildResult.graph.edges, ...linked.edges],
+      nodes: graphWithTests.nodes,
+      edges: [...graphWithTests.edges, ...linked.edges],
     }).graph
     if (graph.nodes.length === 0) {
       throw new AnalysisError('NO_GRAPH_NODES', 'Supported files were found, but no architecture nodes were recognized')
@@ -155,6 +184,7 @@ export async function analyzeProject(options: AnalyzeProjectOptions): Promise<im
     const parseErrors = [
       ...detectionWarnings.map(serializableError),
       ...scratch.getAllErrors().map(serializableError),
+      ...testErrors.map(serializableError),
     ]
 
     report(options, 'detecting_issues', files.length)
