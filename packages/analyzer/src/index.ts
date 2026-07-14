@@ -47,6 +47,9 @@ export {
 } from './project'
 export type { ProjectDetectionWarning } from './project'
 
+export { createDefaultTestAdapters, discoverTests } from './tests'
+export type { TestAdapter, TestDiscoveryContext } from './tests'
+
 // Resolver
 export { PathAliasResolver } from './resolver/pathAlias'
 export type { PathAliasConfig } from './resolver/pathAlias'

@@ -87,6 +87,11 @@ function collectCandidateDirectories(projectRoot: string, projectMeta: ProjectMe
     'services',
     'server',
     'api',
+    'test',
+    'tests',
+    '__tests__',
+    'e2e',
+    'cypress/e2e',
     ...projectMeta.frontendDirs,
     ...projectMeta.backendDirs,
     ...projectMeta.tsrpcApiDirs,
@@ -104,7 +109,10 @@ function collectCandidateDirectories(projectRoot: string, projectMeta: ProjectMe
       continue
     }
     if (!isWithinRoot(realProjectRoot, realPackageRoot)) continue
-    for (const child of ['src', 'app', 'pages', 'components', 'server', 'api', 'prisma']) {
+    for (const child of [
+      'src', 'app', 'pages', 'components', 'server', 'api', 'prisma',
+      'test', 'tests', '__tests__', 'e2e', 'cypress/e2e',
+    ]) {
       candidates.add(path.join(packageRoot, child))
     }
   }

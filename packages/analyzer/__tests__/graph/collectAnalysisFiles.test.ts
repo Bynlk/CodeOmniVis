@@ -81,4 +81,18 @@ describe('collectAnalysisFiles', () => {
 
     expect(collectAnalysisFiles(root, meta)).toEqual([])
   })
+
+  it('collects root tests and Gradle src/test files once', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-analysis-tests-'))
+    cleanupPaths.push(root)
+    fs.mkdirSync(path.join(root, 'tests'), { recursive: true })
+    fs.mkdirSync(path.join(root, 'src', 'test', 'kotlin'), { recursive: true })
+    fs.writeFileSync(path.join(root, 'tests', 'unit.test.ts'), 'test("unit", () => {})')
+    fs.writeFileSync(path.join(root, 'src', 'test', 'kotlin', 'UnitTest.kt'), 'class UnitTest')
+
+    expect(collectAnalysisFiles(root, makeMeta(root))).toEqual([
+      'src/test/kotlin/UnitTest.kt',
+      'tests/unit.test.ts',
+    ])
+  })
 })
