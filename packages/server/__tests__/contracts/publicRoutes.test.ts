@@ -25,6 +25,7 @@ const PUBLIC_ROUTES: RouteCase[] = [
   { method: 'get', path: '/api/graph/issues' },
   { method: 'get', path: '/api/graph/trace' },
   { method: 'get', path: '/api/graph/dataflow' },
+  { method: 'get', path: '/api/tests' },
   { method: 'delete', path: '/api/graph', headers: { 'X-Confirm': 'true' } },
   { method: 'post', path: '/api/analyze' },
   { method: 'post', path: '/api/project' },

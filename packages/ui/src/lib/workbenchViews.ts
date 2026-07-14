@@ -1,5 +1,6 @@
 import type { EdgeType, NodeType, OmniEdge, OmniGraph, OmniNode } from '@codeomnivis/shared'
 import type { WorkbenchGraphOptions } from '../types/workbench'
+import { selectTestGraph } from './testView'
 
 const REQUEST_EDGES = new Set<EdgeType>([
   'renders', 'navigates_to', 'calls_api', 'handles', 'calls_service', 'queries_db',
@@ -118,6 +119,7 @@ export function deriveWorkbenchGraph(graph: OmniGraph, options: WorkbenchGraphOp
 
   if (options.view === 'requests') return graphFromEdges(graph, REQUEST_EDGES)
   if (options.view === 'data') return graphFromEdges(graph, DATA_EDGES)
+  if (options.view === 'tests') return selectTestGraph(graph, options.focusNodeId)
 
   if (options.view === 'architecture' && options.depth === 'overview') {
     return architectureOverview(graph)

@@ -11,6 +11,7 @@ import {
   handleGetDataFlow,
   handleListDbModels,
 } from './tools'
+import { handleGetTestCoverage } from './tools/getTestCoverage'
 
 export const MCP_TOOL_NAMES = {
   getApiRoutes: 'get_api_routes',
@@ -18,6 +19,7 @@ export const MCP_TOOL_NAMES = {
   findCallers: 'find_callers',
   listDbModels: 'list_db_models',
   getDataflow: 'get_dataflow',
+  getTestCoverage: 'get_test_coverage',
 } as const
 
 export const PUBLIC_TOOL_NAMES = Object.freeze(Object.values(MCP_TOOL_NAMES))
@@ -74,6 +76,17 @@ const TOOL_DEFINITIONS = [
       },
     },
   },
+  {
+    name: MCP_TOOL_NAMES.getTestCoverage,
+    description: 'Get discovered test suites, cases, fixtures and static production coverage',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        target: { type: 'string', description: 'Optional production target filter' },
+        framework: { type: 'string', description: 'Optional test framework filter' },
+      },
+    },
+  },
 ]
 
 export interface McpServerOptions {
@@ -118,6 +131,9 @@ export function executeMcpTool(db: OmniDatabase, name: string, args: unknown): C
       break
     case MCP_TOOL_NAMES.getDataflow:
       result = handleGetDataFlow(db, args)
+      break
+    case MCP_TOOL_NAMES.getTestCoverage:
+      result = handleGetTestCoverage(db, args)
       break
     default:
       result = errorResponse(`Unknown tool: ${name}`)

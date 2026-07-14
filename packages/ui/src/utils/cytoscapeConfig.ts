@@ -38,6 +38,9 @@ const EDGE_TYPE_EXTRAS: Partial<Record<EdgeType, cytoscape.Css.Edge>> = {
   contains:          { 'line-style': 'dotted' },
   data_flows_to:     { 'width': 2 },
   imports:           { 'opacity': 0.3 },
+  tests:             { 'line-style': 'dotted' },
+  covers:            { 'width': 2 },
+  uses_fixture:      { 'line-style': 'dashed' },
 }
 
 export function getCytoscapeStyle(): cytoscape.StylesheetJson {

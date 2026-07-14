@@ -14,6 +14,7 @@ const ERROR_COPY: Record<Exclude<WorkbenchView, 'quality'>, { key: string; value
     key: 'workbench.error.data',
     value: 'Unable to load the data model',
   },
+  tests: { key: 'workbench.error.tests', value: 'Unable to load the test view' },
 }
 
 interface CanvasErrorStateProps {

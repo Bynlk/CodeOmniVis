@@ -17,6 +17,8 @@ import { isJsonObject } from '@codeomnivis/shared'
 import { OmniDatabase } from '@codeomnivis/analyzer'
 import { createGraphRouter } from './routes/graph'
 export { createGraphRouter } from './routes/graph'
+import { createTestsRouter } from './routes/tests'
+export { createTestsRouter } from './routes/tests'
 import { codeomnivisEvents, EVENTS } from './events'
 import { IncrementalAnalyzer } from './incremental'
 import { registerAiRoutes } from './ai'
@@ -142,6 +144,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
   // API 路由
   const graphRouter = createGraphRouter(db, undefined, () => app.locals.projectRoot as string)
   app.use('/api/graph', accessGuard, graphRouter)
+  app.use('/api/tests', accessGuard, createTestsRouter(db))
 
   // 健康检查
   app.get('/api/health', (_req, res) => {

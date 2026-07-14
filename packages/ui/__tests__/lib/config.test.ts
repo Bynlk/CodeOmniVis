@@ -12,6 +12,7 @@ const ALL_NODE_TYPES: NodeType[] = [
   'tsrpc_service', 'tsrpc_api', 'tsrpc_msg',
   'express_route', 'handler', 'service', 'db_model', 'module',
   'kotlin_class', 'kotlin_interface', 'kotlin_object', 'kotlin_function', 'kotlin_route',
+  'test_suite', 'test_case', 'test_fixture',
 ]
 
 const ALL_EDGE_TYPES: EdgeType[] = [
@@ -19,6 +20,7 @@ const ALL_EDGE_TYPES: EdgeType[] = [
   'calls_service', 'queries_db', 'db_relation', 'imports', 'contains',
   'kotlin_inherits', 'kotlin_implements', 'kotlin_uses', 'data_flows_to',
   'sends_msg', 'listens_msg',
+  'tests', 'covers', 'uses_fixture',
 ]
 
 describe('NODE_EMOJI', () => {

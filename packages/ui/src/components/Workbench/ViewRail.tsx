@@ -7,6 +7,7 @@ const VIEWS: Array<{ id: WorkbenchView; labelKey: string; defaultLabel: string; 
   { id: 'architecture', labelKey: 'workbench.view.architecture', defaultLabel: 'Architecture', icon: 'architecture' },
   { id: 'requests', labelKey: 'workbench.view.requests', defaultLabel: 'Requests', icon: 'requests' },
   { id: 'data', labelKey: 'workbench.view.data', defaultLabel: 'Data model', icon: 'data' },
+  { id: 'tests', labelKey: 'workbench.view.tests', defaultLabel: 'Tests', icon: 'tests' },
   { id: 'quality', labelKey: 'workbench.view.quality', defaultLabel: 'Quality', icon: 'quality' },
 ]
 

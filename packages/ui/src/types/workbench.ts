@@ -1,4 +1,4 @@
-export type WorkbenchView = 'architecture' | 'requests' | 'data' | 'quality'
+export type WorkbenchView = 'architecture' | 'requests' | 'data' | 'tests' | 'quality'
 
 export type ArchitectureDepth = 'overview' | 'full' | 'focus'
 

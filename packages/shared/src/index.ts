@@ -18,6 +18,7 @@ export type {
   TestsMetadata,
   UsesFixtureMetadata,
 } from './types/test'
+export { isTestFramework } from './types/test'
 
 // 类型导出
 export type {

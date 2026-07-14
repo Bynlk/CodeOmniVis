@@ -16,6 +16,8 @@ import { StatusBar } from './components/Workbench/StatusBar'
 import { CanvasEmptyState } from './components/Workbench/CanvasEmptyState'
 import { CanvasErrorState } from './components/Workbench/CanvasErrorState'
 import { QualityExplorer } from './components/Workbench/QualityExplorer'
+import { TestExplorer } from './components/Workbench/TestExplorer'
+import { TestCanvas } from './components/Workbench/TestCanvas'
 import { CytoscapeContext } from './lib/cytoscapeContext'
 import { SelectionContext } from './lib/selectionContext'
 import { useGraph } from './hooks/useGraph'
@@ -112,9 +114,9 @@ function App() {
         event.preventDefault()
         toggleCommandPalette()
       }
-      if ((event.metaKey || event.ctrlKey) && ['1', '2', '3', '4'].includes(event.key)) {
+      if ((event.metaKey || event.ctrlKey) && ['1', '2', '3', '4', '5'].includes(event.key)) {
         event.preventDefault()
-        const views: WorkbenchView[] = ['architecture', 'requests', 'data', 'quality']
+        const views: WorkbenchView[] = ['architecture', 'requests', 'data', 'tests', 'quality']
         setActiveView(views[Number(event.key) - 1])
       }
     }
@@ -164,7 +166,9 @@ function App() {
         ) : error ? (
           <CanvasErrorState view={activeView} error={error} />
         ) : visibleGraph && visibleGraph.nodes.length > 0 ? (
-          <GraphCanvas graph={visibleGraph} selectedNode={selectedNodeId} onNodeSelect={handleCanvasNodeSelect} onNodeFocus={handleNodeFocus} onCyInit={handleCyInit} />
+          activeView === 'tests'
+            ? <TestCanvas graph={visibleGraph}><GraphCanvas graph={visibleGraph} selectedNode={selectedNodeId} onNodeSelect={handleCanvasNodeSelect} onNodeFocus={handleNodeFocus} onCyInit={handleCyInit} /></TestCanvas>
+            : <GraphCanvas graph={visibleGraph} selectedNode={selectedNodeId} onNodeSelect={handleCanvasNodeSelect} onNodeFocus={handleNodeFocus} onCyInit={handleCyInit} />
         ) : (
           <CanvasEmptyState view={activeView} hasSearchQuery={Boolean(searchQuery.trim())} isAnalyzed={isAnalyzed} />
         )}
@@ -189,7 +193,9 @@ function App() {
                   parserError={errorsError}
                   issuesError={issuesError}
                 />
-              : <ExplorerPanel graph={visibleGraph} view={activeView} isAnalyzed={isAnalyzed} selectedNodeId={selectedNodeId} onNodeSelect={handleExplorerNodeSelect} />}
+              : activeView === 'tests'
+                ? <TestExplorer graph={graph} selectedNodeId={selectedNodeId} onNodeSelect={handleExplorerNodeSelect} />
+                : <ExplorerPanel graph={visibleGraph} view={activeView} isAnalyzed={isAnalyzed} selectedNodeId={selectedNodeId} onNodeSelect={handleExplorerNodeSelect} />}
             main={canvas}
             inspector={selectedNode ? <NodeDetailPanel node={selectedNode} projectRoot={project?.projectRoot} inEdges={inEdges} outEdges={outEdges} onClose={() => handleCanvasNodeSelect(null)} onNodeSelect={selectNode} /> : undefined}
             statusBar={<StatusBar status={status} nodeCount={graph?.nodes.length ?? 0} edgeCount={graph?.edges.length ?? 0} />}

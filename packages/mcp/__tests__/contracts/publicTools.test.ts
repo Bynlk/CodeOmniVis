@@ -8,5 +8,6 @@ it('keeps every existing MCP tool name', () => {
     'get_component_tree',
     'get_dataflow',
     'list_db_models',
+    'get_test_coverage',
   ]))
 })

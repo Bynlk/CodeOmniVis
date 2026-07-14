@@ -20,6 +20,7 @@ const EMPTY_COPY: Record<Exclude<WorkbenchView, 'quality'>, { titleKey: string; 
     descriptionKey: 'workbench.empty.data.description',
     description: 'This project has no parsed Prisma, TypeORM, or query relationships in the current analysis.',
   },
+  tests: { titleKey: 'workbench.empty.tests.title', title: 'No tests discovered', descriptionKey: 'workbench.empty.tests.description', description: 'Add supported TypeScript or Kotlin tests and run analysis again.' },
 }
 
 interface CanvasEmptyStateProps {

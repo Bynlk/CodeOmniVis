@@ -7,6 +7,7 @@ const VIEW_COPY: Record<WorkbenchView, { titleKey: string; title: string; descri
   architecture: { titleKey: 'workbench.view.architecture', title: 'Architecture', descriptionKey: 'workbench.description.architecture', description: 'Explore system boundaries and implementation layers' },
   requests: { titleKey: 'workbench.view.requestFlow', title: 'Request flow', descriptionKey: 'workbench.description.requests', description: 'Follow runtime paths from interface to persistence' },
   data: { titleKey: 'workbench.view.data', title: 'Data model', descriptionKey: 'workbench.description.data', description: 'Inspect queries, ownership, and schema relations' },
+  tests: { titleKey: 'workbench.view.tests', title: 'Tests', descriptionKey: 'workbench.description.tests', description: 'Explore suites, fixtures, and static production coverage' },
   quality: { titleKey: 'workbench.view.quality', title: 'Quality', descriptionKey: 'workbench.description.quality', description: 'Review parser output and deterministic project risks' },
 }
 

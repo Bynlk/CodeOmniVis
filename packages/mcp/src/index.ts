@@ -4,6 +4,7 @@ import { startMcpServer, type McpStdioHandle } from './stdio'
 export * from './server'
 export * from './stdio'
 export * from './tools'
+export * from './tools/getTestCoverage'
 
 function isMainModule(): boolean {
   const entry = process.argv[1]

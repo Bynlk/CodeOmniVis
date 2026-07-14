@@ -9,6 +9,7 @@ const VIEW_META: Record<WorkbenchView, { titleKey: string; title: string; descri
   architecture: { titleKey: 'workbench.view.architecture', title: 'Architecture', descriptionKey: 'workbench.description.architectureShort', description: 'System shape and ownership' },
   requests: { titleKey: 'workbench.view.requestFlow', title: 'Request flow', descriptionKey: 'workbench.description.requestsShort', description: 'UI to API to data' },
   data: { titleKey: 'workbench.view.data', title: 'Data model', descriptionKey: 'workbench.description.dataShort', description: 'Queries and schema relations' },
+  tests: { titleKey: 'workbench.view.tests', title: 'Tests', descriptionKey: 'workbench.description.testsShort', description: 'Suites and production coverage' },
   quality: { titleKey: 'workbench.view.quality', title: 'Quality', descriptionKey: 'workbench.description.qualityShort', description: 'Parser findings and risks' },
 }
 
@@ -16,6 +17,7 @@ const EMPTY_COPY: Record<Exclude<WorkbenchView, 'quality'>, { key: string; value
   architecture: { key: 'workbench.empty.architecture.explorer', value: 'No architecture nodes detected. Open Full graph or run analysis again.' },
   requests: { key: 'workbench.empty.requests.explorer', value: 'No request nodes detected in the latest analysis.' },
   data: { key: 'workbench.empty.data.explorer', value: 'No data nodes detected in the latest analysis.' },
+  tests: { key: 'workbench.empty.tests.explorer', value: 'No test nodes detected in the latest analysis.' },
 }
 
 interface ExplorerPanelProps {
