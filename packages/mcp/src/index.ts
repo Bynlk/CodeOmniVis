@@ -21,6 +21,9 @@ import { getDbPath, hasDbCache } from '@codeomnivis/shared/node'
 import type { NodeType, EdgeType, OmniNode } from '@codeomnivis/shared'
 import { isNodeOfType, isJsonObject } from '@codeomnivis/shared'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import { MCP_TOOL_NAMES } from './server'
+
+export { MCP_TOOL_NAMES, PUBLIC_TOOL_NAMES } from './server'
 
 const API_NODE_TYPES: NodeType[] = ['api_route', 'trpc_procedure', 'express_route', 'tsrpc_api', 'tsrpc_service']
 const API_DOWNSTREAM_EDGE_TYPES: EdgeType[] = ['handles', 'calls_service', 'queries_db']
@@ -175,7 +178,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
-        name: 'get_api_routes',
+        name: MCP_TOOL_NAMES.getApiRoutes,
         description: 'Get all API routes, tRPC procedures, and Express routes with their downstream dependencies (DB operations)',
         inputSchema: {
           type: 'object',
@@ -188,7 +191,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
-        name: 'get_component_tree',
+        name: MCP_TOOL_NAMES.getComponentTree,
         description: 'Get the component tree structure starting from a root path or route',
         inputSchema: {
           type: 'object',
@@ -206,7 +209,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
-        name: 'find_callers',
+        name: MCP_TOOL_NAMES.findCallers,
         description: 'Find all callers and affected frontend pages for a specific node (by name, route, or file path)',
         inputSchema: {
           type: 'object',
@@ -220,7 +223,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
-        name: 'list_db_models',
+        name: MCP_TOOL_NAMES.listDbModels,
         description: 'List all database models (Prisma/TypeORM/Drizzle) in the project',
         inputSchema: {
           type: 'object',
@@ -228,7 +231,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
-        name: 'get_dataflow',
+        name: MCP_TOOL_NAMES.getDataflow,
         description: 'Trace data flow from a database model through API to frontend components',
         inputSchema: {
           type: 'object',
@@ -255,15 +258,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const db = await getDb()
 
     switch (name) {
-      case 'get_api_routes':
+      case MCP_TOOL_NAMES.getApiRoutes:
         return handleGetApiRoutes(db, args)
-      case 'get_component_tree':
+      case MCP_TOOL_NAMES.getComponentTree:
         return handleGetComponentTree(db, args)
-      case 'find_callers':
+      case MCP_TOOL_NAMES.findCallers:
         return handleFindCallers(db, args)
-      case 'list_db_models':
+      case MCP_TOOL_NAMES.listDbModels:
         return handleListDbModels(db)
-      case 'get_dataflow':
+      case MCP_TOOL_NAMES.getDataflow:
         return handleGetDataFlow(db, args)
       default:
         return errorResponse(`Unknown tool: ${name}`)

@@ -5,30 +5,9 @@
  * 支持命令：serve, analyze, check, mcp, init
  */
 
-import { Command } from 'commander'
-import { serveCommand } from './commands/serve'
-import { analyzeCommand } from './commands/analyze'
-import { checkCommand } from './commands/check'
-import { mcpCommand } from './commands/mcp'
-import { initCommand } from './commands/init'
+import { createCliProgram } from './program'
 
-// ============================================================
-// CLI 程序
-// ============================================================
-
-const program = new Command()
-
-program
-  .name('codeomnivis')
-  .description('Full-stack architecture visualizer for TypeScript projects')
-  .version('0.0.1')
-
-// 注册命令
-serveCommand(program)
-analyzeCommand(program)
-checkCommand(program)
-mcpCommand(program)
-initCommand(program)
-
-// 解析命令行参数
-program.parse()
+void createCliProgram().parseAsync().catch((err: unknown) => {
+  console.error(err instanceof Error ? err.message : String(err))
+  process.exitCode = 1
+})
