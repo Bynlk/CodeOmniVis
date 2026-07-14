@@ -431,6 +431,9 @@ const EDGE_VERB: Record<EdgeType, string> = {
   kotlin_inherits: '继承',
   kotlin_implements: '实现',
   kotlin_uses: '依赖',
+  tests: '包含测试',
+  covers: '覆盖',
+  uses_fixture: '使用夹具',
 }
 
 function nodeRoleText(node: OmniNode): string {
@@ -469,6 +472,12 @@ function nodeRoleText(node: OmniNode): string {
       return `Kotlin 函数 ${node.name}`
     case 'kotlin_route':
       return `Kotlin 路由 ${node.metadata.method} ${node.metadata.path}`
+    case 'test_suite':
+      return `测试套件 ${node.name}`
+    case 'test_case':
+      return `测试用例 ${node.name}`
+    case 'test_fixture':
+      return `测试夹具 ${node.name}`
   }
 }
 

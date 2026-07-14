@@ -9,6 +9,16 @@
 export type { JsonPrimitive, JsonValue, JsonObject } from './types/json'
 export { isJsonObject, jsonObjectOrEmpty, readDependencies } from './types/json'
 
+export type {
+  CoversMetadata,
+  TestCaseMetadata,
+  TestFixtureMetadata,
+  TestFramework,
+  TestSuiteMetadata,
+  TestsMetadata,
+  UsesFixtureMetadata,
+} from './types/test'
+
 // 类型导出
 export type {
   NodeType,

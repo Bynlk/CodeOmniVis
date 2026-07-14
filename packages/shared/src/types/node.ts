@@ -6,6 +6,7 @@
  */
 
 import type { JsonObject } from './json'
+import type { TestCaseMetadata, TestFixtureMetadata, TestSuiteMetadata } from './test'
 
 // ============================================================
 // 节点类型枚举
@@ -29,6 +30,9 @@ export type NodeType =
   | 'kotlin_object'   // Kotlin object 声明（含 companion object）
   | 'kotlin_function' // Kotlin 顶级函数 / 扩展函数
   | 'kotlin_route'    // Kotlin 路由端点（Spring @RequestMapping / Ktor routing）
+  | 'test_suite'
+  | 'test_case'
+  | 'test_fixture'
 
 const NODE_TYPES: NodeType[] = [
   'page',
@@ -48,6 +52,9 @@ const NODE_TYPES: NodeType[] = [
   'kotlin_object',
   'kotlin_function',
   'kotlin_route',
+  'test_suite',
+  'test_case',
+  'test_fixture',
 ]
 const NODE_TYPE_SET = new Set<string>(NODE_TYPES)
 
@@ -272,6 +279,9 @@ export type NodeTypeMetadataMap = {
   kotlin_object: KotlinObjectMetadata
   kotlin_function: KotlinFunctionMetadata
   kotlin_route: KotlinRouteMetadata
+  test_suite: TestSuiteMetadata
+  test_case: TestCaseMetadata
+  test_fixture: TestFixtureMetadata
 }
 
 // ============================================================

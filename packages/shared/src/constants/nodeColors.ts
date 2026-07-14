@@ -25,6 +25,9 @@ export const NODE_COLORS: Record<NodeType, string> = {
   kotlin_object:    '#f97316',  // 橙色 - Kotlin Object
   kotlin_function:  '#22c55e',  // 绿色 - Kotlin Function
   kotlin_route:     '#eab308',  // 黄色 - Kotlin Route
+  test_suite:       '#64748b',
+  test_case:        '#22c55e',
+  test_fixture:     '#f59e0b',
 }
 
 /** 节点类型 → 半透明颜色（用于边） */
@@ -46,6 +49,9 @@ export const NODE_COLORS_ALPHA: Record<NodeType, string> = {
   kotlin_object:    '#f9731640',
   kotlin_function:  '#22c55e40',
   kotlin_route:     '#eab30840',
+  test_suite:       '#64748b40',
+  test_case:        '#22c55e40',
+  test_fixture:     '#f59e0b40',
 }
 
 /** 节点类型 → 图标（emoji，用于 CLI 输出） */
@@ -67,4 +73,7 @@ export const NODE_ICONS: Record<NodeType, string> = {
   kotlin_object:    '🟠',
   kotlin_function:  '🟢',
   kotlin_route:     '🟡',
+  test_suite:       '🧪',
+  test_case:        '✅',
+  test_fixture:     '🔩',
 }

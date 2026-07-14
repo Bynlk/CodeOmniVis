@@ -77,6 +77,9 @@ export function traceLayerForNodeType(type: NodeType): TraceLayer {
     case 'kotlin_interface':
     case 'kotlin_object':
     case 'kotlin_function':
+    case 'test_suite':
+    case 'test_case':
+    case 'test_fixture':
       return 'other'
   }
 }

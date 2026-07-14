@@ -21,6 +21,9 @@ export const NODE_EMOJI: Record<NodeType, string> = {
   kotlin_object:    '🟠',
   kotlin_function:  '🟢',
   kotlin_route:     '🟡',
+  test_suite:       '🧪',
+  test_case:        '✅',
+  test_fixture:     '🔩',
 }
 
 export const NODE_TYPE_LIST: NodeType[] = [
@@ -41,4 +44,7 @@ export const NODE_TYPE_LIST: NodeType[] = [
   'kotlin_object',
   'kotlin_function',
   'kotlin_route',
+  'test_suite',
+  'test_case',
+  'test_fixture',
 ]

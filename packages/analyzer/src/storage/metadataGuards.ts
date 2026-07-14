@@ -120,6 +120,9 @@ export function parseStoredNode(base: NodeBase, type: NodeType, o: JsonObject): 
     case 'kotlin_object': return createTypedNode({ ...base, type, metadata: nodeParsers.kotlin_object(o) })
     case 'kotlin_function': return createTypedNode({ ...base, type, metadata: nodeParsers.kotlin_function(o) })
     case 'kotlin_route': return createTypedNode({ ...base, type, metadata: nodeParsers.kotlin_route(o) })
+    case 'test_suite': return createTypedNode({ ...base, type, metadata: nodeParsers.test_suite(o) })
+    case 'test_case': return createTypedNode({ ...base, type, metadata: nodeParsers.test_case(o) })
+    case 'test_fixture': return createTypedNode({ ...base, type, metadata: nodeParsers.test_fixture(o) })
   }
 }
 
@@ -238,6 +241,20 @@ const nodeParsers: { [T in NodeType]: (o: JsonObject) => NodeTypeMetadataMap[T] 
     framework: literal(o, 'framework', 'spring', 'ktor'),
     annotations: strArr(o, 'annotations'),
   }),
+  test_suite: (o) => ({
+    framework: literal(o, 'framework', 'vitest', 'jest', 'playwright', 'cypress', 'junit4', 'junit5', 'kotest'),
+    kind: literal(o, 'kind', 'file', 'describe', 'class', 'nested_class', 'spec'),
+  }),
+  test_case: (o) => ({
+    framework: literal(o, 'framework', 'vitest', 'jest', 'playwright', 'cypress', 'junit4', 'junit5', 'kotest'),
+    isParameterized: bool(o, 'isParameterized'),
+    ...(optStr(o, 'parameterSource') !== undefined ? { parameterSource: optStr(o, 'parameterSource') } : {}),
+    disabled: bool(o, 'disabled'),
+  }),
+  test_fixture: (o) => ({
+    framework: literal(o, 'framework', 'vitest', 'jest', 'playwright', 'cypress', 'junit4', 'junit5', 'kotest'),
+    lifecycle: literal(o, 'lifecycle', 'before_each', 'before_all', 'after_each', 'after_all', 'factory'),
+  }),
 }
 
 function parseDbFields(v: JsonValue | undefined): NodeTypeMetadataMap['db_model']['fields'] {
@@ -280,6 +297,9 @@ export function parseStoredEdge(base: EdgeBase, type: EdgeType, o: JsonObject): 
     case 'data_flows_to': return createTypedEdge({ ...base, type, metadata: edgeParsers.data_flows_to(o) })
     case 'sends_msg': return createTypedEdge({ ...base, type, metadata: edgeParsers.sends_msg(o) })
     case 'listens_msg': return createTypedEdge({ ...base, type, metadata: edgeParsers.listens_msg(o) })
+    case 'tests': return createTypedEdge({ ...base, type, metadata: edgeParsers.tests(o) })
+    case 'covers': return createTypedEdge({ ...base, type, metadata: edgeParsers.covers(o) })
+    case 'uses_fixture': return createTypedEdge({ ...base, type, metadata: edgeParsers.uses_fixture(o) })
   }
 }
 
@@ -354,4 +374,13 @@ const edgeParsers: { [T in EdgeType]: (o: JsonObject) => EdgeTypeMetadataMap[T] 
     'callType' in o
       ? parseCallsApi(o)
       : { msgName: str(o, 'msgName'), callLine: num(o, 'callLine') },
+  tests: (o) => ({
+    relation: literal(o, 'relation', 'contains_case', 'declares_target'),
+  }),
+  covers: (o) => ({
+    evidence: literal(o, 'evidence', 'direct_import', 'direct_call', 'route_reference', 'source_mapping'),
+  }),
+  uses_fixture: (o) => ({
+    usage: literal(o, 'usage', 'lexical_scope', 'parameter', 'explicit_call'),
+  }),
 }

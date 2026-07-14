@@ -22,6 +22,9 @@ export const EDGE_TYPE_LIST: EdgeType[] = [
   'data_flows_to',
   'sends_msg',
   'listens_msg',
+  'tests',
+  'covers',
+  'uses_fixture',
 ]
 
 /** 边线颜色 —— 画布与图例的单一真源。 */
@@ -41,6 +44,9 @@ export const EDGE_COLORS: Record<EdgeType, string> = {
   data_flows_to:     '#06b6d4',
   sends_msg:         '#f97316',
   listens_msg:       '#14b8a6',
+  tests:             '#64748b',
+  covers:            '#22c55e',
+  uses_fixture:      '#f59e0b',
 }
 
 /** 边类型 emoji —— 图例展示用。 */
@@ -60,4 +66,7 @@ export const EDGE_EMOJI: Record<EdgeType, string> = {
   data_flows_to:     '🌊',
   sends_msg:         '📨',
   listens_msg:       '📣',
+  tests:             '🧪',
+  covers:            '🎯',
+  uses_fixture:      '🔩',
 }

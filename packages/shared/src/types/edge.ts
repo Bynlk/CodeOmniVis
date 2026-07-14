@@ -5,6 +5,8 @@
  * 边 ID 格式：{sourceId}--{type}--{targetId}
  */
 
+import type { CoversMetadata, TestsMetadata, UsesFixtureMetadata } from './test'
+
 // ============================================================
 // 边类型枚举
 // ============================================================
@@ -25,6 +27,9 @@ export type EdgeType =
   | 'data_flows_to'   // 数据流：Model → API → Component 类型传播路径
   | 'sends_msg'       // client.sendMsg() / server.broadcast()
   | 'listens_msg'     // client.listenMsg() / server.addMsgListener()
+  | 'tests'
+  | 'covers'
+  | 'uses_fixture'
 
 const EDGE_TYPES: EdgeType[] = [
   'renders',
@@ -42,6 +47,9 @@ const EDGE_TYPES: EdgeType[] = [
   'data_flows_to',
   'sends_msg',
   'listens_msg',
+  'tests',
+  'covers',
+  'uses_fixture',
 ]
 const EDGE_TYPE_SET = new Set<string>(EDGE_TYPES)
 
@@ -216,6 +224,9 @@ export type EdgeTypeMetadataMap = {
   data_flows_to: DataFlowsToMetadata
   sends_msg: CallsApiMetadata | SendsMsgMetadata
   listens_msg: CallsApiMetadata | ListensMsgMetadata
+  tests: TestsMetadata
+  covers: CoversMetadata
+  uses_fixture: UsesFixtureMetadata
 }
 
 
