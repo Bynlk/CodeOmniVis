@@ -142,6 +142,8 @@ export {
   validateUpstreamBaseUrl,
   validateResolvedAddresses,
   isIpLiteral,
+  isLoopbackUpstreamHost,
+  normalizeUpstreamIpAddress,
 } from './types/ai'
 
 // 数据新鲜度契约导出

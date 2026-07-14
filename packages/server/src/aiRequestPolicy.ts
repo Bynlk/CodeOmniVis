@@ -2,6 +2,8 @@ import { isIP } from 'node:net'
 import { Agent, buildConnector, request as undiciRequest } from 'undici'
 import {
   isIpLiteral,
+  isLoopbackUpstreamHost,
+  normalizeUpstreamIpAddress,
   validateResolvedAddresses,
   validateUpstreamBaseUrl,
 } from '@codeomnivis/shared'
@@ -71,11 +73,6 @@ export class AiPolicyError extends Error {
   }
 }
 
-function isLiteralLoopback(hostname: string): boolean {
-  const normalized = hostname.replace(/^\[|\]$/gu, '')
-  return normalized === 'localhost' || normalized === '::1' || /^127\./u.test(normalized)
-}
-
 export async function resolveUpstreamDestination(
   baseUrl: string,
   resolver: HostnameResolver,
@@ -87,7 +84,7 @@ export async function resolveUpstreamDestination(
   }
   const url = new URL(baseUrl.replace(/\/+$/u, '') + '/chat/completions')
   const hostname = url.hostname
-  if (isLiteralLoopback(hostname) && !allowLoopback) {
+  if (isLoopbackUpstreamHost(hostname) && !allowLoopback) {
     throw new AiPolicyError('AI_DESTINATION_REJECTED', 400, 'Loopback AI providers are disabled')
   }
   if (hostname === 'localhost') return { url, hostname }
@@ -140,7 +137,9 @@ export async function readBoundedBody(
 }
 
 export function matchesValidatedAddress(peerAddress: string, validatedAddress: string): boolean {
-  return peerAddress === validatedAddress || peerAddress === `::ffff:${validatedAddress}`
+  const normalizedPeer = normalizeUpstreamIpAddress(peerAddress)
+  const normalizedValidated = normalizeUpstreamIpAddress(validatedAddress)
+  return normalizedPeer !== null && normalizedPeer === normalizedValidated
 }
 
 interface PinnedAgent {
@@ -150,7 +149,7 @@ interface PinnedAgent {
 
 function createPinnedAgent(destination: UpstreamDestination): PinnedAgent {
   let peerAddress: string | undefined
-  if (!destination.address || !destination.family || isLiteralLoopback(destination.hostname)) {
+  if (!destination.address || !destination.family || isLoopbackUpstreamHost(destination.hostname)) {
     return {
       dispatcher: new Agent({ maxRedirections: 0 }),
       getPeerAddress: () => peerAddress,

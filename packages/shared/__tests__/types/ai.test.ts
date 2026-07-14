@@ -54,7 +54,9 @@ describe('parseAiChatRequest', () => {
   it('rejects empty / invalid bodies', () => {
     expect(parseAiChatRequest({ messages: [] })).toBeNull()
     expect(parseAiChatRequest({ messages: [{ role: 'x', content: 'y' }] })).toBeNull()
-    expect(parseAiChatRequest({ messages: [{ role: 'user', content: 'hi' }], config: { baseUrl: '' } })).toBeNull()
+    expect(
+      parseAiChatRequest({ messages: [{ role: 'user', content: 'hi' }], config: { baseUrl: '' } }),
+    ).toBeNull()
     expect(parseAiChatRequest(null)).toBeNull()
   })
 })
@@ -76,7 +78,6 @@ describe('resolveAiConfig', () => {
     expect(resolveAiConfig(undefined, { baseUrl: 'https://env', apiKey: 'ek' })).toBeNull()
   })
 })
-
 
 describe('validateUpstreamBaseUrl', () => {
   it('accepts public https endpoints', () => {
@@ -105,6 +106,13 @@ describe('validateUpstreamBaseUrl', () => {
     expect(validateUpstreamBaseUrl('https://[fe80::1]/v1').ok).toBe(false)
   })
 
+  it('rejects IPv4-mapped IPv6 private destinations while preserving public endpoints', () => {
+    expect(validateUpstreamBaseUrl('https://[::ffff:127.0.0.1]/v1').ok).toBe(false)
+    expect(validateUpstreamBaseUrl('https://[::ffff:a00:1]/v1').ok).toBe(false)
+    expect(validateUpstreamBaseUrl('https://[::ffff:a9fe:a9fe]/v1').ok).toBe(false)
+    expect(validateUpstreamBaseUrl('https://[::ffff:5db8:d822]/v1').ok).toBe(true)
+  })
+
   it('does NOT block public 172 addresses outside 16-31', () => {
     expect(validateUpstreamBaseUrl('https://172.15.0.1/v1').ok).toBe(true)
     expect(validateUpstreamBaseUrl('https://172.32.0.1/v1').ok).toBe(true)
@@ -129,6 +137,30 @@ describe('validateResolvedAddresses (S-06/F5 DNS rebinding)', () => {
     expect(validateResolvedAddresses(['::1']).ok).toBe(false)
     // 混合:一个公网 + 一个内网 -> 仍拒绝
     expect(validateResolvedAddresses(['93.184.216.34', '192.168.1.1']).ok).toBe(false)
+  })
+
+  it('rejects mapped private DNS answers while preserving mapped public answers', () => {
+    expect(validateResolvedAddresses(['::ffff:127.0.0.1']).ok).toBe(false)
+    expect(validateResolvedAddresses(['::ffff:10.0.0.1']).ok).toBe(false)
+    expect(validateResolvedAddresses(['::ffff:169.254.169.254']).ok).toBe(false)
+    expect(validateResolvedAddresses(['::ffff:93.184.216.34']).ok).toBe(true)
+  })
+
+  it('rejects partially compressed mapped private DNS answers', () => {
+    expect(validateResolvedAddresses(['0::ffff:7f00:1']).ok).toBe(false)
+    expect(validateResolvedAddresses(['0:0::ffff:10.0.0.1']).ok).toBe(false)
+    expect(validateResolvedAddresses(['0:0:0::ffff:ac10:1']).ok).toBe(false)
+    expect(validateResolvedAddresses(['0:0:0:0::ffff:c0a8:101']).ok).toBe(false)
+    expect(validateResolvedAddresses(['0::ffff:169.254.169.254']).ok).toBe(false)
+    expect(validateResolvedAddresses(['0:0::ffff:5db8:d822']).ok).toBe(true)
+  })
+
+  it('rejects expanded native IPv6 loopback answers', () => {
+    expect(validateResolvedAddresses(['0:0:0:0:0:0:0:1']).ok).toBe(false)
+  })
+
+  it('rejects expanded native IPv6 unspecified answers', () => {
+    expect(validateResolvedAddresses(['0:0:0:0:0:0:0:0']).ok).toBe(false)
   })
 
   it('rejects empty resolution result', () => {

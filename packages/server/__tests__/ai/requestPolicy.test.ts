@@ -44,6 +44,12 @@ describe('AI request destination policy', () => {
     ).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
   })
 
+  it('rejects IPv4-mapped loopback destinations when remote access disables loopback', async () => {
+    await expect(
+      resolveUpstreamDestination('https://[::ffff:127.0.0.1]/v1', async () => [], false),
+    ).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED', status: 400 })
+  })
+
   it('rejects invalid URLs, DNS failures, and invalid public DNS answers', async () => {
     await expect(
       resolveUpstreamDestination('file:///tmp/provider', async () => []),
@@ -69,6 +75,8 @@ describe('AI request destination policy', () => {
     await expect(readBoundedBody(chunks('hello', ' world'), 11)).resolves.toBe('hello world')
     expect(matchesValidatedAddress('93.184.216.34', '93.184.216.34')).toBe(true)
     expect(matchesValidatedAddress('::ffff:93.184.216.34', '93.184.216.34')).toBe(true)
+    expect(matchesValidatedAddress('::ffff:93.184.216.34', '::ffff:5db8:d822')).toBe(true)
+    expect(matchesValidatedAddress('0::ffff:5db8:d822', '::ffff:93.184.216.34')).toBe(true)
     expect(matchesValidatedAddress('127.0.0.1', '93.184.216.34')).toBe(false)
   })
 
