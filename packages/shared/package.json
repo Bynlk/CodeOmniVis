@@ -38,6 +38,7 @@
     "build": "tsup src/index.ts src/node/index.ts --format esm --dts",
     "lint": "eslint src/",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist",
     "typecheck": "tsc -p tsconfig.test.json"
   },

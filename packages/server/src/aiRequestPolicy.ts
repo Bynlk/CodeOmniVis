@@ -154,6 +154,9 @@ function createPinnedAgent(destination: UpstreamDestination): PinnedAgent {
   }
   const { address, family } = destination
   const connector = buildConnector({
+    // A validated destination contains exactly one pinned address; Node's
+    // multi-address family selection would request the incompatible `all` lookup shape.
+    autoSelectFamily: false,
     lookup: (_hostname, _options, callback) => callback(null, address, family),
   })
   const verifiedConnector: typeof connector = (options, callback) => {

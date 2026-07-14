@@ -45,6 +45,10 @@ const edges: OmniEdge[] = [
     type: 'calls_service', confidence: 'certain', metadata: { serviceName: 'findUser' },
   },
   {
+    id: createEdgeId(apiId, 'handles', svcId), source: apiId, target: svcId,
+    type: 'handles', confidence: 'certain', metadata: { handlerName: 'findUser' },
+  },
+  {
     id: createEdgeId(svcId, 'queries_db', dbId), source: svcId, target: dbId,
     type: 'queries_db', confidence: 'certain', metadata: { operation: 'findUnique' },
   },
@@ -53,6 +57,26 @@ const edges: OmniEdge[] = [
 const graph: OmniGraph = { nodes, edges }
 
 describe('DataFlowTracer.traceFromNode', () => {
+  it('projects model flow through API and component layers and converts it to graph edges', () => {
+    const tracer = new DataFlowTracer(graph)
+    const path = tracer.traceModelFlow(nodes[3])
+
+    expect(path.apiNodes.map(node => node.id)).toEqual([apiId])
+    expect(path.componentNodes.map(node => node.id)).toEqual([compId])
+    expect(path.edges.map(edge => edge.transferMethod)).toEqual([
+      'prisma_result', 'return_type', 'hook_data',
+    ])
+    expect(tracer.pathToEdges(path)).toEqual(path.edges.map(edge => expect.objectContaining({
+      source: edge.from,
+      target: edge.to,
+      type: 'data_flows_to',
+      confidence: 'inferred',
+    })))
+    expect(tracer.traceAllModels()).toEqual([
+      expect.objectContaining({ modelId: dbId, modelName: 'User', totalRoutes: 1, totalComponents: 1 }),
+    ])
+  })
+
   it('returns empty result for an unknown node', () => {
     const result = new DataFlowTracer(graph).traceFromNode('does:not/exist:x')
     expect(result.totalSteps).toBe(0)

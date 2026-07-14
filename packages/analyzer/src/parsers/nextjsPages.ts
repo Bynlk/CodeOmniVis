@@ -81,7 +81,7 @@ export class NextjsPagesParser implements Parser {
       }
 
       // 判断是 API 路由还是页面路由
-      if (normalizedPath.includes('/pages/api/')) {
+      if (/(?:^|\/)pages\/api\//.test(normalizedPath)) {
         const node = this.parseApiRoute(normalizedPath, context.projectRoot)
         if (node) nodes.push(node)
       } else {

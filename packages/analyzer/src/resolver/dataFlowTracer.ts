@@ -126,10 +126,10 @@ export class DataFlowTracer {
     // Service/Handler → API Route
     for (const apiNode of uniqueApiNodes) {
       // 找连接到这个 API 的 service/handler
-      const handles = this.incomingEdges.get(apiNode.id)?.filter(e => e.type === 'handles') ?? []
+      const handles = this.outgoingEdges.get(apiNode.id)?.filter(e => e.type === 'handles') ?? []
       for (const handle of handles) {
         edges.push({
-          from: handle.source,
+          from: handle.target,
           to: apiNode.id,
           typeName: modelNode.name,
           transferMethod: 'return_type',

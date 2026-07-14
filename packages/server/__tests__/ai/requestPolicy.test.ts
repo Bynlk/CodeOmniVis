@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import { createServer } from 'node:http'
+import { once } from 'node:events'
 import {
   AiPolicyError,
+  defaultAiHttpClient,
+  matchesValidatedAddress,
   readBoundedBody,
   resolveUpstreamDestination,
 } from '../../src/aiRequestPolicy'
+import { checkUpstreamDnsSafety, readAiEnv } from '../../src/ai'
 import { RequestLimiter } from '../../src/requestLimiter'
 
 async function* chunks(...values: string[]): AsyncGenerator<Uint8Array> {
@@ -29,11 +34,107 @@ describe('AI request destination policy', () => {
     )).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED', status: 400 })
   })
 
+  it('handles literal loopback and IP destinations without DNS drift', async () => {
+    await expect(resolveUpstreamDestination('http://127.0.0.1:4321/v1', async () => []))
+      .resolves.toMatchObject({ hostname: '127.0.0.1', address: '127.0.0.1', family: 4 })
+    await expect(resolveUpstreamDestination('http://localhost:4321/v1', async () => []))
+      .resolves.toMatchObject({ hostname: 'localhost' })
+    await expect(resolveUpstreamDestination('http://localhost:4321/v1', async () => [], false))
+      .rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
+  })
+
+  it('rejects invalid URLs, DNS failures, and invalid public DNS answers', async () => {
+    await expect(resolveUpstreamDestination('file:///tmp/provider', async () => []))
+      .rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
+    await expect(resolveUpstreamDestination('https://api.example.com', async () => { throw new Error('dns') }))
+      .rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
+    await expect(resolveUpstreamDestination('https://api.example.com', async () => ['not-an-ip']))
+      .rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
+  })
+
   it('rejects a response once its cumulative bytes exceed the limit', async () => {
     await expect(readBoundedBody(chunks('1234', '5678'), 7)).rejects.toMatchObject({
       code: 'AI_RESPONSE_TOO_LARGE',
       status: 502,
     })
+  })
+
+  it('reads a bounded response and accepts IPv4-mapped peer addresses', async () => {
+    await expect(readBoundedBody(chunks('hello', ' world'), 11)).resolves.toBe('hello world')
+    expect(matchesValidatedAddress('93.184.216.34', '93.184.216.34')).toBe(true)
+    expect(matchesValidatedAddress('::ffff:93.184.216.34', '93.184.216.34')).toBe(true)
+    expect(matchesValidatedAddress('127.0.0.1', '93.184.216.34')).toBe(false)
+  })
+
+  it('performs a bounded loopback request and closes its dispatcher', async () => {
+    const server = createServer((request, response) => {
+      request.resume()
+      response.writeHead(200, { 'content-type': 'application/json' })
+      response.end('{"ok":true}')
+    })
+    server.listen(0, '127.0.0.1')
+    await once(server, 'listening')
+    const address = server.address()
+    if (!address || typeof address === 'string') throw new Error('Expected TCP server address')
+    const destination = await resolveUpstreamDestination(
+      `http://127.0.0.1:${address.port}/v1`,
+      async () => [],
+    )
+
+    try {
+      const response = await defaultAiHttpClient({
+        destination,
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+        signal: AbortSignal.timeout(5_000),
+      })
+      expect(response.status).toBe(200)
+      await expect(readBoundedBody(response.body, 100)).resolves.toBe('{"ok":true}')
+      await response.close()
+    } finally {
+      server.close()
+      await once(server, 'close')
+    }
+  })
+
+  it('pins a public hostname to the validated socket address', async () => {
+    const server = createServer((request, response) => {
+      request.resume()
+      response.writeHead(200, { 'content-type': 'application/json' })
+      response.end('{"ok":true}')
+    })
+    server.listen(0, '127.0.0.1')
+    await once(server, 'listening')
+    const address = server.address()
+    if (!address || typeof address === 'string') throw new Error('Expected TCP server address')
+
+    try {
+      const response = await defaultAiHttpClient({
+        destination: {
+          url: new URL(`http://provider.example:${address.port}/v1`),
+          hostname: 'provider.example',
+          address: '127.0.0.1',
+          family: 4,
+        },
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+        signal: AbortSignal.timeout(5_000),
+      })
+      expect(response.peerAddress).toBe('127.0.0.1')
+      await response.close()
+    } finally {
+      server.close()
+      await once(server, 'close')
+    }
+  })
+
+  it('exposes controlled DNS checks and environment configuration', async () => {
+    expect(readAiEnv({ AI_BASE_URL: 'https://api.example.com', AI_API_KEY: 'key', AI_MODEL: 'model' }))
+      .toEqual({ baseUrl: 'https://api.example.com', apiKey: 'key', model: 'model' })
+    await expect(checkUpstreamDnsSafety('https://api.example.com', async () => ['93.184.216.34']))
+      .resolves.toEqual({ ok: true })
+    await expect(checkUpstreamDnsSafety('https://api.example.com', async () => { throw new Error('dns') }))
+      .resolves.toEqual({ ok: false, reason: 'AI hostname could not be resolved' })
   })
 
   it('exposes only a controlled public policy error', () => {

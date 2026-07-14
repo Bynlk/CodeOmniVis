@@ -1,9 +1,14 @@
-import type { OmniGraph, OmniNode } from '@codeomnivis/shared'
+import { isNodeOfType, type OmniGraph, type OmniNode, type TestFramework } from '@codeomnivis/shared'
 
 export interface TestSuiteGroup {
   suite: OmniNode
   cases: OmniNode[]
   fixtures: OmniNode[]
+}
+
+export interface TestSuiteFilters {
+  framework: TestFramework | 'all'
+  status: 'all' | 'enabled' | 'disabled'
 }
 
 export function buildTestSuiteGroups(graph: OmniGraph): TestSuiteGroup[] {
@@ -14,6 +19,25 @@ export function buildTestSuiteGroups(graph: OmniGraph): TestSuiteGroup[] {
     const fixtureFiles = new Set(cases.map(testCase => testCase.filePath))
     const fixtures = graph.nodes.filter(node => node.type === 'test_fixture' && (node.filePath === suite.filePath || fixtureFiles.has(node.filePath)))
     return { suite, cases, fixtures }
+  })
+}
+
+export function filterTestSuiteGroups(
+  groups: readonly TestSuiteGroup[],
+  filters: TestSuiteFilters,
+): TestSuiteGroup[] {
+  return groups.flatMap(group => {
+    if (!isNodeOfType(group.suite, 'test_suite')) return []
+    if (filters.framework !== 'all' && group.suite.metadata.framework !== filters.framework) return []
+    const cases = group.cases.filter(testCase => {
+      if (!isNodeOfType(testCase, 'test_case')) return false
+      if (filters.framework !== 'all' && testCase.metadata.framework !== filters.framework) return false
+      if (filters.status === 'enabled') return !testCase.metadata.disabled
+      if (filters.status === 'disabled') return testCase.metadata.disabled
+      return true
+    })
+    if (filters.status !== 'all' && cases.length === 0) return []
+    return [{ ...group, cases }]
   })
 }
 

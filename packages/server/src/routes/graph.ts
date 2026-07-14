@@ -11,6 +11,7 @@ import { DataFlowTracer } from '@codeomnivis/analyzer'
 import type { NodeType, EdgeType } from '@codeomnivis/shared'
 import { isEdgeType, isNodeType, sanitizeGraph } from '@codeomnivis/shared'
 import { collectGraphIssues } from '../graphIssues'
+import { sendInternalError } from './routeError'
 
 // 合法的节点类型和边类型
 const VALID_NODE_TYPES: ReadonlySet<string> = new Set<NodeType>([
@@ -64,13 +65,7 @@ export function createGraphRouter(
         },
       })
     } catch (err) {
-      console.error('Failed to get graph:', err)
-      res.status(500).json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to load graph data',
-        },
-      })
+      sendInternalError(res, 'Failed to get graph', 'Failed to load graph data', err)
     }
   })
 
@@ -102,13 +97,7 @@ export function createGraphRouter(
         meta: { count: nodes.length },
       })
     } catch (err) {
-      console.error('Failed to get nodes:', err)
-      res.status(500).json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to load nodes',
-        },
-      })
+      sendInternalError(res, 'Failed to get nodes', 'Failed to load nodes', err)
     }
   })
 
@@ -132,13 +121,7 @@ export function createGraphRouter(
 
       res.json({ data: node })
     } catch (err) {
-      console.error('Failed to get node:', err)
-      res.status(500).json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to load node',
-        },
-      })
+      sendInternalError(res, 'Failed to get node', 'Failed to load node', err)
     }
   })
 
@@ -165,13 +148,7 @@ export function createGraphRouter(
         },
       })
     } catch (err) {
-      console.error('Failed to get node edges:', err)
-      res.status(500).json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to load node edges',
-        },
-      })
+      sendInternalError(res, 'Failed to get node edges', 'Failed to load node edges', err)
     }
   })
 
@@ -203,13 +180,7 @@ export function createGraphRouter(
         meta: { count: edges.length },
       })
     } catch (err) {
-      console.error('Failed to get edges:', err)
-      res.status(500).json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to load edges',
-        },
-      })
+      sendInternalError(res, 'Failed to get edges', 'Failed to load edges', err)
     }
   })
 
@@ -222,13 +193,7 @@ export function createGraphRouter(
       const stats = db.getStats()
       res.json({ data: stats })
     } catch (err) {
-      console.error('Failed to get stats:', err)
-      res.status(500).json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to load stats',
-        },
-      })
+      sendInternalError(res, 'Failed to get stats', 'Failed to load stats', err)
     }
   })
 
@@ -251,13 +216,7 @@ export function createGraphRouter(
       db.clearGraph()
       res.json({ data: { success: true } })
     } catch (err) {
-      console.error('Failed to clear graph:', err)
-      res.status(500).json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to clear graph',
-        },
-      })
+      sendInternalError(res, 'Failed to clear graph', 'Failed to clear graph', err)
     }
   })
 
@@ -273,13 +232,7 @@ export function createGraphRouter(
         meta: { count: errors.length },
       })
     } catch (err) {
-      console.error('Failed to get errors:', err)
-      res.status(500).json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to load errors',
-        },
-      })
+      sendInternalError(res, 'Failed to get errors', 'Failed to load errors', err)
     }
   })
 
@@ -299,13 +252,7 @@ export function createGraphRouter(
         },
       })
     } catch (err) {
-      console.error('Failed to get graph issues:', err)
-      res.status(500).json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to load graph issues',
-        },
-      })
+      sendInternalError(res, 'Failed to get graph issues', 'Failed to load graph issues', err)
     }
   })
 
@@ -332,10 +279,7 @@ export function createGraphRouter(
       const result = tracer.traceFromNode(nodeId)
       res.json({ data: result, meta: { totalSteps: result.totalSteps } })
     } catch (err) {
-      console.error('Failed to trace from node:', err)
-      res.status(500).json({
-        error: { code: 'INTERNAL_ERROR', message: 'Failed to trace from node' },
-      })
+      sendInternalError(res, 'Failed to trace from node', 'Failed to trace from node', err)
     }
   })
 
@@ -380,10 +324,7 @@ export function createGraphRouter(
         })
       }
     } catch (err) {
-      console.error('Failed to trace dataflow:', err)
-      res.status(500).json({
-        error: { code: 'INTERNAL_ERROR', message: 'Failed to trace dataflow' },
-      })
+      sendInternalError(res, 'Failed to trace dataflow', 'Failed to trace dataflow', err)
     }
   })
 

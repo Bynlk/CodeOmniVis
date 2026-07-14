@@ -288,6 +288,34 @@ describe('OmniDatabase', () => {
       expect(stats.nodeCount).toBe(0)
       expect(stats.edgeCount).toBe(0)
     })
+
+    it('supports compatibility lookups, traversal, subtrees, and typed batches', () => {
+      db.upsertNodes([testNode, testNode2])
+      db.upsertEdge(testEdge)
+
+      expect(db.getNodesByTypes(['db_model', 'page'])).toHaveLength(2)
+      expect(db.findNodeByRoute('/booking')?.id).toBe(testNode2.id)
+      expect(db.findNodeByFilePath(testNode.filePath)?.id).toBe(testNode.id)
+      expect(db.findNodeByAny('/booking')?.id).toBe(testNode2.id)
+      expect(db.findNodeByAny('User')?.id).toBe(testNode.id)
+      expect(db.getDownstreamNodes(testNode.id, ['queries_db']).map(node => node.id)).toEqual([testNode2.id])
+      expect(db.getUpstreamNodes(testNode2.id).map(node => node.id)).toEqual([testNode.id])
+      expect(db.getSubtree(testNode.id, 'queries_db', 2)?.children[0]?.id).toBe(testNode2.id)
+      expect(db.getAffectedPages(testNode2.id)).toEqual([])
+      expect(db.removeDanglingEdges()).toBe(0)
+    })
+
+    it('clears node, edge, and error collections independently', () => {
+      db.upsertNodes([testNode, testNode2])
+      db.upsertEdge(testEdge)
+      db.insertError({ file: 'test.ts', message: 'bad', severity: 'warning' })
+
+      expect(db.deleteAllEdges()).toBe(true)
+      expect(db.deleteAllErrors()).toBe(true)
+      expect(db.deleteAllNodes()).toBe(true)
+      expect(db.loadGraph()).toEqual({ nodes: [], edges: [] })
+      expect(db.getAllErrors()).toEqual([])
+    })
   })
 
   // ============================================================

@@ -3,11 +3,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
+import path from 'node:path'
 import { NextjsPagesParser } from '../../src/parsers/nextjsPages'
-import type { ProjectMeta } from '@codeomnivis/shared'
+import type { ParseContext, ProjectMeta } from '@codeomnivis/shared'
 
+const projectRoot = path.resolve(__dirname, '../fixtures/nextjs-pages')
 const projectMeta: ProjectMeta = {
-  root: '/project',
+  root: projectRoot,
   frontendFramework: 'next',
   backendFramework: 'trpc',
   databaseType: 'prisma',
@@ -23,6 +25,12 @@ const projectMeta: ProjectMeta = {
   tsConfigPath: null,
   buildFile: null,
   packages: [],
+}
+const context: ParseContext = {
+  projectRoot,
+  projectMeta,
+  tsConfig: null,
+  pathAliases: {},
 }
 
 describe('NextjsPagesParser', () => {
@@ -66,6 +74,46 @@ describe('NextjsPagesParser', () => {
 
     it('处理 Windows 路径', () => {
       expect(parser.canHandle('pages\\index.tsx', projectMeta)).toBe(true)
+    })
+  })
+
+  describe('parse', () => {
+    it('maps index and catch-all pages to stable routes and parameters', async () => {
+      const index = await parser.parse('pages/index.tsx', context)
+      const article = await parser.parse('pages/articles/[...slug].tsx', context)
+
+      expect(index.nodes).toEqual([expect.objectContaining({ type: 'page', name: '/', line: 2 })])
+      expect(article.nodes).toEqual([
+        expect.objectContaining({
+          type: 'page',
+          name: '/articles/[...slug]',
+          metadata: expect.objectContaining({ isDynamic: true, params: ['slug'] }),
+        }),
+      ])
+    })
+
+    it('extracts explicit and req.method API route methods', async () => {
+      const explicit = await parser.parse('pages/api/orders.ts', context)
+      const defaultHandler = await parser.parse('pages/api/users.ts', context)
+
+      expect(explicit.nodes[0]).toEqual(expect.objectContaining({
+        type: 'api_route',
+        name: '/api/orders',
+        metadata: expect.objectContaining({ method: 'GET,POST' }),
+      }))
+      expect(defaultHandler.nodes[0]).toEqual(expect.objectContaining({
+        type: 'api_route',
+        name: '/api/users',
+        metadata: expect.objectContaining({ method: 'POST,DELETE' }),
+      }))
+    })
+
+    it('degrades a missing page to a warning', async () => {
+      const result = await parser.parse('pages/missing.tsx', context)
+      expect(result.nodes).toEqual([])
+      expect(result.errors).toEqual([
+        expect.objectContaining({ severity: 'warning', message: expect.stringContaining('File not found') }),
+      ])
     })
   })
 })

@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import type { ProjectMeta } from '@codeomnivis/shared'
-import { collectAnalysisFiles } from '../../src/graph/collectAnalysisFiles'
+import { collectAnalysisFiles, collectSourceFiles } from '../../src/graph/collectAnalysisFiles'
 
 function makeMeta(root: string): ProjectMeta {
   return {
@@ -94,5 +94,30 @@ describe('collectAnalysisFiles', () => {
       'src/test/kotlin/UnitTest.kt',
       'tests/unit.test.ts',
     ])
+  })
+
+  it('collects one selected source tree and ignores unsupported or disappearing explicit files', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-selected-source-'))
+    cleanupPaths.push(root)
+    const source = path.join(root, 'custom')
+    fs.mkdirSync(path.join(source, 'nested'), { recursive: true })
+    fs.writeFileSync(path.join(source, 'nested', 'service.ts'), 'export const service = true')
+    fs.writeFileSync(path.join(source, 'notes.txt'), 'ignored')
+    const meta = makeMeta(root)
+    meta.prismaSchemaPath = 'missing.prisma'
+    meta.trpcRouterPaths = ['custom/notes.txt']
+
+    expect(collectSourceFiles(source, root)).toEqual(['custom/nested/service.ts'])
+    expect(collectSourceFiles(path.join(root, 'missing'), root)).toEqual([])
+    expect(collectAnalysisFiles(root, meta)).toEqual([])
+  })
+
+  it('skips workspace packages that disappear after detection', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-missing-package-'))
+    cleanupPaths.push(root)
+    fs.mkdirSync(root, { recursive: true })
+    const meta = makeMeta(root)
+    meta.packages = [{ name: 'gone', path: 'packages/gone', dependencies: [], devDependencies: [] }]
+    expect(collectAnalysisFiles(root, meta)).toEqual([])
   })
 })

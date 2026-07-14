@@ -5,7 +5,9 @@
 import { describe, it, expect } from 'vitest'
 import { NODE_EMOJI, NODE_TYPE_LIST } from '../../src/lib/nodeConfig'
 import { EDGE_TYPE_LIST } from '../../src/lib/edgeConfig'
-import type { NodeType, EdgeType } from '@codeomnivis/shared'
+import { NODE_COLORS, type NodeType, type EdgeType } from '@codeomnivis/shared'
+import type cytoscape from 'cytoscape'
+import { getCytoscapeStyle } from '../../src/utils/cytoscapeConfig'
 
 const ALL_NODE_TYPES: NodeType[] = [
   'page', 'component', 'api_route', 'trpc_procedure',
@@ -57,5 +59,33 @@ describe('EDGE_TYPE_LIST', () => {
 
   it('数量正确', () => {
     expect(EDGE_TYPE_LIST).toHaveLength(ALL_EDGE_TYPES.length)
+  })
+})
+
+describe('getCytoscapeStyle', () => {
+  it('defines a restrained style for every edge type', () => {
+    const styles = getCytoscapeStyle()
+    for (const type of ALL_EDGE_TYPES) {
+      expect(styles).toContainEqual(expect.objectContaining({ selector: `edge[type="${type}"]` }))
+    }
+    expect(styles).toContainEqual(expect.objectContaining({ selector: 'edge[confidence="inferred"]' }))
+  })
+
+  it('derives safe node colors and compact labels from runtime data', () => {
+    const nodeBlock = getCytoscapeStyle().find(style => style.selector === 'node')
+    const nodeStyle = nodeBlock && 'style' in nodeBlock
+      ? nodeBlock.style as cytoscape.Css.Node
+      : undefined
+    const borderColor = nodeStyle?.['border-color'] as (node: cytoscape.NodeSingular) => string
+    const label = nodeStyle?.label as (node: cytoscape.NodeSingular) => string
+    const node = (data: Record<string, unknown>) => ({
+      data: (key: string) => data[key],
+    }) as unknown as cytoscape.NodeSingular
+
+    expect(borderColor(node({ type: 'test_case' }))).toBe(NODE_COLORS.test_case)
+    expect(borderColor(node({ type: 'unknown' }))).toBe('#343e4d')
+    expect(label(node({ label: 'A very long architecture node label' }))).toBe('A very long archit…')
+    expect(label(node({ label: 'Short' }))).toBe('Short')
+    expect(label(node({}))).toBe('?')
   })
 })

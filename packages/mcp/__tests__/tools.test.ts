@@ -20,6 +20,7 @@ import {
   handleListDbModels,
   handleGetDataFlow,
 } from '../src/index'
+import { executeMcpTool, MCP_TOOL_NAMES } from '../src/server'
 
 function body(result: CallToolResult) {
   const first = result.content[0]
@@ -223,6 +224,28 @@ describe('MCP Tools — real handler integration (TEST-BUG-04/F19)', () => {
       const data = body(res)
       expect(data).toHaveProperty('totalCount')
       expect(data.models.map((m: { name: string }) => m.name)).toContain('User')
+    })
+
+    it('指定 model 时返回完整静态数据流', () => {
+      const data = body(handleGetDataFlow(db, { model: 'User' }))
+      expect(data.model).toBe('User')
+      expect(data.summary).toContain('User')
+    })
+  })
+
+  describe('executeMcpTool', () => {
+    it('dispatches every public handler through the shared snapshot projection', () => {
+      const requests = [
+        [MCP_TOOL_NAMES.getApiRoutes, {}],
+        [MCP_TOOL_NAMES.getComponentTree, { rootPath: '/users' }],
+        [MCP_TOOL_NAMES.findCallers, { target: '/api/users' }],
+        [MCP_TOOL_NAMES.listDbModels, {}],
+        [MCP_TOOL_NAMES.getDataflow, { model: 'User' }],
+        [MCP_TOOL_NAMES.getTestCoverage, {}],
+      ] as const
+      for (const [name, args] of requests) {
+        expect(body(executeMcpTool(db, name, args))).toBeDefined()
+      }
     })
   })
 })

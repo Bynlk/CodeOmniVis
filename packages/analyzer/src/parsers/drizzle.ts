@@ -255,7 +255,10 @@ export class DrizzleParser implements Parser {
       const callback = args[1]
       if (!Node.isArrowFunction(callback)) return
 
-      const body = callback.getBody()
+      const rawBody = callback.getBody()
+      // Drizzle documents relation callbacks as `() => ({ ... })`, which ts-morph
+      // exposes as a parenthesized expression rather than the inner object.
+      const body = Node.isParenthesizedExpression(rawBody) ? rawBody.getExpression() : rawBody
       if (!Node.isObjectLiteralExpression(body)) return
 
       // 解析关系属性

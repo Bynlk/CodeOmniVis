@@ -5,9 +5,10 @@ import type { CodeOmniVisConfig, ProjectMeta } from '@codeomnivis/shared'
 function safeConfiguredPath(root: string, candidate: string): string | null {
   const resolved = path.resolve(root, candidate)
   try {
+    const realRoot = fs.realpathSync.native(root)
     const real = fs.realpathSync.native(resolved)
     const lexicalRelative = path.relative(root, resolved)
-    const realRelative = path.relative(root, real)
+    const realRelative = path.relative(realRoot, real)
     const lexicalInside = lexicalRelative === ''
       || (!lexicalRelative.startsWith('..') && !path.isAbsolute(lexicalRelative))
     const realInside = realRelative === ''

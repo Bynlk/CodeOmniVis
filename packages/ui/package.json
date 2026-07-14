@@ -28,6 +28,7 @@
     "build": "vite build",
     "lint": "eslint src/",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.test.json"

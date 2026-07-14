@@ -2,7 +2,6 @@
  * feature-008 可访问性测试:关键交互控件的 aria/role 存在性(SSR 静态标记断言)。
  *  - CommandPalette:role=dialog + aria-modal + listbox/option。
  *  - SettingsDrawer:role=dialog + aria-modal + aria-label。
- *  - TabBar:role=tablist/tab + aria-selected。
  *  - LangToggle:图标按钮有 aria-label。
  * 不依赖 jsdom 视口；测试 setup 提供与运行时一致的英文 i18n。
  */
@@ -13,7 +12,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { OmniGraph } from '@codeomnivis/shared'
 import { CommandPalette } from '../../src/components/CommandPalette'
 import { SettingsDrawer } from '../../src/components/SettingsDrawer'
-import { TabBar } from '../../src/components/TabBar/TabBar'
 import { LangToggle } from '../../src/components/Header/LangToggle'
 import GraphCanvas from '../../src/components/GraphCanvas'
 
@@ -74,17 +72,6 @@ describe('feature-008 a11y - SettingsDrawer', () => {
     const html = renderWithQuery(<SettingsDrawer open onClose={() => {}} />)
     expect(html).toContain('data-modal-focus-trap="settings"')
     expect(html).toContain('tabindex="-1"')
-  })
-})
-
-describe('feature-008 a11y - TabBar', () => {
-  it('暴露 tablist / tab / aria-selected', () => {
-    const html = renderToStaticMarkup(
-      <TabBar activeTab={null} onTabChange={() => {}} issueBadgeCount={0} />,
-    )
-    expect(html).toContain('role="tablist"')
-    expect(html).toContain('role="tab"')
-    expect(html).toContain('aria-selected')
   })
 })
 

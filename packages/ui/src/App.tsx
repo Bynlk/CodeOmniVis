@@ -32,6 +32,35 @@ import { deriveWorkbenchGraph } from './lib/workbenchViews'
 import { mergeQualityFindings } from './lib/qualityFindings'
 import type { ArchitectureDepth, WorkbenchView } from './types/workbench'
 
+interface WorkbenchShortcutEvent {
+  metaKey: boolean
+  ctrlKey: boolean
+  key: string
+  preventDefault: () => void
+}
+
+interface WorkbenchShortcutActions {
+  setActiveView: (view: WorkbenchView) => void
+  toggleCommandPalette: () => void
+}
+
+export function handleWorkbenchShortcut(
+  event: WorkbenchShortcutEvent,
+  actions: WorkbenchShortcutActions,
+): void {
+  const hasCommandModifier = event.metaKey || event.ctrlKey
+  if (hasCommandModifier && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    actions.toggleCommandPalette()
+  }
+  if (hasCommandModifier && ['1', '2', '3', '4', '5'].includes(event.key)) {
+    event.preventDefault()
+    const views: WorkbenchView[] = ['architecture', 'requests', 'data', 'tests', 'quality']
+    const view = views[Number(event.key) - 1]
+    if (view) actions.setActiveView(view)
+  }
+}
+
 function GraphLoadingState() {
   const { t } = useTranslation()
   return (
@@ -109,17 +138,10 @@ function App() {
   )
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault()
-        toggleCommandPalette()
-      }
-      if ((event.metaKey || event.ctrlKey) && ['1', '2', '3', '4', '5'].includes(event.key)) {
-        event.preventDefault()
-        const views: WorkbenchView[] = ['architecture', 'requests', 'data', 'tests', 'quality']
-        setActiveView(views[Number(event.key) - 1])
-      }
-    }
+    const onKeyDown = (event: KeyboardEvent) => handleWorkbenchShortcut(
+      event,
+      { setActiveView, toggleCommandPalette },
+    )
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [setActiveView, toggleCommandPalette])

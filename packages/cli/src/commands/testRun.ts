@@ -3,11 +3,41 @@ import type { Command } from 'commander'
 import { runTestRunner, type SupportedTestRunner } from '../utils/testRunner'
 import { runTestImport } from './testImport'
 
-interface TestRunOptions {
+export interface TestRunOptions {
   project: string
   runner: SupportedTestRunner
   timeout: string
   junit?: string
+}
+
+export interface TestRunCommandDeps {
+  run: typeof runTestRunner
+  importResults: typeof runTestImport
+  stdout: (value: string) => void
+  stderr: (value: string) => void
+}
+
+const defaultDeps: TestRunCommandDeps = {
+  run: runTestRunner,
+  importResults: runTestImport,
+  stdout: value => { process.stdout.write(value) },
+  stderr: value => { process.stderr.write(value) },
+}
+
+export async function runTestCommand(
+  runnerArgs: string[],
+  options: TestRunOptions,
+  deps: TestRunCommandDeps = defaultDeps,
+): Promise<void> {
+  const projectRoot = path.resolve(options.project)
+  const request = { projectRoot, runner: options.runner, timeoutMs: Number(options.timeout), extraArgs: runnerArgs }
+  const plan = { cwd: projectRoot, runner: options.runner, args: runnerArgs }
+  deps.stderr(`[codeomnivis] test-run ${JSON.stringify(plan)}\n`)
+  const result = await deps.run(request)
+  deps.stdout(result.stdout)
+  deps.stderr(result.stderr)
+  if (options.junit) await deps.importResults({ project: projectRoot, junit: options.junit })
+  if (result.exitCode !== 0) process.exitCode = result.exitCode ?? 1
 }
 
 export function testRunCommand(program: Command): void {
@@ -21,14 +51,6 @@ export function testRunCommand(program: Command): void {
     .argument('[runnerArgs...]')
     .allowUnknownOption()
     .action(async (runnerArgs: string[], options: TestRunOptions) => {
-      const projectRoot = path.resolve(options.project)
-      const request = { projectRoot, runner: options.runner, timeoutMs: Number(options.timeout), extraArgs: runnerArgs }
-      const plan = { cwd: projectRoot, runner: options.runner, args: runnerArgs }
-      process.stderr.write(`[codeomnivis] test-run ${JSON.stringify(plan)}\n`)
-      const result = await runTestRunner(request)
-      process.stdout.write(result.stdout)
-      process.stderr.write(result.stderr)
-      if (options.junit) await runTestImport({ project: projectRoot, junit: options.junit })
-      if (result.exitCode !== 0) process.exitCode = result.exitCode ?? 1
+      await runTestCommand(runnerArgs, options)
     })
 }

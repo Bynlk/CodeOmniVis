@@ -273,3 +273,50 @@ describe('GET /api/graph/issues', () => {
     expect(res.body.meta.detectors).toHaveLength(4)
   })
 })
+
+describe('Graph trace routes', () => {
+  it('returns a node trace and a model-specific dataflow', async () => {
+    const traceDb = new OmniDatabase(':memory:')
+    await traceDb.ready()
+    const model = {
+      id: 'db_model:prisma/schema.prisma:User',
+      type: 'db_model' as const,
+      name: 'User',
+      filePath: 'prisma/schema.prisma',
+      line: 1,
+      column: 1,
+      metadata: { tableName: 'users', fieldCount: 0, fields: [] },
+    }
+    const api = {
+      id: 'api_route:app/api/users/route.ts:/api/users',
+      type: 'api_route' as const,
+      name: '/api/users',
+      filePath: 'app/api/users/route.ts',
+      line: 1,
+      column: 1,
+      metadata: { method: 'GET' as const, route: '/api/users', isNextApiRoute: true },
+    }
+    traceDb.upsertNode(model)
+    traceDb.upsertNode(api)
+    traceDb.upsertEdge({
+      id: 'queries-user',
+      source: api.id,
+      target: model.id,
+      type: 'queries_db',
+      confidence: 'certain',
+      metadata: {},
+    })
+    const traceApp = express()
+    traceApp.use('/api/graph', createGraphRouter(traceDb))
+
+    const trace = await request(traceApp).get(`/api/graph/trace?node=${encodeURIComponent(model.id)}`)
+    const flow = await request(traceApp).get('/api/graph/dataflow?model=User')
+    traceDb.close()
+
+    expect(trace.status).toBe(200)
+    expect(trace.body.data.steps.length).toBeGreaterThan(0)
+    expect(flow.status).toBe(200)
+    expect(flow.body.data.modelName).toBe('User')
+    expect(flow.body.data.totalRoutes).toBe(1)
+  })
+})

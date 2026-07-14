@@ -3,11 +3,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
+import path from 'node:path'
 import { TypeormParser } from '../../src/parsers/typeorm'
-import type { ProjectMeta } from '@codeomnivis/shared'
+import { isEdgeOfType, type ParseContext, type ProjectMeta } from '@codeomnivis/shared'
 
+const projectRoot = path.resolve(__dirname, '../fixtures/typeorm')
 const typeormMeta: ProjectMeta = {
-  root: '/project',
+  root: projectRoot,
   frontendFramework: 'unknown',
   backendFramework: 'express',
   databaseType: 'typeorm',
@@ -23,6 +25,12 @@ const typeormMeta: ProjectMeta = {
   tsConfigPath: null,
   buildFile: null,
   packages: [],
+}
+const context: ParseContext = {
+  projectRoot,
+  projectMeta: typeormMeta,
+  tsConfig: null,
+  pathAliases: {},
 }
 
 describe('TypeormParser', () => {
@@ -63,6 +71,42 @@ describe('TypeormParser', () => {
 
     it('处理 Windows 路径', () => {
       expect(parser.canHandle('src\\entity\\User.ts', typeormMeta)).toBe(true)
+    })
+  })
+
+  describe('parse', () => {
+    it('extracts entity fields and all supported relation kinds', async () => {
+      const result = await parser.parse('src/entity/User.ts', context)
+
+      expect(result.errors).toEqual([])
+      expect(result.nodes).toEqual([
+        expect.objectContaining({
+          type: 'db_model',
+          name: 'User',
+          metadata: expect.objectContaining({ tableName: 'users', fieldCount: 3 }),
+        }),
+      ])
+      expect(result.edges.filter(edge => isEdgeOfType(edge, 'db_relation')).map(edge => edge.metadata.relationType)).toEqual([
+        'one_to_one',
+        'one_to_many',
+        'many_to_one',
+        'many_to_many',
+      ])
+    })
+
+    it('degrades a missing entity file to a warning', async () => {
+      const result = await parser.parse('src/entity/Missing.ts', context)
+
+      expect(result.nodes).toEqual([])
+      expect(result.edges).toEqual([])
+      expect(result.errors).toEqual([
+        expect.objectContaining({ severity: 'warning', message: expect.stringContaining('TypeORM parser failed') }),
+      ])
+    })
+
+    it('returns an empty result for an entity file without decorated classes', async () => {
+      const result = await parser.parse('src/entity/Empty.ts', context)
+      expect(result).toEqual({ nodes: [], edges: [], errors: [] })
     })
   })
 })

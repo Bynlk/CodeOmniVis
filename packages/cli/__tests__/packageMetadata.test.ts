@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 interface CliPackageManifest {
@@ -13,7 +12,9 @@ interface CliPackageManifest {
 }
 
 function readCliPackageManifest(): CliPackageManifest {
-  return JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')) as CliPackageManifest
+  return JSON.parse(
+    readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+  ) as CliPackageManifest
 }
 
 describe('public CLI package metadata', () => {

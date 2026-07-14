@@ -1,8 +1,9 @@
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createTestRunPlan, runTestRunner } from '../../src/utils/testRunner'
+import { runTestCommand } from '../../src/commands/testRun'
 
 describe('bounded test runner', () => {
   it('builds an argv-only Vitest plan with no shell', () => {
@@ -28,5 +29,27 @@ describe('bounded test runner', () => {
     } finally {
       fs.rmSync(root, { recursive: true, force: true })
     }
+  })
+
+  it('reports the explicit plan, imports requested JUnit, and preserves a failing exit code', async () => {
+    const run = vi.fn(async () => ({ exitCode: 2, signal: null, timedOut: false, stdout: 'out', stderr: 'err', truncated: false }))
+    const importResults = vi.fn(async () => ({ importedFiles: 1, cases: 1, unmatched: 0 }))
+    const stdout = vi.fn()
+    const stderr = vi.fn()
+    process.exitCode = undefined
+
+    await runTestCommand(['tests/order.test.ts'], {
+      project: process.cwd(), runner: 'vitest', timeout: '1000', junit: 'results.xml',
+    }, { run, importResults, stdout, stderr })
+
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({
+      projectRoot: process.cwd(), runner: 'vitest', timeoutMs: 1000,
+      extraArgs: ['tests/order.test.ts'],
+    }))
+    expect(importResults).toHaveBeenCalledWith({ project: process.cwd(), junit: 'results.xml' })
+    expect(stdout).toHaveBeenCalledWith('out')
+    expect(stderr.mock.calls.flat().join('')).toContain('test-run')
+    expect(process.exitCode).toBe(2)
+    process.exitCode = undefined
   })
 })

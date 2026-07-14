@@ -3,11 +3,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
+import path from 'node:path'
 import { ExpressParser } from '../../src/parsers/express'
-import type { ProjectMeta } from '@codeomnivis/shared'
+import { isNodeOfType, type ParseContext, type ProjectMeta } from '@codeomnivis/shared'
 
+const projectRoot = path.resolve(__dirname, '../fixtures/express-contract')
 const expressMeta: ProjectMeta = {
-  root: '/project',
+  root: projectRoot,
   frontendFramework: 'unknown',
   backendFramework: 'express',
   databaseType: 'unknown',
@@ -23,6 +25,12 @@ const expressMeta: ProjectMeta = {
   tsConfigPath: null,
   buildFile: null,
   packages: [],
+}
+const context: ParseContext = {
+  projectRoot,
+  projectMeta: expressMeta,
+  tsConfig: null,
+  pathAliases: {},
 }
 
 describe('ExpressParser', () => {
@@ -59,6 +67,35 @@ describe('ExpressParser', () => {
 
     it('处理 Windows 路径', () => {
       expect(parser.canHandle('server\\routes\\users.ts', expressMeta)).toBe(true)
+    })
+  })
+
+  describe('parse', () => {
+    it('extracts app and router routes with the router prefix', async () => {
+      const result = await parser.parse('src/routes/orders.ts', context)
+
+      expect(result.errors).toEqual([])
+      expect(result.nodes.filter(node => isNodeOfType(node, 'api_route')).map(node => ({
+        name: node.name,
+        method: node.metadata.method,
+      }))).toEqual([
+        { name: '/v1', method: 'GET' },
+        { name: '/v1/orders', method: 'POST' },
+        { name: '/health', method: 'PATCH' },
+      ])
+    })
+
+    it('degrades a missing route file to a warning', async () => {
+      const result = await parser.parse('src/routes/missing.ts', context)
+      expect(result.nodes).toEqual([])
+      expect(result.errors).toEqual([
+        expect.objectContaining({ severity: 'warning', message: expect.stringContaining('Express parser failed') }),
+      ])
+    })
+
+    it('ignores calls without static paths or supported methods', async () => {
+      const result = await parser.parse('src/routes/empty.ts', context)
+      expect(result).toEqual({ nodes: [], edges: [], errors: [] })
     })
   })
 })
