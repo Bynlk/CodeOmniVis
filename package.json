@@ -13,7 +13,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "test": "pnpm test:audit && turbo test",
-    "test:coverage": "vitest --run --coverage",
+    "test:coverage": "pnpm build && vitest --run --coverage",
     "test:e2e": "pnpm build && playwright test",
     "test:contracts": "pnpm --filter @codeomnivis/contract-tests test",
     "lint": "turbo lint",

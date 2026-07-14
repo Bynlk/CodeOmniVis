@@ -29,3 +29,4 @@
 | 2026-07-14 | 记录 npm 首次发布的双因素认证阻塞 | 官方 registry 拒绝未携带发布级 2FA 的上传，`@bynlk/codeomnivis@0.0.1` 尚未创建；复核 npm 11 的 `bin` 规范化警告后确认 tarball 仍保留 `codeomnivis → bin/codeomnivis.js`，无需修改包入口。完成本机安全认证后可重试发布 | Codex |
 | 2026-07-14 | 修复 GitHub Actions 的 pnpm 双重版本源 | 首次 `v0.1.0` workflow 在依赖安装前被新版 `pnpm/action-setup@v4` 拒绝：Action 输入声明 `version: 9`，根 `package.json` 同时声明 `packageManager: pnpm@9.0.0`。CI 四个 job 与 Release 现统一只信任 `packageManager`，避免版本漂移和 `ERR_PNPM_BAD_PM_VERSION` 类失败 | Codex |
 | 2026-07-14 | 让 lint 在干净 checkout 中显式构建 workspace 类型依赖 | GitHub Static quality 在无历史 `dist` 的环境中暴露 CLI ESLint 无法解析 analyzer 类型，产生 `no-unsafe-*` 假错误；本地工作区此前因缓存产物掩盖缺失依赖。Turbo 的 `lint` 任务现声明 `^build`，每个包 lint 前构建其 workspace 依赖，不再依赖命令顺序或脏工作区 | Codex |
+| 2026-07-14 | 让覆盖率命令在干净 checkout 中先构建 packed CLI | GitHub Tests and coverage 在直接运行 `pnpm test:coverage` 时，packed CLI 与 MCP 生命周期测试因缺少 `packages/cli/dist/index.js` 失败；本地完整门禁此前由前序 build 掩盖。`test:coverage` 现先执行 workspace build，使该公开验证命令可独立运行 | Codex |
