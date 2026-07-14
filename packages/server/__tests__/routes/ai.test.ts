@@ -2,26 +2,39 @@
  * AI 路由测试:契约 + 配置优先级 + 上游响应解析。
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import express from 'express'
 import request from 'supertest'
 import { registerAiRoutes } from '../../src/ai'
+import type { AiHttpClient, AiHttpResponse } from '../../src/aiRequestPolicy'
 
 // 默认 mock resolver:把测试主机解析为一个公网 IP,避免真实 DNS 查询。
 const PUBLIC_RESOLVER = async (_hostname: string): Promise<string[]> => ['93.184.216.34']
 
-function makeApp(resolver: (hostname: string) => Promise<string[]> = PUBLIC_RESOLVER) {
+function makeApp(
+  resolver: (hostname: string) => Promise<string[]> = PUBLIC_RESOLVER,
+  client: AiHttpClient = responseClient({ choices: [{ message: { content: 'ok' } }] }),
+) {
   const app = express()
   app.use(express.json())
-  registerAiRoutes(app, resolver)
+  registerAiRoutes(app, resolver, undefined, { client })
   return app
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
+async function* responseBody(value: string): AsyncGenerator<Uint8Array> {
+  yield Buffer.from(value)
+}
+
+function aiResponse(payload: unknown, status = 200): AiHttpResponse {
+  return {
     status,
-    headers: { 'Content-Type': 'application/json' },
-  })
+    body: responseBody(JSON.stringify(payload)),
+    close: async () => {},
+  }
+}
+
+function responseClient(payload: unknown, status = 200): AiHttpClient {
+  return async () => aiResponse(payload, status)
 }
 
 describe('POST /api/ai/chat', () => {
@@ -32,7 +45,9 @@ describe('POST /api/ai/chat', () => {
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    delete process.env.AI_BASE_URL
+    delete process.env.AI_API_KEY
+    delete process.env.AI_MODEL
   })
 
   it('returns 400 for an invalid body', async () => {
@@ -45,15 +60,14 @@ describe('POST /api/ai/chat', () => {
       .post('/api/ai/chat')
       .send({ messages: [{ role: 'user', content: 'hi' }] })
     expect(res.status).toBe(501)
-    expect(res.body.error).toBe('AI not configured')
+    expect(res.body.error.code).toBe('AI_NOT_CONFIGURED')
   })
 
   it('returns the AiChatResponse contract when config is provided', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      jsonResponse({ choices: [{ message: { role: 'assistant', content: 'hello world' } }] }),
-    )
-
-    const res = await request(makeApp())
+    const client = responseClient({
+      choices: [{ message: { role: 'assistant', content: 'hello world' } }],
+    })
+    const res = await request(makeApp(PUBLIC_RESOLVER, client))
       .post('/api/ai/chat')
       .send({
         messages: [{ role: 'user', content: 'hi' }],
@@ -68,11 +82,10 @@ describe('POST /api/ai/chat', () => {
     process.env.AI_BASE_URL = 'https://env.example.com/v1'
     process.env.AI_API_KEY = 'ek'
     process.env.AI_MODEL = 'em'
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      jsonResponse({ choices: [{ message: { role: 'assistant', content: 'from env' } }] }),
-    )
-
-    const res = await request(makeApp())
+    const client = responseClient({
+      choices: [{ message: { role: 'assistant', content: 'from env' } }],
+    })
+    const res = await request(makeApp(PUBLIC_RESOLVER, client))
       .post('/api/ai/chat')
       .send({ messages: [{ role: 'user', content: 'hi' }] })
 
@@ -81,9 +94,9 @@ describe('POST /api/ai/chat', () => {
   })
 
   it('returns 502 when the upstream fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('nope', { status: 500 }))
+    const client = responseClient({ error: 'hidden upstream detail' }, 500)
 
-    const res = await request(makeApp())
+    const res = await request(makeApp(PUBLIC_RESOLVER, client))
       .post('/api/ai/chat')
       .send({
         messages: [{ role: 'user', content: 'hi' }],
@@ -91,12 +104,18 @@ describe('POST /api/ai/chat', () => {
       })
 
     expect(res.status).toBe(502)
+    expect(res.body.error.code).toBe('AI_UPSTREAM_FAILED')
+    expect(JSON.stringify(res.body)).not.toContain('hidden upstream detail')
   })
 
   it('returns 400 and never fetches for a blocked private baseUrl (SSRF guard)', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    let called = false
+    const client: AiHttpClient = async () => {
+      called = true
+      return aiResponse({})
+    }
 
-    const res = await request(makeApp())
+    const res = await request(makeApp(PUBLIC_RESOLVER, client))
       .post('/api/ai/chat')
       .send({
         messages: [{ role: 'user', content: 'hi' }],
@@ -104,14 +123,18 @@ describe('POST /api/ai/chat', () => {
       })
 
     expect(res.status).toBe(400)
-    expect(res.body.error).toBe('Invalid AI baseUrl')
-    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(res.body.error.code).toBe('AI_DESTINATION_REJECTED')
+    expect(called).toBe(false)
   })
 
   it('returns 400 for non-loopback http baseUrl', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    let called = false
+    const client: AiHttpClient = async () => {
+      called = true
+      return aiResponse({})
+    }
 
-    const res = await request(makeApp())
+    const res = await request(makeApp(PUBLIC_RESOLVER, client))
       .post('/api/ai/chat')
       .send({
         messages: [{ role: 'user', content: 'hi' }],
@@ -119,15 +142,19 @@ describe('POST /api/ai/chat', () => {
       })
 
     expect(res.status).toBe(400)
-    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(called).toBe(false)
   })
 
   it('returns 400 and never fetches when hostname resolves to a private address (DNS rebinding)', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    let called = false
+    const client: AiHttpClient = async () => {
+      called = true
+      return aiResponse({})
+    }
     // 公网外观主机名,但解析到内网地址 -> 必须拦截
     const rebindResolver = async (_hostname: string): Promise<string[]> => ['169.254.169.254']
 
-    const res = await request(makeApp(rebindResolver))
+    const res = await request(makeApp(rebindResolver, client))
       .post('/api/ai/chat')
       .send({
         messages: [{ role: 'user', content: 'hi' }],
@@ -135,15 +162,19 @@ describe('POST /api/ai/chat', () => {
       })
 
     expect(res.status).toBe(400)
-    expect(res.body.error).toBe('Invalid AI baseUrl')
-    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(res.body.error.code).toBe('AI_DESTINATION_REJECTED')
+    expect(called).toBe(false)
   })
 
   it('returns 400 when hostname resolves to a loopback address (rebinding to localhost)', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    let called = false
+    const client: AiHttpClient = async () => {
+      called = true
+      return aiResponse({})
+    }
     const rebindResolver = async (_hostname: string): Promise<string[]> => ['127.0.0.1']
 
-    const res = await request(makeApp(rebindResolver))
+    const res = await request(makeApp(rebindResolver, client))
       .post('/api/ai/chat')
       .send({
         messages: [{ role: 'user', content: 'hi' }],
@@ -151,7 +182,7 @@ describe('POST /api/ai/chat', () => {
       })
 
     expect(res.status).toBe(400)
-    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(called).toBe(false)
   })
 })
 

@@ -240,7 +240,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
   // POST /api/ai/chat、/api/ai/explain — AI 聊天/节点说明
   // 配置优先级:请求体 config > 环境变量 > 501。上游为用户自备 OpenAI 兼容 endpoint。
-  registerAiRoutes(app, undefined, accessGuard)
+  registerAiRoutes(app, undefined, accessGuard, { allowLoopback: accessPolicy.loopback })
 
   // 静态文件服务（UI 产物）
   app.use(express.static(uiDistPath))

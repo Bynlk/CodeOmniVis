@@ -52,6 +52,22 @@ describe('non-loopback access policy', () => {
     expect(response.status).toBe(200)
   })
 
+  it('does not let a remote AI client reach a loopback provider', async () => {
+    server = createOmniServer({ host: '0.0.0.0', accessToken: 'remote-secret' })
+    await server.db.ready()
+
+    const response = await request(server.app)
+      .post('/api/ai/chat')
+      .set('Authorization', 'Bearer remote-secret')
+      .send({
+        messages: [{ role: 'user', content: 'hello' }],
+        config: { baseUrl: 'http://localhost:11434/v1', apiKey: 'local', model: 'local' },
+      })
+
+    expect(response.status).toBe(400)
+    expect(response.body.error.code).toBe('AI_DESTINATION_REJECTED')
+  })
+
   it('keeps loopback reads zero-config', async () => {
     server = createOmniServer({ host: '127.0.0.1' })
     await server.db.ready()
