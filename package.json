@@ -16,6 +16,7 @@
     "test:coverage": "pnpm build && vitest --run --coverage",
     "test:e2e": "pnpm build && playwright test",
     "test:contracts": "pnpm --filter @codeomnivis/contract-tests test",
+    "test:release": "node --test scripts/registryVisibility.test.mjs",
     "lint": "turbo lint",
     "format:check": "node scripts/verifyChangedFormatting.mjs",
     "test:format": "node --test scripts/verifyChangedFormatting.test.mjs",
@@ -28,7 +29,7 @@
     "verify:package": "node scripts/verifyPackedCli.mjs",
     "verify:contracts": "node scripts/verifyPublicContracts.mjs && pnpm test:contracts",
     "verify:registry": "node scripts/verifyRegistryInstall.mjs",
-    "quality:gate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test:coverage && node scripts/verifyChangedCoverage.mjs && pnpm test:contracts && pnpm test:e2e && pnpm audit:prod && pnpm verify:readme && pnpm verify:contracts && pnpm verify:package"
+    "quality:gate": "pnpm format:check && pnpm test:release && pnpm lint && pnpm typecheck && pnpm build && pnpm test:coverage && node scripts/verifyChangedCoverage.mjs && pnpm test:contracts && pnpm test:e2e && pnpm audit:prod && pnpm verify:readme && pnpm verify:contracts && pnpm verify:package"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

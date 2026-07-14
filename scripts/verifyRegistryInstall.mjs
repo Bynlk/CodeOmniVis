@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
+import { waitForPublishedVersion } from './registryVisibility.mjs'
 
 const OFFICIAL_REGISTRY = 'https://registry.npmjs.org'
 const PACKAGE_NAME = '@bynlk/codeomnivis'
@@ -155,12 +156,16 @@ try {
   )
 
   const packageSpec = PACKAGE_NAME + '@' + version
-  const published = run(
-    'npm',
-    ['view', packageSpec, 'version', '--registry=' + OFFICIAL_REGISTRY],
-    tempRoot,
-    env,
-  )
+  const published = await waitForPublishedVersion({
+    version,
+    lookup: () =>
+      run(
+        'npm',
+        ['view', packageSpec, 'version', '--registry=' + OFFICIAL_REGISTRY],
+        tempRoot,
+        env,
+      ),
+  })
   if (published !== version) {
     throw new Error('Official registry returned version "' + published + '" for ' + packageSpec)
   }
