@@ -7,7 +7,7 @@ describe('public CLI contract', () => {
     const commandNames = createCliProgram().commands.map(command => command.name())
 
     expect(commandNames).toEqual(
-      expect.arrayContaining(['analyze', 'check', 'init', 'mcp', 'serve', 'test-import']),
+      expect.arrayContaining(['analyze', 'check', 'init', 'mcp', 'serve', 'test-import', 'test-run']),
     )
   })
 
