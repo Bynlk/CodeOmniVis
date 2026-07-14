@@ -6,8 +6,6 @@
  */
 
 import type { Command } from 'commander'
-import ora from 'ora'
-import chalk from 'chalk'
 import * as path from 'path'
 
 interface McpOptions {
@@ -20,25 +18,33 @@ export function mcpCommand(program: Command): void {
     .description('Start MCP Server for AI assistant integration')
     .option('--project <path>', 'Project root path', '.')
     .action(async (options: McpOptions) => {
-      const spinner = ora('Starting MCP Server...').start()
+      let handle: { close: () => Promise<void> } | undefined
+      let stopRequested = false
+      let stopping = false
+      const stop = (): void => {
+        stopRequested = true
+        if (!handle || stopping) return
+        stopping = true
+        void handle.close()
+          .then(() => process.exit(0))
+          .catch((err: unknown) => {
+            process.stderr.write(`Failed to stop MCP Server: ${String(err)}\n`)
+            process.exit(1)
+          })
+      }
+      process.once('SIGINT', stop)
+      process.once('SIGTERM', stop)
 
       try {
-        // 设置项目根路径环境变量，供 MCP 模块使用
         const projectRoot = path.resolve(options.project)
-        process.env.CODEOMNIVIS_PROJECT = projectRoot
-
-        // 动态导入 MCP 包
-        await import('@codeomnivis/mcp')
-
-        spinner.succeed(chalk.green('MCP Server started'))
-        console.log(chalk.gray('\nListening on stdio transport'))
-        console.log(chalk.gray('Press Ctrl+C to stop'))
-
-        // MCP Server 会阻塞进程（通过 stdio transport）
+        const { startMcpServer } = await import('@codeomnivis/mcp')
+        handle = await startMcpServer({ projectRoot })
+        if (stopRequested) stop()
       } catch (err) {
-        spinner.fail(chalk.red('Failed to start MCP Server'))
-        console.error(err)
-        process.exit(1)
+        process.removeListener('SIGINT', stop)
+        process.removeListener('SIGTERM', stop)
+        process.stderr.write(`Failed to start MCP Server: ${String(err)}\n`)
+        process.exitCode = 1
       }
     })
 }
