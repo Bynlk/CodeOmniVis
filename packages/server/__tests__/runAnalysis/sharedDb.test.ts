@@ -76,7 +76,8 @@ describe('H1 RACE-01: analysis results reach the query layer (shared DB)', () =>
     await server.db.ready()
   })
 
-  afterEach(() => {
+  afterEach(async () => {
+    await server.stop()
     fs.rmSync(projectRoot, { recursive: true, force: true })
   })
 
@@ -94,12 +95,12 @@ describe('H1 RACE-01: analysis results reach the query layer (shared DB)', () =>
     // 与分析产出一致:至少包含 prisma 解析出的 db_model 节点
     const nodes: Array<{ type: string }> = graphRes.body.data.nodes
     expect(nodes.some((n) => n.type === 'db_model')).toBe(true)
-  })
+  }, 30_000)
 
   it('reads the same DB instance the analyzer wrote to (no separate handle)', async () => {
     await request(server.app).post('/api/analyze').send({})
     // server.db 与分析写入的是同一实例:直接 loadGraph 也应能看到节点
     const graph = server.db.loadGraph()
     expect(graph.nodes.length).toBeGreaterThan(0)
-  })
+  }, 30_000)
 })

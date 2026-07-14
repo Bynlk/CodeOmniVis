@@ -19,7 +19,14 @@ import { createGraphRouter } from './routes/graph'
 import { codeomnivisEvents, EVENTS } from './events'
 import { IncrementalAnalyzer } from './incremental'
 import { registerAiRoutes } from './ai'
-import { createMutatingGuard, isLoopbackHost } from './authGuard'
+import {
+  authenticateHeaders,
+  createAccessGuard,
+  createAccessPolicy,
+  createSessionHandler,
+  isLoopbackHost,
+} from './accessGuard'
+import { SessionStore } from './sessionStore'
 export { isLoopbackHost, createMutatingGuard } from './authGuard'
 import { isOriginAllowed, toOriginAllowlist } from './originGuard'
 import { resolveProjectRootRequest } from './projectRootPolicy'
@@ -42,8 +49,14 @@ export interface ServerOptions {
   detectProjectMeta?: (projectRoot: string) => Promise<ProjectMeta>
   uiDistPath?: string
   corsOrigin?: string | string[]
-  /** S-07:非 loopback 绑定时,mutating endpoints 要求的访问 token。 */
+  /** Non-loopback REST, WebSocket and AI access token. */
   accessToken?: string
+  /** HTTPS public origins must set Secure on browser session cookies. */
+  secureCookies?: boolean
+  /** Browser session absolute lifetime; defaults to 15 minutes. */
+  sessionTtlMs?: number
+  /** Maximum active in-memory browser sessions. */
+  maxSessions?: number
 }
 
 export interface ServerInstance {
@@ -70,6 +83,9 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     uiDistPath = path.resolve(__dirname, '../../ui/dist'),
     corsOrigin = `http://localhost:${port}`,
     accessToken,
+    secureCookies,
+    sessionTtlMs = 15 * 60 * 1_000,
+    maxSessions = 128,
   } = options
 
   // 初始化 Express
@@ -91,7 +107,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
   app.locals.dbPath = dbPath
 
   // 中间件
-  app.use(cors({ origin: corsOrigin }))
+  app.use(cors({ origin: corsOrigin, credentials: true }))
   app.use(express.json())
 
   // 初始化数据库
@@ -105,13 +121,26 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     projectMeta,
   })
 
-  // S-07:mutating endpoints 鉴权守卫(非 loopback 绑定必须携带 token)。
-  const mutatingGuard = createMutatingGuard({ host, token: accessToken })
+  const sessions = new SessionStore({ ttlMs: sessionTtlMs, maxSessions })
+  const accessPolicy = createAccessPolicy({
+    host,
+    accessToken,
+    sessions,
+    secureCookies: secureCookies ?? (
+      Array.isArray(corsOrigin)
+        ? corsOrigin.some(origin => origin.startsWith('https://'))
+        : corsOrigin.startsWith('https://')
+    ),
+  })
+  const accessGuard = createAccessGuard(accessPolicy)
   const allowArbitraryAbsoluteProjectRoots = isLoopbackHost(host)
 
+  // Browsers exchange the startup token once for a short-lived HttpOnly session.
+  app.post('/api/session', createSessionHandler(accessPolicy))
+
   // API 路由
-  const graphRouter = createGraphRouter(db, mutatingGuard, () => app.locals.projectRoot as string)
-  app.use('/api/graph', graphRouter)
+  const graphRouter = createGraphRouter(db, undefined, () => app.locals.projectRoot as string)
+  app.use('/api/graph', accessGuard, graphRouter)
 
   // 健康检查
   app.get('/api/health', (_req, res) => {
@@ -119,18 +148,18 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
   })
 
   // GET /api/status — 数据新鲜度
-  app.get('/api/status', (_req, res) => {
+  app.get('/api/status', accessGuard, (_req, res) => {
     res.json({ data: incrementalAnalyzer.getStatus(), meta: {} })
   })
 
   // GET /api/project — UI 需要绝对项目根路径来解析节点的相对源码位置。
-  app.get('/api/project', (_req, res) => {
+  app.get('/api/project', accessGuard, (_req, res) => {
     res.json({ data: { projectRoot: app.locals.projectRoot as string }, meta: {} })
   })
 
   // POST /api/analyze — 手动触发重新分析(兜底)
   // 与文件监听共用串行化逻辑,分析期间到达的变更不会丢失。
-  app.post('/api/analyze', mutatingGuard, async (_req, res) => {
+  app.post('/api/analyze', accessGuard, async (_req, res) => {
     try {
       await incrementalAnalyzer.refresh()
       res.json({ data: { success: true, status: incrementalAnalyzer.getStatus() }, meta: {} })
@@ -147,7 +176,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
   // POST /api/project — 运行时切换分析的项目根目录
   // body: { projectRoot: string }。校验目录存在,切换后重建图并重新分析。
-  app.post('/api/project', mutatingGuard, async (req, res) => {
+  app.post('/api/project', accessGuard, async (req, res) => {
     const body: unknown = req.body
     const projectRootInput = isJsonObject(body) ? body.projectRoot : undefined
     if (typeof projectRootInput !== 'string' || projectRootInput.trim() === '') {
@@ -211,7 +240,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
   // POST /api/ai/chat、/api/ai/explain — AI 聊天/节点说明
   // 配置优先级:请求体 config > 环境变量 > 501。上游为用户自备 OpenAI 兼容 endpoint。
-  registerAiRoutes(app)
+  registerAiRoutes(app, undefined, accessGuard)
 
   // 静态文件服务（UI 产物）
   app.use(express.static(uiDistPath))
@@ -232,12 +261,18 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
     path: '/ws',
     verifyClient: (info, done) => {
       const origin = info.origin
-      if (isOriginAllowed(origin, wsOriginAllowlist)) {
-        done(true)
-      } else {
+      if (!isOriginAllowed(origin, wsOriginAllowlist)) {
         console.warn(`WebSocket upgrade rejected: disallowed Origin "${origin ?? ''}"`)
         done(false, 403, 'Forbidden Origin')
+        return
       }
+      const decision = authenticateHeaders(info.req.headers, accessPolicy)
+      if (!decision.ok) {
+        console.warn(`WebSocket upgrade rejected: ${decision.code}`)
+        done(false, decision.status, decision.code)
+        return
+      }
+      done(true)
     },
   })
 
@@ -409,6 +444,7 @@ export function createOmniServer(options: ServerOptions = {}): ServerInstance {
 
     // 关闭数据库
     db.close()
+    sessions.dispose()
 
     const wasListening = startState === 'listening'
     startState = 'stopped'

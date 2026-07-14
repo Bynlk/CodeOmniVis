@@ -6,7 +6,7 @@
  * 不连接任何内部网关。
  */
 
-import type { Express, Request, Response } from 'express'
+import type { Express, Request, RequestHandler, Response } from 'express'
 import { promises as dns } from 'dns'
 import {
   isJsonObject,
@@ -163,7 +163,12 @@ async function handleChat(req: Request, res: Response, resolver: HostnameResolve
  * 在 app 上注册 /api/ai/chat 与 /api/ai/explain(两者共用 chat 契约)。
  * resolver 可注入以便测试(默认使用 dns.lookup)。
  */
-export function registerAiRoutes(app: Express, resolver: HostnameResolver = defaultResolver): void {
-  app.post('/api/ai/chat', (req, res) => { void handleChat(req, res, resolver) })
-  app.post('/api/ai/explain', (req, res) => { void handleChat(req, res, resolver) })
+export function registerAiRoutes(
+  app: Express,
+  resolver: HostnameResolver = defaultResolver,
+  accessGuard?: RequestHandler,
+): void {
+  const guard: RequestHandler = accessGuard ?? ((_req, _res, next) => next())
+  app.post('/api/ai/chat', guard, (req, res) => { void handleChat(req, res, resolver) })
+  app.post('/api/ai/explain', guard, (req, res) => { void handleChat(req, res, resolver) })
 }

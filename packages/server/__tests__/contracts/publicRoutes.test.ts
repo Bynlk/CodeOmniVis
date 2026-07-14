@@ -16,6 +16,7 @@ const PUBLIC_ROUTES: RouteCase[] = [
   { method: 'get', path: '/api/health' },
   { method: 'get', path: '/api/status' },
   { method: 'get', path: '/api/project' },
+  { method: 'post', path: '/api/session' },
   { method: 'get', path: '/api/graph' },
   { method: 'get', path: '/api/graph/nodes' },
   { method: 'get', path: '/api/graph/edges' },

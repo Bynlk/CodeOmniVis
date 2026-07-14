@@ -1,9 +1,8 @@
 /**
  * 访问鉴权守卫(S-07)
  *
- * 当服务器绑定到非 loopback 地址(局域网/公网可达)时,mutating endpoints
- * (`POST /api/analyze`、`POST /api/project`、`DELETE /api/graph`)必须携带
- * 有效的访问 token(`Authorization: Bearer <token>` 或 `X-Access-Token`)。
+ * 旧的 mutating-only guard 保留给直接使用 createGraphRouter 的兼容调用者。
+ * createOmniServer 使用 accessGuard.ts 的统一 REST/WebSocket/session 策略。
  *
  * loopback 绑定(localhost / 127.x / ::1)沿用本机信任模型,放行 mutating 请求。
  * 鉴权不依赖 CORS / X-Confirm —— 二者均可被非浏览器客户端伪造。
@@ -11,14 +10,9 @@
 
 import type { Request, Response, NextFunction } from 'express'
 import { timingSafeEqual } from 'crypto'
+import { isLoopbackHost } from './accessGuard'
 
-/** 判断绑定 host 是否为 loopback(本机可信)。 */
-export function isLoopbackHost(host: string): boolean {
-  const h = host.replace(/^\[|\]$/g, '').toLowerCase()
-  if (h === 'localhost') return true
-  if (h === '::1') return true
-  return /^127\./.test(h)
-}
+export { isLoopbackHost } from './accessGuard'
 
 /** 常量时间比较两个 token,避免计时侧信道。长度不等直接返回 false。 */
 function tokensMatch(a: string, b: string): boolean {
