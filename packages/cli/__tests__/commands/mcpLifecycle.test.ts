@@ -68,6 +68,8 @@ describe('mcp command lifecycle', () => {
 
     child.kill('SIGTERM')
     const [code, signal] = await once(child, 'exit')
-    expect({ code, signal }).toEqual({ code: 0, signal: null })
+    expect({ code, signal }).toEqual(
+      process.platform === 'win32' ? { code: null, signal: 'SIGTERM' } : { code: 0, signal: null },
+    )
   }, 35_000)
 })

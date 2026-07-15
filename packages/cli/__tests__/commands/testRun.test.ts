@@ -77,13 +77,13 @@ describe('bounded test runner', () => {
       const wrapper = path.join(root, isWindows ? 'gradlew.bat' : 'gradlew')
       fs.writeFileSync(
         wrapper,
-        isWindows ? '@echo off\r\n<nul set /p "=ok"\r\n' : '#!/bin/sh\nprintf "ok"\n',
+        isWindows ? '@echo off\r\n<nul set /p "=ok"\r\nexit /b 0\r\n' : '#!/bin/sh\nprintf "ok"\n',
       )
       if (!isWindows) fs.chmodSync(wrapper, 0o700)
       const result = await runTestRunner({
         projectRoot: root,
         runner: 'gradle',
-        timeoutMs: 2_000,
+        timeoutMs: 10_000,
         extraArgs: [],
       })
       expect(result).toMatchObject({ exitCode: 0, timedOut: false, stdout: 'ok', truncated: false })

@@ -31,7 +31,7 @@
 | 仓库自分析                                         | 429 个文件、1,455 个节点、1,754 条边、209 个问题、0 parse error；6 个 critical 均为 `demo/` fixture 的显式未鉴权路由，0 个来自 `__tests__/fixtures` |
 | 源码规模                                           | 严格按 `packages/*/src` 统计：206 个 TS/TSX 文件、25,927 行；22 个文件超过 300 行                                                                   |
 | GitHub 配置                                        | 7 个 YAML 文件可解析且 `.github` 全部通过 Prettier；Issue Forms、CODEOWNERS、Dependabot、CodeQL 和兼容矩阵齐备                                      |
-| Hosted 兼容性首轮反馈                              | Ubuntu Node 22/24 与 CodeQL 通过；Windows Node 20 暴露持久化句柄、Gradle `.bat` 执行和测试路径假设，均已补充本地 RED/GREEN 与跨入口回归             |
+| Hosted 兼容性反馈                                  | Ubuntu Node 22/24 与 CodeQL 通过；Windows Node 20 暴露持久化句柄、Gradle `.bat`、测试路径/信号和 parity 超时假设，均已补充本地 RED/GREEN 与并发回归 |
 | 完整提交范围                                       | `git diff --check origin/master...HEAD` 通过，tracked 工作树干净                                                                                    |
 
 ## 七维评分
@@ -87,7 +87,7 @@
 ### 证据
 
 - 165 个文件、866 项测试覆盖 parser、resolver、storage、CLI、MCP、REST、WebSocket、UI、错误路径、生命周期与真实协议。
-- 新增回归测试经过可观察的 RED/GREEN：映射 IPv6、部分压缩映射地址、语义 peer 相等、展开原生 IPv6 loopback/unspecified、生产 parser 不分发测试 fixture、Windows 可写持久化句柄，以及安全的 Gradle batch 执行计划。
+- 新增回归测试经过可观察的 RED/GREEN：映射 IPv6、部分压缩映射地址、语义 peer 相等、展开原生 IPv6 loopback/unspecified、生产 parser 不分发测试 fixture、Windows 可写持久化句柄、安全的 Gradle batch 执行计划，以及平台原生的路径/进程退出契约。
 - 全局覆盖率稳定高于 85/85/85/80 门禁，变更运行时代码另受单文件覆盖率门禁。
 - Playwright 从打包 CLI 启动真实服务并验证工作台与受控错误态；跨入口契约验证 TypeScript/Kotlin 快照和测试智能一致。
 - CI 保留原 Ubuntu Node 20 四大 job，并新增 Ubuntu Node 22、Node 24 与 Windows Node 20 兼容矩阵。
