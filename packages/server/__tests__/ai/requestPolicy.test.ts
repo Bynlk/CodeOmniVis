@@ -93,22 +93,28 @@ describe('AI request destination policy', () => {
     })
   })
 
-  it('re-reads a connected peer once after an empty initial address', async () => {
+  it('defers the first peer read until the connect listener has completed', async () => {
     const policyModule: Record<string, unknown> = await import('../../src/aiRequestPolicy')
     const readConnectedPeerAddress = policyModule.readConnectedPeerAddress
 
     expect(readConnectedPeerAddress).toBeTypeOf('function')
     if (typeof readConnectedPeerAddress !== 'function') return
 
-    const addresses = ['', '127.0.0.1']
+    let connectListenerActive = true
+    let readCount = 0
     const socket = {
       get remoteAddress(): string | undefined {
-        return addresses.shift()
+        readCount += 1
+        return connectListenerActive ? '' : '127.0.0.1'
       },
     }
 
-    await expect(readConnectedPeerAddress(socket)).resolves.toBe('127.0.0.1')
-    expect(addresses).toEqual([])
+    const pendingAddress = readConnectedPeerAddress(socket)
+    expect(readCount).toBe(0)
+    connectListenerActive = false
+
+    await expect(pendingAddress).resolves.toBe('127.0.0.1')
+    expect(readCount).toBe(1)
   })
 
   it('performs a bounded loopback request and closes its dispatcher', async () => {

@@ -154,11 +154,8 @@ export function createPeerMismatchError(
 export async function readConnectedPeerAddress(socket: {
   readonly remoteAddress?: string
 }): Promise<string | undefined> {
-  const initialAddress = socket.remoteAddress
-  if (initialAddress) return initialAddress
-
-  // Windows can expose an empty peer in the earliest connect listener; one
-  // bounded turn lets Node retry getpeername while preserving fail-closed checks.
+  // Reading an empty peer in Windows' earliest connect listener can cache that
+  // empty value, so defer the first getter access until Node finishes `ready`.
   await new Promise<void>((resolve) => setImmediate(resolve))
   return socket.remoteAddress || undefined
 }
