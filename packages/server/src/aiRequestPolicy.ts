@@ -151,11 +151,15 @@ export function createPeerMismatchError(
   )
 }
 
+export function schedulePinnedLookup(complete: () => void): void {
+  // A synchronous custom lookup leaves peer metadata empty on Windows Node 20.
+  queueMicrotask(complete)
+}
+
 export async function readConnectedPeerAddress(socket: {
   readonly remoteAddress?: string
 }): Promise<string | undefined> {
-  // Reading an empty peer in Windows' earliest connect listener can cache that
-  // empty value, so defer the first getter access until Node finishes `ready`.
+  // Read only after Node finishes the connector's synchronous `ready` phase.
   await new Promise<void>((resolve) => setImmediate(resolve))
   return socket.remoteAddress || undefined
 }
@@ -178,7 +182,8 @@ function createPinnedAgent(destination: UpstreamDestination): PinnedAgent {
     // A validated destination contains exactly one pinned address; Node's
     // multi-address family selection would request the incompatible `all` lookup shape.
     autoSelectFamily: false,
-    lookup: (_hostname, _options, callback) => callback(null, address, family),
+    lookup: (_hostname, _options, callback) =>
+      schedulePinnedLookup(() => callback(null, address, family)),
   })
   const verifiedConnector: typeof connector = (options, callback) => {
     connector(options, (error, socket) => {

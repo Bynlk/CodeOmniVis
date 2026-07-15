@@ -117,6 +117,22 @@ describe('AI request destination policy', () => {
     expect(readCount).toBe(1)
   })
 
+  it('schedules pinned lookup completion after the current stack', async () => {
+    const policyModule: Record<string, unknown> = await import('../../src/aiRequestPolicy')
+    const schedulePinnedLookup = policyModule.schedulePinnedLookup
+
+    expect(schedulePinnedLookup).toBeTypeOf('function')
+    if (typeof schedulePinnedLookup !== 'function') return
+
+    let synchronous = true
+    const completion = new Promise<boolean>((resolve) => {
+      schedulePinnedLookup(() => resolve(synchronous))
+    })
+    synchronous = false
+
+    await expect(completion).resolves.toBe(false)
+  })
+
   it('performs a bounded loopback request and closes its dispatcher', async () => {
     const server = createServer((request, response) => {
       request.resume()
