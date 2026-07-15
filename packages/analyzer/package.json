@@ -49,7 +49,7 @@
     "sql.js": "^1.10.0",
     "tree-sitter-wasms": "^0.1.13",
     "ts-morph": "^21.0.0",
-    "web-tree-sitter": "^0.20.8"
+    "web-tree-sitter": "^0.26.11"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

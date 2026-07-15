@@ -69,8 +69,8 @@
     "ts-morph": "^21.0.0",
     "typescript": "^5.5.0",
     "undici": "^6.27.0",
-    "web-tree-sitter": "^0.20.8",
-    "ws": "^8.16.0"
+    "web-tree-sitter": "^0.26.11",
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "@codeomnivis/analyzer": "workspace:*",
