@@ -142,6 +142,15 @@ export function matchesValidatedAddress(peerAddress: string, validatedAddress: s
   return normalizedPeer !== null && normalizedPeer === normalizedValidated
 }
 
+export function createPeerMismatchError(
+  peerAddress: string | undefined,
+  validatedAddress: string,
+): Error {
+  return new Error(
+    `AI upstream peer address did not match validated DNS (peer=${JSON.stringify(peerAddress ?? null)}, validated=${JSON.stringify(validatedAddress)})`,
+  )
+}
+
 interface PinnedAgent {
   dispatcher: Agent
   getPeerAddress: () => string | undefined
@@ -171,7 +180,7 @@ function createPinnedAgent(destination: UpstreamDestination): PinnedAgent {
       peerAddress = socket.remoteAddress
       if (!peerAddress || !matchesValidatedAddress(peerAddress, address)) {
         socket.destroy()
-        callback(new Error('AI upstream peer address did not match validated DNS'), null)
+        callback(createPeerMismatchError(peerAddress, address), null)
         return
       }
       callback(null, socket)

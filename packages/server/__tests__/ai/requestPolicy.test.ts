@@ -80,6 +80,19 @@ describe('AI request destination policy', () => {
     expect(matchesValidatedAddress('127.0.0.1', '93.184.216.34')).toBe(false)
   })
 
+  it('reports both compared addresses when peer verification fails internally', async () => {
+    const policyModule: Record<string, unknown> = await import('../../src/aiRequestPolicy')
+    const createPeerMismatchError = policyModule.createPeerMismatchError
+
+    expect(createPeerMismatchError).toBeTypeOf('function')
+    if (typeof createPeerMismatchError !== 'function') return
+
+    expect(createPeerMismatchError('::ffff:127.0.0.1', '127.0.0.2')).toMatchObject({
+      message:
+        'AI upstream peer address did not match validated DNS (peer="::ffff:127.0.0.1", validated="127.0.0.2")',
+    })
+  })
+
   it('performs a bounded loopback request and closes its dispatcher', async () => {
     const server = createServer((request, response) => {
       request.resume()
