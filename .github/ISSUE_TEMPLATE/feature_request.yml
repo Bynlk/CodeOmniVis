@@ -1,0 +1,47 @@
+name: Feature request
+description: Propose a focused product or parser improvement
+title: '[Feature]: '
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the user problem before the implementation. Focused requests with a concrete repository shape or workflow are easier to evaluate.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Which user or contributor workflow is currently blocked or unnecessarily difficult?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed outcome
+      description: Describe the observable behavior you want, without requiring one implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Which existing commands, graph views, parser patterns, or workarounds did you try?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and evidence
+      description: Name the affected framework or surface and include a minimal example, fixture shape, or expected graph nodes and edges.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and discussions for this request.
+          required: true
+        - label: I separated the required outcome from optional nice-to-have behavior.
+          required: true

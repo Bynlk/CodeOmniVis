@@ -1,0 +1,87 @@
+name: Bug report
+description: Report a reproducible CodeOmniVis defect
+title: '[Bug]: '
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Include the smallest reproducible project shape you can share. Remove access tokens, API keys, private paths, and source content that should not be public.
+  - type: input
+    id: version
+    attributes:
+      label: CodeOmniVis version
+      description: Run `npx @bynlk/codeomnivis --version` or provide the installed package version.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Windows
+        - Linux
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      description: Paste the output of `node --version`.
+      placeholder: v20.20.0
+    validations:
+      required: true
+  - type: input
+    id: project-stack
+    attributes:
+      label: Project stack
+      description: List the relevant frameworks, data layer, test runner, and monorepo tool.
+      placeholder: Next.js App Router, tRPC, Prisma, Vitest, pnpm workspace
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the incorrect behavior and where you observed it (CLI, workbench, REST, or MCP).
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the exact commands and minimal source or project structure needed to reproduce the problem.
+      placeholder: |
+        1. Run `npx @bynlk/codeomnivis serve --project ...`
+        2. Open ...
+        3. Select ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What result did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste the smallest useful CLI, server, browser-console, or MCP error output after removing secrets.
+      render: shell
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public-report safety
+      options:
+        - label: I removed tokens, API keys, private source code, and other secrets from this report.
+          required: true
+        - label: I searched existing issues and did not find the same reproducible problem.
+          required: true
