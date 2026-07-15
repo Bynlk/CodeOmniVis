@@ -18,7 +18,7 @@ export function persistDatabaseAtomically(filePath: string, data: Uint8Array): v
   )
   try {
     fs.writeFileSync(temporary, Buffer.from(data), { mode: 0o600 })
-    const file = fs.openSync(temporary, 'r')
+    const file = fs.openSync(temporary, 'r+')
     try {
       fs.fsyncSync(file)
     } finally {
