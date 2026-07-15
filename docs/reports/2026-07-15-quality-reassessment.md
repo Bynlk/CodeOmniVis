@@ -4,12 +4,12 @@
 
 在沿用既有七维权重的前提下，本次全面复评得分为 **93.50/100**，较 2026-07-14 的 91.50 分提高 2.00 分。
 
-本轮提升主要来自四类可验证变化：AI 出站地址按 IP 语义规范化、测试源码与生产图解析边界统一、双语 GitHub 入口与信任说明补强，以及 CodeQL、Dependabot、Issue Forms、CODEOWNERS 和 Node/Windows 兼容矩阵落地。项目已具备较完整的本地质量闭环和公开仓库维护基础，但仍有 22 个超过 300 行的生产文件、仅 80.95% 的分支覆盖率，以及尚未完成独立渗透测试/fuzz 的输入攻击面。
+本轮提升主要来自四类可验证变化：AI 出站地址按 IP 语义规范化、测试源码与生产图解析边界统一、双语 GitHub 入口与信任说明补强，以及 CodeQL、Dependabot、Issue Forms、CODEOWNERS 和 Node/Windows 兼容矩阵落地。项目已具备较完整的本地质量闭环和公开仓库维护基础，但仍有 22 个超过 300 行的生产文件、仅 80.98% 的分支覆盖率，以及尚未完成独立渗透测试/fuzz 的输入攻击面。
 
 ## 评估口径与排除项
 
 - 权重保持为：代码与架构 25%、安全 15%、测试与 CI 15%、依赖 10%、文档与上手 20%、可维护性 10%、鲁棒性 5%。
-- 实现基线：`c893c64cc05086e5e77bba3247e5bfef44be298a`；本轮实现快照：`92e24ca`（最终报告提交前）。
+- 实现基线：`c893c64cc05086e5e77bba3247e5bfef44be298a`；本轮实现快照：PR #3 的兼容性修复提交（以本报告所在 Git 提交为准）。
 - 扫描范围：整个仓库的生产源码、关键测试、构建/发布脚本、GitHub 配置、公开文档、打包 CLI 和本地自分析结果。
 - **不采用 Codex Security Deep Scan 的任何结果。**
 - **不采用 `codex-security:security-scan` 的任何结果。**
@@ -21,16 +21,17 @@
 | 检查                                               | 结果                                                                                                                                                |
 | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm quality:gate`                                | 退出码 0；format、release 回归、lint、typecheck、build、coverage、契约、Playwright、audit、README、公共契约、packed CLI 全部通过                    |
-| Vitest 覆盖运行                                    | 164 个测试文件、852 项测试通过                                                                                                                      |
-| 全局覆盖率                                         | statements/lines 88.13%、functions 90.11%、branches 80.95%                                                                                          |
-| 变更源码门禁                                       | 5 个变更运行时文件达到单文件覆盖率要求                                                                                                              |
+| Vitest 覆盖运行                                    | 165 个测试文件、866 项测试通过                                                                                                                      |
+| 全局覆盖率                                         | statements/lines 88.13%、functions 90.12%、branches 80.98%                                                                                          |
+| 变更源码门禁                                       | 7 个变更运行时文件达到单文件覆盖率要求                                                                                                              |
 | `pnpm exec turbo run lint typecheck build --force` | 19/19 任务成功，0 cached                                                                                                                            |
 | Playwright                                         | 打包 CLI 驱动的真实 Chromium E2E 通过                                                                                                               |
 | `pnpm audit --prod --json`                         | 286 个生产依赖节点；info/low/moderate/high/critical 均为 0                                                                                          |
 | `node scripts/verifyRegistryInstall.mjs 0.1.0`     | npm 官方 registry 隔离安装和运行验证通过                                                                                                            |
 | 仓库自分析                                         | 429 个文件、1,455 个节点、1,754 条边、209 个问题、0 parse error；6 个 critical 均为 `demo/` fixture 的显式未鉴权路由，0 个来自 `__tests__/fixtures` |
-| 源码规模                                           | 严格按 `packages/*/src` 统计：206 个 TS/TSX 文件、25,911 行；22 个文件超过 300 行                                                                   |
+| 源码规模                                           | 严格按 `packages/*/src` 统计：206 个 TS/TSX 文件、25,927 行；22 个文件超过 300 行                                                                   |
 | GitHub 配置                                        | 7 个 YAML 文件可解析且 `.github` 全部通过 Prettier；Issue Forms、CODEOWNERS、Dependabot、CodeQL 和兼容矩阵齐备                                      |
+| Hosted 兼容性首轮反馈                              | Ubuntu Node 22/24 与 CodeQL 通过；Windows Node 20 暴露持久化句柄、Gradle `.bat` 执行和测试路径假设，均已补充本地 RED/GREEN 与跨入口回归             |
 | 完整提交范围                                       | `git diff --check origin/master...HEAD` 通过，tracked 工作树干净                                                                                    |
 
 ## 七维评分
@@ -85,8 +86,8 @@
 
 ### 证据
 
-- 164 个文件、852 项测试覆盖 parser、resolver、storage、CLI、MCP、REST、WebSocket、UI、错误路径、生命周期与真实协议。
-- 新增回归测试经过可观察的 RED/GREEN：映射 IPv6、部分压缩映射地址、语义 peer 相等、展开原生 IPv6 loopback/unspecified，以及生产 parser 不分发测试 fixture。
+- 165 个文件、866 项测试覆盖 parser、resolver、storage、CLI、MCP、REST、WebSocket、UI、错误路径、生命周期与真实协议。
+- 新增回归测试经过可观察的 RED/GREEN：映射 IPv6、部分压缩映射地址、语义 peer 相等、展开原生 IPv6 loopback/unspecified、生产 parser 不分发测试 fixture、Windows 可写持久化句柄，以及安全的 Gradle batch 执行计划。
 - 全局覆盖率稳定高于 85/85/85/80 门禁，变更运行时代码另受单文件覆盖率门禁。
 - Playwright 从打包 CLI 启动真实服务并验证工作台与受控错误态；跨入口契约验证 TypeScript/Kotlin 快照和测试智能一致。
 - CI 保留原 Ubuntu Node 20 四大 job，并新增 Ubuntu Node 22、Node 24 与 Windows Node 20 兼容矩阵。
@@ -94,7 +95,7 @@
 
 ### 扣分
 
-- branch coverage 80.95% 仅略高于 80% 门禁，明显落后于 statements/lines/functions。
+- branch coverage 80.98% 仅略高于 80% 门禁，明显落后于 statements/lines/functions。
 - Windows 和新增 Node 版本此前没有持续历史数据；本轮必须以 PR hosted checks 全绿作为合并条件。
 - 缺少 parser/path/XML/WASM 的 property-based 和 fuzz 测试，也没有长期性能趋势基线服务。
 
@@ -166,7 +167,7 @@
 | ---------- | ---: | ---: | -------------------------------------------------------- |
 | 代码与架构 |   92 |   93 | 统一生产/test 分发边界与共享 IP 语义                     |
 | 安全       |   89 |   92 | 关闭映射/非规范 IPv6 边界，增加 CodeQL 与私密报告入口    |
-| 测试与 CI  |   92 |   94 | 10 项新增回归、Node 22/24 与 Windows 矩阵、CodeQL        |
+| 测试与 CI  |   92 |   94 | 24 项新增回归、Node 22/24 与 Windows 矩阵、CodeQL        |
 | 依赖       |   90 |   92 | 分组 Dependabot 与 0/0/0/0 审计闭环                      |
 | 文档       |   94 |   97 | 双语 Quick Start、首分钟结果、FAQ、npm badges 与信任说明 |
 | 可维护性   |   89 |   90 | 中央路径策略与仓库维护模板；超长文件债务仍在             |
@@ -182,7 +183,7 @@
 
 ## 评估限制
 
-- 本轮进行了仓库级扫描、关键实现逐项审查和完整门禁，但没有逐行人工审计全部 25,911 行生产包源码。
+- 本轮进行了仓库级扫描、关键实现逐项审查和完整门禁，但没有逐行人工审计全部 25,927 行生产包源码。
 - 没有使用两类 Codex Security 扫描结果，也没有外部安全认证；92 分安全结论只能解释为“现有工程控制较强且证据完整”。
 - 本地运行环境为 macOS；新增 Linux/Windows/Node 兼容性最终以 GitHub hosted checks 为准。
 - cal.com 大项目证据沿用固定 revision 的既有可复现结果，本轮没有重新扫描上游后续版本。

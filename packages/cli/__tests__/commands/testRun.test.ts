@@ -1,11 +1,16 @@
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createTestRunPlan, runTestRunner } from '../../src/utils/testRunner'
 import { runTestCommand } from '../../src/commands/testRun'
 
 describe('bounded test runner', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllEnvs()
+  })
+
   it('builds an argv-only Vitest plan with no shell', () => {
     const plan = createTestRunPlan({
       projectRoot: process.cwd(),
@@ -68,9 +73,13 @@ describe('bounded test runner', () => {
   it('runs only an explicit validated Gradle wrapper', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-test-run-'))
     try {
-      const wrapper = path.join(root, 'gradlew')
-      fs.writeFileSync(wrapper, '#!/bin/sh\nprintf "ok"\n')
-      fs.chmodSync(wrapper, 0o700)
+      const isWindows = process.platform === 'win32'
+      const wrapper = path.join(root, isWindows ? 'gradlew.bat' : 'gradlew')
+      fs.writeFileSync(
+        wrapper,
+        isWindows ? '@echo off\r\n<nul set /p "=ok"\r\n' : '#!/bin/sh\nprintf "ok"\n',
+      )
+      if (!isWindows) fs.chmodSync(wrapper, 0o700)
       const result = await runTestRunner({
         projectRoot: root,
         runner: 'gradle',
@@ -82,6 +91,59 @@ describe('bounded test runner', () => {
       fs.rmSync(root, { recursive: true, force: true })
     }
   })
+
+  it('routes a Windows Gradle wrapper through cmd.exe without enabling a shell', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-test-plan-'))
+    const wrapper = path.join(root, 'gradlew.bat')
+    fs.writeFileSync(wrapper, '@echo off\r\n')
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+    vi.stubEnv('ComSpec', 'C:\\Windows\\System32\\cmd.exe')
+
+    try {
+      const plan = createTestRunPlan({
+        projectRoot: root,
+        runner: 'gradle',
+        timeoutMs: 1_000,
+        extraArgs: ['--tests', 'com.example.OrderTest'],
+      })
+
+      expect(plan.command).toBe('C:\\Windows\\System32\\cmd.exe')
+      expect(plan.args).toEqual([
+        '/d',
+        '/s',
+        '/c',
+        'gradlew.bat',
+        'test',
+        '--tests',
+        'com.example.OrderTest',
+      ])
+      expect(plan.options).toMatchObject({ cwd: root, shell: false })
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it.each(['&', '|', '<', '>', '(', ')', '^', '%', '!', '"', '\r', '\n'])(
+    'rejects the Windows cmd metacharacter %j in Gradle arguments',
+    (metacharacter) => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-test-plan-'))
+      fs.writeFileSync(path.join(root, 'gradlew.bat'), '@echo off\r\n')
+      vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+
+      try {
+        expect(() =>
+          createTestRunPlan({
+            projectRoot: root,
+            runner: 'gradle',
+            timeoutMs: 1_000,
+            extraArgs: [`safe${metacharacter}whoami`],
+          }),
+        ).toThrow('Windows command metacharacters')
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true })
+      }
+    },
+  )
 
   it('reports the explicit plan, imports requested JUnit, and preserves a failing exit code', async () => {
     const run = vi.fn(async () => ({

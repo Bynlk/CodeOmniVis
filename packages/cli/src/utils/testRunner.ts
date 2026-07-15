@@ -29,6 +29,7 @@ export interface TestRunPlan {
 const MAX_OUTPUT_BYTES = 10 * 1024 * 1024
 const MIN_TIMEOUT_MS = 1_000
 const MAX_TIMEOUT_MS = 30 * 60 * 1_000
+const WINDOWS_CMD_METACHARACTERS = /["&|<>()^%!\r\n]/u
 
 function isInside(root: string, candidate: string): boolean {
   const relative = path.relative(root, candidate)
@@ -44,6 +45,12 @@ function validateArgs(root: string, args: readonly string[]): void {
     if (path.isAbsolute(possiblePath) && !isInside(root, path.resolve(possiblePath))) {
       throw new Error('Runner argument path is outside the project')
     }
+  }
+}
+
+function validateWindowsCmdArgs(args: readonly string[]): void {
+  if (args.some((argument) => WINDOWS_CMD_METACHARACTERS.test(argument))) {
+    throw new Error('Gradle arguments cannot contain Windows command metacharacters')
   }
 }
 
@@ -74,10 +81,19 @@ export function createTestRunPlan(request: TestRunRequest): TestRunPlan {
       args = ['exec', 'cypress', 'run', ...request.extraArgs]
       break
     case 'gradle': {
-      command = path.join(root, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew')
-      if (!fs.existsSync(command))
+      const isWindows = process.platform === 'win32'
+      const wrapperName = isWindows ? 'gradlew.bat' : 'gradlew'
+      const wrapper = path.join(root, wrapperName)
+      if (!fs.existsSync(wrapper))
         throw new Error('Validated Gradle wrapper was not found in the project root')
-      args = ['test', ...request.extraArgs]
+      if (isWindows) {
+        validateWindowsCmdArgs(request.extraArgs)
+        command = process.env.ComSpec ?? 'cmd.exe'
+        args = ['/d', '/s', '/c', wrapperName, 'test', ...request.extraArgs]
+      } else {
+        command = wrapper
+        args = ['test', ...request.extraArgs]
+      }
       break
     }
     default:

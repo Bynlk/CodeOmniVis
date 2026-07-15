@@ -1,10 +1,14 @@
+import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { isCliMainModule, runCli } from '../src/index'
 
 describe('CLI entrypoint', () => {
   it('identifies direct module execution', () => {
-    expect(isCliMainModule(undefined, 'file:///entry.js')).toBe(false)
-    expect(isCliMainModule('/entry.js', 'file:///entry.js')).toBe(true)
+    const entry = resolve('entry.js')
+    const moduleUrl = pathToFileURL(entry).href
+    expect(isCliMainModule(undefined, moduleUrl)).toBe(false)
+    expect(isCliMainModule(entry, moduleUrl)).toBe(true)
   })
 
   it('awaits a successful command program', async () => {

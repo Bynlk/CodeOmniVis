@@ -1,9 +1,10 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { once } from 'node:events'
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 
-const repoRoot = new URL('../../../..', import.meta.url).pathname
+const repoRoot = fileURLToPath(new URL('../../../..', import.meta.url))
 const cliBin = resolve(repoRoot, 'packages/cli/bin/codeomnivis.js')
 const demoRoot = resolve(repoRoot, 'demo')
 
