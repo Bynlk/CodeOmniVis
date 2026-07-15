@@ -110,15 +110,19 @@ function verifyCompactLanding(readmePath, markdown) {
     )
   }
   for (const altText of REQUIRED_BADGE_ALT_TEXT) {
-    if (!markdown.includes(`![${altText}](`)) {
+    if (!hasBadgeAltText(markdown, altText)) {
       errors.push(`${readmePath}: missing stable badge alt text "${altText}"`)
     }
   }
   for (const altText of FORBIDDEN_BADGE_ALT_TEXT) {
-    if (markdown.includes(`![${altText}](`)) {
+    if (hasBadgeAltText(markdown, altText)) {
       errors.push(`${readmePath}: forbidden unstable badge alt text "${altText}"`)
     }
   }
+}
+
+function hasBadgeAltText(markdown, altText) {
+  return markdown.includes(`![${altText}](`) || markdown.includes(`alt="${altText}"`)
 }
 
 const readmes = new Map(README_FILES.map((path) => [path, readRequiredFile(path)]))

@@ -6,11 +6,11 @@ All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 
 ### Added
 
-- Bilingual npm version/download badges, an explicit Quick Start with first-minute outcomes, and a shared FAQ covering local processing, source handling, static-analysis confidence, MCP, and commercial licensing.
 - Structured Issue Forms, CODEOWNERS, grouped Dependabot updates, CodeQL, Node 22/24 and Windows compatibility checks, plus a dated 93.50/100 quality reassessment.
 
 ### Changed
 
+- The bilingual root README now prioritizes a visible Quick Start, four stable trust badges, a focused real-demo hero, compact evidence, MCP setup, and links to detailed documentation.
 - Markdown now participates in the changed-file formatting gate; current security and licensing documentation is separated from clearly marked historical snapshots.
 
 ### Fixed

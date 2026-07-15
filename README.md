@@ -14,10 +14,7 @@
 
 **English** · [简体中文](README.zh-CN.md) · [Documentation](docs/README.md) · [Demo guide](demo/README.md)
 
-[![CI](https://github.com/Bynlk/CodeOmniVis/actions/workflows/ci.yml/badge.svg)](https://github.com/Bynlk/CodeOmniVis/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/%40bynlk%2Fcodeomnivis.svg)](https://www.npmjs.com/package/@bynlk/codeomnivis)
-[![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A518-339933.svg)](https://nodejs.org/)
-[![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-6F83FF.svg)](LICENSE)
+<p align="center"><a href="https://github.com/Bynlk/CodeOmniVis/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Bynlk/CodeOmniVis/actions/workflows/ci.yml/badge.svg"></a> <a href="https://www.npmjs.com/package/@bynlk/codeomnivis"><img alt="npm version" src="https://img.shields.io/npm/v/%40bynlk%2Fcodeomnivis.svg"></a> <a href="https://nodejs.org/"><img alt="Node.js >= 18" src="https://img.shields.io/badge/Node.js-%E2%89%A518-339933.svg"></a> <a href="LICENSE"><img alt="License: PolyForm Noncommercial" src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-6F83FF.svg"></a></p>
 
 </div>
 
