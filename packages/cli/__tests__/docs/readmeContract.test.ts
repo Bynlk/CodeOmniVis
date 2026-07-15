@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 const repoRoot = fileURLToPath(new URL('../../../..', import.meta.url))
 
 describe('README contract', () => {
-  it('keeps visuals, npm discovery, FAQ, commands, search intent, and translations aligned', () => {
+  it('keeps the compact bilingual landing, trust claims, visuals, commands, and search intent aligned', () => {
     const result = spawnSync(process.execPath, ['scripts/verifyReadme.mjs'], {
       cwd: repoRoot,
       encoding: 'utf8',

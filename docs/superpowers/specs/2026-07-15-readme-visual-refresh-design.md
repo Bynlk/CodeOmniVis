@@ -57,7 +57,7 @@ Language and documentation links will appear before the primary visual so Chines
 
 The README will continue to use truthful product evidence only. No AI-generated or invented UI is allowed.
 
-The implementation will capture a new focused screenshot from the real bundled demo and replace the current primary hero. It must show the page-to-component-to-API relationship clearly at GitHub's rendered content width, preserve actual UI state, use a compact landscape aspect ratio, and be checked at desktop and narrow widths.
+The implementation will capture a new focused screenshot from the real bundled demo and replace the current primary hero. It must show the page-to-component-to-API relationship clearly at GitHub's rendered content width, preserve actual UI state, use a compact landscape aspect ratio, keep the browser's native screenshot format, and be checked at desktop and narrow widths.
 
 The architecture SVG remains the main explanatory diagram. The quality screenshot and MCP illustration do not need to remain as separate full-width sections when their information is already represented by concise copy and documentation links. Their source assets remain in the repository and may still be used by documentation pages.
 

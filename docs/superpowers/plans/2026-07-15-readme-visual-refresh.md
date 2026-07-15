@@ -14,7 +14,7 @@
 
 - Modify `scripts/verifyReadme.mjs` — enforce the compact anchor, badge, visual, trust, bilingual, and line-count contract.
 - Modify `packages/cli/__tests__/docs/readmeContract.test.ts` — describe the compact landing-page contract.
-- Create `docs/assets/readme/codeomnivis-workbench-focus.png` — truthful focused screenshot captured from the bundled demo.
+- Create `docs/assets/readme/codeomnivis-workbench-focus.jpg` — truthful focused screenshot captured from the bundled demo.
 - Modify `README.md` — compact English GitHub landing page.
 - Modify `README.zh-CN.md` — structurally equivalent compact Chinese landing page.
 - Modify `CHANGELOG.md` — replace the previous Unreleased README addition with the visual-refresh result.
@@ -44,7 +44,7 @@ const REQUIRED_SECTION_IDS = [
   'license',
 ]
 const REQUIRED_ASSETS = [
-  'docs/assets/readme/codeomnivis-workbench-focus.png',
+  'docs/assets/readme/codeomnivis-workbench-focus.jpg',
   'docs/assets/readme/typescript-full-stack-architecture-graph.svg',
 ]
 const REQUIRED_BADGE_ALT_TEXT = [
@@ -67,7 +67,9 @@ Add these checks without weakening existing local-link validation:
 function verifyCompactLanding(readmePath, markdown) {
   const lineCount = markdown.split(/\r?\n/u).length
   if (lineCount > MAX_README_LINES) {
-    errors.push(`${readmePath}: exceeds compact landing limit (${lineCount}/${MAX_README_LINES} lines)`)
+    errors.push(
+      `${readmePath}: exceeds compact landing limit (${lineCount}/${MAX_README_LINES} lines)`,
+    )
   }
   for (const altText of REQUIRED_BADGE_ALT_TEXT) {
     if (!markdown.includes(`![${altText}](`)) {
@@ -107,31 +109,31 @@ Expected: both commands fail because the current READMEs exceed 200 lines, inclu
 
 **Files:**
 
-- Create: `docs/assets/readme/codeomnivis-workbench-focus.png`
+- Create: `docs/assets/readme/codeomnivis-workbench-focus.jpg`
 
 - [ ] **Step 1: Build the CLI and UI**
 
 Run:
 
 ```bash
-pnpm --filter @bynlk/codeomnivis build
+pnpm exec turbo run build --filter=@bynlk/codeomnivis
 ```
 
-Expected: CLI, bundled UI, and workspace dependencies build successfully.
+Expected: Turbo builds or restores the CLI, bundled UI, and all upstream workspace dependencies before the CLI bundle runs. Direct `pnpm --filter @bynlk/codeomnivis build` is intentionally not used because it bypasses Turbo's `^build` dependency graph in a clean worktree.
 
 - [ ] **Step 2: Start the bundled demo in a persistent terminal session**
 
 Run:
 
 ```bash
-node packages/cli/bin/codeomnivis.js serve --project ./demo --no-open --port 4321
+node packages/cli/bin/codeomnivis.js serve --project ./demo --no-open --port 4322
 ```
 
-Expected: `/api/health` reports healthy and the workbench is available at `http://127.0.0.1:4321`.
+Expected: `/api/health` reports healthy and the workbench is available at `http://127.0.0.1:4322`. Port 4322 keeps the capture isolated from any existing default-port CodeOmniVis session.
 
 - [ ] **Step 3: Prepare the real focus state in the browser**
 
-Use a 1120×720 browser viewport. Open the local workbench, select `BookingList`, and activate the Focus view. Verify before capture:
+Use a 1280×720 browser viewport. Open the local workbench, select `BookingList`, and activate the Focus view. Verify before capture:
 
 - the canvas shows `BookingPage → BookingList → /api/booking`;
 - the inspector shows `components/BookingList.tsx`;
@@ -143,14 +145,14 @@ Use a 1120×720 browser viewport. Open the local workbench, select `BookingList`
 Save the actual browser viewport bytes to:
 
 ```text
-docs/assets/readme/codeomnivis-workbench-focus.png
+docs/assets/readme/codeomnivis-workbench-focus.jpg
 ```
 
-Expected image properties: PNG, 1120×720, no artificial callouts, no generated UI, no post-processing that changes product state.
+Expected image properties: browser-native JPEG, 1280×720, no artificial callouts, no generated UI, no post-processing that changes product state.
 
 - [ ] **Step 5: Stop the demo server**
 
-Send Ctrl-C to the persistent terminal session and confirm port 4321 is no longer listening.
+Send Ctrl-C to the persistent terminal session and confirm port 4322 is no longer listening.
 
 ### Task 3: Rewrite the bilingual landing pages and turn the contract green
 
@@ -160,7 +162,7 @@ Send Ctrl-C to the persistent terminal session and confirm port 4321 is no longe
 - Modify: `README.zh-CN.md`
 - Modify: `scripts/verifyReadme.mjs`
 - Modify: `packages/cli/__tests__/docs/readmeContract.test.ts`
-- Create: `docs/assets/readme/codeomnivis-workbench-focus.png`
+- Create: `docs/assets/readme/codeomnivis-workbench-focus.jpg`
 
 - [ ] **Step 1: Replace the English README with the approved order**
 
@@ -168,30 +170,39 @@ Use these exact section anchors and headings, in this order:
 
 ```markdown
 <a id="quick-start"></a>
+
 ## Quick Start
 
 <a id="workflows"></a>
+
 ## One graph, three workflows
 
 <a id="how-it-works"></a>
+
 ## How it works
 
 <a id="supported-stack"></a>
+
 ## Supported stack
 
 <a id="mcp"></a>
+
 ## MCP setup
 
 <a id="trust"></a>
+
 ## Trust and limitations
 
 <a id="development"></a>
+
 ## Development
 
 <a id="contributing"></a>
+
 ## Contributing
 
 <a id="license"></a>
+
 ## License
 ```
 
@@ -201,7 +212,7 @@ The header must contain the 72px real logo, English/Chinese/docs/demo links befo
 npx @bynlk/codeomnivis serve
 ```
 
-Use the new focused PNG once and the architecture SVG once. Keep every phrase in `REQUIRED_ENGLISH_INTENT` naturally present exactly where it helps the reader. Do not restore the downloads or stars badges.
+Use the new focused JPEG once and the architecture SVG once. Keep every phrase in `REQUIRED_ENGLISH_INTENT` naturally present exactly where it helps the reader. Do not restore the downloads or stars badges.
 
 The three workflow entries must cover:
 
@@ -217,13 +228,21 @@ Use these matching headings:
 
 ```markdown
 ## 快速开始
+
 ## 一张图谱，三种工作流
+
 ## 工作原理
+
 ## 支持范围
+
 ## MCP 配置
+
 ## 信任边界与限制
+
 ## 本地开发
+
 ## 参与贡献
+
 ## 许可证
 ```
 
@@ -262,7 +281,7 @@ Expected: README verification passes and the single Vitest contract passes.
 - [ ] **Step 6: Commit the compact bilingual landing**
 
 ```bash
-git add README.md README.zh-CN.md docs/assets/readme/codeomnivis-workbench-focus.png \
+git add README.md README.zh-CN.md docs/assets/readme/codeomnivis-workbench-focus.jpg \
   scripts/verifyReadme.mjs packages/cli/__tests__/docs/readmeContract.test.ts
 git commit -m "docs(docs): focus the bilingual README landing"
 ```
