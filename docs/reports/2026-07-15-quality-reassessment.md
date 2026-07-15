@@ -31,7 +31,7 @@
 | 仓库自分析                                         | 429 个文件、1,455 个节点、1,754 条边、209 个问题、0 parse error；6 个 critical 均为 `demo/` fixture 的显式未鉴权路由，0 个来自 `__tests__/fixtures` |
 | 源码规模                                           | 严格按 `packages/*/src` 统计：206 个 TS/TSX 文件、25,927 行；22 个文件超过 300 行                                                                   |
 | GitHub 配置                                        | 7 个 YAML 文件可解析且 `.github` 全部通过 Prettier；Issue Forms、CODEOWNERS、Dependabot、CodeQL 和兼容矩阵齐备                                      |
-| Hosted 兼容性反馈                                  | Ubuntu Node 22/24 与 CodeQL 通过；Windows Node 20 暴露持久化句柄、Gradle `.bat`、测试路径/信号和 parity 超时假设，均已补充本地 RED/GREEN 与并发回归 |
+| Hosted 兼容性反馈                                  | Ubuntu Node 22/24 与 CodeQL 通过；Windows Node 20 暴露持久化句柄、`.bat`/`.cmd`、测试路径/信号和 parity 超时假设，均有本地 RED/GREEN 与并发回归     |
 | 完整提交范围                                       | `git diff --check origin/master...HEAD` 通过，tracked 工作树干净                                                                                    |
 
 ## 七维评分
