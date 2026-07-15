@@ -1,7 +1,7 @@
 # CodeOmniVis 项目状态评估报告
 
 > [!WARNING]
-> **历史快照（2026-06-06）**：本文保留早期阶段评估，版本、解析器覆盖、CI、发布状态与 MIT License 等内容已过时。当前事实请以根目录 [README](../../README.md)、[SECURITY.md](../../SECURITY.md) 与最新[质量复评](../reports/2026-07-14-quality-90-reassessment.md)为准。
+> **历史快照（2026-06-06）**：本文保留早期阶段评估，版本、解析器覆盖、CI、发布状态与 MIT License 等内容已过时。当前事实请以根目录 [README](../../README.md)、[SECURITY.md](../../SECURITY.md) 与最新[质量复评](../reports/2026-07-15-quality-reassessment.md)为准。
 
 > 评估日期：2026-06-06
 > 评估依据：计划书 vs 实际代码逐项验证 + ByResume 项目实测

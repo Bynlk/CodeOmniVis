@@ -7,6 +7,7 @@ All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 ### Added
 
 - Bilingual npm version/download badges, an explicit Quick Start with first-minute outcomes, and a shared FAQ covering local processing, source handling, static-analysis confidence, MCP, and commercial licensing.
+- Structured Issue Forms, CODEOWNERS, grouped Dependabot updates, CodeQL, Node 22/24 and Windows compatibility checks, plus a dated 93.50/100 quality reassessment.
 
 ### Changed
 
@@ -14,7 +15,7 @@ All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 
 ### Fixed
 
-- AI destination policy now rejects semantically equivalent IPv4-mapped IPv6 private, loopback, and link-local forms while comparing validated peers by normalized address value.
+- AI destination policy now rejects semantically equivalent IPv4-mapped IPv6 private, loopback, and link-local forms plus expanded native IPv6 loopback/unspecified forms while comparing validated peers by normalized address value.
 - Production parser dispatch skips test-only source paths without removing those files from static test intelligence.
 
 ## [0.1.0] — 2026-07-14

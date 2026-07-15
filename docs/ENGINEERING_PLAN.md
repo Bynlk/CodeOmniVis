@@ -1,7 +1,7 @@
 # CodeOmniVis 工程化计划书
 
 > [!WARNING]
-> **历史快照（2026-06-06）**：本文记录当时的工程缺口与拟议动作，其中 CI、测试、npm 状态和 MIT License 等描述已不代表当前仓库。当前事实请以根目录 [README](../README.md)、[SECURITY.md](../SECURITY.md) 与最新[质量复评](reports/2026-07-14-quality-90-reassessment.md)为准。
+> **历史快照（2026-06-06）**：本文记录当时的工程缺口与拟议动作，其中 CI、测试、npm 状态和 MIT License 等描述已不代表当前仓库。当前事实请以根目录 [README](../README.md)、[SECURITY.md](../SECURITY.md) 与最新[质量复评](reports/2026-07-15-quality-reassessment.md)为准。
 
 > 生成日期：2026-06-06
 > 基于全量代码扫描 + 结论验证
