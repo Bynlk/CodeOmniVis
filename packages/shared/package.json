@@ -43,7 +43,7 @@
     "typecheck": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^26.1.1",
     "rimraf": "^5.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0",
