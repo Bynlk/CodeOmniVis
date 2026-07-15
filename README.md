@@ -13,6 +13,8 @@
 **A zero-config TypeScript architecture visualizer that connects Next.js pages, React components, APIs, services, and database models in one local workbench—and exposes the same graph to AI coding agents through MCP.**
 
 [![CI](https://github.com/Bynlk/CodeOmniVis/actions/workflows/ci.yml/badge.svg)](https://github.com/Bynlk/CodeOmniVis/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/%40bynlk%2Fcodeomnivis.svg)](https://www.npmjs.com/package/@bynlk/codeomnivis)
+[![npm downloads](https://img.shields.io/npm/dm/%40bynlk%2Fcodeomnivis.svg)](https://www.npmjs.com/package/@bynlk/codeomnivis)
 [![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A518-339933.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6.svg)](https://www.typescriptlang.org/)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-6F83FF.svg)](LICENSE)
@@ -20,15 +22,28 @@
 
 ![CodeOmniVis TypeScript architecture visualizer showing a focused Next.js dependency graph and React component graph](docs/assets/readme/codeomnivis-workbench-hero.png)
 
+**English** · [简体中文](README.zh-CN.md) · [Documentation](docs/README.md) · [Demo guide](demo/README.md)
+
+</div>
+
+<a id="quick-start"></a>
+
+## Quick Start
+
 ```bash
 npx @bynlk/codeomnivis serve
 ```
 
 Run it at your repository root. CodeOmniVis detects the project, analyzes it locally, opens the workbench, and keeps the graph fresh as files change.
 
-**English** · [简体中文](README.zh-CN.md) · [Documentation](docs/README.md) · [Demo guide](demo/README.md)
+### What you get in the first minute
 
-</div>
+| Outcome           | What appears in the workbench                                                                              |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| Project map       | Typed pages, components, API routes, services, database models, tests, and their relationships             |
+| Cross-layer trace | Source paths, line numbers, callers, dependencies, and page-to-database paths where static evidence exists |
+| Quality signals   | Parser warnings and deterministic consistency, security, N+1, and RSC-boundary findings                    |
+| Live context      | One versioned local snapshot shared by the workbench, CLI/REST, and MCP, with file-change refresh          |
 
 <a id="why-codeomnivis"></a>
 
@@ -99,14 +114,14 @@ This is **API and database dependency visualization** plus actionable source evi
 
 The MCP server reads the same local graph as the workbench. A client can ask:
 
-| Tool | Question it answers |
-| --- | --- |
-| `get_api_routes` | Which API, tRPC, TSRPC, or Express entry points exist, and what do they reach? |
-| `get_component_tree` | What does this page or component render? |
-| `find_callers` | Who calls this node, and which pages can be affected? |
-| `list_db_models` | Which Prisma, TypeORM, or Drizzle models were detected? |
-| `get_dataflow` | How does a model flow through API and service layers into the UI? |
-| `get_test_coverage` | Which suites, cases, and fixtures were discovered, and what production nodes are they statically linked to? |
+| Tool                 | Question it answers                                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `get_api_routes`     | Which API, tRPC, TSRPC, or Express entry points exist, and what do they reach?                              |
+| `get_component_tree` | What does this page or component render?                                                                    |
+| `find_callers`       | Who calls this node, and which pages can be affected?                                                       |
+| `list_db_models`     | Which Prisma, TypeORM, or Drizzle models were detected?                                                     |
+| `get_dataflow`       | How does a model flow through API and service layers into the UI?                                           |
+| `get_test_coverage`  | Which suites, cases, and fixtures were discovered, and what production nodes are they statically linked to? |
 
 <a id="supported-stack"></a>
 
@@ -114,13 +129,13 @@ The MCP server reads the same local graph as the workbench. A client can ask:
 
 Support is stated by evidence level so parser presence is not confused with equal production depth.
 
-| Evidence level | Current coverage |
-| --- | --- |
-| Demo-verified core path | Next.js App Router, Next.js Pages Router, React components, `fetch` / `axios`, Next.js Route Handlers, tRPC, services, Prisma |
-| Parser and regression coverage | Express, NestJS controllers/modules/services, TSRPC, TypeORM, Drizzle |
-| Static test intelligence | Vitest, Jest, Playwright, Cypress, JUnit 4/5, and Kotest discovery; shared Web, REST, CLI, and MCP projection |
-| Experimental | Kotlin syntax, Spring, Ktor, Room, Exposed; registered in the default pipeline with targeted tests, but less real-world breadth |
-| Workspace discovery | pnpm workspaces and Turborepo source-directory discovery; not yet a complete federated multi-package model |
+| Evidence level                 | Current coverage                                                                                                                |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Demo-verified core path        | Next.js App Router, Next.js Pages Router, React components, `fetch` / `axios`, Next.js Route Handlers, tRPC, services, Prisma   |
+| Parser and regression coverage | Express, NestJS controllers/modules/services, TSRPC, TypeORM, Drizzle                                                           |
+| Static test intelligence       | Vitest, Jest, Playwright, Cypress, JUnit 4/5, and Kotest discovery; shared Web, REST, CLI, and MCP projection                   |
+| Experimental                   | Kotlin syntax, Spring, Ktor, Room, Exposed; registered in the default pipeline with targeted tests, but less real-world breadth |
+| Workspace discovery            | pnpm workspaces and Turborepo source-directory discovery; not yet a complete federated multi-package model                      |
 
 The project also generates a **Prisma ER diagram** through database-model nodes and relation edges. TypeORM and Drizzle use the same `db_model` abstraction where their parsers can resolve a model.
 
@@ -154,15 +169,15 @@ npx @bynlk/codeomnivis check
 
 ### Command reference
 
-| Command | Purpose |
-| --- | --- |
-| `serve --project <path> [--port 4321] [--host localhost] [--no-open]` | Analyze, serve the workbench, watch files, and publish graph updates |
-| `analyze [-o codeomnivis-graph.json]` | Write the current repository graph as JSON |
-| `check` | Print parser diagnostics and deterministic consistency findings |
-| `mcp --project <path>` | Start the stdio MCP server |
-| `test-import --project <path> --junit <file-or-glob>` | Import bounded JUnit XML results without executing tests |
-| `test-run --project <path> --runner <name> [--timeout <ms>]` | Explicitly run one enumerated test runner with shell, path, time, and output bounds |
-| `init` | Generate a starter `.codeomnivis.json` file |
+| Command                                                               | Purpose                                                                             |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `serve --project <path> [--port 4321] [--host localhost] [--no-open]` | Analyze, serve the workbench, watch files, and publish graph updates                |
+| `analyze [-o codeomnivis-graph.json]`                                 | Write the current repository graph as JSON                                          |
+| `check`                                                               | Print parser diagnostics and deterministic consistency findings                     |
+| `mcp --project <path>`                                                | Start the stdio MCP server                                                          |
+| `test-import --project <path> --junit <file-or-glob>`                 | Import bounded JUnit XML results without executing tests                            |
+| `test-run --project <path> --runner <name> [--timeout <ms>]`          | Explicitly run one enumerated test runner with shell, path, time, and output bounds |
+| `init`                                                                | Generate a starter `.codeomnivis.json` file                                         |
 
 Binding to a non-loopback host requires a token for every REST/WebSocket surface except health. Bearer clients may use the token directly; browsers exchange it once for a short-lived HttpOnly, SameSite=Strict session. Local loopback usage remains the recommended default.
 
@@ -177,13 +192,7 @@ Add CodeOmniVis to a compatible client with an absolute project path:
   "mcpServers": {
     "codeomnivis": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@bynlk/codeomnivis",
-        "mcp",
-        "--project",
-        "/absolute/path/to/repository"
-      ]
+      "args": ["-y", "@bynlk/codeomnivis", "mcp", "--project", "/absolute/path/to/repository"]
     }
   }
 }
@@ -250,15 +259,15 @@ Run the bundled demo from source:
 node packages/cli/bin/codeomnivis.js serve --project ./demo --no-open
 ```
 
-| Package | Responsibility |
-| --- | --- |
-| [`packages/shared`](packages/shared) | Shared graph, issue, configuration, and protocol types |
+| Package                                  | Responsibility                                                                     |
+| ---------------------------------------- | ---------------------------------------------------------------------------------- |
+| [`packages/shared`](packages/shared)     | Shared graph, issue, configuration, and protocol types                             |
 | [`packages/analyzer`](packages/analyzer) | Parsers, cross-layer resolution, graph building, quality checks, and local storage |
-| [`packages/server`](packages/server) | REST API, WebSocket, project switching, and incremental analysis |
-| [`packages/ui`](packages/ui) | React + Cytoscape.js architecture workbench |
-| [`packages/mcp`](packages/mcp) | stdio MCP server and architecture query tools |
-| [`packages/cli`](packages/cli) | Public command entry point and self-contained distribution |
-| [`demo`](demo) | Deterministic full-stack fixture used for screenshots and integration tests |
+| [`packages/server`](packages/server)     | REST API, WebSocket, project switching, and incremental analysis                   |
+| [`packages/ui`](packages/ui)             | React + Cytoscape.js architecture workbench                                        |
+| [`packages/mcp`](packages/mcp)           | stdio MCP server and architecture query tools                                      |
+| [`packages/cli`](packages/cli)           | Public command entry point and self-contained distribution                         |
+| [`demo`](demo)                           | Deterministic full-stack fixture used for screenshots and integration tests        |
 
 More detail: [project directory](docs/project-directory.md), [parser pipeline](docs/architecture/parser-pipeline.md), [graph data model](docs/architecture/data-model.md), and [visualization architecture](docs/architecture/visualization.md).
 
@@ -271,6 +280,30 @@ More detail: [project directory](docs/project-directory.md), [parser pipeline](d
 - broader real-project fixtures for experimental parsers;
 - richer impact analysis while keeping findings deterministic;
 - documented public releases and reproducible package provenance.
+
+<a id="faq"></a>
+
+## FAQ
+
+### Is CodeOmniVis local-first?
+
+Yes. Analysis, the graph database, the workbench, and MCP run on your machine without a hosted account. `serve` binds to loopback by default; exposing it on a non-loopback address requires an access token.
+
+### Does it upload or modify my source code?
+
+The core analyzer reads supported project files but does not modify them, upload source code, or collect telemetry. Optional `/api/ai/*` routes make no upstream request until you configure an OpenAI-compatible provider; when you use them, the messages and selected context in that request go to the provider you chose. MCP architecture queries remain local.
+
+### How accurate is the graph?
+
+It is static-analysis evidence, not a runtime trace. Directly resolved relationships are marked `certain`; heuristic matches are marked `inferred`; parser gaps become warnings. Dynamic imports, dependency injection, generated code, and metaprogramming can remain unresolved.
+
+### How does MCP work?
+
+CodeOmniVis starts as a local stdio MCP server and exposes queries over the same `ProjectSnapshot` used by the workbench. Point your client at an absolute project path; if no cache exists, the MCP process runs the initial local analysis first.
+
+### Can I use CodeOmniVis commercially?
+
+The repository uses the PolyForm Noncommercial License 1.0.0. Learning, research, personal, and other noncommercial use are permitted; commercial use requires separate permission from the maintainer.
 
 <a id="contributing"></a>
 

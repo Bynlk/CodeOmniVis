@@ -6,7 +6,7 @@ test('selects changed source, config, and workflow files', () => {
   assert.equal(isFormattablePath('packages/ui/src/App.tsx'), true)
   assert.equal(isFormattablePath('package.json'), true)
   assert.equal(isFormattablePath('.github/workflows/ci.yml'), true)
-  assert.equal(isFormattablePath('docs/api/rest-api.md'), false)
+  assert.equal(isFormattablePath('docs/api/rest-api.md'), true)
 })
 
 test('skips generated output, caches, binary assets, and deleted-file placeholders', () => {

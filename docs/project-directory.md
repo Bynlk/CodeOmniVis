@@ -243,7 +243,7 @@ codeomnivis/
 ├── .gitignore
 ├── .eslintrc.json
 ├── .prettierrc
-├── LICENSE                           # MIT
+├── LICENSE                           # PolyForm Noncommercial 1.0.0
 ├── pnpm-workspace.yaml
 ├── turbo.json
 ├── package.json
@@ -256,51 +256,56 @@ codeomnivis/
 ## 文件职责说明
 
 ### shared 包
-| 文件 | 职责 |
-|------|------|
-| `types/node.ts` | 定义 `OmniNode`、`NodeType`、节点 metadata 类型 |
-| `types/edge.ts` | 定义 `OmniEdge`、`EdgeType`、边 metadata 类型 |
-| `types/graph.ts` | 定义 `OmniGraph`、`ParseResult`、`ProjectMeta` |
-| `types/issue.ts` | 定义 `Issue`、`IssueSeverity`、`IssueType` |
-| `types/config.ts` | 定义 `CodeOmniVisConfig`（.codeomnivis.json 的类型） |
-| `constants/nodeColors.ts` | 节点类型 → 颜色映射（与 UI 主题一致） |
-| `constants/defaults.ts` | 默认配置值（端口、追踪深度、聚合阈值等） |
+
+| 文件                      | 职责                                                 |
+| ------------------------- | ---------------------------------------------------- |
+| `types/node.ts`           | 定义 `OmniNode`、`NodeType`、节点 metadata 类型      |
+| `types/edge.ts`           | 定义 `OmniEdge`、`EdgeType`、边 metadata 类型        |
+| `types/graph.ts`          | 定义 `OmniGraph`、`ParseResult`、`ProjectMeta`       |
+| `types/issue.ts`          | 定义 `Issue`、`IssueSeverity`、`IssueType`           |
+| `types/config.ts`         | 定义 `CodeOmniVisConfig`（.codeomnivis.json 的类型） |
+| `constants/nodeColors.ts` | 节点类型 → 颜色映射（与 UI 主题一致）                |
+| `constants/defaults.ts`   | 默认配置值（端口、追踪深度、聚合阈值等）             |
 
 ### analyzer 包
-| 文件 | 职责 |
-|------|------|
-| `classifier.ts` | 根据文件路径和内容判断文件类型（前端/后端/schema） |
-| `parsers/prisma.ts` | 使用 `@prisma/internals` 解析 schema → `OmniNode[]` + `OmniEdge[]` |
-| `parsers/trpc.ts` | 使用 ts-morph 解析 tRPC router → `OmniNode[]` |
-| `parsers/nextjsApp.ts` | 扫描 `app/` 目录提取页面和 API route |
-| `parsers/reactComponent.ts` | ts-morph 提取 JSX 结构和 import |
-| `parsers/apiCalls.ts` | 识别 fetch/axios/tRPC hooks 调用 |
-| `resolver/symbolResolver.ts` | ts-morph 跨文件符号追踪：handler → service → DB |
-| `resolver/pathAlias.ts` | 解析 tsconfig.json 中的 paths 配置 |
-| `graph/builder.ts` | 合并所有 parser 输出，去重，生成最终图 |
-| `graph/consistency.ts` | 检测死链 API、未使用路由、method 不匹配 |
-| `storage/db.ts` | sql.js CRUD 操作封装 |
+
+| 文件                         | 职责                                                               |
+| ---------------------------- | ------------------------------------------------------------------ |
+| `classifier.ts`              | 根据文件路径和内容判断文件类型（前端/后端/schema）                 |
+| `parsers/prisma.ts`          | 使用 `@prisma/internals` 解析 schema → `OmniNode[]` + `OmniEdge[]` |
+| `parsers/trpc.ts`            | 使用 ts-morph 解析 tRPC router → `OmniNode[]`                      |
+| `parsers/nextjsApp.ts`       | 扫描 `app/` 目录提取页面和 API route                               |
+| `parsers/reactComponent.ts`  | ts-morph 提取 JSX 结构和 import                                    |
+| `parsers/apiCalls.ts`        | 识别 fetch/axios/tRPC hooks 调用                                   |
+| `resolver/symbolResolver.ts` | ts-morph 跨文件符号追踪：handler → service → DB                    |
+| `resolver/pathAlias.ts`      | 解析 tsconfig.json 中的 paths 配置                                 |
+| `graph/builder.ts`           | 合并所有 parser 输出，去重，生成最终图                             |
+| `graph/consistency.ts`       | 检测死链 API、未使用路由、method 不匹配                            |
+| `storage/db.ts`              | sql.js CRUD 操作封装                                               |
 
 ### server 包
-| 文件 | 职责 |
-|------|------|
+
+| 文件              | 职责                            |
+| ----------------- | ------------------------------- |
 | `routes/graph.ts` | 返回完整图数据（nodes + edges） |
-| `pathGuard.ts` | 路径遍历攻击防护 |
+| `pathGuard.ts`    | 路径遍历攻击防护                |
 
 ### ui 包
-| 文件 | 职责 |
-|------|------|
-| `GraphCanvas.tsx` | Cytoscape.js 容器，处理缩放/平移/点击事件 |
-| `NodeDetailPanel.tsx` | 右侧抽屉，显示节点详情、上下游、跳转源码 |
-| `CommandPalette.tsx` | Cmd+K 搜索框，实时过滤节点 |
-| `graphTransform.ts` | 将 REST API 返回的数据转换为 Cytoscape 元素格式 |
-| `cytoscapeConfig.ts` | Cytoscape 样式、布局、事件配置 |
+
+| 文件                  | 职责                                            |
+| --------------------- | ----------------------------------------------- |
+| `GraphCanvas.tsx`     | Cytoscape.js 容器，处理缩放/平移/点击事件       |
+| `NodeDetailPanel.tsx` | 右侧抽屉，显示节点详情、上下游、跳转源码        |
+| `CommandPalette.tsx`  | Cmd+K 搜索框，实时过滤节点                      |
+| `graphTransform.ts`   | 将 REST API 返回的数据转换为 Cytoscape 元素格式 |
+| `cytoscapeConfig.ts`  | Cytoscape 样式、布局、事件配置                  |
 
 ### mcp 包
-| 文件 | 职责 |
-|------|------|
+
+| 文件       | 职责                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------- |
 | `index.ts` | MCP Server 入口，包含全部工具实现（getApiRoutes/getComponentTree/findCallers/listDbModels/getDataFlow） |
 
 ---
 
-*目录结构文档结束*
+_目录结构文档结束_

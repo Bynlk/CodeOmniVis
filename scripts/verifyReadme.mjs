@@ -17,6 +17,7 @@ const REQUIRED_SECTION_IDS = [
   'limitations',
   'development',
   'roadmap',
+  'faq',
   'contributing',
   'license',
 ]
@@ -38,6 +39,8 @@ const REQUIRED_ENGLISH_INTENT = [
   'Cursor, Claude Code, and Cline',
 ]
 const QUICK_START = 'npx @bynlk/codeomnivis serve'
+const NPM_PACKAGE_URL = 'https://www.npmjs.com/package/@bynlk/codeomnivis'
+const REQUIRED_NPM_BADGE_ALT_TEXT = ['npm version', 'npm downloads']
 
 const errors = []
 
@@ -54,7 +57,10 @@ function localMarkdownTargets(markdown) {
   const targets = []
   const pattern = /!?\[[^\]]*\]\(([^)]+)\)/g
   for (const match of markdown.matchAll(pattern)) {
-    const rawTarget = match[1].trim().replace(/^<|>$/g, '').split(/\s+["']/u, 1)[0]
+    const rawTarget = match[1]
+      .trim()
+      .replace(/^<|>$/g, '')
+      .split(/\s+["']/u, 1)[0]
     if (!rawTarget || /^(?:https?:|mailto:|#)/u.test(rawTarget)) continue
     targets.push(rawTarget)
   }
@@ -91,9 +97,17 @@ function verifySharedContract(readmePath, markdown) {
   if (!markdown.includes(QUICK_START)) {
     errors.push(`${readmePath}: missing quick-start command "${QUICK_START}"`)
   }
+  if (!markdown.includes(NPM_PACKAGE_URL)) {
+    errors.push(`${readmePath}: missing npm package link "${NPM_PACKAGE_URL}"`)
+  }
+  for (const altText of REQUIRED_NPM_BADGE_ALT_TEXT) {
+    if (!markdown.includes(`![${altText}](`)) {
+      errors.push(`${readmePath}: missing npm badge alt text "${altText}"`)
+    }
+  }
 }
 
-const readmes = new Map(README_FILES.map(path => [path, readRequiredFile(path)]))
+const readmes = new Map(README_FILES.map((path) => [path, readRequiredFile(path)]))
 
 for (const [readmePath, markdown] of readmes) {
   if (!markdown) continue
