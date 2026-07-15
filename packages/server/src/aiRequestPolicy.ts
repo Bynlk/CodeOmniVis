@@ -2,6 +2,8 @@ import { isIP } from 'node:net'
 import { Agent, buildConnector, request as undiciRequest } from 'undici'
 import {
   isIpLiteral,
+  isLoopbackUpstreamHost,
+  normalizeUpstreamIpAddress,
   validateResolvedAddresses,
   validateUpstreamBaseUrl,
 } from '@codeomnivis/shared'
@@ -71,11 +73,6 @@ export class AiPolicyError extends Error {
   }
 }
 
-function isLiteralLoopback(hostname: string): boolean {
-  const normalized = hostname.replace(/^\[|\]$/gu, '')
-  return normalized === 'localhost' || normalized === '::1' || /^127\./u.test(normalized)
-}
-
 export async function resolveUpstreamDestination(
   baseUrl: string,
   resolver: HostnameResolver,
@@ -87,7 +84,7 @@ export async function resolveUpstreamDestination(
   }
   const url = new URL(baseUrl.replace(/\/+$/u, '') + '/chat/completions')
   const hostname = url.hostname
-  if (isLiteralLoopback(hostname) && !allowLoopback) {
+  if (isLoopbackUpstreamHost(hostname) && !allowLoopback) {
     throw new AiPolicyError('AI_DESTINATION_REJECTED', 400, 'Loopback AI providers are disabled')
   }
   if (hostname === 'localhost') return { url, hostname }
@@ -140,7 +137,31 @@ export async function readBoundedBody(
 }
 
 export function matchesValidatedAddress(peerAddress: string, validatedAddress: string): boolean {
-  return peerAddress === validatedAddress || peerAddress === `::ffff:${validatedAddress}`
+  const normalizedPeer = normalizeUpstreamIpAddress(peerAddress)
+  const normalizedValidated = normalizeUpstreamIpAddress(validatedAddress)
+  return normalizedPeer !== null && normalizedPeer === normalizedValidated
+}
+
+export function createPeerMismatchError(
+  peerAddress: string | undefined,
+  validatedAddress: string,
+): Error {
+  return new Error(
+    `AI upstream peer address did not match validated DNS (peer=${JSON.stringify(peerAddress ?? null)}, validated=${JSON.stringify(validatedAddress)})`,
+  )
+}
+
+export function schedulePinnedLookup(complete: () => void): void {
+  // A synchronous custom lookup leaves peer metadata empty on Windows Node 20.
+  queueMicrotask(complete)
+}
+
+export async function readConnectedPeerAddress(socket: {
+  readonly remoteAddress?: string
+}): Promise<string | undefined> {
+  // Read only after Node finishes the connector's synchronous `ready` phase.
+  await new Promise<void>((resolve) => setImmediate(resolve))
+  return socket.remoteAddress || undefined
 }
 
 interface PinnedAgent {
@@ -150,7 +171,7 @@ interface PinnedAgent {
 
 function createPinnedAgent(destination: UpstreamDestination): PinnedAgent {
   let peerAddress: string | undefined
-  if (!destination.address || !destination.family || isLiteralLoopback(destination.hostname)) {
+  if (!destination.address || !destination.family || isLoopbackUpstreamHost(destination.hostname)) {
     return {
       dispatcher: new Agent({ maxRedirections: 0 }),
       getPeerAddress: () => peerAddress,
@@ -161,7 +182,8 @@ function createPinnedAgent(destination: UpstreamDestination): PinnedAgent {
     // A validated destination contains exactly one pinned address; Node's
     // multi-address family selection would request the incompatible `all` lookup shape.
     autoSelectFamily: false,
-    lookup: (_hostname, _options, callback) => callback(null, address, family),
+    lookup: (_hostname, _options, callback) =>
+      schedulePinnedLookup(() => callback(null, address, family)),
   })
   const verifiedConnector: typeof connector = (options, callback) => {
     connector(options, (error, socket) => {
@@ -169,13 +191,15 @@ function createPinnedAgent(destination: UpstreamDestination): PinnedAgent {
         callback(error, null)
         return
       }
-      peerAddress = socket.remoteAddress
-      if (!peerAddress || !matchesValidatedAddress(peerAddress, address)) {
-        socket.destroy()
-        callback(new Error('AI upstream peer address did not match validated DNS'), null)
-        return
-      }
-      callback(null, socket)
+      void readConnectedPeerAddress(socket).then((resolvedPeerAddress) => {
+        peerAddress = resolvedPeerAddress
+        if (!peerAddress || !matchesValidatedAddress(peerAddress, address)) {
+          socket.destroy()
+          callback(createPeerMismatchError(peerAddress, address), null)
+          return
+        }
+        callback(null, socket)
+      })
     })
   }
   return {

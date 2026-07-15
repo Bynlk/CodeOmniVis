@@ -1,10 +1,11 @@
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { afterEach, describe, expect, it } from 'vitest'
 import { PUBLIC_TOOL_NAMES } from '../src/server'
 
-const repoRoot = new URL('../../..', import.meta.url).pathname
+const repoRoot = fileURLToPath(new URL('../../..', import.meta.url))
 const cliBin = resolve(repoRoot, 'packages/cli/bin/codeomnivis.js')
 const demoRoot = resolve(repoRoot, 'demo')
 

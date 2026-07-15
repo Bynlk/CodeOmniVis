@@ -17,27 +17,31 @@ const cliRoot = resolve(repoRoot, 'packages/cli')
 
 describe('packed CLI distribution', () => {
   it('contains runtime assets and excludes workspace-only files', () => {
-    const result = spawnSync('npm', [
-      'pack',
-      '--dry-run',
-      '--json',
-      '--registry=https://registry.npmjs.org',
-    ], {
-      cwd: cliRoot,
-      encoding: 'utf8',
-    })
+    const npmArgs = ['pack', '--dry-run', '--json', '--registry=https://registry.npmjs.org']
+    const result = spawnSync(
+      process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'npm',
+      process.platform === 'win32' ? ['/d', '/s', '/c', 'npm', ...npmArgs] : npmArgs,
+      {
+        cwd: cliRoot,
+        encoding: 'utf8',
+      },
+    )
 
-    expect(result.status, result.stderr || result.stdout).toBe(0)
+    expect(result.status, result.error?.message || result.stderr || result.stdout).toBe(0)
     const [packed] = JSON.parse(result.stdout) as PackResult[]
-    const paths = packed.files.map(file => file.path)
+    const paths = packed.files.map((file) => file.path)
 
     expect(packed.name).toBe('@bynlk/codeomnivis')
     expect(paths).toContain('bin/codeomnivis.js')
     expect(paths).toContain('dist/index.js')
-    expect(paths.some(path => path.startsWith('dist/ui/assets/'))).toBe(true)
+    expect(paths.some((path) => path.startsWith('dist/ui/assets/'))).toBe(true)
     expect(paths).toContain('dist/wasm/tree-sitter-kotlin.wasm')
     expect(paths).toContain('README.md')
     expect(paths).toContain('LICENSE')
-    expect(paths.some(path => /(?:^|\/)(?:src|__tests__|\.planning|\.superpowers)(?:\/|$)/u.test(path))).toBe(false)
+    expect(
+      paths.some((path) =>
+        /(?:^|\/)(?:src|__tests__|\.planning|\.superpowers)(?:\/|$)/u.test(path),
+      ),
+    ).toBe(false)
   })
 })

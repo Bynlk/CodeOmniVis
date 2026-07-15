@@ -4,11 +4,26 @@ All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Bilingual npm version/download badges, an explicit Quick Start with first-minute outcomes, and a shared FAQ covering local processing, source handling, static-analysis confidence, MCP, and commercial licensing.
+- Structured Issue Forms, CODEOWNERS, grouped Dependabot updates, CodeQL, Node 22/24 and Windows compatibility checks, plus a dated 93.50/100 quality reassessment.
+
+### Changed
+
+- Markdown now participates in the changed-file formatting gate; current security and licensing documentation is separated from clearly marked historical snapshots.
+
+### Fixed
+
+- AI destination policy now rejects semantically equivalent IPv4-mapped IPv6 private, loopback, and link-local forms plus expanded native IPv6 loopback/unspecified forms while comparing validated peers by normalized address value.
+- Production parser dispatch skips test-only source paths without removing those files from static test intelligence.
+
 ## [0.1.0] — 2026-07-14
 
 ### Stage B · 前端能力套件 (#15–#20)
 
 #### Added
+
 - **跨语言测试智能**：静态发现 Vitest、Jest、Playwright、Cypress、JUnit 4/5 与 Kotest suite/case/fixture；新增 `tests`、`covers`、`uses_fixture` 图关系、Tests 工作台、`GET /api/tests`、MCP `get_test_coverage`、显式有界 `test-run` 与安全 JUnit XML `test-import`。
 - **跨入口快照契约**：混合 TypeScript/Kotlin fixture 验证 Analyzer、CLI JSON、REST 与 MCP 的 `snapshotDigest` 及测试节点/边 ID 完全一致；1000 文件完整分析纳入 60 秒性能门禁。
 - **可执行公共文档契约**：CLI、REST 与 MCP 文档中的 fenced inventory 会与实际注册表逐项比对，同时校验 workspace filters、AI 配置描述与 cal.com 实测证据；固定 cal.com revision `f00434927386c9ecdcbd7e6c5f82d22044a245bc` 完成 2,243 文件、3,223 节点、4,413 边、0 parse error 的 50.15 秒静态分析。
@@ -25,11 +40,13 @@ All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 - 18 个新 i18n key/locale(EN/ZH),共 155 key。
 
 #### Changed
+
 - AiPanel 读取 `data.data.content`(原 `data.response`);AiPanel/TracePanel 复用 `lib/aiConfig` 公共模块。
 - `POST /api/analyze` 改为委托 `incrementalAnalyzer.refresh()`(共享序列化)。
 - CLI `package.json`:第三方依赖移入 dependencies,workspace 包改 devDependencies(workspace:*),`main` 指向 `./dist/index.js`,build 使用 tsup。
 
 #### Fixed
+
 - 构建后的 analyzer 现在携带 Kotlin tree-sitter WASM，ESM 与内联 CLI 均通过 `import.meta.url` 定位资产，不再因缺少 `dist/wasm` 或未定义 `__dirname` 静默失去 Kotlin 分析。
 - Vitest/Jest test adapter 改用轻量 TypeScript 单文件 AST，避免每个测试文件创建完整 `ts-morph Project`；本地 1000 文件基准由超过 95 秒降至约 1.2 秒。
 - AI 请求契约前后端不一致(响应字段、配置缺失时的 501)。
@@ -37,6 +54,7 @@ All notable changes to CodeOmniVis. Format loosely follows Keep a Changelog.
 - `turbo.json` 增加 `globalPassThroughEnv: ["TMPDIR"]`,使 turbo 下的 vitest 继承沙箱临时目录。
 
 ### Stage A · 类型驱动设计 (A0–A9) — 已合并 master
+
 - NodeMetadata / EdgeMetadata 改为封闭判别联合,移除 `Record<string,unknown>` fallback。
 - 删除 `metadataValue()`,改用 `getRouteDisplay` / `getNodeRoute` + `isNodeOfType` 收窄。
 - parser/storage 经 `createTypedNode` / `createTypedEdge` 工厂与 switch 复活器,零 cast。

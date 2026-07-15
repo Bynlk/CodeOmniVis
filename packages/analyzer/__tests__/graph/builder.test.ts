@@ -8,22 +8,55 @@ import * as os from 'os'
 import * as path from 'path'
 import { GraphBuilder } from '../../src/graph/builder'
 import { OmniDatabase } from '../../src/storage/db'
-import type { OmniNode, OmniEdge, Parser, ParseContext, ProjectMeta, ParseResult } from '@codeomnivis/shared'
+import type {
+  OmniNode,
+  OmniEdge,
+  Parser,
+  ParseContext,
+  ProjectMeta,
+  ParseResult,
+} from '@codeomnivis/shared'
 
 // 辅助函数
-const PAGE_META = { route: '/', isDynamic: false, params: [], isGroupLayout: false, layoutFile: null }
+const PAGE_META = {
+  route: '/',
+  isDynamic: false,
+  params: [],
+  isGroupLayout: false,
+  layoutFile: null,
+}
 const COMPONENT_META = { props: [], hasState: false, isPage: false, jsxChildCount: 0 }
 
 function makeNode(id: string, type: 'page' | 'component' = 'page'): OmniNode {
   if (type === 'component') {
-    return { id, type, name: id, filePath: 'test.tsx', line: 1, column: 1, metadata: COMPONENT_META }
+    return {
+      id,
+      type,
+      name: id,
+      filePath: 'test.tsx',
+      line: 1,
+      column: 1,
+      metadata: COMPONENT_META,
+    }
   }
   return { id, type, name: id, filePath: 'test.tsx', line: 1, column: 1, metadata: PAGE_META }
 }
 
-function makeEdge(id: string, source: string, target: string, type: 'renders' | 'calls_api' = 'renders'): OmniEdge {
+function makeEdge(
+  id: string,
+  source: string,
+  target: string,
+  type: 'renders' | 'calls_api' = 'renders',
+): OmniEdge {
   if (type === 'calls_api') {
-    return { id, source, target, type, confidence: 'certain', metadata: { callType: 'fetch', callLine: 1 } }
+    return {
+      id,
+      source,
+      target,
+      type,
+      confidence: 'certain',
+      metadata: { callType: 'fetch', callLine: 1 },
+    }
   }
   return { id, source, target, type, confidence: 'certain', metadata: {} }
 }
@@ -77,7 +110,10 @@ describe('GraphBuilder', () => {
     let parsed = 0
     freshBuilder.registerParser({
       name: 'test',
-      canHandle: () => { handled += 1; return true },
+      canHandle: () => {
+        handled += 1
+        return true
+      },
       parse: async (): Promise<ParseResult> => {
         parsed += 1
         return { nodes: [makeNode('n1')], edges: [], errors: [] }
@@ -89,6 +125,36 @@ describe('GraphBuilder', () => {
     expect(parsed).toBe(1)
     expect(result.stats.totalNodes).toBe(1)
 
+    freshDb.close()
+  })
+
+  it('does not dispatch production parsers for test fixtures', async () => {
+    const freshDb = new OmniDatabase(':memory:')
+    await freshDb.ready()
+    const freshBuilder = new GraphBuilder(freshDb)
+    let handled = 0
+    let parsed = 0
+
+    freshBuilder.registerParser({
+      name: 'production-parser',
+      canHandle: () => {
+        handled += 1
+        return true
+      },
+      parse: async (): Promise<ParseResult> => {
+        parsed += 1
+        return { nodes: [makeNode('fixture-node')], edges: [], errors: [] }
+      },
+    })
+
+    const result = await freshBuilder.parseFiles(
+      ['packages/analyzer/__tests__/fixtures/app/route.ts'],
+      context,
+    )
+
+    expect(handled).toBe(0)
+    expect(parsed).toBe(0)
+    expect(result.graph).toEqual({ nodes: [], edges: [] })
     freshDb.close()
   })
 
@@ -234,7 +300,10 @@ describe('GraphBuilder', () => {
     const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'covis-page-hierarchy-'))
     const pageFile = path.join(projectRoot, 'app', 'page.tsx')
     fs.mkdirSync(path.dirname(pageFile), { recursive: true })
-    fs.writeFileSync(pageFile, "import Child from '../components/Child'\nexport default function HomePage() { return <Child /> }")
+    fs.writeFileSync(
+      pageFile,
+      "import Child from '../components/Child'\nexport default function HomePage() { return <Child /> }",
+    )
 
     const page: OmniNode = {
       id: 'page:app/page.tsx:/',
@@ -269,7 +338,11 @@ describe('GraphBuilder', () => {
     freshBuilder.registerParser({
       name: 'page-fixture',
       canHandle: () => true,
-      parse: async (): Promise<ParseResult> => ({ nodes: [page, pageComponent, child], edges: [], errors: [] }),
+      parse: async (): Promise<ParseResult> => ({
+        nodes: [page, pageComponent, child],
+        edges: [],
+        errors: [],
+      }),
     })
 
     try {
@@ -278,12 +351,12 @@ describe('GraphBuilder', () => {
         projectRoot,
         projectMeta: { ...projectMeta, root: projectRoot },
       })
-      expect(result.graph.edges.filter(edge => edge.type === 'renders').map(edge =>
-        `${edge.source}->${edge.target}`
-      ).sort()).toEqual([
-        `${pageComponent.id}->${child.id}`,
-        `${page.id}->${pageComponent.id}`,
-      ])
+      expect(
+        result.graph.edges
+          .filter((edge) => edge.type === 'renders')
+          .map((edge) => `${edge.source}->${edge.target}`)
+          .sort(),
+      ).toEqual([`${pageComponent.id}->${child.id}`, `${page.id}->${pageComponent.id}`])
     } finally {
       freshDb.close()
       fs.rmSync(projectRoot, { recursive: true, force: true })
@@ -307,7 +380,7 @@ describe('GraphBuilder', () => {
     await freshBuilder.parseFiles(['test.tsx'], context)
 
     const graph = freshBuilder.loadGraph()
-    expect(graph.nodes.map(n => n.id).sort()).toEqual(['lg-a', 'lg-b'])
+    expect(graph.nodes.map((n) => n.id).sort()).toEqual(['lg-a', 'lg-b'])
     expect(graph.edges).toHaveLength(1)
     expect(graph.edges[0].id).toBe('lg-e')
 
@@ -338,7 +411,9 @@ describe('GraphBuilder', () => {
     freshBuilder.registerParser({
       name: 'broken',
       canHandle: () => true,
-      parse: async () => { throw new Error('boom') },
+      parse: async () => {
+        throw new Error('boom')
+      },
     })
 
     const result = await freshBuilder.parseFiles(['test.tsx'], context)

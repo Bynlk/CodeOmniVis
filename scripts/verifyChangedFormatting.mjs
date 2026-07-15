@@ -11,6 +11,7 @@ const FORMATTABLE_EXTENSIONS = new Set([
   '.json',
   '.jsx',
   '.mjs',
+  '.md',
   '.mts',
   '.scss',
   '.ts',

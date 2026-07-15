@@ -29,7 +29,7 @@ describe('autoDetectProject', () => {
           '@trpc/server': '10.0.0',
           '@prisma/client': '5.0.0',
         },
-      })
+      }),
     )
 
     // 创建 prisma schema
@@ -55,9 +55,7 @@ describe('autoDetectProject', () => {
     const meta = await autoDetectProject(tmpDir)
 
     expect(meta.trpcRouterPaths.length).toBeGreaterThanOrEqual(2)
-    // findTrpcRouterPaths 使用 path.join，Windows 下返回反斜杠
-    const expected = path.join('server', 'routers', 'user.ts')
-    expect(meta.trpcRouterPaths).toContain(expected)
+    expect(meta.trpcRouterPaths).toContain('server/routers/user.ts')
   })
 
   it('补全 typeormEntityDirs', async () => {
@@ -74,7 +72,7 @@ describe('autoDetectProject', () => {
         dependencies: {
           typeorm: '0.3.0',
         },
-      })
+      }),
     )
 
     // 创建 entity 目录
@@ -113,7 +111,7 @@ describe('collectScanDirs sibling boundary (S-08/F4)', () => {
     const dirs = collectScanDirs(root)
     const resolvedRoot = path.resolve(root)
     // 不应包含 sibling
-    expect(dirs.some(d => path.resolve(d).startsWith(path.resolve(sibling)))).toBe(false)
+    expect(dirs.some((d) => path.resolve(d).startsWith(path.resolve(sibling)))).toBe(false)
     // 所有目录都在 root 内
     for (const d of dirs) {
       const rel = path.relative(resolvedRoot, path.resolve(d))
@@ -123,7 +121,7 @@ describe('collectScanDirs sibling boundary (S-08/F4)', () => {
 
   it('仅当显式配置 frontend.dirs 指向兄弟目录时才纳入', () => {
     const dirs = collectScanDirs(root, { frontend: { dirs: ['../frontend/src'] } })
-    expect(dirs.some(d => path.resolve(d) === path.resolve(sibling, 'src'))).toBe(true)
+    expect(dirs.some((d) => path.resolve(d) === path.resolve(sibling, 'src'))).toBe(true)
   })
 })
 
@@ -135,7 +133,10 @@ describe('collectScanDirs 覆盖顶层源码目录（回归：根级组件/数�
     base = fs.mkdtempSync(path.join(os.tmpdir(), 'codeomnivis-topcomp-'))
     root = path.join(base, 'project')
     fs.mkdirSync(path.join(root, 'app'), { recursive: true })
-    fs.writeFileSync(path.join(root, 'app', 'page.tsx'), 'export default function Page(){return null}')
+    fs.writeFileSync(
+      path.join(root, 'app', 'page.tsx'),
+      'export default function Page(){return null}',
+    )
     // 与 app/ 平级的根级源码目录（旧逻辑扫不到）
     for (const d of ['components', 'hooks', 'lib', 'features', 'services']) {
       fs.mkdirSync(path.join(root, d), { recursive: true })
@@ -150,12 +151,12 @@ describe('collectScanDirs 覆盖顶层源码目录（回归：根级组件/数�
   })
 
   it.each(['components', 'hooks', 'lib', 'features', 'services'])('纳入根级 %s/', (d) => {
-    const dirs = collectScanDirs(root).map(x => path.resolve(x))
+    const dirs = collectScanDirs(root).map((x) => path.resolve(x))
     expect(dirs).toContain(path.resolve(root, d))
   })
 
   it.each(['components', 'hooks', 'lib', 'features', 'services'])('纳入 src/%s/', (d) => {
-    const dirs = collectScanDirs(root).map(x => path.resolve(x))
+    const dirs = collectScanDirs(root).map((x) => path.resolve(x))
     expect(dirs).toContain(path.resolve(root, 'src', d))
   })
 
@@ -173,9 +174,18 @@ describe('split frontend/backend application discovery', () => {
     fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'split-app' }))
     fs.mkdirSync(path.join(root, 'frontend', 'src'), { recursive: true })
     fs.mkdirSync(path.join(root, 'backend', 'src'), { recursive: true })
-    fs.writeFileSync(path.join(root, 'frontend', 'package.json'), JSON.stringify({ dependencies: { next: '15.0.0', react: '19.0.0' } }))
-    fs.writeFileSync(path.join(root, 'backend', 'package.json'), JSON.stringify({ dependencies: { tsrpc: '3.4.0' } }))
-    fs.writeFileSync(path.join(root, 'frontend', 'src', 'App.tsx'), 'export function App() { return null }')
+    fs.writeFileSync(
+      path.join(root, 'frontend', 'package.json'),
+      JSON.stringify({ dependencies: { next: '15.0.0', react: '19.0.0' } }),
+    )
+    fs.writeFileSync(
+      path.join(root, 'backend', 'package.json'),
+      JSON.stringify({ dependencies: { tsrpc: '3.4.0' } }),
+    )
+    fs.writeFileSync(
+      path.join(root, 'frontend', 'src', 'App.tsx'),
+      'export function App() { return null }',
+    )
     fs.writeFileSync(path.join(root, 'backend', 'src', 'index.ts'), 'export const server = true')
   })
 
@@ -190,7 +200,7 @@ describe('split frontend/backend application discovery', () => {
   })
 
   it('scans both conventional child source directories', () => {
-    const dirs = collectScanDirs(root).map(dir => path.resolve(dir))
+    const dirs = collectScanDirs(root).map((dir) => path.resolve(dir))
     expect(dirs).toContain(path.resolve(root, 'frontend', 'src'))
     expect(dirs).toContain(path.resolve(root, 'backend', 'src'))
   })
@@ -201,21 +211,30 @@ describe('pnpm workspace package discovery', () => {
 
   beforeAll(() => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), 'codeomnivis-pnpm-workspace-'))
-    fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'workspace-root', private: true }))
+    fs.writeFileSync(
+      path.join(root, 'package.json'),
+      JSON.stringify({ name: 'workspace-root', private: true }),
+    )
     fs.writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n")
 
     const uiRoot = path.join(root, 'packages', 'ui')
     const apiRoot = path.join(root, 'packages', 'api')
     fs.mkdirSync(path.join(uiRoot, 'src'), { recursive: true })
     fs.mkdirSync(path.join(apiRoot, 'src'), { recursive: true })
-    fs.writeFileSync(path.join(uiRoot, 'package.json'), JSON.stringify({
-      name: '@fixture/ui',
-      dependencies: { next: '15.0.0', react: '19.0.0' },
-    }))
-    fs.writeFileSync(path.join(apiRoot, 'package.json'), JSON.stringify({
-      name: '@fixture/api',
-      dependencies: { express: '5.0.0', '@prisma/client': '6.0.0' },
-    }))
+    fs.writeFileSync(
+      path.join(uiRoot, 'package.json'),
+      JSON.stringify({
+        name: '@fixture/ui',
+        dependencies: { next: '15.0.0', react: '19.0.0' },
+      }),
+    )
+    fs.writeFileSync(
+      path.join(apiRoot, 'package.json'),
+      JSON.stringify({
+        name: '@fixture/api',
+        dependencies: { express: '5.0.0', '@prisma/client': '6.0.0' },
+      }),
+    )
   })
 
   afterAll(() => {
@@ -228,7 +247,7 @@ describe('pnpm workspace package discovery', () => {
     expect(meta.frontendFramework).toBe('next')
     expect(meta.backendFramework).toBe('express')
     expect(meta.databaseType).toBe('prisma')
-    expect(meta.packages.map(pkg => pkg.path)).toEqual(['packages/api', 'packages/ui'])
+    expect(meta.packages.map((pkg) => pkg.path)).toEqual(['packages/api', 'packages/ui'])
     expect(meta.frontendDirs).toContain('packages/ui/src')
     expect(meta.backendDirs).toContain('packages/api/src')
   })

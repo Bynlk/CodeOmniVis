@@ -13,6 +13,8 @@
 **零配置 TypeScript 架构可视化工具：在一个本地工作台里连接 Next.js 页面、React 组件、API、服务与数据库模型，并通过 MCP 把同一份架构图谱提供给 AI 编程助手。**
 
 [![CI](https://github.com/Bynlk/CodeOmniVis/actions/workflows/ci.yml/badge.svg)](https://github.com/Bynlk/CodeOmniVis/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/%40bynlk%2Fcodeomnivis.svg)](https://www.npmjs.com/package/@bynlk/codeomnivis)
+[![npm downloads](https://img.shields.io/npm/dm/%40bynlk%2Fcodeomnivis.svg)](https://www.npmjs.com/package/@bynlk/codeomnivis)
 [![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A518-339933.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6.svg)](https://www.typescriptlang.org/)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-6F83FF.svg)](LICENSE)
@@ -20,15 +22,28 @@
 
 ![CodeOmniVis TypeScript 架构工作台，展示聚焦后的 Next.js 依赖图与 React 组件图](docs/assets/readme/codeomnivis-workbench-hero.png)
 
+[English](README.md) · **简体中文** · [文档导航](docs/README.md) · [Demo 指南](demo/README.md)
+
+</div>
+
+<a id="quick-start"></a>
+
+## 快速开始
+
 ```bash
 npx @bynlk/codeomnivis serve
 ```
 
 在仓库根目录执行。CodeOmniVis 会检测项目、本地分析源码、打开工作台，并在文件变化后持续刷新图谱。
 
-[English](README.md) · **简体中文** · [文档导航](docs/README.md) · [Demo 指南](demo/README.md)
+### 第一分钟能看到什么
 
-</div>
+| 结果       | 工作台中呈现的内容                                                     |
+| ---------- | ---------------------------------------------------------------------- |
+| 项目地图   | 带类型的页面、组件、API 路由、服务、数据库模型、测试及其关系           |
+| 跨层链路   | 在静态证据存在时展示源码路径、行号、调用者、依赖关系与页面到数据库路径 |
+| 质量信号   | Parser warning，以及确定性的一致性、安全、N+1 与 RSC 边界发现          |
+| 实时上下文 | 工作台、CLI/REST 与 MCP 共用一份带版本的本地快照，并随文件变化刷新     |
 
 <a id="why-codeomnivis"></a>
 
@@ -99,14 +114,14 @@ Quality 不是 AI 总结。它结合 parser 诊断和确定性项目检查，包
 
 MCP Server 读取和工作台相同的本地图谱。客户端可以调用：
 
-| 工具 | 回答的问题 |
-| --- | --- |
-| `get_api_routes` | 有哪些 API、tRPC、TSRPC 或 Express 入口，它们继续访问了什么？ |
-| `get_component_tree` | 这个页面或组件渲染了什么？ |
-| `find_callers` | 谁调用了这个节点，哪些页面可能受到影响？ |
-| `list_db_models` | 检测到了哪些 Prisma、TypeORM 或 Drizzle model？ |
-| `get_dataflow` | 一个 model 如何经过 API 与 service 层流向 UI？ |
-| `get_test_coverage` | 发现了哪些 suite、case 与 fixture，它们通过静态证据连接到哪些生产节点？ |
+| 工具                 | 回答的问题                                                              |
+| -------------------- | ----------------------------------------------------------------------- |
+| `get_api_routes`     | 有哪些 API、tRPC、TSRPC 或 Express 入口，它们继续访问了什么？           |
+| `get_component_tree` | 这个页面或组件渲染了什么？                                              |
+| `find_callers`       | 谁调用了这个节点，哪些页面可能受到影响？                                |
+| `list_db_models`     | 检测到了哪些 Prisma、TypeORM 或 Drizzle model？                         |
+| `get_dataflow`       | 一个 model 如何经过 API 与 service 层流向 UI？                          |
+| `get_test_coverage`  | 发现了哪些 suite、case 与 fixture，它们通过静态证据连接到哪些生产节点？ |
 
 <a id="supported-stack"></a>
 
@@ -114,13 +129,13 @@ MCP Server 读取和工作台相同的本地图谱。客户端可以调用：
 
 支持度按证据分级，避免把“源码里存在 parser”误解成“所有生态成熟度相同”。
 
-| 证据级别 | 当前覆盖 |
-| --- | --- |
-| Demo 已验证主路径 | Next.js App Router、Next.js Pages Router、React 组件、`fetch` / `axios`、Next.js Route Handler、tRPC、service、Prisma |
-| Parser 与回归测试覆盖 | Express、NestJS controller/module/service、TSRPC、TypeORM、Drizzle |
-| 静态测试智能 | Vitest、Jest、Playwright、Cypress、JUnit 4/5 与 Kotest 发现；Web、REST、CLI、MCP 共用投影 |
-| 实验性支持 | Kotlin 语法、Spring、Ktor、Room、Exposed；已注册进默认 pipeline 并有针对性测试，但真实项目广度较少 |
-| Workspace 发现 | pnpm workspace 与 Turborepo 源码目录发现；尚不是完整的多包联邦模型 |
+| 证据级别              | 当前覆盖                                                                                                              |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Demo 已验证主路径     | Next.js App Router、Next.js Pages Router、React 组件、`fetch` / `axios`、Next.js Route Handler、tRPC、service、Prisma |
+| Parser 与回归测试覆盖 | Express、NestJS controller/module/service、TSRPC、TypeORM、Drizzle                                                    |
+| 静态测试智能          | Vitest、Jest、Playwright、Cypress、JUnit 4/5 与 Kotest 发现；Web、REST、CLI、MCP 共用投影                             |
+| 实验性支持            | Kotlin 语法、Spring、Ktor、Room、Exposed；已注册进默认 pipeline 并有针对性测试，但真实项目广度较少                    |
+| Workspace 发现        | pnpm workspace 与 Turborepo 源码目录发现；尚不是完整的多包联邦模型                                                    |
 
 项目还会通过数据库模型节点与 relation 边生成 **Prisma ER 图**。当 TypeORM 与 Drizzle parser 能解析模型时，它们会复用相同的 `db_model` 抽象。
 
@@ -154,15 +169,15 @@ npx @bynlk/codeomnivis check
 
 ### 命令速查
 
-| 命令 | 用途 |
-| --- | --- |
-| `serve --project <path> [--port 4321] [--host localhost] [--no-open]` | 分析项目、启动工作台、监听文件并推送图更新 |
-| `analyze [-o codeomnivis-graph.json]` | 将当前仓库图谱写入 JSON |
-| `check` | 输出 parser 诊断和确定性一致性发现 |
-| `mcp --project <path>` | 启动 stdio MCP Server |
-| `test-import --project <path> --junit <file-or-glob>` | 在不执行测试的情况下导入有界 JUnit XML 结果 |
-| `test-run --project <path> --runner <name> [--timeout <ms>]` | 显式运行一个枚举内的 test runner，并限制 shell、路径、时间与输出 |
-| `init` | 生成 `.codeomnivis.json` 起始配置 |
+| 命令                                                                  | 用途                                                             |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `serve --project <path> [--port 4321] [--host localhost] [--no-open]` | 分析项目、启动工作台、监听文件并推送图更新                       |
+| `analyze [-o codeomnivis-graph.json]`                                 | 将当前仓库图谱写入 JSON                                          |
+| `check`                                                               | 输出 parser 诊断和确定性一致性发现                               |
+| `mcp --project <path>`                                                | 启动 stdio MCP Server                                            |
+| `test-import --project <path> --junit <file-or-glob>`                 | 在不执行测试的情况下导入有界 JUnit XML 结果                      |
+| `test-run --project <path> --runner <name> [--timeout <ms>]`          | 显式运行一个枚举内的 test runner，并限制 shell、路径、时间与输出 |
+| `init`                                                                | 生成 `.codeomnivis.json` 起始配置                                |
 
 绑定非 loopback host 时，除 health 外的 REST/WebSocket 入口都需要 token。Bearer 客户端可直接使用，浏览器则一次性交换为短期 HttpOnly、SameSite=Strict session。推荐默认使用本机 loopback。
 
@@ -177,13 +192,7 @@ npx @bynlk/codeomnivis check
   "mcpServers": {
     "codeomnivis": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@bynlk/codeomnivis",
-        "mcp",
-        "--project",
-        "/absolute/path/to/repository"
-      ]
+      "args": ["-y", "@bynlk/codeomnivis", "mcp", "--project", "/absolute/path/to/repository"]
     }
   }
 }
@@ -250,15 +259,15 @@ pnpm lint
 node packages/cli/bin/codeomnivis.js serve --project ./demo --no-open
 ```
 
-| 包 | 职责 |
-| --- | --- |
-| [`packages/shared`](packages/shared) | 共享图谱、issue、配置与协议类型 |
+| 包                                       | 职责                                         |
+| ---------------------------------------- | -------------------------------------------- |
+| [`packages/shared`](packages/shared)     | 共享图谱、issue、配置与协议类型              |
 | [`packages/analyzer`](packages/analyzer) | Parser、跨层解析、图构建、质量检查与本地存储 |
-| [`packages/server`](packages/server) | REST API、WebSocket、项目切换与增量分析 |
-| [`packages/ui`](packages/ui) | React + Cytoscape.js 架构工作台 |
-| [`packages/mcp`](packages/mcp) | stdio MCP Server 与架构查询工具 |
-| [`packages/cli`](packages/cli) | 公共命令入口与自包含发行包 |
-| [`demo`](demo) | 用于截图和集成测试的确定性全栈 fixture |
+| [`packages/server`](packages/server)     | REST API、WebSocket、项目切换与增量分析      |
+| [`packages/ui`](packages/ui)             | React + Cytoscape.js 架构工作台              |
+| [`packages/mcp`](packages/mcp)           | stdio MCP Server 与架构查询工具              |
+| [`packages/cli`](packages/cli)           | 公共命令入口与自包含发行包                   |
+| [`demo`](demo)                           | 用于截图和集成测试的确定性全栈 fixture       |
 
 更多资料：[项目目录](docs/project-directory.md)、[解析流水线](docs/architecture/parser-pipeline.md)、[图数据模型](docs/architecture/data-model.md)和[可视化架构](docs/architecture/visualization.md)。
 
@@ -271,6 +280,30 @@ node packages/cli/bin/codeomnivis.js serve --project ./demo --no-open
 - 为实验性 parser 增加更多真实项目 fixture；
 - 在保持确定性的前提下增强影响分析；
 - 可复现的公共发布与包来源说明。
+
+<a id="faq"></a>
+
+## 常见问题
+
+### CodeOmniVis 是 local-first 吗？
+
+是。分析、图数据库、工作台和 MCP 都在你的机器上运行，不需要托管账号。`serve` 默认只绑定 loopback；如果暴露到非 loopback 地址，必须配置访问 token。
+
+### 它会上传或修改我的源码吗？
+
+核心分析器只读取受支持的项目文件，不会修改或上传源码，也不收集遥测。可选的 `/api/ai/*` 路由只有在你配置 OpenAI 兼容服务后才会发出上游请求；使用时，该次请求中的消息与选定上下文会发送给你选择的服务商。MCP 架构查询仍在本地完成。
+
+### 图谱有多准确？
+
+它提供的是静态分析证据，不是运行时 trace。直接解析出的关系标记为 `certain`，启发式匹配标记为 `inferred`，parser 缺口会变成 warning。动态 import、依赖注入、生成代码和元编程仍可能无法解析。
+
+### MCP 如何工作？
+
+CodeOmniVis 以本地 stdio MCP Server 运行，查询工作台使用的同一份 `ProjectSnapshot`。在客户端配置目标项目的绝对路径；如果没有缓存，MCP 进程会先执行一次本地分析。
+
+### 可以商业使用吗？
+
+仓库采用 PolyForm Noncommercial License 1.0.0。学习、研究、个人及其他非商业用途可以使用；商业用途需要另行取得维护者许可。
 
 <a id="contributing"></a>
 

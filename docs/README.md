@@ -19,6 +19,7 @@
 
 ## 状态与报告
 
+- [质量复评（2026-07-15）](reports/2026-07-15-quality-reassessment.md) — 仓库信任边界、GitHub 可发现性与兼容矩阵加固后的七维评分
 - [质量 90 复评报告](reports/2026-07-14-quality-90-reassessment.md) — 0.1.0 发布后的七维评分、证据、扣分项与改进建议
 - [质量工程基线](reports/2026-07-14-quality-baseline.md) — 90 分工程启动前的冻结事实与缺口
 - [项目状态报告](PROJECT_STATUS_REPORT.md) — 当前代码基线与阶段性评估

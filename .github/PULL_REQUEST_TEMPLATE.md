@@ -22,6 +22,6 @@ Closes #(issue number)
 
 ## 📸 Screenshots (if applicable)
 
-Before | After
---- | ---
-screenshot | screenshot
+| Before     | After      |
+| ---------- | ---------- |
+| screenshot | screenshot |

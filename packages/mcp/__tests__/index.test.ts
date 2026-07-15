@@ -1,3 +1,5 @@
+import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
 import { isMainModule, runMcpProcess } from '../src/index'
 
@@ -30,8 +32,10 @@ function createRuntime() {
 
 describe('MCP direct process lifecycle', () => {
   it('identifies the direct module without relying on global argv in tests', () => {
-    expect(isMainModule(undefined, 'file:///entry.js')).toBe(false)
-    expect(isMainModule('/entry.js', 'file:///entry.js')).toBe(true)
+    const entry = resolve('entry.js')
+    const moduleUrl = pathToFileURL(entry).href
+    expect(isMainModule(undefined, moduleUrl)).toBe(false)
+    expect(isMainModule(entry, moduleUrl)).toBe(true)
   })
 
   it('closes a started server on SIGTERM and exits cleanly', async () => {

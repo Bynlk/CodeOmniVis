@@ -44,6 +44,12 @@ describe('AI request destination policy', () => {
     ).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED' })
   })
 
+  it('rejects IPv4-mapped loopback destinations when remote access disables loopback', async () => {
+    await expect(
+      resolveUpstreamDestination('https://[::ffff:127.0.0.1]/v1', async () => [], false),
+    ).rejects.toMatchObject({ code: 'AI_DESTINATION_REJECTED', status: 400 })
+  })
+
   it('rejects invalid URLs, DNS failures, and invalid public DNS answers', async () => {
     await expect(
       resolveUpstreamDestination('file:///tmp/provider', async () => []),
@@ -69,7 +75,62 @@ describe('AI request destination policy', () => {
     await expect(readBoundedBody(chunks('hello', ' world'), 11)).resolves.toBe('hello world')
     expect(matchesValidatedAddress('93.184.216.34', '93.184.216.34')).toBe(true)
     expect(matchesValidatedAddress('::ffff:93.184.216.34', '93.184.216.34')).toBe(true)
+    expect(matchesValidatedAddress('::ffff:93.184.216.34', '::ffff:5db8:d822')).toBe(true)
+    expect(matchesValidatedAddress('0::ffff:5db8:d822', '::ffff:93.184.216.34')).toBe(true)
     expect(matchesValidatedAddress('127.0.0.1', '93.184.216.34')).toBe(false)
+  })
+
+  it('reports both compared addresses when peer verification fails internally', async () => {
+    const policyModule: Record<string, unknown> = await import('../../src/aiRequestPolicy')
+    const createPeerMismatchError = policyModule.createPeerMismatchError
+
+    expect(createPeerMismatchError).toBeTypeOf('function')
+    if (typeof createPeerMismatchError !== 'function') return
+
+    expect(createPeerMismatchError('::ffff:127.0.0.1', '127.0.0.2')).toMatchObject({
+      message:
+        'AI upstream peer address did not match validated DNS (peer="::ffff:127.0.0.1", validated="127.0.0.2")',
+    })
+  })
+
+  it('defers the first peer read until the connect listener has completed', async () => {
+    const policyModule: Record<string, unknown> = await import('../../src/aiRequestPolicy')
+    const readConnectedPeerAddress = policyModule.readConnectedPeerAddress
+
+    expect(readConnectedPeerAddress).toBeTypeOf('function')
+    if (typeof readConnectedPeerAddress !== 'function') return
+
+    let connectListenerActive = true
+    let readCount = 0
+    const socket = {
+      get remoteAddress(): string | undefined {
+        readCount += 1
+        return connectListenerActive ? '' : '127.0.0.1'
+      },
+    }
+
+    const pendingAddress = readConnectedPeerAddress(socket)
+    expect(readCount).toBe(0)
+    connectListenerActive = false
+
+    await expect(pendingAddress).resolves.toBe('127.0.0.1')
+    expect(readCount).toBe(1)
+  })
+
+  it('schedules pinned lookup completion after the current stack', async () => {
+    const policyModule: Record<string, unknown> = await import('../../src/aiRequestPolicy')
+    const schedulePinnedLookup = policyModule.schedulePinnedLookup
+
+    expect(schedulePinnedLookup).toBeTypeOf('function')
+    if (typeof schedulePinnedLookup !== 'function') return
+
+    let synchronous = true
+    const completion = new Promise<boolean>((resolve) => {
+      schedulePinnedLookup(() => resolve(synchronous))
+    })
+    synchronous = false
+
+    await expect(completion).resolves.toBe(false)
   })
 
   it('performs a bounded loopback request and closes its dispatcher', async () => {

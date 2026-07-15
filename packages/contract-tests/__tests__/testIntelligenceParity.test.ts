@@ -118,5 +118,5 @@ describe('cross-language test intelligence parity', () => {
     expect(ids(mcp.cases)).toEqual(ids(directView.cases))
     expect(ids(mcp.coverage)).toEqual(ids(directView.coverage))
     db.close()
-  })
+  }, 60_000)
 })

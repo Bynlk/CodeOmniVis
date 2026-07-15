@@ -1,0 +1,14 @@
+* @Bynlk
+
+/.github/CODEOWNERS @Bynlk
+/.github/dependabot.yml @Bynlk
+/.github/workflows/ @Bynlk
+/package.json @Bynlk
+/packages/*/package.json @Bynlk
+/pnpm-lock.yaml @Bynlk
+/pnpm-workspace.yaml @Bynlk
+/turbo.json @Bynlk
+/scripts/registryVisibility.mjs @Bynlk
+/scripts/verifyPackedCli.mjs @Bynlk
+/scripts/verifyRegistryInstall.mjs @Bynlk
+/SECURITY.md @Bynlk

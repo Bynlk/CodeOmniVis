@@ -16,6 +16,7 @@ import type {
   ParseContext,
 } from '@codeomnivis/shared'
 import { OmniDatabase } from '../storage/db'
+import { isTestSourcePath } from './sourcePathPolicy'
 
 // ============================================================
 // 类型定义
@@ -69,6 +70,7 @@ export class GraphBuilder {
 
     // 对每个文件，找到能处理它的解析器
     for (const file of files) {
+      if (isTestSourcePath(file)) continue
       for (const parser of this.parsers) {
         if (parser.canHandle(file, context.projectMeta)) {
           try {

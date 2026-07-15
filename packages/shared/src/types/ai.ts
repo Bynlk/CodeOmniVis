@@ -85,15 +85,70 @@ export interface UpstreamUrlCheck {
   reason?: string
 }
 
-function isLoopbackHost(host: string): boolean {
-  if (host === 'localhost') return true
-  if (host === '::1' || host === '[::1]') return true
-  return /^127\./.test(host)
+function normalizedIpv4Address(address: string): string | null {
+  const dotted = address.split('.')
+  if (
+    dotted.length === 4 &&
+    dotted.every((part) => /^\d{1,3}$/.test(part) && Number(part) <= 255)
+  ) {
+    return dotted.map((part) => String(Number(part))).join('.')
+  }
+  return null
+}
+
+function canonicalIpv6Address(host: string): string | null {
+  const normalized = host.replace(/^\[|\]$/g, '').toLowerCase()
+  if (!normalized.includes(':')) return null
+  try {
+    return new URL(`http://[${normalized}]/`).hostname.replace(/^\[|\]$/g, '')
+  } catch {
+    return null
+  }
+}
+
+function mappedIpv4FromCanonicalIpv6(address: string): string | null {
+  if (!address.startsWith('::ffff:')) return null
+  const tail = address.slice('::ffff:'.length)
+
+  const hextets = tail.split(':')
+  if (hextets.length !== 2 || hextets.some((part) => !/^[0-9a-f]{1,4}$/.test(part))) {
+    return null
+  }
+  const high = Number.parseInt(hextets[0], 16)
+  const low = Number.parseInt(hextets[1], 16)
+  return [high >>> 8, high & 0xff, low >>> 8, low & 0xff].join('.')
+}
+
+function mappedIpv4Address(host: string): string | null {
+  const canonical = canonicalIpv6Address(host)
+  return canonical === null ? null : mappedIpv4FromCanonicalIpv6(canonical)
+}
+
+export function normalizeUpstreamIpAddress(address: string): string | null {
+  const normalized = address.replace(/^\[|\]$/g, '').toLowerCase()
+  const ipv4 = normalizedIpv4Address(normalized)
+  if (ipv4 !== null) return ipv4
+  const ipv6 = canonicalIpv6Address(normalized)
+  if (ipv6 === null) return null
+  return mappedIpv4FromCanonicalIpv6(ipv6) ?? ipv6
+}
+
+export function isLoopbackUpstreamHost(host: string): boolean {
+  const stripped = host.replace(/^\[|\]$/g, '').toLowerCase()
+  const normalized = normalizeUpstreamIpAddress(stripped)
+  return (
+    stripped === 'localhost' ||
+    normalized === '::1' ||
+    (normalized !== null && /^127\./.test(normalized))
+  )
 }
 
 /** 判断是否为应拒绝的内网 / 链路本地 / metadata / 未指定地址(字面量)。 */
 function isBlockedHost(host: string): boolean {
-  const h = host.replace(/^\[|\]$/g, '')
+  const stripped = host.replace(/^\[|\]$/g, '').toLowerCase()
+  const mapped = mappedIpv4Address(stripped)
+  if (mapped !== null) return isLoopbackUpstreamHost(mapped) || isBlockedHost(mapped)
+  const h = normalizeUpstreamIpAddress(stripped) ?? stripped
   if (h === '0.0.0.0' || h === '::') return true
   // IPv4 私网 / 链路本地
   if (/^10\./.test(h)) return true
@@ -105,9 +160,8 @@ function isBlockedHost(host: string): boolean {
     if (second >= 16 && second <= 31) return true
   }
   // IPv6 ULA fc00::/7 (fc.. / fd..) 与链路本地 fe80::/10
-  const lower = h.toLowerCase()
-  if (/^f[cd][0-9a-f]*:/.test(lower)) return true
-  if (/^fe[89ab][0-9a-f]*:/.test(lower)) return true
+  if (/^f[cd][0-9a-f]*:/.test(h)) return true
+  if (/^fe[89ab][0-9a-f]*:/.test(h)) return true
   return false
 }
 
@@ -130,7 +184,7 @@ export function validateResolvedAddresses(addresses: string[]): UpstreamUrlCheck
     return { ok: false, reason: 'Hostname did not resolve to any address' }
   }
   for (const addr of addresses) {
-    if (isLoopbackHost(addr) || isBlockedHost(addr)) {
+    if (isLoopbackUpstreamHost(addr) || isBlockedHost(addr)) {
       return {
         ok: false,
         reason: `Hostname resolves to loopback/private/link-local/metadata address: ${addr}`,
@@ -154,7 +208,7 @@ export function validateUpstreamBaseUrl(baseUrl: string): UpstreamUrlCheck {
   if (isBlockedHost(host)) {
     return { ok: false, reason: `Refusing to reach private/link-local/metadata address: ${host}` }
   }
-  if (isLoopbackHost(host)) {
+  if (isLoopbackUpstreamHost(host)) {
     return { ok: true }
   }
   if (url.protocol !== 'https:') {
