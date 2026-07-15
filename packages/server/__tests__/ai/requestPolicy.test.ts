@@ -93,6 +93,24 @@ describe('AI request destination policy', () => {
     })
   })
 
+  it('re-reads a connected peer once after an empty initial address', async () => {
+    const policyModule: Record<string, unknown> = await import('../../src/aiRequestPolicy')
+    const readConnectedPeerAddress = policyModule.readConnectedPeerAddress
+
+    expect(readConnectedPeerAddress).toBeTypeOf('function')
+    if (typeof readConnectedPeerAddress !== 'function') return
+
+    const addresses = ['', '127.0.0.1']
+    const socket = {
+      get remoteAddress(): string | undefined {
+        return addresses.shift()
+      },
+    }
+
+    await expect(readConnectedPeerAddress(socket)).resolves.toBe('127.0.0.1')
+    expect(addresses).toEqual([])
+  })
+
   it('performs a bounded loopback request and closes its dispatcher', async () => {
     const server = createServer((request, response) => {
       request.resume()

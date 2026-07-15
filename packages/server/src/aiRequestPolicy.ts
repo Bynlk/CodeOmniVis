@@ -151,6 +151,18 @@ export function createPeerMismatchError(
   )
 }
 
+export async function readConnectedPeerAddress(socket: {
+  readonly remoteAddress?: string
+}): Promise<string | undefined> {
+  const initialAddress = socket.remoteAddress
+  if (initialAddress) return initialAddress
+
+  // Windows can expose an empty peer in the earliest connect listener; one
+  // bounded turn lets Node retry getpeername while preserving fail-closed checks.
+  await new Promise<void>((resolve) => setImmediate(resolve))
+  return socket.remoteAddress || undefined
+}
+
 interface PinnedAgent {
   dispatcher: Agent
   getPeerAddress: () => string | undefined
@@ -177,13 +189,15 @@ function createPinnedAgent(destination: UpstreamDestination): PinnedAgent {
         callback(error, null)
         return
       }
-      peerAddress = socket.remoteAddress
-      if (!peerAddress || !matchesValidatedAddress(peerAddress, address)) {
-        socket.destroy()
-        callback(createPeerMismatchError(peerAddress, address), null)
-        return
-      }
-      callback(null, socket)
+      void readConnectedPeerAddress(socket).then((resolvedPeerAddress) => {
+        peerAddress = resolvedPeerAddress
+        if (!peerAddress || !matchesValidatedAddress(peerAddress, address)) {
+          socket.destroy()
+          callback(createPeerMismatchError(peerAddress, address), null)
+          return
+        }
+        callback(null, socket)
+      })
     })
   }
   return {
