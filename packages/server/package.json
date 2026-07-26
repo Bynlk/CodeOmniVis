@@ -42,7 +42,7 @@
   "dependencies": {
     "@codeomnivis/analyzer": "workspace:*",
     "@codeomnivis/shared": "workspace:*",
-    "chokidar": "^4.0.0",
+    "chokidar": "^5.0.0",
     "cors": "^2.8.5",
     "express": "^4.18.0",
     "undici": "^6.27.0",
