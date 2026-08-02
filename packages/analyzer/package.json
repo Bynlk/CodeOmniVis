@@ -45,11 +45,11 @@
     "@codeomnivis/shared": "workspace:*",
     "@prisma/internals": "^5.0.0",
     "fast-glob": "^3.3.0",
-    "fast-xml-parser": "^5.10.0",
+    "fast-xml-parser": "^5.10.1",
     "sql.js": "^1.10.0",
     "tree-sitter-wasms": "^0.1.13",
     "ts-morph": "^21.0.0",
-    "web-tree-sitter": "^0.20.8"
+    "web-tree-sitter": "^0.26.11"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
